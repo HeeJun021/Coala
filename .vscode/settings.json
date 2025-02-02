@@ -6,3 +6,9 @@
     "python.analysis.extraPaths": ["./backend","./backend/app"],
     "python.languageServer": "Pylance"
 }
+
+{
+    "css.validate": false,
+    "scss.validate": false,
+    "less.validate": false
+  }

@@ -1,13 +1,20 @@
-import './App.css';
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Navbar from "./components/Navbar";
+import Home from "./pages/Home";
+import Quiz from "./pages/Quiz";
 
-function App() {
+const App = () => {
   return (
-    <div className="m-0 font-sans">
-      <code className="font-mono text-blue-500">
-        TailwindCSS 적용 확인
-      </code>
-    </div>
+    <Router>
+      <Navbar />
+      <div className="p-4">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/Quiz" element={<Quiz />} />
+        </Routes>
+      </div>
+    </Router>
   );
-}
+};
 
 export default App;
