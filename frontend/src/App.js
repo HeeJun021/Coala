@@ -1,20 +1,26 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Navbar from "./components/Navbar";
-import Home from "./pages/Home";
-import Quiz from "./pages/Quiz";
+import { useState } from "react";
 
-const App = () => {
+function App() {
+  const [name, setName] = useState(""); // 사용자 입력 상태
+  const [response, setResponse] = useState(""); // 백엔드 응답 상태
+
+  const handleRegister = async () => {
+    const res = await fetch("http://127.0.0.1:8000/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    const data = await res.json();
+    setResponse(data.message); // 백엔드 응답 저장
+  };
+
   return (
-    <Router>
-      <Navbar />
-      <div className="p-4">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/Quiz" element={<Quiz />} />
-        </Routes>
-      </div>
-    </Router>
+    <div>
+      <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="이름 입력" />
+      <button onClick={handleRegister}>회원가입</button>
+      <p>{response}</p>
+    </div>
   );
-};
+}
 
 export default App;
