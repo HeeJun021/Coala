@@ -1,14 +1,28 @@
 {
-    "editor.intelliCode.suggestions.enabled": true,
+  // IntelliCode를 활성화하여 AI 기반 코드 추천 사용
+  "editor.intelliCode.suggestions.enabled": true,
 
-    "python.terminal.activateEnvironment": true,
-    
-    "python.analysis.extraPaths": ["./backend","./backend/app"],
-    "python.languageServer": "Pylance"
-}
+  // 터미널에서 Python 가상환경을 자동으로 활성화
+  "python.terminal.activateEnvironment": true,
 
-{
-    "css.validate": false,
-    "scss.validate": false,
-    "less.validate": false
+  // Python 인터프리터 경로를 가상환경으로 설정 (Windows 기준)
+  "python.defaultInterpreterPath": "./backend/.venv/Scripts/python",
+
+  // Python 언어 서버로 Pylance를 사용하여 빠르고 정밀한 코드 분석
+  "python.languageServer": "Pylance",
+
+  // CSS, SCSS, LESS 파일의 유효성 검사를 비활성화 (TailwindCSS를 사용할 경우)
+  "css.validate": false,
+  "scss.validate": false,
+  "less.validate": false,
+
+  // TailwindCSS를 활성화하고 관련 파일에서 자동 완성 기능 제공
+  "tailwindCSS.includeLanguages": {
+    "plaintext": "html"
+  },
+
+  // 문자열 안에서도 자동 완성 기능을 제공
+  "editor.quickSuggestions": {
+    "strings": true
   }
+}
