@@ -24,5 +24,11 @@
   // 문자열 안에서도 자동 완성 기능을 제공
   "editor.quickSuggestions": {
     "strings": true
-  }
+  },
+    "python.autoComplete.extraPaths": [
+        "./backend"
+    ],
+    "python.analysis.extraPaths": [
+        "./backend"
+    ]
 }

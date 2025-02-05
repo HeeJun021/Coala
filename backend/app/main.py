@@ -1,17 +1,27 @@
-import sys
-import os
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))  # 현재 디렉토리를 sys.path에 추가
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))  # 상위 디렉토리 추가
-
 from fastapi import FastAPI
-from app.routers import users  # users 라우터 가져오기
+from app.routers import user  # 사용자 라우터 가져오기
+from app.database import engine  # 데이터베이스 연결 엔진
+from sqlalchemy import text
 
 app = FastAPI()
 
-# users 라우터 등록
-app.include_router(users.router, prefix="/users", tags=["users"])
+# 사용자 라우터 등록
+app.include_router(user.router, prefix="/users", tags=["Users"])
 
-@app.get("/")
-def root():
-    return {"message": "API is running"}
+# 데이터베이스 연결 테스트 API
+@app.get("/db-test", tags=["Database"])
+def db_test():
+    """데이터베이스 연결 테스트"""
+    try:
+        # 데이터베이스 연결 확인
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+        return {"status": "✅ Database Connected"}
+    except Exception as e:
+        return {"status": "❌ Database Connection Failed", "error": str(e)}
+
+# 기본 라우트
+@app.get("/", tags=["Root"])
+def read_root():
+    """서버 상태 확인"""
+    return {"message": "FastAPI is running!"}
