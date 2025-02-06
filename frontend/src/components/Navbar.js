@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 const Navbar = () => {
   return (
-    <div className="w-full bg-[#81A978] h-[141px] flex items-center px-10">
+    <nav className="fixed top-0 left-0 w-full bg-navbar h-[100px] shadow-md flex items-center px-12 z-50">
       {/* 로고 */}
       <div className="flex items-center">
         <img
@@ -15,7 +15,7 @@ const Navbar = () => {
       </div>
 
       {/* 메뉴 */}
-      <div className="flex space-x-10 ml-16">
+      <div className="ml-auto flex gap-40">
         <Link
           to="/StudyMaterialsPage"
           className="text-[28px] text-black hover:text-gray-700"
@@ -54,7 +54,7 @@ const Navbar = () => {
           <span className="text-center text-black"></span>
         </div>
       </div>
-    </div>
+    </nav>
   );
 };
 

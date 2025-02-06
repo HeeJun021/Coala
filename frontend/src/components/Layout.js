@@ -15,14 +15,8 @@ const Layout = ({ children }) => {
       {/* 조건부 렌더링으로 사이드바 표시 */}
       {showSidebar && <Sidebar />}
       {/* 메인 컨텐츠 */}
-      <main
-        className={`content ${
-          showSidebar ? "ml-[250px]" : ""
-        } flex-1 p-4 transition-all duration-300`}
-      >
-        {children}
-      </main>
-    </div>
+      <main className="content flex-1 px-10 max-w-[1207px] h-[1539px] mx-auto ">
+        {children}</main></div>
   );
 };
 
