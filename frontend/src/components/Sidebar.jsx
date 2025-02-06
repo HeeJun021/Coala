@@ -1,16 +1,30 @@
 import React, { useState } from "react";
 
-const Sidebar = ({ setCategory = () => {} }) => { // 기본값 설정
+const Sidebar = ({ setCategory }) => {
   const [activeSection, setActiveSection] = useState("학습자료");
   const [activeSubMenu, setActiveSubMenu] = useState("HTML");
 
   const handleSectionClick = (section) => {
     setActiveSection(section);
+    if (section === "학습자료") {
+      setCategory("HTML"); // 학습자료 선택 시 기본값 HTML 설정
+    } else if (section === "예제") {
+      setCategory("예제-HTML"); // 예제 선택 시 기본값 예제-HTML 설정
+    }
   };
 
   const handleSubMenuClick = (menu) => {
     setActiveSubMenu(menu);
-    setCategory(menu); // setCategory 호출
+
+    if (typeof setCategory === "function") {
+      if (activeSection === "학습자료") {
+        setCategory(menu);
+      } else if (activeSection === "예제") {
+        setCategory(`예제-${menu}`);
+      }
+    } else {
+      console.error("setCategory is not a function. Check StudyMaterialsPage.");
+    }
   };
 
   return (
