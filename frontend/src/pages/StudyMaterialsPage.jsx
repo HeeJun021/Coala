@@ -24,14 +24,14 @@ const StudyMaterialsPage = () => {
       <Sidebar setCategory={setCategory} />
 
       {/* 메인 컨텐츠 */}
-      <div className="ml-8 flex-1 bg-white rounded-lg shadow-lg p-8">
-        <h2 className="text-3xl font-bold mb-4">
-          {isExample ? "예제" : "학습자료"} - {displayCategory}
-        </h2>
+      <div className="ml- flex-1 bg-white rounded-lg shadow-lg">
+  <h2 className="text-3xl font-bold mb-4 mt-4 ml-4">
+    {isExample ? "예제" : "학습자료"} - {displayCategory}
+  </h2>
 
-        {/* Table 컴포넌트 사용 */}
-        <Table rows={rows} type={type} category={displayCategory} />
-      </div>
+  {/* Table 컴포넌트 사용 */}
+  <Table rows={rows} type={type} category={displayCategory} />
+</div>
     </div>
   );
 };
