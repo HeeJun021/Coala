@@ -3,5 +3,13 @@
 @tailwind utilities;
 
 body {
-    @apply bg-[#F8F3E2]; /* 기본 배경색 */
+    background-color: #F8F3E2; /* Tailwind config의 베이지색 */
+    margin: 0;
+    padding: 0;
+    font-family: 'Arial', sans-serif; /* 기본 폰트 설정 */
   }
+  
+  html, body, #root {
+    height: 100%; /* 전체 화면을 채우도록 설정 */
+  }
+  
