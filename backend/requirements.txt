@@ -1,0 +1,5 @@
+# FastAPI, SQLAlchemy, dotenv 등을 설치하기 위한 패키지 목록
+fastapi
+uvicorn
+sqlalchemy
+python-dotenv
