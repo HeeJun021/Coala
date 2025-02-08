@@ -3,7 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom"; // Re
 import Layout from "./components/Layout"; // Layout 컴포넌트 (공통 레이아웃) 가져오기
 import Home from "./pages/Home"; // 홈 페이지 컴포넌트 가져오기
 import Signup from "./pages/Signup"; // 회원가입 페이지 추가
-
+import MyPage from "./pages/MyPage";
+import MyPageModify from "./pages/MyPageModify";
 
 // App 컴포넌트: 애플리케이션의 루트 컴포넌트
 const App = () => {
@@ -17,6 +18,8 @@ const App = () => {
           {/* Route: 특정 경로에 따라 렌더링할 컴포넌트를 지정 */}
           <Route path="/" element={<Home />} />{" "}
           <Route path="/signup" element={<Signup />} /> {/* 회원가입 경로 */}
+          <Route path="/mypage" element={<MyPage />} />{" "}
+          <Route path="/mypage/modify" element={<MyPageModify />} />{" "}
           {/* "/" 경로에서 Home 컴포넌트를 렌더링 */}
         </Routes>
       </Layout>
