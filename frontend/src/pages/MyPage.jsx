@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import MyPageSidebar from '../components/MyPageSideBar';
 import MyPageHome from './MyPageHome';
 import MyPageModify from './MyPageModify';
+import MyPageSetting from './MyPageSetting';
 
 const MyPage = () => {
     return (
@@ -16,6 +17,7 @@ const MyPage = () => {
                     {/* 상대 경로 사용 */}
                     <Route path="/" element={<MyPageHome />} />
                     <Route path="/modify" element={<MyPageModify />} />
+                    <Route path="/setting" element={<MyPageSetting />} />
                     {/* 다른 경로 추가 가능 */}
                 </Routes>
             </main>

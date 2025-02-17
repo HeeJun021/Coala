@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import { updateUserInfo } from '../api/user';
 
-const ProfileCard = ({ profile_image_url, username, role, bio }) => {
+const ProfileCard = ({ userId, profile_image_url, username, role, bio }) => {
     const [isEditing, setIsEditing] = useState(false); // 수정 모드 상태
     const [formData, setFormData] = useState({
         username,
@@ -25,31 +26,11 @@ const ProfileCard = ({ profile_image_url, username, role, bio }) => {
     // 저장 로직 (백엔드와 연결 시 추가)
     const saveProfile = async () => {
         try {
-            // 1. API 요청을 통해 수정된 데이터를 백엔드로 전송
-            // 예: PUT 요청을 사용하여 프로필 업데이트
-            const response = await fetch('/api/profile', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData),
-            });
-
-            // 2. 백엔드에서 반환한 응답을 확인
-            if (!response.ok) {
-                throw new Error('프로필 저장에 실패했습니다.');
-            }
-
-            const result = await response.json();
-            console.log('저장 성공:', result);
-
-            // 3. 저장 성공 후 사용자 알림 및 수정 모드 종료
-            alert('정보가 저장되었습니다.');
+            await updateUserInfo(userId, formData);
+            alert('프로필이 업데이트되었습니다.');
             setIsEditing(false);
         } catch (error) {
-            // 4. 에러 처리
-            console.error('저장 실패:', error);
-            alert('정보 저장 중 문제가 발생했습니다.');
+            alert('프로필 업데이트 실패');
         }
     };
 

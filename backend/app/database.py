@@ -1,4 +1,5 @@
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base  # ✅ declarative_base 추가
 import os
 from dotenv import load_dotenv
 
@@ -11,13 +12,16 @@ DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:1234@localhost:5
 # SQLAlchemy 엔진 생성
 engine = create_engine(DATABASE_URL)
 
-# 데이터베이스 연결 테스트 함수
-def test_db_connection():
+# 세션 로컬 클래스 생성
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# ✅ Base 클래스를 생성 (이 부분이 없어서 오류 발생)
+Base = declarative_base()
+
+# 데이터베이스 세션을 반환하는 의존성 함수
+def get_db():
+    db = SessionLocal()
     try:
-        with engine.connect() as connection:
-            # ✅ text()를 사용하여 실행해야 함
-            connection.execute(text("SELECT 1"))  
-        return True
-    except Exception as e:
-        print(f"❌ Database Connection Error: {e}")
-        return False
+        yield db
+    finally:
+        db.close()

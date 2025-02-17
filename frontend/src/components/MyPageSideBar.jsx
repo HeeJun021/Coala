@@ -18,7 +18,7 @@ const MyPageSidebar = () => {
                         <span className="block mb-2 text-gray-600">로그인 정보</span>
                         <ul className="ml-4 space-y-1 text-sm">
                             <li><Link to="/mypage/modify">계정 정보 및 관리</Link></li>
-                            <li><Link to="/mypage/privacy">개인정보 보호 설정</Link></li>
+                            <li><Link to="/mypage/setting">개인정보 보호 설정</Link></li>
                         </ul>
                     </li>
                     <li className="font-semibold">
