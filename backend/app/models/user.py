@@ -1,3 +1,4 @@
+import uuid  # UUID 생성 모듈 추가
 from sqlalchemy import Column, Integer, String, Boolean, Date, ForeignKey, TIMESTAMP
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -7,7 +8,7 @@ from datetime import datetime
 class User(Base):
     __tablename__ = "users"
 
-    user_id = Column(String(50), primary_key=True)
+    user_id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)  # UUID 적용
     username = Column(String(50), unique=True, nullable=False)
     email = Column(String(255), unique=True)
     email_verified = Column(Boolean, default=False)

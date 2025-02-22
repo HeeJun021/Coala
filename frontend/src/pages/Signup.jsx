@@ -89,38 +89,51 @@ const Signup = () => {
             </select>
           </div>
 
-          {/* 생년월일 */}
+          {/* 생년월일 (드롭다운 방식) */}
           <div className="flex items-center border-b border-gray-200 pb-2">
             <FaUser className="text-dark mr-2" />
-            <input
-              type="text"
+
+            {/* 연도 선택 */}
+            <select
               name="birthYear"
-              placeholder="년(4자)"
-              className="w-1/3 p-1.5 h-10 outline-none text-black"
-            />
+              className="border p-1.5 h-10 rounded-md w-1/3 text-black"
+            >
+              <option value="">년</option>
+              {Array.from({ length: 100 }, (_, i) => {
+                const year = new Date().getFullYear() - i;
+                return (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                );
+              })}
+            </select>
+
+            {/* 월 선택 */}
             <select
               name="birthMonth"
               className="border p-1.5 h-10 rounded-md w-1/3 ml-2 text-black"
             >
-              <option>1월</option>
-              <option>2월</option>
-              <option>3월</option>
-              <option>4월</option>
-              <option>5월</option>
-              <option>6월</option>
-              <option>7월</option>
-              <option>8월</option>
-              <option>9월</option>
-              <option>10월</option>
-              <option>11월</option>
-              <option>12월</option>
+              <option value="">월</option>
+              {Array.from({ length: 12 }, (_, i) => (
+                <option key={i + 1} value={i + 1}>
+                  {i + 1}월
+                </option>
+              ))}
             </select>
-            <input
-              type="text"
+
+            {/* 일 선택 */}
+            <select
               name="birthDay"
-              placeholder="일"
-              className="w-1/3 p-1.5 h-10 outline-none ml-2 text-black"
-            />
+              className="border p-1.5 h-10 rounded-md w-1/3 ml-2 text-black"
+            >
+              <option value="">일</option>
+              {Array.from({ length: 31 }, (_, i) => (
+                <option key={i + 1} value={i + 1}>
+                  {i + 1}일
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* 통신사 선택 */}
@@ -152,6 +165,19 @@ const Signup = () => {
             />
             <button className="ml-4 bg-accent text-white px-6 py-1.5 h-8 rounded-md hover:bg-green-400">
               인증 요청
+            </button>
+          </div>
+
+          {/* 인증번호 입력 및 확인 버튼 */}
+          <div className="flex items-center justify-between border-b border-gray-200 pb-2 mt-4">
+            <input
+              type="text"
+              name="verificationCode"
+              placeholder="인증번호 입력"
+              className="flex-1 p-1.5 h-10 outline-none text-black"
+            />
+            <button className="ml-4 bg-accent text-white px-6 py-1.5 h-8 rounded-md hover:bg-green-400">
+              인증 확인
             </button>
           </div>
 

@@ -8,18 +8,15 @@ from datetime import datetime
 from sqlalchemy import text
 from fastapi.middleware.cors import CORSMiddleware
 
+# from app.routers import auth  # 로그인 관련 라우터 (새로 만들 예정)
+
+
 app = FastAPI()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # 프론트엔드 URL 추가
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# 라우터 등록
+app.include_router(user.router)
 
-# 사용자 라우터 등록
-app.include_router(user.router, prefix="/users", tags=["Users"])
+# app.include_router(auth.router)  # auth.py에서 라우터를 설정할 예정
 
 # 데이터베이스 연결 테스트 API
 @app.get("/db-test", tags=["Database"])

@@ -38,9 +38,13 @@ const Navbar = ({ hideButtons }) => {
       {/* 회원가입 및 로그인 버튼 */}
       {!hideButtons && (
         <div className="flex gap-4">
-          <button className="bg-[#F8F3E2] text-[#81A978] px-4 py-2 rounded-md font-medium hover:bg-[#e6ddc9]">
+          {/* 로그인 버튼을 Link로 수정 */}
+          <Link
+            to="/login"
+            className="bg-[#F8F3E2] text-[#81A978] px-4 py-2 rounded-md font-medium hover:bg-[#e6ddc9]"
+          >
             로그인
-          </button>
+          </Link>
           <Link
             to="/signup"
             className="bg-[#F8F3E2] text-[#81A978] px-4 py-2 rounded-md font-medium hover:bg-[#e6ddc9]"
