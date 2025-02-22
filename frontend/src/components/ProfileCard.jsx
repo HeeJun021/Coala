@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { updateUserInfo } from '../api/user';
 
-const ProfileCard = ({ userId, profile_image_url, username, role, bio }) => {
+const ProfileCard = ({ userId, profile_image_url, nickname, role, bio }) => {
     const [isEditing, setIsEditing] = useState(false); // 수정 모드 상태
     const [formData, setFormData] = useState({
-        username,
+        nickname,
         role,
         bio,
     });
@@ -60,8 +60,8 @@ const ProfileCard = ({ userId, profile_image_url, username, role, bio }) => {
                             <h2 className='font-bold'>닉네임</h2>
                             <input
                                 type="text"
-                                name="username"
-                                value={formData.username}
+                                name="nickname"
+                                value={formData.nickname}
                                 onChange={handleInputChange}
                                 className="w-[75%] border border-gray-300 rounded-md px-2 py-1 mt-1 bg-beige ml-auto mr-10"
                             />
@@ -122,7 +122,7 @@ const ProfileCard = ({ userId, profile_image_url, username, role, bio }) => {
                         {/* 닉네임 */}
                         <div className="flex items-center">
                             <h2 className="font-bold w-24">닉네임</h2>
-                            <p className="flex-1">{formData.username}</p>
+                            <p className="flex-1">{formData.nickname}</p>
                         </div>
 
                         {/* 자기소개 */}

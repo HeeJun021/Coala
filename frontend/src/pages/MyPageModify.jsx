@@ -23,7 +23,7 @@ const MyPageModify = () => {
 
                 setUserData({
                     profile_image_url: koala, // 프로필 이미지 기본값
-                    username: user.username,
+                    nickname: user.nickname,
                     bio: "안녕하세요.", // bio는 더미 데이터로 추가
                     role: "프론트 엔드", // 역할 기본값 추가
                 });
@@ -62,7 +62,7 @@ const MyPageModify = () => {
                 {/* 상단 제목 */}
                 <header className="p-6">
                     <h1 className="text-2xl font-bold text-left">
-                        {userData.username} 님의 페이지
+                        {userData.nickname} 님의 페이지
                     </h1>
                 </header>
 
@@ -72,7 +72,7 @@ const MyPageModify = () => {
                     <div className="bg-white border border-gray-300 rounded-lg shadow-lg p-6 w-full max-w-2xl">
                         <ProfileCard
                             userId={userInfo.userId}
-                            username={userData.username}
+                            nickname={userData.nickname}
                             bio={userData.bio}
                             role={userData.role}
                             profile_image_url={userData.profile_image_url}

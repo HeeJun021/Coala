@@ -26,63 +26,6 @@ app.include_router(user.router)
 
 # app.include_router(auth.router)  # auth.py에서 라우터를 설정할 예정
 
-# 데이터베이스 연결 테스트 API
-@app.get("/db-test", tags=["Database"])
-def db_test():
-    """데이터베이스 연결 테스트"""
-    try:
-        with engine.connect() as connection:
-            connection.execute(text("SELECT 1"))
-        return {"status": "✅ Database Connected"}
-    except Exception as e:
-        return {"status": "❌ Database Connection Failed", "error": str(e)}
-
-# 사용자 정보 가져오기 API
-@app.get("/users/{user_id}", tags=["Users"])
-def get_user(user_id: str, db: Session = Depends(get_db)):
-    """
-    🔹 특정 사용자 정보를 가져옵니다.
-    - `user_id`: 조회할 사용자 ID
-    """
-    user = db.query(User).filter(User.user_id == user_id).first()
-
-    if not user:
-        raise HTTPException(status_code=404, detail="❌ User not found")
-
-    return {
-        "user_id": user.user_id,
-        "username": user.username,
-        "email": user.email,
-        "email_verified": user.email_verified,
-        "phone_number": user.phone_number,
-        "rating": user.rating,
-        "status": user.status,
-        "created_at": user.created_at,
-        "tier_id": user.tier_id
-    }
-
-# ✅ 사용자 정보 업데이트 API 추가
-@app.put("/users/{user_id}", tags=["Users"])
-def update_user(user_id: str, user_update: UserUpdateSchema, db: Session = Depends(get_db)):
-    """
-    🔹 특정 사용자의 닉네임, 자기소개, 개발 직군을 업데이트합니다.
-    """
-    user = db.query(User).filter(User.user_id == user_id).first()
-
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    # 사용자 정보 업데이트
-    user.username = user_update.username
-    user.bio = user_update.bio
-    user.role = user_update.role
-    user.updated_at = datetime.now()
-    
-    db.commit()
-    db.refresh(user)
-
-    return {"message": "✅ User updated successfully"}
-
 # 기본 라우트
 @app.get("/", tags=["Root"])
 def read_root():

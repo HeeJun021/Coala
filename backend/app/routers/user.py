@@ -9,7 +9,7 @@ from app.utils.security import hash_password
 
 router = APIRouter(prefix="/users", tags=["users"])
 
-@router.get("/users/{user_id}", response_model=UserResponse)
+@router.get("/{user_id}", response_model=UserResponse)
 def get_user(user_id: str, db: Session = Depends(get_db)):
     user = get_user_by_id(db, user_id)
     if not user:
@@ -25,11 +25,6 @@ def update_user(user_id: str, user_update: UserUpdateSchema, db: Session = Depen
 # 회원 가입
 @router.post("/register", response_model=UserResponse)
 def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
-    # 아이디 중복 검사
-    existing_user = db.query(User).filter(User.username == user_data.username).first()
-    if existing_user:
-        raise HTTPException(status_code=400, detail="이미 사용 중인 아이디입니다.")
-
     # 이메일 중복 검사
     existing_email = db.query(User).filter(User.email == user_data.email).first()
     if existing_email:
@@ -41,8 +36,6 @@ def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
 
     # 새 사용자 생성
     new_user = User(
-        user_id=str(uuid.uuid4()),  # UUID 자동 생성
-        username=user_data.username,
         email=user_data.email,
         password=hashed_password,
     )
