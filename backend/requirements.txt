@@ -14,3 +14,7 @@ pip install alembic
 pip install bcrypt passlib
 # bcrypt 패키지 버전을 다운그레이드 해야함
 pip install bcrypt==3.2.0
+
+pip install pydantic-settings
+
+pip install itsdangerous

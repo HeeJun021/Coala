@@ -35,7 +35,7 @@ class UserResponse(BaseModel):
     created_at: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # 사용자 정보 수정용 스키마
 class UserUpdateSchema(BaseModel):
