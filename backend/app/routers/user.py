@@ -38,7 +38,10 @@ def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
     new_user = User(
         email=user_data.email,
         password=hashed_password,
+        nickname=user_data.nickname,
+        birth_date=user_data.birth_date
     )
+    
     db.add(new_user)
     db.commit()
     db.refresh(new_user)

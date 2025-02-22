@@ -21,7 +21,6 @@ class User(Base):
     email_verified = Column(Boolean, default=False)
     password = Column(String(255), nullable=False)
     rating = Column(Integer, default=0)
-    status = Column(String(20), default="pending_verification")
     created_at = Column(TIMESTAMP, server_default="CURRENT_TIMESTAMP")
     updated_at = Column(TIMESTAMP, default=datetime.now, onupdate=datetime.now)
     

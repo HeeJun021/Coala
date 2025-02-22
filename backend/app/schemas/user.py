@@ -4,8 +4,8 @@ from datetime import date, datetime
 
 # 기본 User 스키마
 class UserBase(BaseModel):
-    user_id: str
-    username: str
+    user_id: int
+    nickname: str
     email: Optional[str]
     rating: int
     tier_id: Optional[int] = 1
@@ -14,10 +14,28 @@ class UserBase(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-class UserCreate(BaseModel):  # 회원가입에 필요한 필드만 포함
-    username: str
+# 회원가입 요청 스키마
+class UserCreate(BaseModel):
     email: EmailStr
-    password: str  # 패스워드는 DB 저장 시 해싱할 것
+    password: str
+    nickname: str
+    birth_date: Optional[date] = None
+    
+# 회원가입 응답 스키마
+class UserResponse(BaseModel):
+    user_id: int
+    email: str
+    nickname: str
+    profile_image_url: Optional[str]
+    bio: Optional[str]
+    birth_date: Optional[date]
+    rating: int
+    tier_id: int
+    email_verified: bool
+    created_at: str
+
+    class Config:
+        orm_mode = True
 
 # 사용자 정보 수정용 스키마
 class UserUpdateSchema(BaseModel):
