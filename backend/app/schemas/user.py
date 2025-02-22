@@ -6,7 +6,6 @@ class UserBase(BaseModel):
     user_id: str
     username: str
     email: Optional[str]
-    phone_number: str
     rating: int
     status: str
     tier_id: Optional[int]
@@ -17,8 +16,6 @@ class UserCreate(BaseModel):  # 회원가입에 필요한 필드만 포함
     username: str
     email: EmailStr
     password: str  # 패스워드는 DB 저장 시 해싱할 것
-    phone_number: str
-    birth_date: date
 
 class UserUpdateSchema(BaseModel):
     username: str

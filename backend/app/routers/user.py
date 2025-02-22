@@ -35,10 +35,6 @@ def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
     if existing_email:
         raise HTTPException(status_code=400, detail="이미 사용 중인 이메일입니다.")
 
-    # 전화번호 중복 검사
-    existing_phone = db.query(User).filter(User.phone_number == user_data.phone_number).first()
-    if existing_phone:
-        raise HTTPException(status_code=400, detail="이미 사용 중인 전화번호입니다.")
     
     # 비밀번호 해싱
     hashed_password = hash_password(user_data.password)
@@ -49,8 +45,6 @@ def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
         username=user_data.username,
         email=user_data.email,
         password=hashed_password,
-        phone_number=user_data.phone_number,
-        birth_date=user_data.birth_date
     )
     db.add(new_user)
     db.commit()

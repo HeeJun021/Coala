@@ -1,10 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { FaUser, FaLock } from "react-icons/fa";
+import { FaEnvelope, FaLock } from "react-icons/fa"; // 이메일 아이콘으로 변경
 
 const Login = () => {
   return (
-    <div className="flex items-center justify-center min-h-screen">
+    <div className="flex items-center justify-center min-h-screen mt-[-70px]">
       <div className="bg-white p-16 rounded-lg shadow-lg w-full max-w-[450px] text-left">
         {/* 타이틀 - 상단 간격 조정 */}
         <h2 className="text-3xl font-extrabold text-center mb-6 text-navbar">
@@ -15,13 +15,13 @@ const Login = () => {
         </p>
 
         <form className="flex flex-col gap-6">
-          {/* 아이디 입력 */}
+          {/* 이메일 입력 (아이디 대신) */}
           <div className="flex items-center border-b border-gray-200 pb-2">
-            <FaUser className="text-dark mr-2" />
+            <FaEnvelope className="text-dark mr-2" /> {/* 아이콘 변경 */}
             <input
               type="text"
-              name="username"
-              placeholder="아이디"
+              name="email"
+              placeholder="이메일"
               className="w-full p-2 h-10 outline-none text-black"
             />
           </div>
@@ -48,19 +48,61 @@ const Login = () => {
           </div>
         </form>
 
-        {/* 회원가입 | 아이디 찾기 | 비밀번호 찾기 - 간격 추가 */}
+        {/* 회원가입 | 비밀번호 찾기 - 간격 추가 */}
         <div className="flex justify-center gap-6 mt-8 text-dark text-sm">
           <Link to="/signup" className="hover:underline">
             회원가입
           </Link>
           <span className="text-gray-300">|</span>
-          <Link to="/find-id" className="hover:underline">
-            아이디 찾기
-          </Link>
-          <span className="text-gray-300">|</span>
           <Link to="/forgot-password" className="hover:underline">
             비밀번호 찾기
           </Link>
+        </div>
+
+        {/* 간편 로그인 구분선 */}
+        <div className="flex items-center my-6">
+          <hr className="flex-grow border-gray-300" />
+          <span className="mx-4 text-gray-500 text-sm">간편 로그인</span>
+          <hr className="flex-grow border-gray-300" />
+        </div>
+
+        {/* 간편 로그인 아이콘 */}
+        <div className="flex gap-5 justify-center">
+          {/* 카카오 로그인 */}
+          <button className="flex items-center justify-center w-12 h-12 bg-white p-2 rounded-lg shadow-md border">
+            <img
+              src="/assets/kakao_login.png"
+              alt="카카오 로그인"
+              className="w-8 h-8"
+            />
+          </button>
+
+          {/* 구글 로그인 */}
+          <button className="flex items-center justify-center w-12 h-12 bg-white p-2 rounded-lg shadow-md border">
+            <img
+              src="/assets/google_login.png"
+              alt="구글 로그인"
+              className="w-8 h-8"
+            />
+          </button>
+
+          {/* 깃허브 로그인 */}
+          <button className="flex items-center justify-center w-12 h-12 bg-white p-2 rounded-lg shadow-md">
+            <img
+              src="/assets/github_login.png"
+              alt="깃허브 로그인"
+              className="w-8 h-8"
+            />
+          </button>
+
+          {/* 애플 로그인 */}
+          <button className="flex items-center justify-center w-12 h-12 bg-white p-2 rounded-lg shadow-md border">
+            <img
+              src="/assets/apple_login.png"
+              alt="애플 로그인"
+              className="w-8 h-8"
+            />
+          </button>
         </div>
       </div>
     </div>
