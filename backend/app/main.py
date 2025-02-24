@@ -14,21 +14,19 @@ from app.config import settings  # ✅ 설정 불러오기
 
 app = FastAPI()
 
-# ✅ 환경 변수 확인 (테스트용 로그 - 필요 없으면 제거 가능)
-print(f"🔑 SECRET_KEY: {settings.SECRET_KEY}")
-print(f"🍪 SESSION_COOKIE_NAME: {settings.SESSION_COOKIE_NAME}")
-
 # 🔥 세션 미들웨어 추가 (환경 변수 적용)
 app.add_middleware(
     SessionMiddleware,
-    secret_key=settings.SECRET_KEY,  
-    session_cookie=settings.SESSION_COOKIE_NAME  
+    secret_key="your_secret_key",
+    session_cookie="session_id",
+    max_age=1209600,  # ✅ 2주간 유지
+    same_site="None",  # ✅ 크로스 사이트 요청에서도 쿠키 허용
 )
 
 # 🔥 CORS 미들웨어 추가 (프론트엔드 허용)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 모든 도메인 허용 (실제 운영에서는 특정 프론트엔드 URL로 제한할 것)
+    allow_origins=["http://localhost:3000"],  # 모든 도메인 허용 (실제 운영에서는 특정 프론트엔드 URL로 제한할 것)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

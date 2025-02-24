@@ -1,7 +1,26 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { getCurrentUser, logoutUser } from "../api"; // ✅ 로그인 정보 가져오기 & 로그아웃 API 추가
 
-const Navbar = ({ hideButtons }) => {
+const Navbar = () => {
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
+
+  // ✅ 현재 로그인한 사용자 정보 가져오기
+  useEffect(() => {
+    getCurrentUser()
+      .then((data) => setUser(data)) // ✅ 로그인 성공 시 유저 정보 저장
+      .catch(() => setUser(null)); // ✅ 로그인 안 되어 있으면 null
+  }, []);
+
+  // ✅ 로그아웃 함수 (세션 삭제 후 새로고침)
+  const handleLogout = async () => {
+    await logoutUser(); // 백엔드 로그아웃 요청
+    setUser(null);
+    navigate("/"); // 홈으로 이동
+    window.location.reload(); // ✅ 새로고침 (세션 초기화)
+  };
+
   return (
     <nav className="fixed top-0 left-0 w-full bg-[#81A978] h-[70px] shadow-sm flex items-center px-6 z-50">
       {/* 로고 */}
@@ -16,7 +35,7 @@ const Navbar = ({ hideButtons }) => {
         </Link>
       </div>
 
-      {/* 메뉴 (중앙 정렬) */}
+      {/* 메뉴 */}
       <div className="flex-1 flex justify-center gap-8">
         {[
           { path: "/StudyMaterialsPage", label: "학습자료" },
@@ -35,10 +54,19 @@ const Navbar = ({ hideButtons }) => {
         ))}
       </div>
 
-      {/* 회원가입 및 로그인 버튼 */}
-      {!hideButtons && (
+      {/* 로그인 상태 확인 후 버튼 표시 */}
+      {user ? (
+        <div className="flex items-center gap-4">
+          <span className="text-white">{user.nickname}님</span>
+          <button
+            onClick={handleLogout}
+            className="bg-[#F8F3E2] text-[#81A978] px-4 py-2 rounded-md font-medium hover:bg-[#e6ddc9]"
+          >
+            로그아웃
+          </button>
+        </div>
+      ) : (
         <div className="flex gap-4">
-          {/* 로그인 버튼을 Link로 수정 */}
           <Link
             to="/login"
             className="bg-[#F8F3E2] text-[#81A978] px-4 py-2 rounded-md font-medium hover:bg-[#e6ddc9]"

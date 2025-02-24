@@ -1,12 +1,30 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import { FaEnvelope, FaLock } from "react-icons/fa"; // 이메일 아이콘으로 변경
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { FaEnvelope, FaLock } from "react-icons/fa";
+import { loginUser } from "../api"; // ✅ 로그인 API 함수 추가
 
 const Login = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+
+  // ✅ 로그인 처리 함수
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    try {
+      await loginUser(email, password);
+      alert("로그인 성공!");
+
+      navigate("/"); // ✅ 로그인 성공 시 홈페이지로 이동
+    } catch (error) {
+      alert("로그인 실패: " + (error.response?.data?.detail || "오류 발생"));
+    }
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen mt-[-70px]">
       <div className="bg-white p-16 rounded-lg shadow-lg w-full max-w-[450px] text-left">
-        {/* 타이틀 - 상단 간격 조정 */}
+        {/* 타이틀 */}
         <h2 className="text-3xl font-extrabold text-center mb-6 text-navbar">
           로그인
         </h2>
@@ -14,15 +32,18 @@ const Login = () => {
           Coala에 오신 것을 환영합니다!
         </p>
 
-        <form className="flex flex-col gap-6">
-          {/* 이메일 입력 (아이디 대신) */}
+        {/* 로그인 폼 */}
+        <form className="flex flex-col gap-6" onSubmit={handleLogin}>
+          {/* 이메일 입력 */}
           <div className="flex items-center border-b border-gray-200 pb-2">
-            <FaEnvelope className="text-dark mr-2" /> {/* 아이콘 변경 */}
+            <FaEnvelope className="text-dark mr-2" />
             <input
               type="text"
               name="email"
               placeholder="이메일"
               className="w-full p-2 h-10 outline-none text-black"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
           </div>
 
@@ -34,10 +55,12 @@ const Login = () => {
               name="password"
               placeholder="비밀번호"
               className="w-full p-2 h-10 outline-none text-black"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
             />
           </div>
 
-          {/* 로그인 버튼 - 하단 여백 추가 */}
+          {/* 로그인 버튼 */}
           <div className="flex justify-center mt-8">
             <button
               type="submit"
@@ -48,7 +71,7 @@ const Login = () => {
           </div>
         </form>
 
-        {/* 회원가입 | 비밀번호 찾기 - 간격 추가 */}
+        {/* 회원가입 | 비밀번호 찾기 */}
         <div className="flex justify-center gap-6 mt-8 text-dark text-sm">
           <Link to="/signup" className="hover:underline">
             회원가입
