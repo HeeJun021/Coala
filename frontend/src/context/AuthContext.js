@@ -8,26 +8,20 @@ export const AuthProvider = ({ children }) => {
 
     // ✅ 앱 시작 시 로그인 상태 확인
     useEffect(() => {
-        const fetchUser = async () => {
-            const userData = await getCurrentUser();
-            setUser(userData);
-        };
-        fetchUser();
+        getCurrentUser()
+            .then(setUser)
+            .catch(() => setUser(null));
     }, []);
 
     // ✅ 로그인 처리
     const handleLogin = async (email, password) => {
-        try {
-            const userData = await loginUser(email, password);
-            setUser(userData); // ✅ 로그인 후 상태 업데이트
-            console.log("로그인 성공, user 상태 업데이트:", userData);
-        } catch (error) {
-            console.error("로그인 실패:", error);
-        }
+        await loginUser(email, password);
+        const userData = await getCurrentUser();
+        setUser(userData);
     };
     
 
-    // ✅ 로그아웃 처리 (useNavigate 제거)
+    // ✅ 로그아웃 처리
     const handleLogout = async () => {
         await logoutUser();
         setUser(null);

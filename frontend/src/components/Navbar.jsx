@@ -1,14 +1,15 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom"; // ✅ useNavigate 추가
-import { useAuth } from "../context/AuthContext";
+import { Link, useNavigate } from "react-router-dom"; 
+import { useAuth } from "../context/AuthContext"; 
 
 const Navbar = () => {
-    const { user, handleLogout } = useAuth();
-    const navigate = useNavigate(); // ✅ 네비게이션 함수 추가
+    const { user, handleLogout } = useAuth();  // ✅ 'user'를 직접 사용
+    const navigate = useNavigate();
 
     const logoutAndRedirect = async () => {
-        await handleLogout(); // ✅ 로그아웃 실행
-        navigate("/"); // ✅ 홈으로 이동
+        await handleLogout();
+        navigate("/");
+        window.location.reload(); // ✅ 로그아웃 후 새로고침하여 쿠키 삭제 반영
     };
 
     return (
@@ -47,7 +48,7 @@ const Navbar = () => {
                 <div className="flex items-center gap-4">
                     <span className="text-white">{user.nickname}님</span>
                     <button
-                        onClick={logoutAndRedirect} // ✅ 수정된 로그아웃 함수 호출
+                        onClick={logoutAndRedirect}
                         className="bg-[#F8F3E2] text-[#81A978] px-4 py-2 rounded-md font-medium hover:bg-[#e6ddc9]"
                     >
                         로그아웃

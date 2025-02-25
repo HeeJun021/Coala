@@ -1,7 +1,8 @@
 import uuid
+import jwt
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta  # ✅ 올바른 임포트 방식
 
 
 from app.models.user import User
@@ -19,6 +20,9 @@ from app.schemas.auth import (
     PasswordResetConfirm,
     LoginRequest,
 )
+
+SECRET_KEY = "your_secret_key"  # ✅ JWT 서명용 키
+ALGORITHM = "HS256"  # ✅ 암호화 알고리즘
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -43,55 +47,66 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 #     return {"message": "로그인 성공!"}
 
+def create_access_token(user_id: int):
+    """✅ JWT 액세스 토큰 생성"""
+    expire = datetime.utcnow() + timedelta(days=14)  # ✅ 수정: `datetime.datetime.utcnow()` → `datetime.utcnow()`
+    payload = {"user_id": user_id, "exp": expire}
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
-@router.post("/login")
-def login(
-    request: Request,
-    response: Response,
-    login_data: LoginRequest,
-    db: Session = Depends(get_db),
-):
-    # 1️⃣ 이메일 확인
-    user = db.query(User).filter(User.email == login_data.email).first()
-    if not user:
-        raise HTTPException(status_code=400, detail="이메일이 등록되지 않았습니다.")
 
-    # 2️⃣ 비밀번호 검증
-    if not verify_password(login_data.password, user.password):
-        raise HTTPException(status_code=400, detail="비밀번호가 일치하지 않습니다.")
-
-    # ✅ 세션 저장 (FastAPI의 session 기능)
-    request.session["session_id"] = f"session_{user.user_id}"
+def verify_access_token(token: str):
+    """✅ JWT 검증"""
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="토큰이 만료되었습니다.")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="유효하지 않은 토큰입니다.")
     
-    # ✅ 세션이 유지되는지 확인
-    print(f"🔍 [로그인 후 세션] {request.session}")
+@router.post("/login")
+def jwt_login(request: Request, response: Response, login_data: LoginRequest, db: Session = Depends(get_db)):
+    """✅ JWT 로그인 API"""
+    user = db.query(User).filter(User.email == login_data.email).first()
+    if not user or not verify_password(login_data.password, user.password):
+        raise HTTPException(status_code=400, detail="이메일 또는 비밀번호가 올바르지 않습니다.")
 
-    # ✅ `SameSite=None`을 강제 적용하여 브라우저에서 쿠키가 차단되지 않도록 설정
+    # ✅ JWT 생성
+    access_token = create_access_token(user.user_id)
+
+    # ✅ 쿠키에 JWT 저장
     response.set_cookie(
-        key="session_id",
-        value=f"session_{user.user_id}",
-        httponly=True,
-        secure=False,  # ✅ localhost에서는 False, HTTPS 환경에서는 True로 변경
-        samesite="None",  # ✅ 크로스 사이트에서도 쿠키 허용
-        max_age=1209600,  # ✅ 2주 동안 유지 (초 단위)
-        expires=1209600  # ✅ 2주 동안 유지 (초 단위)
+        key="access_token",
+        value=access_token,
+        httponly=True,  # ✅ JavaScript에서 접근 불가 (보안 강화)
+        secure=False,    # ✅ 개발 환경에서는 False (배포 환경에서는 True)
+        samesite="None",  # ✅ 크로스 사이트 요청에서도 유지
+        max_age=1209600
     )
+    
+    print(f"🔍 Set-Cookie 헤더 확인: {response.headers}")  # ✅ 응답 헤더 출력
 
-    # ✅ 디버깅 로그 추가
-    print(
-        f"🔍 Set-Cookie 헤더 확인: {response.headers.get('set-cookie')}"
-    )  # ✅ 쿠키 설정 확인
-    print(f"🔍 세션 저장됨: {request.session}")  # ✅ FastAPI 세션 확인
+    return {"message": "JWT 로그인 성공!", "access_token": access_token}
 
-    return {"message": "로그인 성공!"}
+@router.get("/me")
+def get_current_user(request: Request):
+    """✅ JWT 기반 로그인 상태 확인"""
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="인증되지 않음")
+
+    user_data = verify_access_token(token)
+    return {"user_id": user_data["user_id"], "message": "JWT 세션 유지됨!"}
+
 
 
 # ✅ 로그아웃 API (세션 삭제)
 @router.post("/logout")
-def logout(request: Request, response: Response):
-    request.session.clear()  # ✅ 세션 삭제
-    response.delete_cookie("session_id")  # ✅ 세션 쿠키 삭제
-    return {"message": "로그아웃 완료!"}
+def logout(response: Response):
+    """✅ JWT 로그아웃 (쿠키 삭제)"""
+    response.delete_cookie("access_token")  # ✅ JWT 삭제
+    return {"message": "로그아웃 성공!"}
+
 
 
 # ✅ 로인 세션 확인 API

@@ -14,8 +14,8 @@ const Login = () => {
     try {
       await loginUser(email, password);
       alert("로그인 성공!");
-
-      navigate("/"); // ✅ 로그인 성공 시 홈페이지로 이동
+      navigate("/");  // ✅ 로그인 후 홈으로 이동
+      window.location.reload();  // ✅ 네비게이션 업데이트 (JWT 적용)
     } catch (error) {
       alert("로그인 실패: " + (error.response?.data?.detail || "오류 발생"));
     }

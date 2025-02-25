@@ -109,38 +109,28 @@ export async function resetPassword(email, newPassword) {
     return data;
 }
 
-// ✅ 로그인 (세션 저장)
+// ✅ JWT 로그인 요청
 export const loginUser = async (email, password) => {
     const response = await axios.post(
         `${BASE_URL}/auth/login`,
         { email, password },
-        { withCredentials: true } // ✅ 쿠키 포함 필수
+        { withCredentials: true }  // ✅ 쿠키에 JWT 저장 (필수)
     );
     return response.data;
 };
 
 
-
-
 // ✅ 현재 로그인한 사용자 정보 가져오기
 export const getCurrentUser = async () => {
-    try {
-        const response = await axios.get("http://127.0.0.1:8000/auth/me", {
-            withCredentials: true,  // ✅ 쿠키 포함 요청
-        });
-        console.log("🔍 [프론트] 로그인 상태 확인 응답:", response.data);
-        return response.data;
-    } catch (error) {
-        console.error("❌ [프론트] 로그인 상태 확인 실패:", error);
-        return null;
-    }
+    const response = await axios.get(`${BASE_URL}/auth/me`, {
+        withCredentials: true,  // ✅ 쿠키에서 JWT 포함 (필수)
+    });
+    return response.data;
 };
 
   
   
-// ✅ 로그아웃 API
+// ✅ 로그아웃 요청
 export const logoutUser = async () => {
     await axios.post(`${BASE_URL}/auth/logout`, {}, { withCredentials: true });
 };
-
-  

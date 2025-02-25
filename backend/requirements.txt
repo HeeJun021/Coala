@@ -19,4 +19,5 @@ pip install pydantic-settings
 
 pip install itsdangerous
 
-pip install secure-cookie
+# jwt 인증 라이브러리
+pip install pyjwt
