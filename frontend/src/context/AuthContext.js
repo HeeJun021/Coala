@@ -1,33 +1,44 @@
-// import { createContext, useContext, useState, useEffect } from "react";
-// import { loginUser, getCurrentUser, logoutUser } from "../api/api"; // 🔥 API 연결
+import { createContext, useContext, useState, useEffect } from "react";
+import { loginUser, getCurrentUser, logoutUser } from "../api";
 
-// const AuthContext = createContext();
+const AuthContext = createContext();
 
-// export const AuthProvider = ({ children }) => {
-//     const [user, setUser] = useState(null);
+export const AuthProvider = ({ children }) => {
+    const [user, setUser] = useState(null);
 
-//     // ✅ 로그인 상태 확인 (앱 시작 시 실행)
-//     useEffect(() => {
-//         getCurrentUser().then(setUser).catch(() => setUser(null));
-//     }, []);
+    // ✅ 앱 시작 시 로그인 상태 확인
+    useEffect(() => {
+        const fetchUser = async () => {
+            const userData = await getCurrentUser();
+            setUser(userData);
+        };
+        fetchUser();
+    }, []);
 
-//     // ✅ 로그인 함수
-//     const handleLogin = async (email, password) => {
-//         const userData = await loginUser(email, password);
-//         setUser(userData);
-//     };
+    // ✅ 로그인 처리
+    const handleLogin = async (email, password) => {
+        try {
+            const userData = await loginUser(email, password);
+            setUser(userData); // ✅ 로그인 후 상태 업데이트
+            console.log("로그인 성공, user 상태 업데이트:", userData);
+        } catch (error) {
+            console.error("로그인 실패:", error);
+        }
+    };
+    
 
-//     // ✅ 로그아웃 함수
-//     const handleLogout = async () => {
-//         await logoutUser(setUser);
-//     };
+    // ✅ 로그아웃 처리 (useNavigate 제거)
+    const handleLogout = async () => {
+        await logoutUser();
+        setUser(null);
+    };
 
-//     return (
-//         <AuthContext.Provider value={{ user, handleLogin, handleLogout }}>
-//             {children}
-//         </AuthContext.Provider>
-//     );
-// };
+    return (
+        <AuthContext.Provider value={{ user, handleLogin, handleLogout }}>
+            {children}
+        </AuthContext.Provider>
+    );
+};
 
-// // ✅ Hook으로 사용
-// export const useAuth = () => useContext(AuthContext);
+// ✅ Hook으로 사용
+export const useAuth = () => useContext(AuthContext);

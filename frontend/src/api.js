@@ -109,20 +109,14 @@ export async function resetPassword(email, newPassword) {
     return data;
 }
 
-// ✅ 로그인 (세션 유지)
+// ✅ 로그인 (세션 저장)
 export const loginUser = async (email, password) => {
-    try {
-        await axios.post(
-            `${BASE_URL}/auth/login`,
-            { email, password },
-            { withCredentials: true }
-        );
-
-        // ✅ 로그인 후 현재 유저 정보 가져오기
-        return await getCurrentUser();
-    } catch (error) {
-        throw new Error(error.response?.data?.detail || "로그인 실패");
-    }
+    const response = await axios.post(
+        `${BASE_URL}/auth/login`,
+        { email, password },
+        { withCredentials: true } // ✅ 쿠키 포함 필수
+    );
+    return response.data;
 };
 
 
@@ -130,23 +124,23 @@ export const loginUser = async (email, password) => {
 
 // ✅ 현재 로그인한 사용자 정보 가져오기
 export const getCurrentUser = async () => {
-    const response = await axios.get(`${BASE_URL}/auth/me`, {
-      withCredentials: true, // ✅ 세션 유지 필수
-    });
-    return response.data;
-  };
-  
-  
-// ✅ 로그아웃 (세션 삭제 후 새로고침)
-export const logoutUser = async (setUser) => {
     try {
-        await axios.post(`${BASE_URL}/auth/logout`, {}, { withCredentials: true });
-
-        // ✅ 상태 업데이트
-        setUser(null);
+        const response = await axios.get("http://127.0.0.1:8000/auth/me", {
+            withCredentials: true,  // ✅ 쿠키 포함 요청
+        });
+        console.log("🔍 [프론트] 로그인 상태 확인 응답:", response.data);
+        return response.data;
     } catch (error) {
-        console.error("❌ 로그아웃 실패:", error.response?.data?.detail || "로그아웃 오류");
+        console.error("❌ [프론트] 로그인 상태 확인 실패:", error);
+        return null;
     }
+};
+
+  
+  
+// ✅ 로그아웃 API
+export const logoutUser = async () => {
+    await axios.post(`${BASE_URL}/auth/logout`, {}, { withCredentials: true });
 };
 
   

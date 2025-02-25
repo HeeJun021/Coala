@@ -6,13 +6,35 @@ from app.routers import user, auth  # 사용자 관련 라우터 가져오기
 from app.schemas.user import UserUpdateSchema
 from datetime import datetime
 from sqlalchemy import text
-from fastapi.middleware.cors import CORSMiddleware
 
+import os
+from starlette.middleware.sessions import SessionMiddleware
+
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware  # ✅ Starlette에서 가져오기
 from app.config import settings  # ✅ 설정 불러오기
 
 
 app = FastAPI()
+
+# ✅ 세션 데이터 저장할 폴더 경로 설정
+SESSION_DIR = os.path.join(os.getcwd(), "session_data")
+
+# ✅ 폴더가 없으면 생성
+if not os.path.exists(SESSION_DIR):
+    os.makedirs(SESSION_DIR)
+    
+print(f"🔍 [세션 저장소 경로] {SESSION_DIR}")
+
+
+# 🔥 CORS 미들웨어 추가 (프론트엔드 허용)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 모든 도메인 허용 (실제 운영에서는 특정 프론트엔드 URL로 제한할 것)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # 🔥 세션 미들웨어 추가 (환경 변수 적용)
 app.add_middleware(
@@ -21,16 +43,10 @@ app.add_middleware(
     session_cookie="session_id",
     max_age=1209600,  # ✅ 2주간 유지
     same_site="None",  # ✅ 크로스 사이트 요청에서도 쿠키 허용
+    https_only=False,
 )
 
-# 🔥 CORS 미들웨어 추가 (프론트엔드 허용)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # 모든 도메인 허용 (실제 운영에서는 특정 프론트엔드 URL로 제한할 것)
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+print("✅ [SessionMiddleware] 파일 기반 세션 저장소 활성화됨.")
 
 # 라우터 등록
 app.include_router(user.router)
