@@ -27,18 +27,26 @@ def login(request: Request, response: Response, login_data: LoginRequest, db: Se
     if not verify_password(login_data.password, user.password):
         raise HTTPException(status_code=400, detail="비밀번호가 일치하지 않습니다.")
     
-    # ✅ 세션 저장 (FastAPI의 session 기능)
-    request.session["session_id"] = f"session_{user.user_id}"
-    response.set_cookie(key="session_id", value=f"session_{user.user_id}", httponly=True)
+    # ✅ 세션 ID 생성 (이제 request.session 사용 ❌)
+    session_id = f"session_{user.user_id}"
     
+    # ✅ 클라이언트(브라우저)에 쿠키로 세션 저장
+    response.set_cookie(
+        key="session_id",
+        value=session_id,
+        httponly=True,
+        samesite="None",  # ✅ 크로스 사이트 요청에서도 쿠키 유지
+        secure=False  # ✅ 로컬에서는 False, 배포 시(HTTPS) True
+    )
+
     return {"message": "로그인 성공!"}
 
 
 # ✅ 로그아웃 API (세션 삭제)
 @router.post("/logout")
-def logout(request: Request, response: Response):
-    request.session.clear()  # ✅ 세션 삭제
-    response.delete_cookie("session_id")  # ✅ 세션 쿠키 삭제
+def logout(response: Response):
+    # ✅ `session_id` 쿠키 삭제 (request.session.clear() 제거)
+    response.delete_cookie("session_id")
     return {"message": "로그아웃 완료!"}
 
 
@@ -48,19 +56,26 @@ def logout(request: Request, response: Response):
 def get_current_user(request: Request, db: Session = Depends(get_db)):
     print(f"🔍 요청 헤더 확인: {request.headers}")  # ✅ FastAPI 콘솔에서 헤더 확인
     print(f"🔍 쿠키 확인: {request.cookies}")  # ✅ FastAPI 콘솔에서 쿠키 확인
-    print(f"🔍 세션 확인: {request.session}")  # ✅ FastAPI 콘솔에서 세션 확인
-
-    session_id = request.session.get("session_id")  # ✅ 세션에서 가져오기
+    
+    # ✅ `request.session` 대신 `request.cookies` 사용
+    session_id = request.cookies.get("session_id")
+    
     if not session_id:
         raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
 
-    user_id = int(session_id.replace("session_", ""))  # ✅ 세션에서 user_id 추출
+    # ✅ `session_id`에서 user_id 추출
+    try:
+        user_id = int(session_id.replace("session_", ""))  
+    except ValueError:
+        raise HTTPException(status_code=400, detail="잘못된 세션 정보입니다.")
 
+    # ✅ 데이터베이스에서 사용자 조회
     user = db.query(User).filter(User.user_id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
 
     return {"user_id": user.user_id, "email": user.email, "nickname": user.nickname}
+
 
 
 

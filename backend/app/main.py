@@ -14,15 +14,6 @@ from app.config import settings  # ✅ 설정 불러오기
 
 app = FastAPI()
 
-# 🔥 세션 미들웨어 추가 (환경 변수 적용)
-app.add_middleware(
-    SessionMiddleware,
-    secret_key="your_secret_key",
-    session_cookie="session_id",
-    max_age=1209600,  # ✅ 2주간 유지
-    same_site="None",  # ✅ 크로스 사이트 요청에서도 쿠키 허용
-)
-
 # 🔥 CORS 미들웨어 추가 (프론트엔드 허용)
 app.add_middleware(
     CORSMiddleware,
@@ -31,6 +22,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ✅ `session_id` 자동 생성 방지 (다른 이름으로 변경)
+# app.add_middleware(SessionMiddleware, secret_key="mysecret", session_cookie="fastapi_session")
 
 # 라우터 등록
 app.include_router(user.router)
