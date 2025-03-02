@@ -26,30 +26,9 @@ ALGORITHM = "HS256"  # ✅ 암호화 알고리즘
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
-# ✅ 로그인 API (세션 생성)
-# @router.post("/login")
-# def login(request: Request, response: Response, login_data: LoginRequest, db: Session = Depends(get_db)):
-#     # 1️⃣ 이메일 확인
-#     user = db.query(User).filter(User.email == login_data.email).first()
-#     if not user:
-#         raise HTTPException(status_code=400, detail="이메일이 등록되지 않았습니다.")
-
-#     # 2️⃣ 비밀번호 검증
-#     if not verify_password(login_data.password, user.password):
-#         raise HTTPException(status_code=400, detail="비밀번호가 일치하지 않습니다.")
-
-#     # ✅ 세션 저장 (FastAPI의 session 기능)
-#     request.session["session_id"] = f"session_{user.user_id}"
-#     response.set_cookie(key="session_id", value=f"session_{user.user_id}", httponly=True)
-
-#     print(f"🔍 Set-Cookie 헤더 확인: {response.headers}")  # ✅ 로그 추가
-#     print(f"🔍 세션 저장됨: {request.session}")  # ✅ 디버깅 로그 추가
-
-#     return {"message": "로그인 성공!"}
-
-def create_access_token(user_id: int):
+def create_access_token(user_id: int, expires_delta: timedelta = timedelta(days=14)):
     """✅ JWT 액세스 토큰 생성"""
-    expire = datetime.utcnow() + timedelta(days=14)  # ✅ 수정: `datetime.datetime.utcnow()` → `datetime.utcnow()`
+    expire = datetime.utcnow() + expires_delta
     payload = {"user_id": user_id, "exp": expire}
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -63,6 +42,8 @@ def verify_access_token(token: str):
         raise HTTPException(status_code=401, detail="토큰이 만료되었습니다.")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="유효하지 않은 토큰입니다.")
+
+
     
 @router.post("/login")
 def jwt_login(request: Request, response: Response, login_data: LoginRequest, db: Session = Depends(get_db)):
@@ -93,23 +74,33 @@ def jwt_login(request: Request, response: Response, login_data: LoginRequest, db
 
 # ✅ 로그아웃 API (세션 삭제)
 @router.post("/logout")
-def logout(response: Response):
+def logout(response: Response, request: Request):
     """✅ JWT 로그아웃 (쿠키 삭제)"""
-    response.delete_cookie("access_token")  # ✅ JWT 삭제
+    response.delete_cookie(
+        key="access_token",
+        path="/",
+        samesite="None",
+        secure=True,  # ✅ 개발 환경에서는 False (운영 환경에서는 True)
+        httponly=True
+    )
+    
     return {"message": "로그아웃 성공!"}
+
+
 
 
 @router.get("/me")
 def get_current_user(request: Request, db: Session = Depends(get_db)):
     """✅ JWT 기반 로그인 상태 확인"""
     token = request.cookies.get("access_token")  # ✅ 쿠키에서 JWT 가져오기
+    print(f"🔍 현재 access_token 쿠키: {token}")  # ✅ 쿠키 상태 확인
+
     if not token:
-        print("🚨 [서버 로그] 쿠키에서 access_token이 없음!")
         raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
 
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])  # ✅ JWT 검증
-        user_id = payload.get("user_id")  # ✅ JWT에서 user_id 추출
+        user_id = payload.get("user_id")
         if not user_id:
             raise HTTPException(status_code=401, detail="유효하지 않은 토큰입니다.")
 
@@ -119,11 +110,10 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
 
         return {"user_id": user.user_id, "email": user.email, "nickname": user.nickname}
     except jwt.ExpiredSignatureError:
-        print("🚨 [서버 로그] 토큰이 만료됨")
         raise HTTPException(status_code=401, detail="토큰이 만료되었습니다.")
     except jwt.InvalidTokenError:
-        print("🚨 [서버 로그] 유효하지 않은 토큰")
         raise HTTPException(status_code=401, detail="유효하지 않은 토큰입니다.")
+
 
 
 # ✅ 회원가입 이메일 인증 요청 API

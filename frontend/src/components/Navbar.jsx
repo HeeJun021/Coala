@@ -3,14 +3,17 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext"; 
 
 const Navbar = () => {
-    const { user, handleLogout } = useAuth();  // ✅ 'user'를 직접 사용
+    const { user, handleLogout, loading } = useAuth(); // ✅ logoutUser 대신 handleLogout 사용
     const navigate = useNavigate();
 
     const logoutAndRedirect = async () => {
-        await handleLogout();
+        await handleLogout(); // ✅ 이제 handleLogout에서 logoutUser 실행됨
         navigate("/");
         window.location.reload(); // ✅ 로그아웃 후 새로고침하여 쿠키 삭제 반영
     };
+
+    // ✅ 로그인 여부 확인 중이면 아무것도 렌더링하지 않음 (깜빡임 방지)
+    if (loading) return null;
 
     return (
         <nav className="fixed top-0 left-0 w-full bg-[#81A978] h-[70px] shadow-sm flex items-center px-6 z-50">
@@ -28,11 +31,13 @@ const Navbar = () => {
 
             {/* 메뉴 */}
             <div className="flex-1 flex justify-center gap-8">
-                {[{ path: "/StudyMaterialsPage", label: "학습자료" },
-                { path: "/quiz", label: "퀴즈문제" },
-                { path: "/coding", label: "자율코딩" },
-                { path: "/board", label: "게시판" },
-                { path: "/mypage", label: "마이페이지" }].map((item, index) => (
+                {[
+                    { path: "/StudyMaterialsPage", label: "학습자료" },
+                    { path: "/quiz", label: "퀴즈문제" },
+                    { path: "/coding", label: "자율코딩" },
+                    { path: "/board", label: "게시판" },
+                    { path: "/mypage", label: "마이페이지" }
+                ].map((item, index) => (
                     <Link
                         key={index}
                         to={item.path}

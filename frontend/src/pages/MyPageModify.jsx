@@ -4,7 +4,7 @@ import ProfileCard from '../components/ProfileCard';
 import InfoCard from '../components/InfoCard';
 import koala from '../assets/koala.jpg';
 import DeleteAccountDialog from '../components/DeleteAccountDialog';
-import { getUserById } from '../api/user';
+import { getUserById } from '../api/userApi';
 
 const MyPageModify = () => {
     const [userData, setUserData] = useState(null);

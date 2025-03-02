@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; // ✅ 네비게이션 추가
 import { FaUser, FaLock, FaEnvelope, FaCalendarAlt } from "react-icons/fa";
-import { requestEmailVerification, verifyEmail, registerUser } from "../api"; // ✅ API 함수 추가
+import { requestEmailVerification, verifyEmail } from "../api/userApi"; // ✅ 이메일 인증 관련 API
+import { registerUser } from "../api/authApi"; // ✅ 회원가입 API
+
 
 const Signup = () => {
   const [email, setEmail] = useState("");

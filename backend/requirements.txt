@@ -21,3 +21,6 @@ pip install itsdangerous
 
 # jwt 인증 라이브러리
 pip install pyjwt
+
+# 소셜 로그인을 위한 인스톨
+pip install requests

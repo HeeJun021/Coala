@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { updateUserInfo } from '../api/user';
+import { updateUserInfo } from '../api/userApi';
 
 const ProfileCard = ({ userId, profile_image_url, nickname, role, bio }) => {
     const [isEditing, setIsEditing] = useState(false); // 수정 모드 상태

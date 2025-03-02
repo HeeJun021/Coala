@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FaEnvelope, FaLock } from "react-icons/fa";
-import { loginUser } from "../api"; // ✅ 로그인 API 함수 추가
+import { loginUser } from "../api/authApi"; // ✅ 로그인 API 경로 수정
 
 const Login = () => {
   const [email, setEmail] = useState("");
