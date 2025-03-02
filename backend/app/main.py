@@ -10,7 +10,6 @@ from app.config import settings  # ✅ 설정 불러오기
 
 from fastapi.middleware.cors import CORSMiddleware
 
-
 app = FastAPI()
 
 
@@ -22,7 +21,6 @@ app.add_middleware(
     allow_methods=["*"],  # ✅ 모든 HTTP 메소드 허용 (POST, GET, OPTIONS 등)
     allow_headers=["*"],  # ✅ 모든 헤더 허용
 )
-
 
 # 라우터 등록
 app.include_router(user.router)

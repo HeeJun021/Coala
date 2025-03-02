@@ -5,19 +5,13 @@ from fastapi import APIRouter, HTTPException, Depends
 from starlette.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
-# ✅ 데이터베이스 경로 수정
 from app.database import get_db  
-
-# ✅ 모델 임포트 경로 수정
 from app.models.user import User
 from app.models.social_login import SocialLogin
-
-# ✅ JWT 유틸리티 경로 수정
 from app.utils.jwt import create_access_token
 
 router = APIRouter(prefix="/auth/social", tags=["Social Authentication"])
 
-# ✅ 환경 변수 설정
 PROVIDERS = {
     "google": {
         "client_id": os.getenv("GOOGLE_CLIENT_ID"),
@@ -53,9 +47,8 @@ PROVIDERS = {
     }
 }
 
-# 닉네임 중복방지
+# ✅ 닉네임 중복 방지
 def get_unique_nickname(db: Session, base_nickname: str):
-    """닉네임 중복 방지를 위해 숫자를 추가하여 고유 닉네임 생성"""
     nickname = base_nickname
     count = 1
     while db.query(User).filter(User.nickname == nickname).first():
@@ -63,7 +56,7 @@ def get_unique_nickname(db: Session, base_nickname: str):
         count += 1
     return nickname
 
-# ✅ 공통 함수: DB에서 소셜 로그인 사용자 확인 또는 생성
+# ✅ 사용자 조회 또는 생성
 def get_or_create_user(db: Session, provider: str, provider_user_id: str, email: str, name: str, picture: str):
     social_login = db.query(SocialLogin).filter_by(provider=provider, provider_user_id=provider_user_id).first()
 
@@ -85,8 +78,7 @@ def get_or_create_user(db: Session, provider: str, provider_user_id: str, email:
 
     return user
 
-
-# ✅ 공통 로그인 URL 생성
+# ✅ 로그인 URL 생성
 @router.get("/{provider}/login")
 def social_login(provider: str):
     if provider not in PROVIDERS:
@@ -106,8 +98,7 @@ def social_login(provider: str):
 
     return RedirectResponse(auth_url)
 
-
-# ✅ 공통 콜백 처리
+# ✅ 콜백 처리
 @router.get("/{provider}/callback")
 def social_callback(provider: str, code: str, db: Session = Depends(get_db)):
     if provider not in PROVIDERS:
@@ -121,15 +112,13 @@ def social_callback(provider: str, code: str, db: Session = Depends(get_db)):
         "client_secret": provider_info["client_secret"],
         "redirect_uri": provider_info["redirect_uri"],
         "code": code,
+        "grant_type": "authorization_code"
     }
-
-    if provider == "apple":
-        token_data["grant_type"] = "authorization_code"
-    elif provider in ["google", "kakao", "github"]:
-        token_data["grant_type"] = "authorization_code"
 
     headers = {"Accept": "application/json"}
     token_response = requests.post(token_url, data=token_data, headers=headers)
+
+    token_response.raise_for_status()
     token_json = token_response.json()
     access_token = token_json.get("access_token")
 
@@ -140,6 +129,7 @@ def social_callback(provider: str, code: str, db: Session = Depends(get_db)):
     user_info_url = provider_info.get("user_info_url")
     headers = {"Authorization": f"Bearer {access_token}"}
     user_info_response = requests.get(user_info_url, headers=headers)
+
     user_info = user_info_response.json()
 
     provider_user_id, email, name, picture = None, None, None, None
@@ -186,7 +176,20 @@ def social_callback(provider: str, code: str, db: Session = Depends(get_db)):
     user = get_or_create_user(db, provider, provider_user_id, email, name, picture)
 
     jwt_token = create_access_token(user.user_id)
+    print(f"🔍 JWT: {jwt_token}")  # 🔍 디버깅용
+
     response = RedirectResponse(url="http://localhost:3000")
-    response.set_cookie("access_token", jwt_token, httponly=True, secure=True, samesite="None")
+    response.set_cookie(
+    key="access_token",
+    value=jwt_token,
+    httponly=True,
+    secure=True,
+    samesite="None",
+    domain="localhost",  # ✅ 여기가 문제일 가능성 높음!
+    path="/",
+    max_age=86400  # ✅ 24시간 유지
+)
+
+
 
     return response

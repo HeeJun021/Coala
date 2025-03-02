@@ -19,14 +19,13 @@ export async function loginUser(email, password) {
 // ✅ 로그인한 사용자 정보 가져오기
 export async function getCurrentUser() {
     try {
-        const response = await apiClient.get("/auth/me",);
+        const response = await apiClient.get("/auth/me", { withCredentials: true }); // ✅ 명시적으로 쿠키 포함
         return response.data;
     } catch (error) {
         console.error("Error fetching current user:", error);
         return null;
     }
 }
-
 
 // ✅ 로그아웃 요청 (JWT 쿠키 삭제)
 export const logoutUser = async () => {
