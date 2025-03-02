@@ -13,7 +13,6 @@ const Login = () => {
     e.preventDefault();
     try {
       await loginUser(email, password);
-      alert("로그인 성공!");
       navigate("/");
       window.location.reload();
     } catch (error) {

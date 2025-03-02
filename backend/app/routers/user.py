@@ -7,6 +7,7 @@ from app.schemas.user import UserCreate, UserResponse, UserUpdateSchema
 from app.services.user import get_user_by_id, update_user_info
 from app.utils.security import hash_password
 
+
 router = APIRouter(prefix="/users", tags=["users"])
 
 @router.get("/{user_id}", response_model=UserResponse)
@@ -45,3 +46,18 @@ def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
     db.refresh(existing_user)
 
     return existing_user
+
+@router.delete("/{user_id}")
+def delete_user(user_id: int, db: Session = Depends(get_db)):
+    """
+    특정 사용자의 계정을 삭제하는 API
+    """
+    user = db.query(User).filter(User.user_id == user_id).first()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+
+    db.delete(user)
+    db.commit()
+
+    return {"message": "계정이 성공적으로 삭제되었습니다."}

@@ -37,3 +37,13 @@ export const logoutUser = async () => {
         throw error;
     }
 };
+
+export const deleteUser = async(userId) => {
+    try {
+        const response = await apiClient.delete(`/users/${userId}`);
+        return response.data;
+    } catch (error) {
+        console.error("Failed to delete user:", error);
+        throw error;
+    }
+}

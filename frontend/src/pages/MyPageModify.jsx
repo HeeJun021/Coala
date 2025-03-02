@@ -5,7 +5,7 @@ import InfoCard from '../components/InfoCard';
 //import koala from '../assets/koala.jpg';
 import DeleteAccountDialog from '../components/DeleteAccountDialog';
 import { getUserById } from '../api/userApi';
-import { getCurrentUser } from '../api/authApi';
+import { getCurrentUser, deleteUser, logoutUser } from '../api/authApi';
 
 const MyPageModify = () => {
     const [userData, setUserData] = useState(null);
@@ -44,10 +44,24 @@ const MyPageModify = () => {
         fetchUserData();
     }, []);
 
-    const handleDeleteAccount = (password) => { //여기에다가 계정 탈퇴 로직 넣으면 됨
-        alert(`계정 탈퇴 요청! 입력한 비밀번호: ${password}`);
-        setIsDialogOpen(false); // 다이얼로그 닫기
+    const handleDeleteAccount = async () => {
+        if (!window.confirm("정말로 계정을 삭제하시겠습니까?")) {
+            return;
+        }
+    
+        try {
+            await deleteUser(userInfo.userId); // ✅ 백엔드에 탈퇴 요청
+            alert("계정이 성공적으로 삭제되었습니다.");
+    
+            // ✅ 탈퇴 후 로그아웃
+            await logoutUser();
+            window.location.href = "/"; // ✅ 홈으로 이동
+        } catch (error) {
+            console.error("계정 탈퇴 실패:", error);
+            alert(error.response?.data?.detail || "계정 탈퇴에 실패했습니다.");
+        }
     };
+    
 
     // 로딩 중일 때
     if (isLoading) {
