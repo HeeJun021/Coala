@@ -6,7 +6,6 @@ from fastapi import HTTPException
 SECRET_KEY = os.getenv("SECRET_KEY", "your_secret_key")  # ✅ 환경 변수에서 가져오기
 ALGORITHM = "HS256"
 
-
 def create_access_token(user_id: int, expires_delta: timedelta = timedelta(days=14)):
     """✅ JWT 액세스 토큰 생성"""
     expire = datetime.utcnow() + expires_delta
