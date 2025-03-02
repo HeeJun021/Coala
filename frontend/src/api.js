@@ -120,14 +120,18 @@ export const loginUser = async (email, password) => {
 };
 
 
-// ✅ 현재 로그인한 사용자 정보 가져오기
+// ✅ 로그인한 사용자 정보 가져오기
 export const getCurrentUser = async () => {
-    const response = await axios.get(`${BASE_URL}/auth/me`, {
-        withCredentials: true,  // ✅ 쿠키에서 JWT 포함 (필수)
-    });
-    return response.data;
+    try {
+        const response = await axios.get(`${BASE_URL}/auth/me`, {
+            withCredentials: true,  // ✅ 반드시 추가 (쿠키 포함)
+        });
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching current user:", error);
+        return null;
+    }
 };
-
   
   
 // ✅ 로그아웃 요청

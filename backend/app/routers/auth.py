@@ -79,7 +79,7 @@ def jwt_login(request: Request, response: Response, login_data: LoginRequest, db
         key="access_token",
         value=access_token,
         httponly=True,  # ✅ JavaScript에서 접근 불가 (보안 강화)
-        secure=False,    # ✅ 개발 환경에서는 False (배포 환경에서는 True)
+        secure=True,    # ✅ 개발 환경에서는 False (배포 환경에서는 True)
         samesite="None",  # ✅ 크로스 사이트 요청에서도 유지
         max_age=1209600
     )
@@ -88,15 +88,6 @@ def jwt_login(request: Request, response: Response, login_data: LoginRequest, db
 
     return {"message": "JWT 로그인 성공!", "access_token": access_token}
 
-@router.get("/me")
-def get_current_user(request: Request):
-    """✅ JWT 기반 로그인 상태 확인"""
-    token = request.cookies.get("access_token")
-    if not token:
-        raise HTTPException(status_code=401, detail="인증되지 않음")
-
-    user_data = verify_access_token(token)
-    return {"user_id": user_data["user_id"], "message": "JWT 세션 유지됨!"}
 
 
 
@@ -108,27 +99,31 @@ def logout(response: Response):
     return {"message": "로그아웃 성공!"}
 
 
-
-# ✅ 로인 세션 확인 API
 @router.get("/me")
 def get_current_user(request: Request, db: Session = Depends(get_db)):
-    # print(f"🔍 요청 헤더 확인: {request.headers}")  # ✅ FastAPI 콘솔에서 헤더 확인
-    # print(f"🔍 쿠키 확인: {request.cookies}")  # ✅ FastAPI 콘솔에서 쿠키 확인
-    # print(f"🔍 세션 확인: {request.session}")  # ✅ FastAPI 콘솔에서 세션 확인
-    print(f"🔍 [서버 로그] 현재 세션 데이터: {request.session}")
-
-    session_id = request.session.get("session_id")  # ✅ 세션에서 가져오기
-    print(f"🔍 [서버 로그] 현재 세션 데이터: {request.session}")
-    if not session_id:
+    """✅ JWT 기반 로그인 상태 확인"""
+    token = request.cookies.get("access_token")  # ✅ 쿠키에서 JWT 가져오기
+    if not token:
+        print("🚨 [서버 로그] 쿠키에서 access_token이 없음!")
         raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
 
-    user_id = int(session_id.replace("session_", ""))  # ✅ 세션에서 user_id 추출
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])  # ✅ JWT 검증
+        user_id = payload.get("user_id")  # ✅ JWT에서 user_id 추출
+        if not user_id:
+            raise HTTPException(status_code=401, detail="유효하지 않은 토큰입니다.")
 
-    user = db.query(User).filter(User.user_id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+        user = db.query(User).filter(User.user_id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
 
-    return {"user_id": user.user_id, "email": user.email, "nickname": user.nickname}
+        return {"user_id": user.user_id, "email": user.email, "nickname": user.nickname}
+    except jwt.ExpiredSignatureError:
+        print("🚨 [서버 로그] 토큰이 만료됨")
+        raise HTTPException(status_code=401, detail="토큰이 만료되었습니다.")
+    except jwt.InvalidTokenError:
+        print("🚨 [서버 로그] 유효하지 않은 토큰")
+        raise HTTPException(status_code=401, detail="유효하지 않은 토큰입니다.")
 
 
 # ✅ 회원가입 이메일 인증 요청 API
