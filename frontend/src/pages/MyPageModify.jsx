@@ -2,36 +2,38 @@ import React, { useState, useEffect } from 'react';
 import MyPageSidebar from '../components/MyPageSideBar';
 import ProfileCard from '../components/ProfileCard';
 import InfoCard from '../components/InfoCard';
-import koala from '../assets/koala.jpg';
+//import koala from '../assets/koala.jpg';
 import DeleteAccountDialog from '../components/DeleteAccountDialog';
 import { getUserById } from '../api/userApi';
+import { getCurrentUser } from '../api/authApi';
 
 const MyPageModify = () => {
     const [userData, setUserData] = useState(null);
     const [userInfo, setUserInfo] = useState(null);
     const [isLoading, setIsLoading] = useState(true); // 로딩 상태 추가
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const userId = 1; // 테스트용 사용자 ID
 
     // 사용자 데이터
     useEffect(() => {
         const fetchUserData = async () => {
             try {
-                const user = await getUserById(userId);
+                const currentUser = await getCurrentUser();
                 
-                console.log("API 응답 데이터 user", user)
+                const userInfo = await getUserById(currentUser.user_id);
+
+                console.log(userInfo);
 
                 setUserData({
-                    profile_image_url: koala, // 프로필 이미지 기본값
-                    nickname: user.nickname,
-                    bio: "안녕하세요.", // bio는 더미 데이터로 추가
-                    role: "프론트 엔드", // 역할 기본값 추가
+                    profile_image_url: userInfo.profile_image_url, // 프로필 이미지 기본값
+                    nickname: userInfo.nickname,
+                    bio: userInfo.bio,
+                    role: userInfo.role
                 });
                 setUserInfo({
-                    userId: user.user_id,
+                    userId: currentUser.user_id,
                     hashedPassword: "********", // 보안 상 비밀번호는 숨김 처리
-                    email: user.email,
-                    phone: user.phone_number,
+                    email: currentUser.email,
+                    phone: currentUser.phone_number,
                 });
             } catch (error) {
                 console.error("Error fetching user data:", error);
@@ -82,10 +84,8 @@ const MyPageModify = () => {
                         {/* 계정 정보 섹션 */}
                         <div className=" bg-white border border-gray-300 rounded-lg shadow-lg p-6 w-full max-w-2xl">
                             <InfoCard
-                                userId={userInfo.userId}
-                                hashedPassword={userInfo.hashedPassword}
                                 email={userInfo.email}
-                                phone={userInfo.phone}
+                                hashedPassword={userInfo.hashedPassword}
                                 isEmailVerified={false}
                             />  
                         </div>    

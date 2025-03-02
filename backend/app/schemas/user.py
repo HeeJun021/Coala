@@ -6,10 +6,12 @@ from datetime import date, datetime
 class UserBase(BaseModel):
     user_id: int
     nickname: str
+    profile_image_url: Optional[str] # 나중에 기본 이미지 넣어야 함
     email: Optional[str]
     rating: int
     tier_id: Optional[int] = 1
     dailycheck: bool
+    bio: Optional[str] = "자기소개 없음" # ✅ 자기소개 필드 추가
     email_verified: bool
     created_at: datetime
     updated_at: datetime
