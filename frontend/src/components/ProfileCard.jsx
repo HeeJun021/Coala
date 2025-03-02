@@ -76,16 +76,7 @@ const ProfileCard = ({ userId, profile_image_url, nickname, role, bio }) => {
                                 className="w-[75%] border border-gray-300 rounded-md px-2 py-1 mt-1 bg-beige ml-auto mr-10"
                             />
                         </label>
-                        <label className="flex items-center justify-between pt-1">
-                            <h2 className='font-bold'>개발 직군</h2>
-                            <input
-                                type="text"
-                                name="role"
-                                value={formData.role}
-                                onChange={handleInputChange}
-                                className="w-[75%] border border-gray-300 rounded-md px-2 py-1 mt-1 bg-beige ml-auto mr-10"
-                            />
-                        </label>
+
                     </div>
 
                     {/* 취소 및 저장 버튼 */}
@@ -131,11 +122,6 @@ const ProfileCard = ({ userId, profile_image_url, nickname, role, bio }) => {
                             <p className="flex-1">{formData.bio}</p>
                         </div>
 
-                        {/* 개발 직군 */}
-                        <div className="flex items-center">
-                            <h2 className="font-bold w-24">개발 직군</h2>
-                            <p className="flex-1">{formData.role}</p>
-                        </div>
                     </div>
 
 
