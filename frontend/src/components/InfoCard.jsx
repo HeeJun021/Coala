@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { resetPassword } from '../api';
+import { resetPassword } from '../api/passwordApi';
 
 const InfoCard = ({ userId, hashedPassword, email, phone, isEmailVerified }) => {
     // 상태 관리
