@@ -2,6 +2,15 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import date, datetime
 
+
+class UserTierBase(BaseModel):
+    tier_id: int
+    tier_name: str
+    min_rating: int
+
+    class Config:
+        from_attributes = True  # 
+
 # 기본 User 스키마
 class UserBase(BaseModel):
     user_id: int
@@ -15,6 +24,8 @@ class UserBase(BaseModel):
     email_verified: bool
     created_at: datetime
     updated_at: datetime
+    tier: Optional[UserTierBase]
+
 
 # 회원가입 요청 스키마
 class UserCreate(BaseModel):

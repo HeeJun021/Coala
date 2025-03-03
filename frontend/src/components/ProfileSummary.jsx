@@ -1,6 +1,6 @@
 import React from 'react';
 
-const ProfileSummary = ({ profile_image_url, username }) => {
+const ProfileSummary = ({ profile_image_url, nickname }) => {
     return (
         <div className="bg-yellow-50 p-4 rounded-md shadow-md flex flex-col items-center">
             {/* 프로필 이미지 */}
@@ -10,7 +10,7 @@ const ProfileSummary = ({ profile_image_url, username }) => {
                 className="w-20 h-20 object-contain rounded-lg"
             />
             {/* 프로필 텍스트 */}
-            <h2 className="text-lg font-bold">{username}</h2>
+            <h2 className="text-lg font-bold">{nickname}</h2>
         </div>
     );
 };

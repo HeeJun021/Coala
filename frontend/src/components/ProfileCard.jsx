@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { updateUserInfo } from '../api/userApi';
 
-const ProfileCard = ({ userId, profile_image_url, nickname, role, bio }) => {
+const ProfileCard = ({ userId, profile_image_url, nickname, tier_name, bio }) => {
     const [isEditing, setIsEditing] = useState(false); // 수정 모드 상태
     const [formData, setFormData] = useState({
         nickname,
-        role,
+        tier_name,
         bio,
     });
 
@@ -76,6 +76,16 @@ const ProfileCard = ({ userId, profile_image_url, nickname, role, bio }) => {
                                 className="w-[75%] border border-gray-300 rounded-md px-2 py-1 mt-1 bg-beige ml-auto mr-10"
                             />
                         </label>
+                        <label className='flex items-center justify-between pt-1'>
+                            <h2 className='font-bold'>사용자 티어</h2>
+                            <input
+                                type="text"
+                                name="bio"
+                                value={formData.tier_name}
+                                readOnly
+                                className="w-[75%] border border-gray-300 rounded-md px-2 py-1 mt-1 bg-gray-50 ml-auto mr-10"
+                            />
+                        </label>
 
                     </div>
 
@@ -120,6 +130,12 @@ const ProfileCard = ({ userId, profile_image_url, nickname, role, bio }) => {
                         <div className="flex items-center">
                             <h2 className="font-bold w-24">자기소개</h2>
                             <p className="flex-1">{formData.bio}</p>
+                        </div>
+
+                        {/* ✅ 티어 정보 추가 */}
+                        <div className="flex items-center">
+                            <h2 className="font-bold w-24">등급</h2>
+                            <p className="flex-1">{formData.tier_name}</p>
                         </div>
 
                     </div>

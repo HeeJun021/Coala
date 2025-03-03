@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import MyPageSidebar from '../components/MyPageSideBar';
 import ProfileCard from '../components/ProfileCard';
 import InfoCard from '../components/InfoCard';
-//import koala from '../assets/koala.jpg';
+import koala from '../assets/koala.jpg';
 import DeleteAccountDialog from '../components/DeleteAccountDialog';
 import { getUserById } from '../api/userApi';
 import { getCurrentUser, deleteUser, logoutUser } from '../api/authApi';
@@ -24,10 +24,10 @@ const MyPageModify = () => {
                 console.log(userInfo);
 
                 setUserData({
-                    profile_image_url: userInfo.profile_image_url, // 프로필 이미지 기본값
+                    profile_image_url: userInfo.profile_image_url || koala, // 프로필 이미지 기본값
                     nickname: userInfo.nickname,
                     bio: userInfo.bio,
-                    role: userInfo.role
+                    tier_name: userInfo.tier?.tier_name
                 });
                 setUserInfo({
                     userId: currentUser.user_id,
@@ -90,7 +90,7 @@ const MyPageModify = () => {
                             userId={userInfo.userId}
                             nickname={userData.nickname}
                             bio={userData.bio}
-                            role={userData.role}
+                            tier_name={userData.tier_name}
                             profile_image_url={userData.profile_image_url}
                         />
                     </div>
