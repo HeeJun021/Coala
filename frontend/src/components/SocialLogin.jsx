@@ -1,10 +1,10 @@
 import React from "react";
 
 const SOCIAL_LOGIN_URLS = {
-    google: "http://127.0.0.1:8000/auth/social/google/login",
     kakao: "http://127.0.0.1:8000/auth/social/kakao/login",
+    naver: "http://127.0.0.1:8000/auth/social/naver/login",
+    google: "http://127.0.0.1:8000/auth/social/google/login",
     github: "http://127.0.0.1:8000/auth/social/github/login",
-    apple: "http://127.0.0.1:8000/auth/social/apple/login",
 };
 
 const SocialLogin = () => {
@@ -14,26 +14,29 @@ const SocialLogin = () => {
 
     return (
         <div className="flex gap-5 justify-center">
-            {/* 카카오 로그인 */}
-            <button onClick={() => handleSocialLogin("kakao")} className="w-12 h-12 bg-white p-2 rounded-lg shadow-md border">
-                <img src="/assets/kakao_login.png" alt="카카오 로그인" className="w-8 h-8" />
-            </button>
+    {/* ✅ 카카오 로그인 (아이콘 크기 키움 + 보더 제거) */}
+    <button onClick={() => handleSocialLogin("kakao")} className="w-12 h-12 bg-white p-2 rounded-2xl shadow-md">
+        <img src="/assets/kakao_login.png" alt="카카오 로그인" className="w-8 h-8 rounded-full" />
+    </button>
 
-            {/* 구글 로그인 */}
-            <button onClick={() => handleSocialLogin("google")} className="w-12 h-12 bg-white p-2 rounded-lg shadow-md border">
-                <img src="/assets/google_login.png" alt="구글 로그인" className="w-8 h-8" />
-            </button>
+    {/* ✅ 네이버 로그인 (보더 제거) */}
+    <button onClick={() => handleSocialLogin("naver")} className="w-12 h-12 bg-white p-2 rounded-2xl shadow-md">
+        <img src="/assets/naver_login.png" alt="네이버 로그인" className="w-8 h-8 rounded-full" />
+    </button>
 
-            {/* 깃허브 로그인 */}
-            <button onClick={() => handleSocialLogin("github")} className="w-12 h-12 bg-white p-2 rounded-lg shadow-md">
-                <img src="/assets/github_login.png" alt="깃허브 로그인" className="w-8 h-8" />
-            </button>
+    {/* ✅ 구글 로그인 (보더 제거) */}
+    <button onClick={() => handleSocialLogin("google")} className="w-12 h-12 bg-white p-2 rounded-2xl shadow-md">
+        <img src="/assets/google_login.png" alt="구글 로그인" className="w-8 h-8 rounded-full" />
+    </button>
 
-            {/* 애플 로그인 */}
-            <button onClick={() => handleSocialLogin("apple")} className="w-12 h-12 bg-white p-2 rounded-lg shadow-md border">
-                <img src="/assets/apple_login.png" alt="애플 로그인" className="w-8 h-8" />
-            </button>
-        </div>
+    {/* ✅ 깃허브 로그인 (보더 제거) */}
+    <button onClick={() => handleSocialLogin("github")} className="w-12 h-12 bg-white p-2 rounded-2xl shadow-md">
+        <img src="/assets/github_login.png" alt="깃허브 로그인" className="w-8 h-8 rounded-full" />
+    </button>
+</div>
+
+
+
     );
 };
 
