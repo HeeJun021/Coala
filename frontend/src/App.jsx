@@ -36,6 +36,11 @@ const App = () => {
               path="/StudyMaterialsPage/examples/:language/:id"
               element={<StudyMaterialsPageDetails />}
             />
+             {/* ✅ 개별 자료 조회 라우트 설정 확인 */}
+        <Route path="/materials/:language/:id" element={<StudyMaterialsPageDetails />} />
+        
+        {/* ✅ 전체 자료 목록 */}
+        <Route path="/materials" element={<StudyMaterialsPage />} />
           </Routes>
         </div>
       </MainLayout>

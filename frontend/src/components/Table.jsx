@@ -14,21 +14,24 @@ const Table = ({ rows, type, category }) => {
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => (
-            <tr key={row.id} className="border-b">
-              <td className="p-2">{row.id}</td>
-              <td className="p-2">
-                <Link
-                  to={`/StudyMaterialsPage/${type}/${category}/${row.id}`}
-                  className="text-blue-500 hover:underline"
-                >
-                  {row.title}
-                </Link>
-              </td>
-              <td className="p-2 text-center">-</td>
-              <td className="p-2 text-center">-</td>
-            </tr>
-          ))}
+          {rows.map((row) => {
+            const id = row.material_id || row.example_id; // ✅ Ensure correct ID mapping
+            return (
+              <tr key={id} className="border-b">
+                <td className="p-2">{id}</td>
+                <td className="p-2">
+                  <Link
+                    to={`/materials/${category.toLowerCase()}/${id}`} // ✅ Correct URL mapping
+                    className="text-blue-500 hover:underline"
+                  >
+                    {row.title}
+                  </Link>
+                </td>
+                <td className="p-2 text-center">-</td>
+                <td className="p-2 text-center">{new Date(row.created_at).toLocaleDateString()}</td> {/* ✅ 등록일 출력 */}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
 

@@ -4,7 +4,7 @@ from database import Base
 
 # 학습자료 테이블
 class StudyMaterials(Base):
-    __tablename__ = "studymaterials"
+    __tablename__ = "study_materials"
 
     material_id = Column(Integer, primary_key=True, index=True)
     language_id = Column(String(50), nullable=False)
@@ -21,7 +21,7 @@ class StudyMaterials(Base):
 
 # 예제 테이블
 class StudyExample(Base):
-    __tablename__ = "studyexample"
+    __tablename__ = "study_example"
 
     example_id = Column(Integer, primary_key=True, index=True)
     language_id = Column(String(50), nullable=False)
