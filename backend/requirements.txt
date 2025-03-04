@@ -3,3 +3,24 @@ fastapi
 uvicorn
 sqlalchemy
 python-dotenv
+## 비밀번호 해시화를 위한 인스톨
+pip install passlib
+# 이메일 필드 검증 인스톨
+pip install pydantic[email]
+# 알렘믹.ini 사용을 위한 인스톨
+pip install alembic
+# bcrypt 패키지 설치(비밀번호 해싱)
+# 근데 이거 깔면 최신버전인 4.몇이라 깔면 안됨 아래에 있는 3.2.0 깔아야함
+pip install bcrypt passlib
+# bcrypt 패키지 버전을 다운그레이드 해야함
+pip install bcrypt==3.2.0
+
+pip install pydantic-settings
+
+pip install itsdangerous
+
+# jwt 인증 라이브러리
+pip install pyjwt
+
+# 소셜 로그인을 위한 인스톨
+pip install requests
