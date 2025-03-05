@@ -22,3 +22,28 @@ def get_materials_by_category(category: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="자료 없음")
 
     return materials
+
+@router.get("/api/materials/{language}/{id}")
+def get_study_material(language: str, id: int, db: Session = Depends(get_db)):
+    # ✅ 잘못된 접두어 제거
+    if "-" in language:
+        language = language.split("-")[-1]  # "예제-html" → "html"
+
+    # ✅ 대소문자 무시하고 언어 찾기
+    language_entry = db.query(Language).filter(Language.language.ilike(language)).first()
+    
+    if not language_entry:
+        raise HTTPException(status_code=404, detail="해당 언어가 존재하지 않습니다.")
+
+    # ✅ 개별 자료 조회
+    material = db.query(StudyMaterials).filter(
+        StudyMaterials.language_id == language_entry.language_id,
+        StudyMaterials.material_id == id
+    ).first()
+
+    if not material:
+        raise HTTPException(status_code=404, detail="Material not found")
+
+    return material
+
+

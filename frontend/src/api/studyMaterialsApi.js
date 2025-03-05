@@ -1,11 +1,11 @@
-import axios from "axios";
+import apiClient from "./apiClient";
 
-const API_BASE_URL = "http://127.0.0.1:8000/api";
+const API_BASE_URL = "/api"; // 이미 apiClient에서 BASE_URL을 설정했으므로 상대 경로 사용
 
 // ✅ 전체 학습 자료 가져오기 (수정됨)
 export const fetchStudyMaterials = async () => {
     try {
-        const response = await axios.get(`${API_BASE_URL}/materials`);
+        const response = await apiClient.get(`${API_BASE_URL}/materials`);
         return response.data;
     } catch (error) {
         console.error("Error fetching study materials:", error);
@@ -16,7 +16,7 @@ export const fetchStudyMaterials = async () => {
 // ✅ 전체 예제 가져오기 (수정됨)
 export const fetchStudyExamples = async () => {
     try {
-        const response = await axios.get(`${API_BASE_URL}/examples`);
+        const response = await apiClient.get(`${API_BASE_URL}/examples`);
         return response.data;
     } catch (error) {
         console.error("Error fetching study examples:", error);
@@ -27,7 +27,7 @@ export const fetchStudyExamples = async () => {
 // ✅ 개별 학습 자료 가져오기 추가
 export const fetchStudyMaterialById = async (language, id) => {
     try {
-        const response = await axios.get(`${API_BASE_URL}/materials/${language}/${id}`);
+        const response = await apiClient.get(`${API_BASE_URL}/materials/${language}/${id}`);
         return response.data;
     } catch (error) {
         console.error(`Error fetching study material ${id}:`, error);
