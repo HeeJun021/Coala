@@ -1,68 +1,81 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const Navbar = () => {
-  return (
-    <nav className="fixed top-0 left-0 w-full bg-navbar h-[100px] shadow-md flex items-center px-12 z-50">
-      {/* ✅ 로고 영역 */}
-      <div className="flex items-center">
-        <img
-          src="/path-to-logo.png" // 로고 이미지 경로
-          alt="Coala Logo"
-          className="w-[50px] h-[50px] mr-3"
-        />
-        <span className="text-[36px] font-[Figma Hand] text-[#2A3F30]">
-          Coala
-        </span>
-      </div>
+    const { user, handleLogout, loading } = useAuth();
+    const navigate = useNavigate();
 
-      {/* ✅ 네비게이션 메뉴 */}
-      <div className="ml-auto flex gap-40">
-        <Link to="/StudyMaterialsPage" className="text-[28px] text-black hover:text-gray-700">
-          학습자료
-        </Link>
-        <Link to="/quiz" className="text-[28px] text-black hover:text-gray-700">
-          퀴즈문제
-        </Link>
-        <Link to="/coding" className="text-[28px] text-black hover:text-gray-700">
-          자율코딩
-        </Link>
-        <Link to="/board" className="text-[28px] text-black hover:text-gray-700">
-          게시판
-        </Link>
-        <Link to="/mypage" className="text-[28px] text-black hover:text-gray-700">
-          마이페이지
-        </Link>
-      </div>
+    const logoutAndRedirect = async () => {
+        await handleLogout();
+        navigate("/");
+        window.location.reload();
+    };
 
-      {/* ✅ 오른쪽 버튼 (추후 기능 추가 가능) */}
-      <div className="ml-auto">
-        <div className="bg-[#A7DA9B] w-[132px] h-[116px] flex justify-center items-center rounded-full border border-black">
-          <span className="text-center text-black"></span>
-        </div>
-      </div>
-    </nav>
-  );
+    if (loading) return null;
+
+    return (
+        <nav className="fixed top-0 left-0 w-full bg-[#81A978] h-[70px] shadow-sm flex items-center px-6 z-50">
+            {/* 로고 */}
+            <div className="flex items-center">
+                <Link to="/" className="flex items-center">
+                    <img
+                        src="/coala.jpg"
+                        alt="Coala Logo"
+                        className="w-[40px] h-[40px] mr-2 rounded-full border border-white"
+                    />
+                    <span className="text-[24px] font-bold text-white">Coala</span>
+                </Link>
+            </div>
+
+            {/* 메뉴 */}
+            <div className="flex-1 flex justify-center gap-8">
+                {[ 
+                    { path: "/StudyMaterialsPage", label: "학습자료" },
+                    { path: "/quiz", label: "퀴즈문제" },
+                    { path: "/coding", label: "자율코딩" },
+                    { path: "/board", label: "게시판" },
+                    { path: "/mypage", label: "마이페이지" }
+                ].map((item, index) => (
+                    <Link 
+                        key={index} 
+                        to={item.path} 
+                        className="text-[16px] text-white hover:text-[#F8F3E2] font-medium"
+                    >
+                        {item.label}
+                    </Link>
+                ))}
+            </div>
+
+            {/* 로그인 상태 확인 후 버튼 표시 */}
+            {user ? (
+                <div className="flex items-center gap-4">
+                    <span className="text-white">{user.nickname}님</span>
+                    <button
+                        onClick={logoutAndRedirect}
+                        className="bg-[#F8F3E2] text-[#81A978] px-4 py-2 rounded-md font-medium hover:bg-[#e6ddc9]"
+                    >
+                        로그아웃
+                    </button>
+                </div>
+            ) : (
+                <div className="flex gap-4">
+                    <Link
+                        to="/login"
+                        className="bg-[#F8F3E2] text-[#81A978] px-4 py-2 rounded-md font-medium hover:bg-[#e6ddc9]"
+                    >
+                        로그인
+                    </Link>
+                    <Link
+                        to="/signup"
+                        className="bg-[#F8F3E2] text-[#81A978] px-4 py-2 rounded-md font-medium hover:bg-[#e6ddc9]"
+                    >
+                        회원가입
+                    </Link>
+                </div>
+            )}
+        </nav>
+    );
 };
 
 export default Navbar;
-
-//1️⃣ 메뉴 항목을 map 함수로 자동화
-//const menuItems = [
-//  { path: "/StudyMaterialsPage", label: "학습자료" },
-//  { path: "/quiz", label: "퀴즈문제" },
-//  { path: "/coding", label: "자율코딩" },
-//  { path: "/board", label: "게시판" },
-//  { path: "/mypage", label: "마이페이지" },
-//];
-
-//return (
-//  <div className="ml-auto flex gap-40">
-//    {menuItems.map((item) => (
-//      <Link key={item.path} to={item.path} className="text-[28px] text-black hover:text-gray-700">
-//        {item.label}
-//      </Link>
-//    ))}
-//  </div>
-//);
-//반복되는 Link 요소를 배열로 정리하면 유지보수가 편리해짐.

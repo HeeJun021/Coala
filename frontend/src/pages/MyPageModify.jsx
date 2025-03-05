@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import MyPageSidebar from '../components/MyPageSideBar';
+import MyPageSidebar from '../Layout/MyPageSideBar';
 import ProfileCard from '../components/ProfileCard';
 import InfoCard from '../components/InfoCard';
 //import koala from '../assets/koala.jpg';

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import MyPageSidebar from '../components/MyPageSideBar';
+import MyPageSidebar from '../Layout/MyPageSideBar';
 import PrivacyCard from '../components/PrivacyCard';
 import NotificationCard from '../components/NotificationCard';
 

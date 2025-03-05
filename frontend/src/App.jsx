@@ -7,10 +7,9 @@ import StudyMaterialsPage from "./pages/StudyMaterialsPage"; // 학습자료 페
 import StudyMaterialsPageDetails from "./pages/StudyMaterialsPageDetails"; // 학습자료 및 예제 상세 페이지
 
 import { AuthProvider } from "./context/AuthContext"; // ✅ 로그인 상태 관리
-
 // 페이지 컴포넌트 가져오기;
 import Signup from "./pages/Signup";
-import Login from "./pages/Login";
+import Login from "./pages/Login";  
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import MyPage from "./pages/MyPage";
