@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from "react";
+import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext"; // ✅ 로그인 상태 관리
 import { getCurrentUser } from "./api/authApi";
@@ -9,10 +9,9 @@ import Quiz from "./pages/Quiz"; // 퀴즈 페이지
 import StudyMaterialsPage from "./pages/StudyMaterialsPage"; // 학습자료 페이지
 import StudyMaterialsPageDetails from "./pages/StudyMaterialsPageDetails"; // 학습자료 및 예제 상세 페이지
 
-import { AuthProvider } from "./context/AuthContext"; // ✅ 로그인 상태 관리
-// 페이지 컴포넌트 가져오기;
+// 페이지 컴포넌트 가져오기
 import Signup from "./pages/Signup";
-import Login from "./pages/Login";  
+import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import MyPage from "./pages/MyPage";
@@ -23,36 +22,39 @@ const App = () => {
   const [userData, setUserData] = useState({});
 
   useEffect(() => {
-    const fetchUserData = async() => {
+    const fetchUserData = async () => {
+      // ✅ `access_token`이 있는 경우에만 실행
+     
+
       try {
-        const user = await getCurrentUser(); // ✅ 로그인된 사용자 정보 가져오기
+        const user = await getCurrentUser();
 
-        console.log(user);
-
-        setUserData(prevData => ({
-          ...prevData,
+        setUserData({
           user_id: user.user_id,
           email: user.email,
           nickname: user.nickname || "사용자",
           profile_image_url: user.profile_image_url || koala,
-          bio: user.bio !== undefined ? user.bio : prevData.bio, 
+          bio: user.bio || "",
           rating: user.rating || 1000,
           tier_id: user.tier_id || 1,
           dailycheck: user.dailycheck || false,
           email_verified: user.email_verified || false,
           created_at: user.created_at,
           updated_at: user.updated_at,
-          tier_name: user.tier?.tier_name,
-        }));
-      } catch (error) {
-        console.error(error);
-      }
-    };
-    console.log("🔍 ProfileCard useEffect → userData:", userData);
-    fetchUserData();
-  }, [])
+          tier_name: user.tier?.tier_name || "초급",
+        });
 
-  
+        console.log("✅ 로그인된 사용자:", user);
+      } catch (error) {      
+        console.error("⚠️ 사용자 데이터를 가져오는 중 오류 발생:", error);
+        setUserData(null);
+      }
+    }
+      
+
+    fetchUserData();
+  }, []);
+
   return (
     <Router>
       <AuthProvider> {/* ✅ AuthProvider 적용 */}
@@ -76,6 +78,8 @@ const App = () => {
             <Route path="/login" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            
+            {/* 마이페이지 관련 */}
             <Route path="/mypage/*" element={<MyPage userData={userData} />} /> {/* ✅ MyPage에 userData 전달 */}
             <Route path="/mypage/modify" element={<MyPageModify userData={userData} setUserData={setUserData} />} /> {/* ✅ 수정 시 반영 */}
             <Route path="/mypage/setting" element={<MyPageSetting userData={userData} />} />

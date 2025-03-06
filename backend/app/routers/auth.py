@@ -84,6 +84,7 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
 
     if not token:
         raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
+        return None
 
     try:
         payload = verify_access_token(token)  # ✅ JWT 검증 함수 사용
