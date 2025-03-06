@@ -1,15 +1,18 @@
 import React, {useState, useEffect} from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext"; // ✅ 로그인 상태 관리
-import Layout from "./components/Layout"; // 공통 레이아웃
-import Navbar from "./components/Navbar"; // 네비게이션 바
 import { getCurrentUser } from "./api/authApi";
-import koala from "./assets/koala.jpg"
+import koala from "./assets/koala.jpg";
+import MainLayout from "./Layout/MainLayout"; // 공통 레이아웃 (Sidebar, Navbar 포함)
+import Home from "./pages/Home"; // 홈 페이지
+import Quiz from "./pages/Quiz"; // 퀴즈 페이지
+import StudyMaterialsPage from "./pages/StudyMaterialsPage"; // 학습자료 페이지
+import StudyMaterialsPageDetails from "./pages/StudyMaterialsPageDetails"; // 학습자료 및 예제 상세 페이지
 
-// 페이지 컴포넌트 가져오기
-import Home from "./pages/Home";
+import { AuthProvider } from "./context/AuthContext"; // ✅ 로그인 상태 관리
+// 페이지 컴포넌트 가져오기;
 import Signup from "./pages/Signup";
-import Login from "./pages/Login";
+import Login from "./pages/Login";  
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import MyPage from "./pages/MyPage";
@@ -52,11 +55,23 @@ const App = () => {
   
   return (
     <Router>
-      <AuthProvider> {/* ✅ AuthProvider를 Router 내부로 이동 */}
-        <Layout>
-          <Navbar /> {/* ✅ 네비게이션 바 (로그인 상태 자동 반영) */}
+      <AuthProvider> {/* ✅ AuthProvider 적용 */}
+        <MainLayout> {/* ✅ MainLayout 내부에서 Route 적용 */}
           <Routes>
+            {/* 홈 페이지 */}
             <Route path="/" element={<Home />} />
+
+            {/* 퀴즈 페이지 */}
+            <Route path="/quiz" element={<Quiz />} />
+
+            {/* 학습자료 관련 페이지 */}
+            <Route path="/StudyMaterialsPage" element={<StudyMaterialsPage />} />
+            <Route path="/StudyMaterialsPage/materials/:language/:id" element={<StudyMaterialsPageDetails />} />
+            <Route path="/StudyMaterialsPage/examples/:language/:id" element={<StudyMaterialsPageDetails />} />
+            <Route path="/materials/:language/:id" element={<StudyMaterialsPageDetails />} />
+            <Route path="/materials" element={<StudyMaterialsPage />} />
+
+            {/* 인증 관련 페이지 */}
             <Route path="/signup" element={<Signup />} />
             <Route path="/login" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -65,7 +80,7 @@ const App = () => {
             <Route path="/mypage/modify" element={<MyPageModify userData={userData} setUserData={setUserData} />} /> {/* ✅ 수정 시 반영 */}
             <Route path="/mypage/setting" element={<MyPageSetting userData={userData} />} />
           </Routes>
-        </Layout>
+        </MainLayout>
       </AuthProvider>
     </Router>
   );

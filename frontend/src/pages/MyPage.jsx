@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import MyPageSidebar from '../components/MyPageSideBar';
+import MyPageSidebar from '../Layout/MyPageSideBar';
 import MyPageHome from './MyPageHome';
 import MyPageModify from './MyPageModify';
 import MyPageSetting from './MyPageSetting';

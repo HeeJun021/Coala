@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "http://127.0.0.1:8000"; // 🔥 백엔드 주소
+const BASE_URL = "http://localhost:8000"; // 🔥 백엔드 주소
 
 const apiClient = axios.create({
     baseURL: BASE_URL,

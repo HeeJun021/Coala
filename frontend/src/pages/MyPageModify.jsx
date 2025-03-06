@@ -1,5 +1,5 @@
 import React from 'react';
-import MyPageSidebar from '../components/MyPageSideBar';
+import MyPageSidebar from '../Layout/MyPageSideBar';
 import ProfileCard from '../components/ProfileCard';
 import InfoCard from '../components/InfoCard';
 import DeleteAccountDialog from '../components/DeleteAccountDialog';

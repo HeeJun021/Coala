@@ -11,6 +11,10 @@
   // Python 언어 서버로 Pylance를 사용하여 빠르고 정밀한 코드 분석
   "python.languageServer": "Pylance",
 
+  "python.linting.enabled": true,
+  "python.linting.flake8Enabled": true,
+  "python.linting.linter": "flake8",
+
   // CSS, SCSS, LESS 파일의 유효성 검사를 비활성화 (TailwindCSS를 사용할 경우)
   "css.validate": false,
   "scss.validate": false,
@@ -25,10 +29,18 @@
   "editor.quickSuggestions": {
     "strings": true
   },
-    "python.autoComplete.extraPaths": [
-        "./backend"
-    ],
-    "python.analysis.extraPaths": [
-        "./backend"
-    ]
+
+  // Python 경로 추가 (백엔드 디렉토리 포함)
+  "python.autoComplete.extraPaths": [
+    "./backend"
+  ],
+  "python.analysis.extraPaths": [
+    "./backend"
+  ],
+
+  // Flake8 설정
+  "python.linting.flake8Args": [
+    "--max-line-length=100",
+    "--ignore=E302,E501"
+  ]
 }

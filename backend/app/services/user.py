@@ -2,7 +2,8 @@ from sqlalchemy.orm import Session, joinedload
 from app.models.user import User
 from app.schemas.user import UserUpdateSchema
 from fastapi import HTTPException
-from datetime import datetime 
+from datetime import datetime
+
 
 def get_user_by_id(db: Session, user_id: str):
     return (
@@ -11,6 +12,7 @@ def get_user_by_id(db: Session, user_id: str):
         .filter(User.user_id == user_id)
         .first()
     )
+
 
 # 사용자 정보 업데이트
 def update_user_info(db: Session, user_id: int, user_update: UserUpdateSchema):

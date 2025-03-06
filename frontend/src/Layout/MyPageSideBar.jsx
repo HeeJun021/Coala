@@ -1,19 +1,15 @@
 import React from 'react';
 import ProfileSummary from './ProfileSummary';
-import { Link } from 'react-router-dom';
 import koala from '../assets/koala.jpg'
+import { Link } from 'react-router-dom';
 
-const MyPageSidebar = ({ userData }) => {
-    
-
+const MyPageSidebar = () => {
     return (
         <aside className="w-64 min-h-screen bg-[#F8F3E2] p-6 shadow-md">
             <h1 className="text-2xl font-bold text-center mb-4">마이페이지</h1>
-
-            {/* ✅ 현재 사용자 정보 반영 */}
             <ProfileSummary 
-                profile_image_url={userData?.profile_image_url || koala}
-                nickname={userData?.nickname}
+                profile_image_url={koala}
+                username="김희준"
             />
 
             <nav className="text-gray-800">
