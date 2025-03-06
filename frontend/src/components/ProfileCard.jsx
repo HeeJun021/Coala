@@ -1,20 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { updateUserInfo } from '../api/userApi';
 
-const ProfileCard = ({ userId, profile_image_url, nickname, tier_name, bio }) => {
+const ProfileCard = ({ userData, setUserData }) => {
     const [isEditing, setIsEditing] = useState(false); // 수정 모드 상태
     const [formData, setFormData] = useState({
-        nickname,
-        tier_name,
-        bio,
+        nickname: userData.nickname,
+        tier_name: userData.tier_name,
+        bio: userData.bio ?? "",
+        profile_image_url: userData.profile_image_url 
     });
+
+    // ✅ userData가 변경되면 formData도 업데이트되도록 설정
+    useEffect(() => {
+        console.log("🔍 ProfileCard useEffect 실행됨! userData:", userData);
+    
+        setFormData(prevFormData => ({
+            nickname: userData.nickname ?? prevFormData.nickname,  // ✅ 기존 값 유지
+            tier_name: userData.tier_name ?? prevFormData.tier_name,
+            bio: userData.bio !== undefined ? userData.bio : prevFormData.bio,  // ✅ bio가 undefined면 기존 값 유지
+            profile_image_url: userData.profile_image_url ?? prevFormData.profile_image_url
+        }));
+    }, [userData]); 
 
     // 입력값 변경 핸들러
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData((prevData) => ({
             ...prevData,
-            [name]: value,
+            [name]: value ?? "",
         }));
     };
 
@@ -23,11 +36,19 @@ const ProfileCard = ({ userId, profile_image_url, nickname, tier_name, bio }) =>
         setIsEditing((prev) => !prev);
     };
 
-    // 저장 로직 (백엔드와 연결 시 추가)
     const saveProfile = async () => {
         try {
-            await updateUserInfo(userId, formData);
+            const updatedData = await updateUserInfo(userData.user_id, formData);
             alert('프로필이 업데이트되었습니다.');
+    
+            setUserData(prevData => ({
+                ...prevData,  // ✅ 기존 데이터 유지
+                ...updatedData,  // ✅ 업데이트된 데이터 적용
+                bio: updatedData.bio !== undefined ? updatedData.bio : prevData.bio, 
+                profile_image_url: updatedData.profile_image_url || prevData.profile_image_url,  // ✅ 이미지 유지
+                tier_name: prevData.tier_name  // ✅ 기존 사용자 티어 유지
+            }));
+    
             setIsEditing(false);
         } catch (error) {
             alert('프로필 업데이트 실패');
@@ -41,10 +62,10 @@ const ProfileCard = ({ userId, profile_image_url, nickname, tier_name, bio }) =>
                 <>
                 <h2 className="text-lg font-bold mb-1">사용자 정보</h2>
                     {/* 프로필 이미지 */}
-                    {profile_image_url && (
+                    {userData.profile_image_url && (
                         <div className="flex items-center gap-4">
                             <img
-                                src={profile_image_url}
+                                src={userData.profile_image_url}
                                 alt="Profile"
                                 className="w-16 h-16 rounded-md"
                             />
@@ -71,7 +92,7 @@ const ProfileCard = ({ userId, profile_image_url, nickname, tier_name, bio }) =>
                             <input
                                 type="text"
                                 name="bio"
-                                value={formData.bio}
+                                defaultValue={formData.bio}
                                 onChange={handleInputChange}
                                 className="w-[75%] border border-gray-300 rounded-md px-2 py-1 mt-1 bg-beige ml-auto mr-10"
                             />
@@ -81,7 +102,7 @@ const ProfileCard = ({ userId, profile_image_url, nickname, tier_name, bio }) =>
                             <input
                                 type="text"
                                 name="bio"
-                                value={formData.tier_name}
+                                value={userData.tier_name}
                                 readOnly
                                 className="w-[75%] border border-gray-300 rounded-md px-2 py-1 mt-1 bg-gray-50 ml-auto mr-10"
                             />
@@ -110,9 +131,9 @@ const ProfileCard = ({ userId, profile_image_url, nickname, tier_name, bio }) =>
                 <>
                     <h2 className="text-lg font-bold mb-1">사용자 정보</h2>
                     {/* 프로필 이미지 */}
-                    {profile_image_url && (
+                    {userData.profile_image_url && (
                         <img
-                            src={profile_image_url}
+                            src={userData?.profile_image_url}
                             alt="Profile"
                             className="w-16 h-16 rounded-md"
                         />
@@ -123,23 +144,21 @@ const ProfileCard = ({ userId, profile_image_url, nickname, tier_name, bio }) =>
                         {/* 닉네임 */}
                         <div className="flex items-center">
                             <h2 className="font-bold w-24">닉네임</h2>
-                            <p className="flex-1">{formData.nickname}</p>
+                            <p className="flex-1">{userData?.nickname}</p>
                         </div>
 
                         {/* 자기소개 */}
                         <div className="flex items-center">
                             <h2 className="font-bold w-24">자기소개</h2>
-                            <p className="flex-1">{formData.bio}</p>
+                            <p className="flex-1">{userData?.bio}</p>
                         </div>
 
                         {/* ✅ 티어 정보 추가 */}
                         <div className="flex items-center">
                             <h2 className="font-bold w-24">등급</h2>
-                            <p className="flex-1">{formData.tier_name}</p>
+                            <p className="flex-1">{userData?.tier_name}</p>
                         </div>
-
                     </div>
-
 
                     {/* 수정 버튼 */}
                     <button

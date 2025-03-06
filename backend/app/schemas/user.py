@@ -20,7 +20,7 @@ class UserBase(BaseModel):
     rating: int
     tier_id: Optional[int] = 1
     dailycheck: bool
-    bio: Optional[str] = "자기소개 없음" # ✅ 자기소개 필드 추가
+    bio: Optional[str] = None # ✅ 자기소개 필드 추가
     email_verified: bool
     created_at: datetime
     updated_at: datetime
@@ -40,13 +40,14 @@ class UserResponse(BaseModel):
     email: str
     nickname: str
     profile_image_url: Optional[str]
-    bio: Optional[str]
+    bio: Optional[str] = None
     birth_date: Optional[date]
     rating: int
     tier_id: int
     email_verified: bool
     created_at: str
-
+    tier: Optional[UserTierBase]
+    
     class Config:
         from_attributes = True
 
@@ -57,7 +58,6 @@ class UserUpdateSchema(BaseModel):
     profile_image_url: Optional[str] = None
     
     
-
 class UserResponse(UserBase):
     pass
 

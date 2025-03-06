@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy.orm import Session
 
 # ✅ 모델
-from app.models.user import User
+from app.models.user import User, UserTier
 from app.models.email_verification import EmailVerificationToken
 
 # ✅ 데이터베이스
@@ -95,7 +95,22 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
         if not user:
             raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
 
-        return {"user_id": user.user_id, "email": user.email, "nickname": user.nickname}
+        tier_name = db.query(UserTier.tier_name).filter(UserTier.tier_id == user.tier_id).scalar()
+
+        return {
+            "user_id": user.user_id,
+            "email": user.email,
+            "nickname": user.nickname,
+            "profile_image_url": user.profile_image_url,
+            "rating": user.rating,
+            "tier_id": user.tier_id,
+            "dailycheck": user.dailycheck,
+            "email_verified": user.email_verified,
+            "bio": user.bio,
+            "created_at": user.created_at,
+            "updated_at": user.updated_at,
+            "tier": {"tier_name": user.tier.tier_name} if user.tier else None,
+        }
     
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="토큰이 만료되었습니다.")

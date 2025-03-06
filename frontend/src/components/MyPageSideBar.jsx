@@ -1,31 +1,10 @@
-import React, {useState, useEffect} from 'react';
+import React from 'react';
 import ProfileSummary from './ProfileSummary';
-import koala from '../assets/koala.jpg'
 import { Link } from 'react-router-dom';
-import { getCurrentUser } from '../api/authApi';
+import koala from '../assets/koala.jpg'
 
-const MyPageSidebar = () => {
-    const [userData, setUserData] = useState({
-        profile_image_url: koala,
-        nickname: "사용자",
-    });
-
-    useEffect(() => {
-        const fetchUserData = async () => {
-            try {
-                const currentUser = await getCurrentUser();
-                if (currentUser) {
-                    setUserData({
-                        profile_image_url: currentUser.profile_image_url || koala,
-                        nickname: currentUser.nickname || "사용자",
-                    });
-                }
-            } catch (error) {
-                console.error("사용자 정보를 불러오는 데 실패했습니다.", error);
-            }
-        };
-        fetchUserData();
-    }, []);
+const MyPageSidebar = ({ userData }) => {
+    
 
     return (
         <aside className="w-64 min-h-screen bg-[#F8F3E2] p-6 shadow-md">
@@ -33,8 +12,8 @@ const MyPageSidebar = () => {
 
             {/* ✅ 현재 사용자 정보 반영 */}
             <ProfileSummary 
-                profile_image_url={userData.profile_image_url}
-                nickname={userData.nickname}
+                profile_image_url={userData?.profile_image_url || koala}
+                nickname={userData?.nickname}
             />
 
             <nav className="text-gray-800">

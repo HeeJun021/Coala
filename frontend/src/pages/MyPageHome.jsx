@@ -23,10 +23,7 @@ const MyPageHome = () => {
 
         {/* 메인 콘텐츠 */}
         <main className="flex items-center justify-start ml-10">
-            <div className="bg-white border-2 border-gray-300 rounded-lg shadow-lg p-6 w-full max-w-2xl">
-                {/* 프로필 카드 */}
-                <ProfileCard username={userData.username} bio={userData.bio} role={userData.role} profile_image_url={userData.profile_image_url}/>
-            </div>
+                
         </main>
     </div>
     );

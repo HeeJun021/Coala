@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { resetPassword } from '../api/passwordApi';
 
-const InfoCard = ({ userId, hashedPassword, email, phone, isEmailVerified }) => {
+const InfoCard = ({ userData, setUserData }) => {
     // 상태 관리
     const [isEditingPassword, setIsEditingPassword] = useState(false); // 비밀번호 수정 모드 상태
     const [newPassword, setNewPassword] = useState(''); // 새 비밀번호
     const [confirmPassword, setConfirmPassword] = useState(''); // 비밀번호 확인
-    const [setLoading] = useState(false); // ✅ 로딩 상태 추가
+    const [loading, setLoading] = useState(false); // ✅ 로딩 상태 추가
 
 
     // 비밀번호 저장 로직 (백엔드와 연결 필요)
@@ -18,7 +18,7 @@ const InfoCard = ({ userId, hashedPassword, email, phone, isEmailVerified }) => 
 
         setLoading(true);
         try {
-            await resetPassword(email, newPassword); // ✅ 비밀번호 변경 API 호출
+            await resetPassword(userData.email, newPassword); // ✅ 비밀번호 변경 API 호출
             alert("비밀번호가 성공적으로 변경되었습니다.");
             setIsEditingPassword(false);
             setNewPassword("");
@@ -38,7 +38,7 @@ const InfoCard = ({ userId, hashedPassword, email, phone, isEmailVerified }) => 
             {/* 이메일 섹션 */}
             <div className="flex items-center w-full gap-4">
                 <h2 className="font-bold w-14">이메일</h2>
-                <p className="text-gray-700">{email}</p>
+                <p className="text-gray-700">{userData?.email}</p>
             </div>
 
             {/* 비밀번호 섹션 */}
