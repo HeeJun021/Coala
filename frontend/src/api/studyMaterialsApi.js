@@ -24,6 +24,7 @@ export const fetchStudyExamples = async () => {
     }
 };
 
+
 // ✅ 개별 학습 자료 가져오기 추가
 export const fetchStudyMaterialById = async (language, id) => {
     try {
@@ -32,5 +33,16 @@ export const fetchStudyMaterialById = async (language, id) => {
     } catch (error) {
         console.error(`Error fetching study material ${id}:`, error);
         return null;
+    }
+};
+
+// ✅ 언어 목록 가져오기
+export const fetchLanguages = async () => {
+    try {
+        const response = await apiClient.get("/api/languages");
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching languages:", error);
+        return [];
     }
 };

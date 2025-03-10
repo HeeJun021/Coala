@@ -2,99 +2,127 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const Sidebar = () => {
-  const navigate = useNavigate(); // ✅ 페이지 이동을 위한 `useNavigate` 훅
-  const location = useLocation(); // ✅ 현재 URL 정보를 가져오는 `useLocation` 훅
-
-  // ✅ 현재 URL에서 'category' 파라미터 가져오기
+  const navigate = useNavigate();
+  const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
-  const currentCategory = queryParams.get("category") || "HTML"; // 기본값: "HTML"
-  const isExample = currentCategory.startsWith("예제"); // "예제-"로 시작하면 예제 카테고리
-  const initialSection = isExample ? "예제" : "학습자료"; // 기본적으로 예제인지 학습자료인지 확인
+  const initialCategory = queryParams.get("category") || "HTML";
 
-  // ✅ 상태(State) 정의
-  const [activeSection, setActiveSection] = useState(initialSection); // "학습자료" 또는 "예제"
-  const [activeSubMenu, setActiveSubMenu] = useState(currentCategory); // 현재 선택된 카테고리 (HTML, CSS, JavaScript 등)
+  const [languages, setLanguages] = useState([]);
+  const [studyMaterials, setStudyMaterials] = useState([]);
+  const [studyExamples, setStudyExamples] = useState([]);
+  const [selectedLanguage, setSelectedLanguage] = useState(initialCategory);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isExample, setIsExample] = useState(false); // ✅ 선언 추가
 
-  // ✅ 컴포넌트가 처음 마운트되었을 때 URL에 맞춰서 상태 설정
   useEffect(() => {
-    if (!activeSubMenu) {
-      setActiveSubMenu(currentCategory);
-      setActiveSection(initialSection);
+    setIsExample(initialCategory.startsWith("예제-")); // ✅ 이제 정상 작동
+  }, [initialCategory]);
+  
+
+  useEffect(() => {
+    const fetchLanguages = async () => {
+      try {
+        const response = await fetch("/api/languages");
+        const data = await response.json();
+        setLanguages(data);
+      } catch (err) {
+        setError("언어 데이터를 불러오는 중 오류 발생");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLanguages();
+  }, []);
+
+  useEffect(() => {
+    if (selectedLanguage) {
+      const fetchMaterialsAndExamples = async () => {
+        try {
+          console.log(`🔍 Fetching materials for language: ${selectedLanguage.toLowerCase()}`);
+  
+          const materialsResponse = await fetch(`/api/materials/${selectedLanguage.toLowerCase()}`);
+          if (!materialsResponse.ok) throw new Error(`HTTP error! Status: ${materialsResponse.status}`);
+  
+          const materials = await materialsResponse.json();
+          console.log(`✅ Materials loaded:`, materials);
+          setStudyMaterials(materials);
+  
+          console.log(`🔍 Fetching examples for language: ${selectedLanguage.toLowerCase()}`);
+          const examplesResponse = await fetch(`/api/examples/${selectedLanguage.toLowerCase()}`);
+          if (!examplesResponse.ok) throw new Error(`HTTP error! Status: ${examplesResponse.status}`);
+  
+          const examples = await examplesResponse.json();
+          console.log(`✅ Examples loaded:`, examples);
+          setStudyExamples(examples);
+        } catch (err) {
+          console.error("❌ 오류 발생:", err);
+          setError("학습 자료 데이터를 불러오는 중 오류 발생");
+        }
+      };
+      fetchMaterialsAndExamples();
     }
-  }, [currentCategory, initialSection, activeSubMenu]);
+  }, [selectedLanguage]);  
+  
 
-  // ✅ "학습자료" 또는 "예제" 버튼 클릭 시 호출되는 함수
-  const handleSectionClick = (section) => {
-    setActiveSection(section);
-    const defaultCategory = section === "학습자료" ? "HTML" : "예제-HTML"; // 학습자료: HTML / 예제: 예제-HTML
-    setActiveSubMenu(defaultCategory.replace("예제-", "")); // "예제-" 제거하여 상태 업데이트
-    navigate(`/StudyMaterialsPage?category=${defaultCategory}`); // ✅ URL 변경하여 페이지 이동
-  };
-
-  // ✅ 서브메뉴 (HTML, CSS, JavaScript) 클릭 시 호출되는 함수
-  const handleSubMenuClick = (menu) => {
-    const newCategory = activeSection === "예제" ? `예제-${menu}` : menu; // 예제라면 "예제-" 붙이기
-    setActiveSubMenu(newCategory); // 상태 업데이트
-    navigate(`/StudyMaterialsPage?category=${newCategory}`); // ✅ URL 변경하여 페이지 이동
+  const handleLanguageClick = (language) => {
+    setSelectedLanguage(language);
+    navigate(`/StudyMaterialsPage?category=${language}`);
   };
 
   return (
     <div className="absolute top-[239px] left-[33px] w-[243px] bg-white rounded-md shadow-md">
-      {/* ✅ 학습자료 섹션 */}
-      <div
-        className={`h-[54px] flex items-center pl-6 cursor-pointer ${
-          activeSection === "학습자료" ? "bg-[#A7DA9B]" : "bg-[#EFEFEF]"
-        }`}
-        onClick={() => handleSectionClick("학습자료")}
-      >
-        <h1 className={`text-[20px] font-normal ${activeSection === "학습자료" ? "text-black" : "text-gray-600"}`}>
-          학습자료
-        </h1>
+      <div className="h-[54px] flex items-center pl-6 bg-[#A7DA9B]">
+        <h1 className="text-[20px] font-normal text-black">학습자료</h1>
       </div>
 
-      {/* ✅ 학습자료 카테고리 (HTML, CSS, JavaScript) */}
-      {activeSection === "학습자료" && (
+      {loading ? (
+        <div className="h-[54px] flex items-center pl-6 text-gray-500">로딩 중...</div>
+      ) : error ? (
+        <div className="h-[54px] flex items-center pl-6 text-red-500">{error}</div>
+      ) : (
         <>
-          {["HTML", "CSS", "JavaScript"].map((menu) => (
+          {languages.map((lang) => (
             <div
-              key={menu}
+              key={lang.language_id}
               className={`h-[54px] flex items-center pl-6 cursor-pointer ${
-                activeSubMenu === menu ? "bg-gray-300" : "bg-white"
+                selectedLanguage === lang.language ? "bg-gray-300" : "bg-white"
               }`}
-              onClick={() => handleSubMenuClick(menu)}
+              onClick={() => handleLanguageClick(lang.language)}
             >
-              {menu} {activeSubMenu === menu && ">"}
+              {lang.language} {selectedLanguage === lang.language && ">"}
             </div>
           ))}
-        </>
-      )}
 
-      {/* ✅ 예제 섹션 */}
-      <div
-        className={`h-[54px] flex items-center pl-6 cursor-pointer ${
-          activeSection === "예제" ? "bg-[#A7DA9B]" : "bg-[#EFEFEF]"
-        }`}
-        onClick={() => handleSectionClick("예제")}
-      >
-        <h1 className={`text-[20px] font-normal ${activeSection === "예제" ? "text-black" : "text-gray-600"}`}>
-          예제
-        </h1>
-      </div>
+          {selectedLanguage && (
+            <>
+              <div className="pl-6 pt-2 font-bold text-lg">{selectedLanguage}</div>
 
-      {/* ✅ 예제 카테고리 (HTML, CSS, JavaScript) */}
-      {activeSection === "예제" && (
-        <>
-          {["HTML", "CSS", "JavaScript"].map((menu) => (
-            <div
-              key={menu}
-              className={`h-[54px] flex items-center pl-6 cursor-pointer ${
-                activeSubMenu === `예제-${menu}` ? "bg-gray-300" : "bg-white"
-              }`}
-              onClick={() => handleSubMenuClick(menu)}
-            >
-              {menu} {activeSubMenu === `예제-${menu}` && ">"}
-            </div>
-          ))}
+              {studyMaterials.map((material) => (
+                <div
+                  key={material.material_id}
+                  className="pl-8 cursor-pointer hover:bg-gray-100"
+                  onClick={() => navigate(`/StudyMaterialsPage?category=${selectedLanguage}&content=${material.title}`)}
+                >
+                  {material.title}
+                </div>
+              ))}
+
+              {studyExamples.length > 0 && (
+                <div className="pl-6 pt-2 font-bold text-lg">{selectedLanguage} Example</div>
+              )}
+
+              {studyExamples.map((example) => (
+                <div
+                  key={example.example_id}
+                  className="pl-8 cursor-pointer hover:bg-gray-100"
+                  onClick={() => navigate(`/StudyMaterialsPage?category=${selectedLanguage}&content=${example.title}`)}
+                >
+                  {example.title}
+                </div>
+              ))}
+            </>
+          )}
         </>
       )}
     </div>
