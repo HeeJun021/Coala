@@ -8,7 +8,7 @@ from app.schemas.quiz import QuizCreate, QuizResponse
 
 router = APIRouter(
     prefix="/quizzes",
-    tags=["Quizzes"]
+    tags=["quizzes"]
 )
 
 # 1️⃣ 모든 퀴즈 조회 API

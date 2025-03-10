@@ -1,6 +1,5 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
-import QuizSideBar from "../Layout/QuizSideBar";
 import PracticeQuiz from "./PraticeQuiz";
 import TestQuiz from "./TestQuiz";
 // import CustomQuiz from "./CustomQuiz";
@@ -27,12 +26,11 @@ const QuizPage = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      {/* ✅ 좌측 고정된 사이드바 */}
-      <QuizSideBar />
+    <div className="flex min-h-screen bg-beige">
 
       {/* ✅ 선택된 퀴즈 유형에 따른 콘텐츠 변경 */}
       <div className="ml-[250px] p-6 flex-1">{renderQuizComponent()}</div>
+      
     </div>
   );
 };

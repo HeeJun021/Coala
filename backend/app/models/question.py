@@ -2,6 +2,12 @@ from sqlalchemy import Column, Integer, String, Text, ARRAY, ForeignKey, TIMESTA
 from sqlalchemy.sql import func
 from app.database import Base  # DB 연결을 위한 Base import
 
+class QuestionType(Base):  # ✅ `question_type` 테이블 정의
+    __tablename__ = "question_type"
+
+    question_type = Column(Integer, primary_key=True)  # OX, 단답형, 객관식
+    base_score = Column(Integer, nullable=False)  # 기본 점수
+
 class Question(Base):
     __tablename__ = "questions"
 

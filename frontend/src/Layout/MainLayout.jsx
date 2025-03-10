@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
 import Sidebar from "./Sidebar";
 import MyPageSideBar from "./MyPageSideBar";
+import QuizSideBar from "./QuizSideBar";
 
 const MainLayout = ({ children }) => {
   const location = useLocation(); // 현재 페이지 URL 정보 가져오기
@@ -15,6 +16,10 @@ const MainLayout = ({ children }) => {
                             location.pathname.startsWith("/MyPageModify") || 
                             location.pathname.startsWith("/MyPageSetting/");
 
+  const showQuizPageSideBar = location.pathname.startsWith("/quizpage") ||
+                              location.pathname.startsWith("/practice") ||
+                              location.pathname.startsWith("/practice");
+                
 
   return (
     <div className="layout flex">
@@ -24,6 +29,8 @@ const MainLayout = ({ children }) => {
       {showSidebar && <Sidebar />}
 
       {showMyPageSideBar && <MyPageSideBar />}
+
+      {showQuizPageSideBar && <QuizSideBar />}
     
 
       {/* ✅ 메인 컨텐츠 영역 */}

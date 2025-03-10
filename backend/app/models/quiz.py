@@ -7,26 +7,26 @@ class Quiz(Base):
     __tablename__ = "quizzes"
 
     quiz_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    title = Column(String(255), nullable=False)  # 퀴즈 제목
-    quiz_type = Column(String(20), nullable=False)  # 'practice' 또는 'test'
+    title = Column(String(255), nullable=False)
+    quiz_type = Column(String(20), nullable=False)
     created_at = Column(TIMESTAMP, server_default=func.now())
 
-    # Quiz와 연결된 QuizSetting 및 QuizAssignment
     settings = relationship("QuizSetting", back_populates="quiz")
     assignments = relationship("QuizAssignment", back_populates="quiz")
 
 class QuizSetting(Base):
-    __tablename__ = "quiz_settings"
+    __tablename__ = "quizsetting"
 
     quiz_id = Column(Integer, ForeignKey("quizzes.quiz_id"), primary_key=True)
-    question_type = Column(Integer, ForeignKey("question_type.question_type"), primary_key=True)
-    difficulty = Column(Integer, nullable=False)  # 난이도
-    question_count = Column(Integer, nullable=False)  # 문제 개수
+    question_type = Column(Integer, ForeignKey("question_type.question_type"), primary_key=True)  # ✅ FK 수정
+    difficulty = Column(Integer, nullable=False)
+    question_count = Column(Integer, nullable=False)
 
     quiz = relationship("Quiz", back_populates="settings")
+    question_type_rel = relationship("QuestionType")  # ✅ FK 관계 추가
 
 class QuizAssignment(Base):
-    __tablename__ = "quiz_assignments"
+    __tablename__ = "quizassignment"
 
     assignment_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     quiz_id = Column(Integer, ForeignKey("quizzes.quiz_id"), nullable=False)
