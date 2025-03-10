@@ -5,7 +5,7 @@ import { getCurrentUser } from "./api/authApi";
 import koala from "./assets/koala.jpg";
 import MainLayout from "./Layout/MainLayout"; // 공통 레이아웃 (Sidebar, Navbar 포함)
 import Home from "./pages/Home"; // 홈 페이지
-import Quiz from "./pages/Quiz"; // 퀴즈 페이지
+
 import StudyMaterialsPage from "./pages/StudyMaterialsPage"; // 학습자료 페이지
 import StudyMaterialsPageDetails from "./pages/StudyMaterialsPageDetails"; // 학습자료 및 예제 상세 페이지
 
@@ -17,6 +17,9 @@ import ResetPassword from "./pages/ResetPassword";
 import MyPage from "./pages/MyPage";
 import MyPageModify from "./pages/MyPageModify";
 import MyPageSetting from "./pages/MyPageSetting";
+
+//퀴즈 페이지
+import QuizPage from "./pages/QuizPage"; // 퀴즈 페이지
 
 const App = () => {
   const [userData, setUserData] = useState({});
@@ -64,7 +67,7 @@ const App = () => {
             <Route path="/" element={<Home />} />
 
             {/* 퀴즈 페이지 */}
-            <Route path="/quiz" element={<Quiz />} />
+            <Route path="/quizpage" element={<QuizPage />} />
 
             {/* 학습자료 관련 페이지 */}
             <Route path="/StudyMaterialsPage" element={<StudyMaterialsPage />} />
@@ -83,6 +86,8 @@ const App = () => {
             <Route path="/mypage/*" element={<MyPage userData={userData} />} /> {/* ✅ MyPage에 userData 전달 */}
             <Route path="/mypage/modify" element={<MyPageModify userData={userData} setUserData={setUserData} />} /> {/* ✅ 수정 시 반영 */}
             <Route path="/mypage/setting" element={<MyPageSetting userData={userData} />} />
+
+            
           </Routes>
         </MainLayout>
       </AuthProvider>

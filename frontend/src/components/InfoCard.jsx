@@ -6,7 +6,7 @@ const InfoCard = ({ userData, setUserData }) => {
     const [isEditingPassword, setIsEditingPassword] = useState(false); // 비밀번호 수정 모드 상태
     const [newPassword, setNewPassword] = useState(''); // 새 비밀번호
     const [confirmPassword, setConfirmPassword] = useState(''); // 비밀번호 확인
-    const [loading, setLoading] = useState(false); // ✅ 로딩 상태 추가
+    const [setLoading] = useState(false); // ✅ 로딩 상태 추가
 
 
     // 비밀번호 저장 로직 (백엔드와 연결 필요)

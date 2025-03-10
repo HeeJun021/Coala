@@ -32,7 +32,7 @@ const Navbar = () => {
             <div className="flex-1 flex justify-center gap-8">
                 {[ 
                     { path: "/StudyMaterialsPage", label: "학습자료" },
-                    { path: "/quiz", label: "퀴즈문제" },
+                    { path: "/quizpage", label: "퀴즈문제" },
                     { path: "/coding", label: "자율코딩" },
                     { path: "/board", label: "게시판" },
                     { path: "/mypage", label: "마이페이지" }
