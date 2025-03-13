@@ -24,3 +24,13 @@ pip install pyjwt
 
 # 소셜 로그인을 위한 인스톨
 pip install requests
+
+# 크롤링을 위한 버퍼 및 리퀘스트 인스톨
+pip install beautifulsoup4
+pip install requests
+
+
+# 프로그래머스는 자바스크립트가 동적으로 로딩되기 때문에 selenium 필요
+# requests만으로 동적 페이지 크롤링 불가능
+pip install selenium
+pip install selenium webdriver-manager

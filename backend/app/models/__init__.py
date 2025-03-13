@@ -1,3 +1,3 @@
-from .study_example import StudyExample
+# from .study_example import StudyExample
 
-__all__ = ["StudyExample"]  # ✅ F401 오류 해결
+# __all__ = ["StudyExample"]  # ✅ F401 오류 해결
