@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
-import PracticeQuiz from "./PraticeQuiz";
+import PracticeQuiz from "./PracticeQuiz";
 import TestQuiz from "./TestQuiz";
 // import CustomQuiz from "./CustomQuiz";
 

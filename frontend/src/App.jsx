@@ -20,6 +20,7 @@ import MyPageSetting from "./pages/MyPageSetting";
 
 //퀴즈 페이지
 import QuizPage from "./pages/QuizPage"; // 퀴즈 페이지
+import QuizSolvePage from "./pages/QuizSolvePage";
 
 const App = () => {
   const [userData, setUserData] = useState({});
@@ -68,6 +69,7 @@ const App = () => {
 
             {/* 퀴즈 페이지 */}
             <Route path="/quizpage" element={<QuizPage />} />
+            <Route path="/quizsolve/:quizId" element={<QuizSolvePage />} />
 
             {/* 학습자료 관련 페이지 */}
             <Route path="/StudyMaterialsPage" element={<StudyMaterialsPage />} />

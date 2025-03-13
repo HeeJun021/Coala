@@ -20,3 +20,32 @@ export const createQuiz = async (quizData) => {
     }
   };
   
+
+// ✅ 특정 퀴즈 상세 조회 API
+export const getQuizDetails = async (quizId) => {
+  try {
+    const response = await apiClient.get(`/quizzes/${quizId}`);
+    return response.data;
+  } catch (error) {
+    console.error("🚨 퀴즈 데이터를 불러오는 중 오류 발생:", error);
+    throw error;
+  }
+};
+
+export const submitQuiz = async (quizId, userId, answers) => {
+  try {
+      const response = await apiClient.post(`/quizzes/${quizId}/submit`, {
+          quiz_id: quizId,
+          user_id: userId,
+          answers: answers.map(answer => ({
+              question_id: answer.questionId,
+              user_answer: answer.userAnswer
+          }))
+      });
+
+      return response.data; // 서버 응답 데이터 반환
+  } catch (error) {
+      console.error("🚨 퀴즈 제출 실패:", error);
+      throw error;
+  }
+};

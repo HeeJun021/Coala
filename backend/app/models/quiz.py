@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, TIMESTAMP
+from sqlalchemy import Column, Integer, String, ForeignKey, TIMESTAMP, Boolean
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -33,4 +33,30 @@ class QuizAssignment(Base):
     question_id = Column(Integer, ForeignKey("questions.question_id"), nullable=False)
 
     quiz = relationship("Quiz", back_populates="assignments")
-    question = relationship("Question")
+    question = relationship("Question")  # ✅ "Questions" → "Question"
+
+class QuizSubmissions(Base):
+    __tablename__ = "quiz_submissions"
+
+    submission_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    quiz_id = Column(Integer, ForeignKey("quizzes.quiz_id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
+    rating_change = Column(Integer, default=0)
+    correct_count = Column(Integer, default=0)
+    submitted_at = Column(String, nullable=False)
+
+    details = relationship("QuizSubmissionDetails", back_populates="submission")
+
+
+class QuizSubmissionDetails(Base):
+    __tablename__ = "quiz_submission_details"
+
+    detail_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    submission_id = Column(Integer, ForeignKey("quiz_submissions.submission_id", ondelete="CASCADE"), nullable=False)
+    question_id = Column(Integer, ForeignKey("questions.question_id", ondelete="CASCADE"), nullable=False)
+    user_answer = Column(String, nullable=False)
+    is_correct = Column(Boolean, nullable=False)
+
+    # ✅ "Questions" → "Question" 으로 변경
+    submission = relationship("QuizSubmissions", back_populates="details")
+    question = relationship("Question", back_populates="submission_details")  

@@ -1,10 +1,12 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { createQuiz } from "../api/quizApi";
 
 const PracticeQuiz = () => {
 
     // ✅ API 요청 중 로딩 상태
     const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
 
     const difficultyMap = {
         "Lv.1": 1,
@@ -63,6 +65,12 @@ const PracticeQuiz = () => {
 
         const newQuiz = await createQuiz(quizPayload);
         console.log("✅ 퀴즈 생성 완료:", newQuiz); // ✅ 생성된 퀴즈 확인
+
+        if (newQuiz && newQuiz.quiz_id) {
+          navigate(`/quizsolve/${newQuiz.quiz_id}`);
+        } else {
+          alert("퀴즈 생성은 되었지만 id를 찾을 수 없습니다.")
+        }
 
         alert("퀴즈가 생성되었습니다!"); // ✅ 퀴즈 생성 성공 알림
         } catch (error) {
