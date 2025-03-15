@@ -45,4 +45,5 @@ class QuizAnswer(BaseModel):
 class QuizSubmissionRequest(BaseModel):
     quiz_id: int
     user_id: int
+    mode: str
     answers: List[QuizAnswer]

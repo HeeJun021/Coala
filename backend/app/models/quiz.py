@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, TIMESTAMP, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, TIMESTAMP, Boolean, Text
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -35,28 +35,43 @@ class QuizAssignment(Base):
     quiz = relationship("Quiz", back_populates="assignments")
     question = relationship("Question")  # ✅ "Questions" → "Question"
 
+# ✅ 퀴즈 제출 정보 테이블
 class QuizSubmissions(Base):
-    __tablename__ = "quiz_submissions"
+    __tablename__ = "quizsubmissions"  # 테이블명 확인
 
     submission_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     quiz_id = Column(Integer, ForeignKey("quizzes.quiz_id", ondelete="CASCADE"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
     rating_change = Column(Integer, default=0)
     correct_count = Column(Integer, default=0)
-    submitted_at = Column(String, nullable=False)
+    submitted_at = Column(TIMESTAMP, server_default=func.now())
 
-    details = relationship("QuizSubmissionDetails", back_populates="submission")
+    # ✅ QuizSubmissionDetails와 관계 설정
+    details = relationship(
+        "QuizSubmissionDetails",
+        back_populates="submission",
+        cascade="all, delete-orphan"
+    )
 
 
+# ✅ 개별 문제 제출 정보 테이블
 class QuizSubmissionDetails(Base):
-    __tablename__ = "quiz_submission_details"
+    __tablename__ = "quizsubmissiondetails"  # 테이블명 확인
 
     detail_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    submission_id = Column(Integer, ForeignKey("quiz_submissions.submission_id", ondelete="CASCADE"), nullable=False)
+    submission_id = Column(Integer, ForeignKey("quizsubmissions.submission_id", ondelete="CASCADE"), nullable=False)
     question_id = Column(Integer, ForeignKey("questions.question_id", ondelete="CASCADE"), nullable=False)
-    user_answer = Column(String, nullable=False)
+    user_answer = Column(Text, nullable=False)
     is_correct = Column(Boolean, nullable=False)
 
-    # ✅ "Questions" → "Question" 으로 변경
-    submission = relationship("QuizSubmissions", back_populates="details")
-    question = relationship("Question", back_populates="submission_details")  
+    # ✅ QuizSubmissions과 연결 (부모 테이블)
+    submission = relationship(
+        "QuizSubmissions",
+        back_populates="details"
+    )
+
+    # ✅ Question과 연결 (제출된 문제 정보)
+    question = relationship(
+        "Question",
+        back_populates="submission_details"
+    )

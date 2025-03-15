@@ -4,8 +4,12 @@ from typing import List
 
 from app.database import get_db
 from app.services.quiz import get_all_quizzes, get_quiz, create_quiz
+from app.models.question import Question
+from app.models.quiz import QuizSubmissions, QuizSubmissionDetails
 from app.schemas.quiz import QuizCreate, QuizResponse
 from app.schemas.quiz import QuizSubmissionRequest
+from app.utils.quiz import check_answer 
+from app.models.user import User
 
 router = APIRouter(
     prefix="/quizzes",
@@ -36,19 +40,28 @@ def submit_quiz(quiz_id: int, submission_data: QuizSubmissionRequest, db: Sessio
     퀴즈 제출 API
     """
     user_id = submission_data.user_id
-    user_answers = submission_data.answers  # { question_id: user_answer } 형태
+    mode = submission_data.mode  # ✅ mode 값 받기 (practice / test)
+    user_answers = submission_data.answers  # { "question_id": "user_answer" } 형태
 
     # 1️⃣ 퀴즈 제출 정보 저장
-    submission = QuizSubmissions(quiz_id=quiz_id, user_id=user_id)
+    submission = QuizSubmissions(
+        quiz_id=quiz_id,
+        user_id=user_id,
+        correct_count=0  # 초기값 설정
+    )
     db.add(submission)
-    db.commit()
-    db.refresh(submission)
+    db.commit()  
+    db.refresh(submission)  # ✅ 커밋 후 ID 참조 가능
 
     correct_count = 0  # 정답 개수
+    total_questions = len(user_answers)  # 전체 문제 개수
 
     # 2️⃣ 제출된 문제 개별 검증
-    for question_id, user_answer in user_answers.items():
-        question = db.query(Questions).filter(Questions.question_id == question_id).first()
+    for answer in user_answers:
+        question_id = answer.question_id
+        user_answer = answer.user_answer
+
+        question = db.query(Question).filter(Question.question_id == question_id).first()
 
         if not question:
             continue  # 문제 없음 → 스킵
@@ -69,8 +82,37 @@ def submit_quiz(quiz_id: int, submission_data: QuizSubmissionRequest, db: Sessio
         )
         db.add(submission_detail)
 
-    # 4️⃣ 점수 계산 및 반영
-    submission.correct_count = correct_count
-    db.commit()
+    # 4️⃣ 연습 모드에서는 점수 변동 없음
+    if mode == "practice":
+        submission.correct_count = correct_count
+        db.commit()
+        return {
+            "message": "연습 퀴즈 제출 완료",
+            "correct_count": correct_count
+        }
 
-    return {"message": "퀴즈 제출 완료", "correct_count": correct_count}
+    # 5️⃣ 테스트 모드: 정답률 계산 후 레이팅 변동
+    correct_rate = correct_count / total_questions
+    rating_change = 0
+
+    if correct_rate >= 0.8:
+        rating_change = 50  # ✅ 80% 이상 맞추면 +50점
+    elif correct_rate >= 0.6:
+        rating_change = 20  # ✅ 60~79% 정답이면 +20점
+    elif correct_rate < 0.3:
+        rating_change = -30  # ❌ 30% 미만 정답이면 -30점
+
+    # ✅ 사용자 레이팅 업데이트
+    user = db.query(User).filter(User.user_id == user_id).first()
+    
+    if mode == "test":
+        if rating_change != 0:  # ✅ 이미 반영된 점수인지 확인
+            user.rating = user.rating + rating_change
+            db.commit()
+            db.refresh(user)
+
+    return {
+        "message": "테스트 퀴즈 제출 완료",
+        "correct_count": correct_count,
+        "rating_change": rating_change
+    }
