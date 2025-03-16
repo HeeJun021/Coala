@@ -51,3 +51,14 @@ export const submitQuiz = async (quizId, userId, mode, answers) => {
     throw error;
   }
 };
+
+// ✅ 퀴즈 결과 조회 API
+export const getQuizResult = async (quizId, userId) => {
+  try {
+    const response = await apiClient.get(`/quizzes/${quizId}/result/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error("🚨 퀴즈 결과 불러오기 실패:", error);
+    throw error;
+  }
+};

@@ -69,32 +69,28 @@ const QuizSolvePage = ({ userData }) => { // ✅ userData 받기
             if (!quizData || !quizData.questions) {
                 throw new Error("퀴즈 데이터가 없습니다.");
             }
-
+    
             if (!userId) {
                 alert("로그인이 필요합니다.");
                 return;
             }
-
+    
             const missingAnswers = quizData.questions.filter(q =>
                 !answers.some(a => a.questionId === q.question_id && a.userAnswer !== "")
             );
-
+    
             if (missingAnswers.length > 0) {
                 alert("모든 문제에 답변해야 합니다.");
                 return;
             }
-
+    
             setSubmitting(true);
             const result = await submitQuiz(quizId, userId, mode, answers);
             console.log("✅ 퀴즈 제출 결과:", result);
-
-            if (mode === "test") {
-                alert(`테스트 제출 완료! 정답 개수: ${result.correct_count}, 획득 레이팅: ${result.rating_change}`);
-                navigate("/mypage/test-results");
-            } else {
-                alert(`연습 퀴즈 제출 완료! 정답 개수: ${result.correct_count}`);
-                navigate("/mypage/quiz-history");
-            }
+    
+            // ✅ 퀴즈 결과 페이지로 이동 (quizId 포함)
+            navigate(`/quiz-result/${quizId}`);
+    
         } catch (error) {
             console.error("🚨 퀴즈 제출 오류:", error);
             alert("퀴즈 제출 중 오류가 발생했습니다.");

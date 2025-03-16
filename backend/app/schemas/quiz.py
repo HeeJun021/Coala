@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
-from app.schemas.question import QuestionResponse
+from app.schemas.question import QuestionResponse, QuestionResult
 
 class QuizBase(BaseModel):
     title: str
@@ -47,3 +47,12 @@ class QuizSubmissionRequest(BaseModel):
     user_id: int
     mode: str
     answers: List[QuizAnswer]
+    
+# ✅ 퀴즈 결과 응답 스키마
+class QuizResultResponse(BaseModel):
+    quiz_id: int
+    title: str
+    quiz_type: str  # "practice" or "test"
+    submitted_at: datetime
+    rating_change: Optional[int] = 0  # 테스트 모드일 때만 적용
+    questions: List[QuestionResult]
