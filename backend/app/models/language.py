@@ -11,4 +11,4 @@ class Language(Base):
 
     # 🔥 StudyMaterials와 관계 설정
     materials = relationship("StudyMaterials", back_populates="language")
-    examples = relationship("StudyExample", back_populates="language")
+    examples = relationship("StudyExample", back_populates="language", cascade="all, delete")

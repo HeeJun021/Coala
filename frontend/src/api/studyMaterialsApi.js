@@ -1,45 +1,48 @@
 import apiClient from "./apiClient";
 
-const API_BASE_URL = "/api"; // 이미 apiClient에서 BASE_URL을 설정했으므로 상대 경로 사용
-
-// ✅ 전체 학습 자료 가져오기 (수정됨)
-export const fetchStudyMaterials = async () => {
+// ✅ 특정 카테고리의 학습자료 가져오기
+export const fetchStudyMaterials = async (category) => {
     try {
-        const response = await apiClient.get(`${API_BASE_URL}/materials`);
+        const response = await apiClient.get(`/api/materials/${category}`);  // ✅ "/api" 유지
         return response.data;
     } catch (error) {
-        console.error("Error fetching study materials:", error);
+        console.error(`🚨 Error fetching study materials for category ${category}:`, error);
         return [];
     }
 };
 
-// ✅ 전체 예제 가져오기 (수정됨)
-export const fetchStudyExamples = async () => {
+// ✅ 특정 카테고리의 예제 가져오기 ("/api" 경로 수정)
+export const fetchStudyExamples = async (category) => {
     try {
-        const response = await apiClient.get(`${API_BASE_URL}/examples`);
+        const response = await apiClient.get(`/api/examples/${category}`); // ✅ "/api" 추가
         return response.data;
     } catch (error) {
-        console.error("Error fetching study examples:", error);
+        console.error(`🚨 Error fetching study examples for category ${category}:`, error);
         return [];
     }
 };
 
-
-// ✅ 개별 학습 자료 가져오기 추가
+// ✅ 개별 학습 자료 가져오기 (에러 메시지 개선)
 export const fetchStudyMaterialById = async (language, id) => {
+    if (!language || !id) {
+        console.error("🚨 API 요청 실패: language 또는 id가 undefined입니다.", { language, id });
+        return null;
+    }
+
     try {
-        const response = await apiClient.get(`${API_BASE_URL}/materials/${language}/${id}`);
+        const response = await apiClient.get(`/api/materials/${language}/${id}`);
         return response.data;
     } catch (error) {
-        console.error(`Error fetching study material ${id}:`, error);
+        console.error(`🚨 Error fetching study material ID ${id} for language ${language}:`, error.response?.data || error.message);
         return null;
     }
 };
 
+
 // ✅ 언어 목록 가져오기
 export const fetchLanguages = async () => {
     try {
-        const response = await apiClient.get("/api/languages");
+        const response = await apiClient.get("/languages"); // ✅ "/api" 제거
         return response.data;
     } catch (error) {
         console.error("Error fetching languages:", error);

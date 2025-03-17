@@ -1,16 +1,14 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
-
-class StudyMaterialsResponse(BaseModel):
+class StudyMaterialResponse(BaseModel):
     material_id: int
     language_id: int
     title: str
     content: str
     file_url: Optional[str] = None
-    created_at: datetime
-    updated_at: datetime
+    sections: List[dict] | None = None  # ✅ JSON 필드 수정 (더 명확한 타입)
 
     class Config:
-        orm_mode = True
+        from_attributes = True  # ✅ Pydantic v2에서 orm_mode 대신 사용
