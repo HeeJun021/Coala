@@ -25,8 +25,8 @@ app.add_middleware(
 app.include_router(user.router)
 app.include_router(auth.router)
 app.include_router(social_auth.router)  # ✅ 소셜 로그인 API 추가
-app.include_router(study_example.router)
-app.include_router(study_materials.router)
+# app.include_router(study_example.router)
+# app.include_router(study_materials.router)
 
 # 기본 라우트
 @app.get("/", tags=["Root"])

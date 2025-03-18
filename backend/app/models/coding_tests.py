@@ -1,62 +1,50 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, TIMESTAMP
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
 from app.database import Base
 
+# ✅ 코딩 테스트 문제 테이블
 class CodingTests(Base):
-    """코딩 테스트 문제 테이블"""
-    __tablename__ = "codingtests"
+    __tablename__ = "coding_tests"
 
-    source_id = Column(Integer, primary_key=True)  # ✅ test_id 제거하고 source_id를 PK로 변경
+    test_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     title = Column(String(255), nullable=False)
-    description = Column(Text, nullable=True)  # ✅ NULL 허용으로 변경
-    level = Column(Integer, nullable=True)  # 난이도 NULL 허용
+    description = Column(Text, nullable=False)
+    difficulty = Column(Integer, nullable=False)
     category = Column(String(100), nullable=True)
-    starter_code = Column(Text, nullable=True)
     input_format = Column(Text, nullable=True)
     output_format = Column(Text, nullable=True)
-    time_limit = Column(Integer, nullable=False, default=2)
+    time_limit = Column(Integer, nullable=False, default=2000)
     memory_limit = Column(Integer, nullable=False, default=256)
-    created_at = Column(TIMESTAMP, server_default=func.now())
+    created_at = Column(Integer, nullable=False, default=2000)
 
-    # ✅ 관계 설정
-    examples = relationship("CodingTestExamples", back_populates="coding_test", cascade="all, delete")
-    constraints = relationship("CodingTestConstraints", back_populates="coding_test", cascade="all, delete")
-    test_cases = relationship("CodingTestTestCases", back_populates="coding_test", cascade="all, delete")
+    # 관계 설정
+    test_cases = relationship("CodingTestCases", back_populates="test")
+    constraints = relationship("CodingTestConstraints", back_populates="test")
 
+# ✅ 테스트 케이스 저장 테이블
+class CodingTestCases(Base):
+    __tablename__ = "coding_test_cases"
 
-class CodingTestExamples(Base):
-    """코딩 테스트 예제 테이블"""
-    __tablename__ = "codingtestexamples"
-
-    example_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    source_id = Column(Integer, ForeignKey("codingtests.source_id", ondelete="CASCADE"))
+    test_case_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    test_id = Column(Integer, ForeignKey("coding_tests.test_id", ondelete="CASCADE"))
+    test_type = Column(String(20), nullable=False)  # 'basic', 'boundary', 'hidden'
     example_input = Column(Text, nullable=False)
     example_output = Column(Text, nullable=False)
-    example_explanation = Column(Text, nullable=True)
+    is_hidden = Column(Boolean, default=False)
 
-    coding_test = relationship("CodingTests", back_populates="examples")
+    # 관계 설정
+    test = relationship("CodingTests", back_populates="test_cases")
 
-
+# ✅ 입력값 제약 조건 테이블
 class CodingTestConstraints(Base):
-    """코딩 테스트 제한 사항 테이블"""
-    __tablename__ = "codingtestconstraints"
+    __tablename__ = "coding_test_constraints"
 
-    constraint_id = Column(Integer, primary_key=True, autoincrement=True)
-    source_id = Column(Integer, ForeignKey("codingtests.source_id", ondelete="CASCADE"))
+    constraint_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    test_id = Column(Integer, ForeignKey("coding_tests.test_id", ondelete="CASCADE"))
+    variable_name = Column(String(50), nullable=False)
+    min_value = Column(Integer, nullable=True)
+    max_value = Column(Integer, nullable=True)
     constraint_text = Column(Text, nullable=False)
 
-    coding_test = relationship("CodingTests", back_populates="constraints")
-
-
-class CodingTestTestCases(Base):
-    """코딩 테스트 케이스 구성 안내 테이블"""
-    __tablename__ = "codingtesttestcases"
-
-    test_case_id = Column(Integer, primary_key=True, autoincrement=True)
-    source_id = Column(Integer, ForeignKey("codingtests.source_id", ondelete="CASCADE"))
-    test_group = Column(String(50), nullable=False)
-    score = Column(String(10), nullable=True)
-    description = Column(Text, nullable=False)
-
-    coding_test = relationship("CodingTests", back_populates="test_cases")
+    # 관계 설정
+    test = relationship("CodingTests", back_populates="constraints")
