@@ -41,9 +41,7 @@ const MyPageSetting = () => {
 
     return (
         <div className="flex bg-[#F8F3E2] min-h-screen">
-            {/* 사이드바 */}
-            <MyPageSidebar />
-
+            
             {/* 메인 콘텐츠 */}
             <div className="flex-1 p-6 ml-10">
                 {/* 상단 제목 */}

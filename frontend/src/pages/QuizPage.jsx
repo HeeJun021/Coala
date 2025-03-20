@@ -26,7 +26,7 @@ const QuizPage = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-beige">
+    <div className="flex min-h-screen bg-white">
 
       {/* ✅ 선택된 퀴즈 유형에 따른 콘텐츠 변경 */}
       <div className="ml-[250px] p-6 flex-1">{renderQuizComponent()}</div>

@@ -62,3 +62,14 @@ export const getQuizResult = async (quizId, userId) => {
     throw error;
   }
 };
+
+// ✅ 사용자의 푼 퀴즈 목록 가져오기
+export const getUserQuizHistory = async (userId) => {
+  try {
+    const response = await apiClient.get(`/quizzes/history/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error("🚨 퀴즈 기록 가져오기 실패:", error);
+    throw error;
+  }
+};

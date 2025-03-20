@@ -12,9 +12,10 @@ const MainLayout = ({ children }) => {
   const showSidebar = location.pathname.startsWith("/StudyMaterialsPage") || 
                       location.pathname.startsWith("/materials/");
               
-  const showMyPageSideBar = location.pathname.startsWith("/MyPage") || 
-                            location.pathname.startsWith("/MyPageModify") || 
-                            location.pathname.startsWith("/MyPageSetting/");
+  const showMyPageSideBar = location.pathname.startsWith("/mypage") || 
+                            location.pathname.startsWith("/mypage/modify") || 
+                            location.pathname.startsWith("/mypage/setting") ||
+                            location.pathname.startsWith("/mypage/quiz-history");
 
   const showQuizPageSideBar = location.pathname.startsWith("/quizpage") ||
                               location.pathname.startsWith("/practice") ||

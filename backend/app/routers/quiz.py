@@ -186,3 +186,34 @@ def get_quiz_result(quiz_id: int, user_id: int, db: Session = Depends(get_db)):
         "questions": question_results,
         "rating_change": submission.rating_change if quiz.quiz_type == "test" else None
     }
+
+@router.get("/history/{user_id}")
+def get_user_quiz_history(user_id: int, db: Session = Depends(get_db)):
+    """
+    사용자의 푼 퀴즈 내역 조회 API
+    """
+    quiz_history = (
+        db.query(QuizSubmissions, Quiz)
+        .join(Quiz, QuizSubmissions.quiz_id == Quiz.quiz_id)
+        .filter(QuizSubmissions.user_id == user_id)
+        .order_by(QuizSubmissions.submitted_at.desc())
+        .all()
+    )
+
+    if not quiz_history:
+        return []
+
+    return [
+        {
+            "quiz_id": submission.quiz_id,
+            "title": quiz.title,
+            "quiz_type": quiz.quiz_type,
+            "correct_count": submission.correct_count,
+            "total_questions": db.query(QuizSubmissionDetails)
+                                 .filter(QuizSubmissionDetails.submission_id == submission.submission_id)
+                                 .count(),
+            "submitted_at": submission.submitted_at,
+            "rating_change": submission.rating_change 
+        }
+        for submission, quiz in quiz_history
+    ]

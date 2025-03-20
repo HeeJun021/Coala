@@ -8,7 +8,7 @@ const MyPageSidebar = ({ userData }) => {
 
 
     return (
-        <aside className="w-64 min-h-screen bg-[#F8F3E2] p-6 shadow-md flex-shrink-0 absolute left-4">
+        <aside className="w-64 min-h-screen bg-gray-50 p-6 shadow-md flex-shrink-0 absolute left-4">
             <h1 className="text-2xl font-bold text-center mb-4">마이페이지</h1>
 
             {/* ✅ 현재 사용자 정보 반영 */}
