@@ -5,7 +5,7 @@ import Home from "./pages/Home"; // 홈 페이지
 import Quiz from "./pages/Quiz"; // 퀴즈 페이지
 import StudyMaterialsPage from "./pages/StudyMaterialsPage"; // 학습자료 페이지
 import StudyMaterialsPageDetails from "./pages/StudyMaterialsPageDetails"; // 학습자료 및 예제 상세 페이지
-
+import CodeTestPage from "./pages/CodeTestPage";
 import { AuthProvider } from "./context/AuthContext"; // ✅ 로그인 상태 관리
 // 페이지 컴포넌트 가져오기;
 import Signup from "./pages/Signup";
@@ -34,6 +34,7 @@ const App = () => {
             <Route path="/StudyMaterialsPage/examples/:language/:id" element={<StudyMaterialsPageDetails />} />
             <Route path="/materials/:language/:id" element={<StudyMaterialsPageDetails />} />
             <Route path="/materials" element={<StudyMaterialsPage />} />
+            <Route path="/codetest" element={<CodeTestPage />} />
 
             {/* 인증 관련 페이지 */}
             <Route path="/signup" element={<Signup />} />
