@@ -58,15 +58,17 @@ const TestQuiz = () => {
                 <h2 className="text-2xl font-bold mb-6">테스트 퀴즈 설정</h2>
 
                 {/* ✅ 문제 유형 (항상 OX, 단답형, 선택형 포함) */}
-                <div className="flex items-center gap-6 mb-6">
+                <div className="flex items-center gap-7 mb-6">
                     <span className="text-lg font-semibold">문제 유형</span>
                     {["ox", "short", "multiple"].map((type) => (
+                        <label key={type} className="flex items-center space-x-2 cursor-default">
+                        {/* 선택 불가능하므로 input은 렌더링 X */}
                         <div
-                            key={type}
                             className="px-4 py-2 rounded-lg border-2 bg-accent text-white border-navbar transition-all"
                         >
                             {type === "ox" ? "O/X" : type === "short" ? "단답형" : "선택형"}
                         </div>
+                        </label>
                     ))}
                 </div>
 

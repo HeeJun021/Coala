@@ -175,7 +175,8 @@ def get_quiz_result(quiz_id: int, user_id: int, db: Session = Depends(get_db)):
             "question_text": question.question_text,
             "user_answer": detail.user_answer,
             "correct_answer": question.correct_answer,  # ✅ 정답 필드 수정
-            "is_correct": detail.is_correct
+            "is_correct": detail.is_correct,
+            "explanation": question.explanation or ""
         })
     print(f"✅ [DEBUG] 최종 반환 데이터: {question_results}")
     return {

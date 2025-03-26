@@ -30,7 +30,7 @@ const MyPageModify = ({ userData, setUserData }) => {
     };
 
     return (
-        <div className="flex bg-[#F8F3E2] min-h-screen">
+        <div className="flex bg-white min-h-screen">
 
             {/* 메인 콘텐츠 */}
             <div className="flex-1 p-6 ml-10">

@@ -100,15 +100,19 @@ const PracticeQuiz = () => {
                 className="hidden"
               />
               <div
-                className={`px-4 py-2 rounded-lg border-2 ${
-                  selectedTypes[type] ? "bg-accent text-white border-navbar" : "bg-gray-200 border-gray-400"
-                } transition-all`}
+                className={`px-4 py-2 rounded-lg border-2 transition-all
+                  ${
+                    selectedTypes[type]
+                      ? "bg-accent text-white border-navbar"
+                      : "bg-gray-200 border-gray-400"
+                  }`}
               >
                 {type === "ox" ? "O/X" : type === "short" ? "단답형" : "선택형"}
               </div>
             </label>
           ))}
         </div>
+
 
         {/* ✅ 문제 개수 & 난이도 설정 */}
         <div className="grid grid-cols-3 gap-6 w-full">

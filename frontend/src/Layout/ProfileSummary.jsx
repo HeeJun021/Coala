@@ -5,7 +5,7 @@ import koala from '../assets/koala.jpg'
 const ProfileSummary = ({ profile_image_url, nickname }) => {
     console.log("🔍 ProfileSummary Props:", { profile_image_url, nickname }); 
     return (
-        <div className="bg-yellow-50 p-4 rounded-md shadow-md flex flex-col items-center">
+        <div className="bg-white p-4 rounded-md shadow-md flex flex-col items-center">
             {/* 프로필 이미지 */}
             <img 
                 src={profile_image_url ?? koala} 

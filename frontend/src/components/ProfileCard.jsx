@@ -84,7 +84,7 @@ const ProfileCard = ({ userData, setUserData }) => {
                                 name="nickname"
                                 value={formData.nickname}
                                 onChange={handleInputChange}
-                                className="w-[75%] border border-gray-300 rounded-md px-2 py-1 mt-1 bg-beige ml-auto mr-10"
+                                className="w-[75%] border border-gray-300 rounded-md px-2 py-1 mt-1 bg-gray-50 ml-auto mr-10"
                             />
                         </label>
                         <label className="flex items-center justify-between pt-1">
@@ -94,7 +94,7 @@ const ProfileCard = ({ userData, setUserData }) => {
                                 name="bio"
                                 defaultValue={formData.bio}
                                 onChange={handleInputChange}
-                                className="w-[75%] border border-gray-300 rounded-md px-2 py-1 mt-1 bg-beige ml-auto mr-10"
+                                className="w-[75%] border border-gray-300 rounded-md px-2 py-1 mt-1 bg-gray-50 ml-auto mr-10"
                             />
                         </label>
                         <label className='flex items-center justify-between pt-1'>
@@ -104,7 +104,7 @@ const ProfileCard = ({ userData, setUserData }) => {
                                 name="bio"
                                 value={userData.tier_name}
                                 readOnly
-                                className="w-[75%] border border-gray-300 rounded-md px-2 py-1 mt-1 bg-gray-50 ml-auto mr-10"
+                                className="w-[75%] border border-gray-300 rounded-md px-2 py-1 mt-1 bg-gray-400 ml-auto mr-10"
                             />
                         </label>
 

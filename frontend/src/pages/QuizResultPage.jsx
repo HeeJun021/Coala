@@ -9,7 +9,6 @@ const QuizResultPage = ({ userData }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ✅ 퀴즈 결과 데이터 가져오기
   useEffect(() => {
     const fetchQuizResult = async () => {
       if (!userData?.user_id) {
@@ -18,7 +17,7 @@ const QuizResultPage = ({ userData }) => {
       }
 
       try {
-        const response = await getQuizResult(quizId, userData.user_id); // ✅ user_id 추가
+        const response = await getQuizResult(quizId, userData.user_id);
         console.log("✅ 퀴즈 결과 데이터:", response);
         setQuizResult(response);
       } catch (err) {
@@ -42,54 +41,77 @@ const QuizResultPage = ({ userData }) => {
         <strong>퀴즈 유형:</strong>{" "}
         {quizResult.quiz_type === "test" ? "📝 퀴즈 테스트" : "🎯 연습 퀴즈"}
       </p>
-      <p className="text-sm text-gray-600">
-        <strong>제출 시간:</strong> {new Date(quizResult.submitted_at).toLocaleString()}
+      <p className="text-sm text-gray-600 mb-6">
+        <strong>제출 시간:</strong>{" "}
+        {new Date(quizResult.submitted_at).toLocaleString()}
       </p>
 
-      {/* ✅ 문제 및 정답 비교 테이블 */}
-      <div className="mt-6 bg-white shadow-md rounded-lg p-4">
-        <table className="w-full border-collapse border">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="border px-4 py-2">문제</th>
-              <th className="border px-4 py-2">내 답</th>
-              <th className="border px-4 py-2">정답</th>
-              <th className="border px-4 py-2">결과</th>
-            </tr>
-          </thead>
-          <tbody>
-            {quizResult.questions.map((q, index) => (
-              <tr key={q.question_id} className="border">
-                <td className="px-4 py-2">{`${index + 1}. ${q.question_text}`}</td>
-                <td className="px-4 py-2">{q.user_answer}</td>
-                <td className="px-4 py-2">{q.correct_answer}</td>
-                <td className="px-4 py-2 text-center">
-                  {q.is_correct ? "✅" : "❌"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {/* 문제별 상세 결과 표시 */}
+      {quizResult.questions.map((q, index) => (
+        <div
+          key={q.question_id}
+          className={`mb-6 p-4 rounded-xl border-2 ${
+            q.is_correct ? "border-green-300 bg-green-50" : "border-red-300 bg-red-50"
+          }`}
+        >
+          <p className="font-semibold text-lg mb-2">
+            문제 {index + 1} ({q.question_type?.toUpperCase()}) 🧠
+          </p>
+          <p className="mb-2">{q.question_text}</p>
 
-      {/* ✅ 레이팅 변화 표시 (테스트 모드일 경우) */}
+          <div className="mb-2">
+            <span className="font-medium text-gray-700">제출한 정답:</span>{" "}
+            <span className={q.is_correct ? "text-green-600" : "text-red-600"}>
+              {q.user_answer}
+            </span>
+          </div>
+
+          <div className="mb-2">
+            <span className="font-medium text-gray-700">정답:</span>{" "}
+            <span className="text-blue-600">{q.correct_answer}</span>
+          </div>
+
+          <div className="mb-2 text-sm text-gray-700">
+            <span className="font-medium">설명:</span>{" "}
+            {q.explanation || "설명이 제공되지 않았습니다."}
+          </div>
+        </div>
+      ))}
+
+      {/* 레이팅 변화 표시 */}
       {quizResult.quiz_type === "test" && (
         <div className="mt-4 text-lg font-semibold">
-          <p>획득 레이팅: <span className="text-blue-600">{quizResult.rating_change}</span>점</p>
+          <p>
+            획득 레이팅:{" "}
+            <span
+              className={
+                quizResult.rating_change > 0
+                  ? "text-green-600"
+                  : quizResult.rating_change < 0
+                  ? "text-red-600"
+                  : "text-gray-600"
+              }
+            >
+              {quizResult.rating_change > 0
+                ? `+${quizResult.rating_change}`
+                : quizResult.rating_change}
+            </span>{" "}
+            점
+          </p>
         </div>
       )}
 
-      {/* ✅ 버튼: 다시 풀기 & 마이페이지 이동 */}
+      {/* 다시 풀기 & 마이페이지 이동 */}
       <div className="mt-6 flex justify-between">
         <button
           className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all"
-          onClick={() => navigate(`/quizpage?mode=${quizResult.quiz_type}`)} 
+          onClick={() => navigate(`/quizpage?mode=${quizResult.quiz_type}`)}
         >
           다시 풀기
         </button>
         <button
           className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all"
-          onClick={() => navigate("/mypage/quiz-history")} // ✅ 마이페이지 이동 (test/practice 동일)
+          onClick={() => navigate("/mypage/quiz-history")}
         >
           마이페이지로 이동
         </button>
