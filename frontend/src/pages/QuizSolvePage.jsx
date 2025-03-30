@@ -158,14 +158,15 @@ const QuizSolvePage = ({ userData }) => { // ✅ userData 받기
                     )}
                 </div>
             ))}
-
-            <button
-                className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg mt-4"
-                onClick={handleSubmitQuiz}
-                disabled={submitting}
-            >
-                {submitting ? "제출 중..." : "퀴즈 제출하기"}
-            </button>
+            <div className="flex justify-center mt-4">
+                <button
+                    className="px-6 py-2 bg-navbar text-white font-semibold rounded-lg mt-4"
+                    onClick={handleSubmitQuiz}
+                    disabled={submitting}
+                >
+                    {submitting ? "제출 중..." : "퀴즈 제출하기"}
+                </button>
+            </div>
         </div>
     );
 };

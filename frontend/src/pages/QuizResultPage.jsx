@@ -104,7 +104,7 @@ const QuizResultPage = ({ userData }) => {
       {/* 다시 풀기 & 마이페이지 이동 */}
       <div className="mt-6 flex justify-between">
         <button
-          className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all"
+          className="px-4 py-2 bg-navbar text-white rounded-lg hover:bg-green-600 transition-all"
           onClick={() => navigate(`/quizpage?mode=${quizResult.quiz_type}`)}
         >
           다시 풀기
