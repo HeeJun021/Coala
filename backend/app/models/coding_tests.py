@@ -66,6 +66,7 @@ class CodingTestSubmissions(Base):
     total_test_cases = Column(Integer, default=0)
     is_correct = Column(Boolean, default=False)
     submitted_at = Column(TIMESTAMP, nullable=True)
+    language = Column(String(20), default="python")
 
 
 class CorrectSubmissionStats(Base):

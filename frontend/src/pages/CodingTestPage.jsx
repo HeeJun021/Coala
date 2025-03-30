@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { FaCheck, FaSort, FaSearch, FaTimes } from "react-icons/fa";
 import { useSearchParams, Link } from "react-router-dom";
 import { getCodingTestList } from "../api/codingTestApi";
+import { useAuth } from "../context/AuthContext"; // ✅ 추가
 
 const levelColors = {
   1: "text-blue-500",
@@ -11,19 +12,13 @@ const levelColors = {
   5: "text-red-500",
 };
 
-const categories = [
-  "기본 연산",
-  "자료구조",
-  "동적 계획법",
-  "탐색",
-  "그래프 이론",
-];
-
 const CodingTestPage = () => {
+  const { user } = useAuth(); // ✅ 사용자 정보 가져오기
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [problems, setProblems] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
+  const [categoryCounts, setCategoryCounts] = useState([]);
 
   const page = parseInt(searchParams.get("page")) || 1;
   const search = searchParams.get("search") || "";
@@ -44,16 +39,17 @@ const CodingTestPage = () => {
           status,
           category,
           sort,
-          user_id: 1, // 임시 유저 ID
+          ...(user?.user_id && { user_id: user.user_id }), // ✅ 조건부 user_id 전달
         });
         setProblems(res.problems);
         setTotalCount(res.total);
+        setCategoryCounts(res.category_counts);
       } catch (err) {
         console.error("문제 목록 불러오기 실패:", err);
       }
     };
     fetchProblems();
-  }, [page, search, level, status, category, sort]);
+  }, [page, search, level, status, category, sort, user]);
 
   const handleSearch = () => {
     setSearchParams({
@@ -67,9 +63,7 @@ const CodingTestPage = () => {
   };
 
   const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      handleSearch();
-    }
+    if (e.key === "Enter") handleSearch();
   };
 
   const clearSearch = () => {
@@ -95,7 +89,8 @@ const CodingTestPage = () => {
   };
 
   const totalPages = Math.ceil(totalCount / 20);
-  const sortText = sort === "desc" ? "정답률이 높은 문제" : "정답률이 낮은 문제";
+  const sortText =
+    sort === "desc" ? "정답률이 높은 문제" : "정답률이 낮은 문제";
 
   return (
     <div className="p-6 pt-[90px] bg-white min-h-screen">
@@ -129,24 +124,26 @@ const CodingTestPage = () => {
         </div>
 
         <div className="flex gap-2">
-          <select
-            value={status}
-            onChange={(e) =>
-              setSearchParams({
-                page: 1,
-                search,
-                level,
-                category,
-                sort,
-                status: e.target.value,
-              })
-            }
-            className="border border-gray-300 rounded-md px-2 py-1 w-[100px]"
-          >
-            <option value="">상태</option>
-            <option value="solved">푼 문제</option>
-            <option value="unsolved">안 푼 문제</option>
-          </select>
+          {user && (
+            <select
+              value={status}
+              onChange={(e) =>
+                setSearchParams({
+                  page: 1,
+                  search,
+                  level,
+                  category,
+                  sort,
+                  status: e.target.value,
+                })
+              }
+              className="border border-gray-300 rounded-md px-2 py-1 w-[100px]"
+            >
+              <option value="">상태</option>
+              <option value="solved">푼 문제</option>
+              <option value="unsolved">안 푼 문제</option>
+            </select>
+          )}
 
           <select
             value={level}
@@ -182,12 +179,12 @@ const CodingTestPage = () => {
                 category: e.target.value,
               })
             }
-            className="border border-gray-300 rounded-md px-2 py-1 w-[160px]"
+            className="border border-gray-300 rounded-md px-2 py-1 w-[180px]"
           >
             <option value="">카테고리</option>
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
+            {categoryCounts.map((cat) => (
+              <option key={cat.category} value={cat.category}>
+                {cat.category} ({cat.count})
               </option>
             ))}
           </select>
@@ -216,7 +213,9 @@ const CodingTestPage = () => {
               <th className="p-3 font-medium w-[60px] text-center">번호</th>
               <th className="p-3 font-medium w-[300px] text-left">제목</th>
               <th className="p-3 font-medium w-[100px] text-center">난이도</th>
-              <th className="p-3 font-medium w-[160px] text-center">카테고리</th>
+              <th className="p-3 font-medium w-[160px] text-center">
+                카테고리
+              </th>
               <th className="p-3 font-medium w-[100px] text-center">정답률</th>
             </tr>
           </thead>
@@ -227,7 +226,7 @@ const CodingTestPage = () => {
                 className="hover:bg-gray-50 border-b border-gray-200 cursor-pointer text-sm"
               >
                 <td className="p-3 w-[50px] text-center pr-2">
-                  {problem.solved && (
+                  {user && problem.solved && (
                     <FaCheck className="text-blue-500 mx-auto" />
                   )}
                 </td>
@@ -241,7 +240,9 @@ const CodingTestPage = () => {
                   </Link>
                 </td>
                 <td
-                  className={`p-3 font-semibold w-[100px] text-center ${levelColors[problem.level]}`}
+                  className={`p-3 font-semibold w-[100px] text-center ${
+                    levelColors[problem.level]
+                  }`}
                 >
                   Lv.{problem.level}
                 </td>
@@ -262,7 +263,7 @@ const CodingTestPage = () => {
         {Array.from({ length: totalPages }, (_, i) => (
           <button
             key={i}
-            onClick={() =>
+            onClick={() => {
               setSearchParams({
                 page: i + 1,
                 search,
@@ -270,8 +271,10 @@ const CodingTestPage = () => {
                 status,
                 category,
                 sort,
-              })
-            }
+              });
+              window.scrollTo(0, 0); // 스크롤 최상단 바로 이동
+              // window.scrollTo({ top: 0, behavior: "smooth" }); // 스크롤 최상단 smooth 이동
+            }}
             className={`px-3 py-1 rounded-md border ${
               page === i + 1 ? "bg-gray-300" : "hover:bg-gray-200"
             }`}

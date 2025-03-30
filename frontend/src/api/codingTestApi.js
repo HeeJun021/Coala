@@ -1,4 +1,3 @@
-// src/api/codingTestApi.js
 import apiClient from "./apiClient";
 
 // 문제 리스트 조회
@@ -17,4 +16,18 @@ export const getCodingTestDetail = async (testId) => {
 export const getStarterCode = async (language) => {
     const res = await apiClient.get(`/language-starter-code/${language}`);
     return res.data;
-  };  
+  };
+
+// 코드 제출
+export const submitCodingTest = async (data) => {
+  const res = await apiClient.post("/codingtest/submit", data);
+  return res.data;
+};
+
+// 제출 내역 조회
+export const getSubmissionList = async (testId, userId) => {
+  const res = await apiClient.get(`/codingtest/submissions/${testId}`, {
+    params: { user_id: userId },
+  });
+  return res.data;
+};
