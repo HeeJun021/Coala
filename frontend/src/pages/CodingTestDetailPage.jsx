@@ -3,16 +3,19 @@ import { HiOutlineRefresh } from "react-icons/hi";
 import { motion, AnimatePresence } from "framer-motion";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { ResizableBox } from "react-resizable";
 import Editor from "react-simple-code-editor";
 import Prism from "prismjs";
 import {
   getCodingTestDetail,
   getStarterCode,
   getSubmissionList,
+  runCodeWithTestcases,
 } from "../api/codingTestApi";
 import "prismjs/components/prism-javascript";
 import "prismjs/components/prism-python";
 import "prismjs/components/prism-java";
+import "react-resizable/css/styles.css"; // 스타일 추가
 import "../index.css";
 
 const CodingTestDetailPage = () => {
@@ -21,11 +24,11 @@ const CodingTestDetailPage = () => {
   const [problem, setProblem] = useState(null);
   const [activeTab, setActiveTab] = useState("info");
   const [code, setCode] = useState("// 여기에 코드를 입력하세요.");
-  const [result, setResult] = useState("");
   const [selectedLine, setSelectedLine] = useState(null);
   const [language, setLanguage] = useState("javascript");
   const [submissions, setSubmissions] = useState([]);
   const [showRefreshMessage, setShowRefreshMessage] = useState(false);
+  const [executionResults, setExecutionResults] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -70,21 +73,74 @@ const CodingTestDetailPage = () => {
     }, 3000);
   };
 
-  const handleRunCode = () => {
-    setResult("실행 결과가 여기에 표시됩니다.");
+  // 실행 버튼 핸들러
+  const handleRunCode = async () => {
+    if (!problem) return;
+    try {
+      const res = await runCodeWithTestcases(problem.id, code, language);
+
+      // 🔥 성공 여부 확인
+      const hasPassedAll = res.results.every((r) => r.passed);
+
+      setExecutionResults(res.results);
+
+      if (hasPassedAll) {
+        console.log("🎯 모든 테스트 케이스 통과");
+      } else {
+        console.log("❌ 일부 테스트 케이스 실패");
+      }
+    } catch (err) {
+      console.error("코드 실행 중 에러:", err);
+      setExecutionResults([
+        {
+          input: "",
+          expected_output: "",
+          actual_output: "",
+          passed: false,
+          stderr: "코드 실행 중 에러 발생",
+        },
+      ]);
+    }
   };
 
   const handleResetCode = async () => {
     try {
       const starter = await getStarterCode(language);
-      const formattedCode = starter.code.replace(/\\n/g, "\n"); // 🔥 추가
+      const formattedCode = starter.code.replace(/\\n/g, "\n"); // 🔥 개행 처리
       setCode(formattedCode);
-      setResult("");
     } catch (err) {
       console.error("초기화 실패:", err);
     }
   };
-  
+
+  const HoverHandle = () => {
+    const [hover, setHover] = useState(false);
+
+    return (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "3px",
+        }}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+      >
+        {[...Array(3)].map((_, i) => (
+          <div
+            key={i}
+            style={{
+              width: "40px",
+              height: "2px",
+              backgroundColor: hover ? "#607D8B" : "#B0BEC5", // 연한 회색 & 진한 회색
+              borderRadius: "1px",
+              transition: "background-color 0.2s",
+            }}
+          />
+        ))}
+      </div>
+    );
+  };
 
   const highlightWithLineNumbers = (code) =>
     Prism.highlight(code, Prism.languages.javascript, "javascript")
@@ -123,17 +179,16 @@ const CodingTestDetailPage = () => {
       <AnimatePresence>
         {showRefreshMessage && (
           <div className="fixed top-4 w-full flex justify-center z-[9999]">
-          <motion.div
-            initial={{ y: -50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="bg-blue-500 text-white text-sm px-6 py-3 rounded shadow"
-          >
-            새로고침 되었습니다.
-          </motion.div>
-        </div>
-        
+            <motion.div
+              initial={{ y: -50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className="bg-blue-500 text-white text-sm px-6 py-3 rounded shadow"
+            >
+              새로고침 되었습니다.
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
@@ -345,7 +400,7 @@ const CodingTestDetailPage = () => {
           {/* 우측: 코드 에디터 */}
           <div className="w-1/2 flex flex-col border-l border-gray-600 bg-[#3d4d63]">
             <div
-              className="flex-1 overflow-auto p-4 editor-wrapper"
+              className="flex-1 overflow-auto p-4 editor-wrapper editor-scrollbar"
               onClick={handleClick}
             >
               <Editor
@@ -357,12 +412,93 @@ const CodingTestDetailPage = () => {
                 preClassName="editor-pre"
               />
             </div>
-            <div className="border-t border-gray-600 p-2 text-sm h-24">
-              <strong>실행 결과</strong>
-              <p className="mt-2">
-                {result || "실행 결과가 여기에 표시됩니다."}
-              </p>
-            </div>
+
+            <ResizableBox
+              width={"100%"}
+              height={200}
+              minConstraints={[100, 100]}
+              maxConstraints={[Infinity, 500]}
+              resizeHandles={["n"]}
+              handle={
+                <span
+                  className="react-resizable-handle react-resizable-handle-n"
+                  style={{
+                    position: "absolute",
+                    top: "5px",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    height: "16px",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    cursor: "ns-resize",
+                    background: "transparent",
+                  }}
+                >
+                  <HoverHandle />
+                </span>
+              }
+            >
+              <div className="border-t border-gray-600 p-4 text-sm overflow-auto bg-[#3d4d63] h-full">
+                <h3 className="text-white font-semibold mb-2">실행 결과</h3>
+
+                {executionResults.length === 0 ? (
+                  <p className="text-gray-300 text-xs mt-3">
+                    실행 결과가 여기에 표시됩니다.
+                  </p>
+                ) : (
+                  <>
+                    <table className="w-full text-left border border-gray-500">
+                      <thead>
+                        <tr className="bg-[#2c3544] text-white">
+                          <th className="p-2 border-r border-gray-500">
+                            입력값
+                          </th>
+                          <th className="p-2 border-r border-gray-500">
+                            기댓값
+                          </th>
+                          <th className="p-2 border-r border-gray-500">
+                            실행 결과
+                          </th>
+                          <th className="p-2">출력</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {executionResults.map((result, idx) => (
+                          <tr
+                            key={idx}
+                            className="border-t border-gray-500 text-white"
+                          >
+                            <td className="p-2 border-r border-gray-500">
+                              {result.input}
+                            </td>
+                            <td className="p-2 border-r border-gray-500">
+                              {result.expected_output}
+                            </td>
+                            <td className="p-2 border-r border-gray-500">
+                              {result.passed ? (
+                                <span className="text-blue-400">
+                                  테스트를 통과하였습니다.
+                                </span>
+                              ) : (
+                                <span className="text-red-400">
+                                  테스트를 통과하지 못했습니다.
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-2">{result.actual_output}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <p className="text-gray-300 text-xs mt-3">
+                      샘플 테스트 케이스를 통과했다는 의미로, 작성한 코드가
+                      문제의 정답은 아닐 수 있습니다.
+                    </p>
+                  </>
+                )}
+              </div>
+            </ResizableBox>
           </div>
         </div>
 
@@ -383,10 +519,14 @@ const CodingTestDetailPage = () => {
             </button>
             <button
               onClick={handleRunCode}
-              className="text-xs text-white border border-gray-500 px-3 py-2 rounded hover:bg-gray-600 transition"
+              disabled={!problem}
+              className={`text-xs text-white border border-gray-500 px-3 py-2 rounded transition ${
+                !problem ? "opacity-50 cursor-not-allowed" : "hover:bg-gray-600"
+              }`}
             >
               코드 실행
             </button>
+
             <button className="text-xs bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600 transition">
               코드 제출 후 채점
             </button>

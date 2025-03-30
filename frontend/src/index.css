@@ -24,15 +24,20 @@ html, body, #root {
   height: 100%;
 }
 
-/* 코딩테스트 스크롤바 커스텀 */
-.problem-info-scrollbar::-webkit-scrollbar {
+/* 코딩테스트 & 에디터 스크롤바 커스텀 */
+.problem-info-scrollbar::-webkit-scrollbar,
+.editor-scrollbar::-webkit-scrollbar {
   width: 8px;
 }
-.problem-info-scrollbar::-webkit-scrollbar-thumb {
+
+.problem-info-scrollbar::-webkit-scrollbar-thumb,
+.editor-scrollbar::-webkit-scrollbar-thumb {
   background-color: #2c3544;
   border-radius: 2px;
 }
-.problem-info-scrollbar::-webkit-scrollbar-track {
+
+.problem-info-scrollbar::-webkit-scrollbar-track,
+.editor-scrollbar::-webkit-scrollbar-track {
   background-color: #4b5b6e;
 }
 
