@@ -15,6 +15,8 @@ import ResetPassword from "./pages/ResetPassword";
 import MyPage from "./pages/MyPage";
 import MyPageModify from "./pages/MyPageModify";
 import MyPageSetting from "./pages/MyPageSetting";
+import CodeTestTerminalPage from "./pages/CodeTestTerminalPage";
+
 
 const App = () => {
   return (
@@ -35,7 +37,8 @@ const App = () => {
             <Route path="/materials/:language/:id" element={<StudyMaterialsPageDetails />} />
             <Route path="/materials" element={<StudyMaterialsPage />} />
             <Route path="/codetest" element={<CodeTestPage />} />
-
+            <Route path="/terminal" element={<CodeTestTerminalPage />} />
+            
             {/* 인증 관련 페이지 */}
             <Route path="/signup" element={<Signup />} />
             <Route path="/login" element={<Login />} />

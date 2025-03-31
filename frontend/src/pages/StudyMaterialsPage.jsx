@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { dracula } from "react-syntax-highlighter/dist/esm/styles/prism";
 
-// CSS 문자열을 React 스타일 객체로 변환
 const parseStyleString = (styleString) => {
   if (!styleString) return {};
   const styleObj = {};
@@ -28,9 +27,9 @@ const StudyMaterialsPage = () => {
   const [studyContent, setStudyContent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedOption, setSelectedOption] = useState(null);
-  const [submitted, setSubmitted] = useState(false);
-  const [isCorrect, setIsCorrect] = useState(null);
+  const [selectedOptions, setSelectedOptions] = useState({});
+  const [submittedStatus, setSubmittedStatus] = useState({});
+  const [correctStatus, setCorrectStatus] = useState({});
 
   useEffect(() => {
     if (!category || (!materialId && !exampleId)) {
@@ -63,22 +62,31 @@ const StudyMaterialsPage = () => {
     fetchContent();
   }, [category, materialId, exampleId]);
 
-  const handleOptionChange = (option) => {
-    setSelectedOption(option);
+  useEffect(() => {
+    // 페이지 이동 시 상태 초기화
+    setSelectedOptions({});
+    setSubmittedStatus({});
+    setCorrectStatus({});
+  }, [materialId, exampleId]);
+
+  const handleOptionChange = (index, option) => {
+    setSelectedOptions((prev) => ({ ...prev, [index]: option }));
   };
 
-  const handleSubmit = (correctAnswer) => {
-    if (selectedOption !== null) {
-      const isAnswerCorrect = selectedOption === correctAnswer;
-      setIsCorrect(isAnswerCorrect);
-      setSubmitted(true);
-    }
+  const handleSubmit = (index, correctAnswer) => {
+    const isCorrect = selectedOptions[index] === correctAnswer;
+    setCorrectStatus((prev) => ({ ...prev, [index]: isCorrect }));
+    setSubmittedStatus((prev) => ({ ...prev, [index]: true }));
   };
 
-  const handleRetry = () => {
-    setSelectedOption(null);
-    setSubmitted(false);
-    setIsCorrect(null);
+  const handleRetry = (index) => {
+    setSelectedOptions((prev) => ({ ...prev, [index]: null }));
+    setSubmittedStatus((prev) => ({ ...prev, [index]: false }));
+    setCorrectStatus((prev) => ({ ...prev, [index]: null }));
+  };
+
+  const formatCodeContent = (content) => {
+    return content.replace(/<br>/g, "\n");
   };
 
   return (
@@ -92,14 +100,14 @@ const StudyMaterialsPage = () => {
           <h1 className="text-4xl font-bold text-gray-800 mb-4">{studyContent.title}</h1>
           <p className="text-lg text-gray-700 leading-relaxed mb-6">{studyContent.content}</p>
 
-          {studyContent.sections && studyContent.sections.length > 0 && (
+          {Array.isArray(studyContent.sections) && studyContent.sections.length > 0 && (
             <div className="mt-6">
               {studyContent.sections.map((section, index) => (
                 <React.Fragment key={`${section.type}-${index}`}>
                   <div className="mt-4" style={parseStyleString(section.style)}>
                     {section.type === "text" && (
                       <div
-                        className="text-lg text-gray-700"
+                        className="text-lg text-gray-700 [&_b]:font-bold [&_b]:text-green-600"
                         dangerouslySetInnerHTML={{ __html: section.content }}
                       />
                     )}
@@ -131,66 +139,129 @@ const StudyMaterialsPage = () => {
                       <div className="bg-gray-100 p-4 rounded-md mt-4 border border-gray-300 shadow-md">
                         <h2 className="text-lg font-semibold text-gray-800 mb-2">{section.title}</h2>
                         <SyntaxHighlighter
-                          language="html"
+                          language={category.toLowerCase()}
                           style={dracula}
                           className="rounded-md"
                           wrapLines={true}
-                          customStyle={{ whiteSpace: "pre-wrap" }}
+                          customStyle={{ whiteSpace: "pre-wrap", fontSize: "14px" }}
                         >
-                          {section.content}
+                          {formatCodeContent(section.content)}
                         </SyntaxHighlighter>
                         <p className="mt-2 text-sm text-gray-600">{section.problem_description}</p>
-                        <button
-                          onClick={() =>
-                            navigate(
-                              `/codetest?code=${encodeURIComponent(section.content)}&language=${encodeURIComponent(
-                                category
-                              )}&title=${encodeURIComponent(
-                                studyContent.title
-                              )}&problem_description=${encodeURIComponent(
-                                section.problem_description || "코드를 실행하여 결과를 확인하세요."
-                              )}`
-                            )
-                          }
-                          className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-                        >
-                          코드 테스트 →
-                        </button>
+                        <div className="flex gap-2 mt-4">
+                          <button
+                            onClick={() =>
+                              navigate(
+                                `/codetest?code=${encodeURIComponent(section.content)}&language=${encodeURIComponent(
+                                  category
+                                )}&title=${encodeURIComponent(
+                                  studyContent.title
+                                )}&problem_description=${encodeURIComponent(
+                                  section.problem_description || "코드를 실행하여 결과를 확인하세요."
+                                )}`
+                              )
+                            }
+                            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+                          >
+                            코드 테스트 →
+                          </button>
+                          <button
+                            onClick={() =>
+                              navigate(
+                                `/terminal?language=${encodeURIComponent(category)}&code=${encodeURIComponent(
+                                  section.content
+                                )}&title=${encodeURIComponent(studyContent.title)}`
+                              )
+                            }
+                            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+                          >
+                            터미널 실습 →
+                          </button>
+                        </div>
                       </div>
                     )}
 
                     {section.type === "definition" && (
                       <div className="bg-gray-50 p-4 rounded-md mt-4 border border-gray-200">
                         {section.content.map((def, idx) => (
-                          <p
-                            key={idx}
-                            className="text-gray-700 mb-2"
-                            dangerouslySetInnerHTML={{
-                              __html: `<strong>${def.term}</strong>: ${def.definition}`,
-                            }}
-                          />
+                          <div key={idx} className="mb-3">
+                            <p
+                              className="text-gray-800 font-semibold"
+                              dangerouslySetInnerHTML={{ __html: def.term }}
+                            />
+                            <p
+                              className="text-gray-600 ml-4"
+                              dangerouslySetInnerHTML={{ __html: def.definition }}
+                            />
+                          </div>
                         ))}
                       </div>
                     )}
 
-                    {section.type === "quiz" && (
+                    {section.type === "table" && (
+                      <div className="overflow-x-auto mt-4">
+                        <table className="min-w-full bg-white border border-gray-300">
+                          <thead>
+                            <tr>
+                              {section.content.headers.map((header, idx) => (
+                                <th key={idx} className="py-2 px-4 bg-gray-100 border-b border-gray-300">
+                                  {header}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {section.content.rows.map((row, rowIndex) => (
+                              <tr key={rowIndex}>
+                                {row.map((cell, cellIndex) => (
+                                  <td key={cellIndex} className="py-2 px-4 border-b border-gray-300">
+                                    {cell}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        {section.description && (
+                          <p className="text-sm text-gray-600 mt-2">{section.description}</p>
+                        )}
+                      </div>
+                    )}
+
+                    {section.type === "example" && (
+                      <div className="bg-gray-100 p-4 rounded-md mt-4 border border-gray-300 shadow-md">
+                        <h2 className="text-lg font-semibold text-gray-800 mb-2">{section.content.title}</h2>
+                        <SyntaxHighlighter
+                          language={category.toLowerCase()}
+                          style={dracula}
+                          className="rounded-md"
+                          wrapLines={true}
+                          customStyle={{ whiteSpace: "pre-wrap", fontSize: "14px" }}
+                        >
+                          {section.content.code}
+                        </SyntaxHighlighter>
+                        <p className="mt-2 text-sm text-gray-600">{section.content.explanation}</p>
+                      </div>
+                    )}
+
+                    {section.type === "quiz" && section.content?.options && (
                       <div className="bg-gray-900 text-white p-6 rounded-lg shadow-lg w-full max-w-3xl mt-6 mx-auto">
                         <h2 className="text-2xl font-bold text-center mb-4">퀴즈</h2>
                         <p className="text-lg text-center">{section.content.question}</p>
                         <div className="mt-4">
-                          {section.content.options.map((option, idx) => (
+                          {section.content.options.map((option, optIdx) => (
                             <label
-                              key={idx}
+                              key={optIdx}
                               className={`block bg-gray-700 rounded-md p-3 my-2 cursor-pointer transition-all ${
-                                selectedOption === option ? "ring-2 ring-green-400" : ""
+                                selectedOptions[index] === option ? "ring-2 ring-green-400" : ""
                               }`}
                             >
                               <input
                                 type="radio"
-                                name="quiz"
+                                name={`quiz-${index}`}
                                 value={option}
-                                checked={selectedOption === option}
-                                onChange={() => handleOptionChange(option)}
+                                checked={selectedOptions[index] === option}
+                                onChange={() => handleOptionChange(index, option)}
                                 className="hidden"
                               />
                               {option}
@@ -198,28 +269,29 @@ const StudyMaterialsPage = () => {
                           ))}
                         </div>
                         <button
-                          onClick={() => handleSubmit(section.content.correct_answer)}
+                          onClick={() => handleSubmit(index, section.content.correct_answer)}
                           className={`mt-4 w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 transition ${
-                            selectedOption === null ? "opacity-50 cursor-not-allowed" : ""
+                            selectedOptions[index] === null || selectedOptions[index] === undefined
+                              ? "opacity-50 cursor-not-allowed"
+                              : ""
                           }`}
-                          disabled={selectedOption === null}
+                          disabled={selectedOptions[index] === null || selectedOptions[index] === undefined}
                         >
                           정답 제출 →
                         </button>
-                        {submitted && (
+                        {submittedStatus[index] && (
                           <div className="mt-3 text-center">
-                            <p className={`${isCorrect ? "text-green-400" : "text-red-500"}`}>
-                              {isCorrect ? (
-                                "✅ 정답입니다!"
-                              ) : (
-                                <span className="text-red-500 font-semibold">❌ 오답입니다!</span>
-                              )}
+                            <p className={`${correctStatus[index] ? "text-green-400" : "text-red-500"}`}>
+                              {correctStatus[index] ? "✅ 정답입니다!" : "❌ 오답입니다!"}
                             </p>
-                            {submitted && isCorrect && (
-                              <p className="text-sm text-gray-300 mt-2">{section.content.explanation}</p>
+                            {correctStatus[index] && (
+                              <p
+                                className="text-sm text-gray-300 mt-2 [&_b]:font-bold [&_b]:text-green-400"
+                                dangerouslySetInnerHTML={{ __html: section.content.explanation }}
+                              />
                             )}
                             <button
-                              onClick={handleRetry}
+                              onClick={() => handleRetry(index)}
                               className="mt-2 bg-gray-500 text-white px-4 py-1 rounded hover:bg-gray-600 transition"
                             >
                               다시 시도
@@ -230,7 +302,6 @@ const StudyMaterialsPage = () => {
                     )}
                   </div>
 
-                  {/* 섹션마다 절취선 자동 삽입 */}
                   {index < studyContent.sections.length - 1 && (
                     <hr className="border-t border-gray-300 my-8" />
                   )}

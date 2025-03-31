@@ -3,9 +3,12 @@ import { useLocation } from "react-router-dom";
 import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
 import { html } from "@codemirror/lang-html";
+import { css } from "@codemirror/lang-css";
 import { python } from "@codemirror/lang-python";
 import { dracula } from "@uiw/codemirror-theme-dracula";
 import { createTheme } from "@uiw/codemirror-themes";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import apiClient from "../api/apiClient";
 
 const CodeTestPage = () => {
@@ -15,11 +18,23 @@ const CodeTestPage = () => {
   const codeLanguage = queryParams.get("language") || "";
   const title = queryParams.get("title") || "코딩 테스트 연습";
   const problemDescription = queryParams.get("problem_description") || "코드를 실행하여 결과를 확인하세요.";
-  const [code, setCode] = useState(decodeURIComponent(initialCode));
+
+  const safeDecodeURIComponent = (str) => {
+    try {
+      return decodeURIComponent(str);
+    } catch (e) {
+      console.error("디코딩 오류:", e);
+      return str;
+    }
+  };
+
+  const [code, setCode] = useState(safeDecodeURIComponent(initialCode));
+  const [input, setInput] = useState("");
   const [result, setResult] = useState("");
+  const [error, setError] = useState("");
   const [htmlPreview, setHtmlPreview] = useState("");
   const [theme, setTheme] = useState("light");
-  const [language, setLanguage] = useState(codeLanguage.toLowerCase() || "javascript");
+  const [language, setLanguage] = useState(safeDecodeURIComponent(codeLanguage).toLowerCase() || "javascript");
 
   const oneLight = createTheme({
     theme: "light",
@@ -33,8 +48,16 @@ const CodeTestPage = () => {
 
   const runCode = async () => {
     try {
-      if (language.toLowerCase() !== codeLanguage.toLowerCase()) {
+      if (language.toLowerCase() !== safeDecodeURIComponent(codeLanguage).toLowerCase()) {
         setResult(`🚨 선택한 언어(${language})와 코드의 언어(${codeLanguage})가 일치하지 않습니다. 언어를 ${codeLanguage}로 바꿔주세요.`);
+        setError("");
+        setHtmlPreview("");
+        return;
+      }
+
+      if (language === "javascript" && (code.includes("<script>") || code.includes("</script>"))) {
+        setResult("");
+        setError("🚨 JavaScript 실행에서는 <script> 태그를 포함할 수 없습니다.");
         setHtmlPreview("");
         return;
       }
@@ -42,20 +65,27 @@ const CodeTestPage = () => {
       const response = await apiClient.post("/api/run-code", {
         language: language,
         code: code,
+        input: input
       });
 
       setResult(response.data.output || "✅ 실행 완료");
-      setHtmlPreview(response.data.html_output || ""); // 백엔드에서 HTML 출력 제공
+      setError(response.data.error || "");
+      setHtmlPreview(response.data.html_output || "");
     } catch (error) {
-      setResult(`🚨 오류 발생: ${error.response?.data?.detail || error.message}`);
+      setResult("");
+      setError(`🚨 오류 발생: ${error.response?.data?.detail || error.message}`);
       setHtmlPreview("");
     }
   };
 
+  const withWhiteBackground = htmlPreview?.includes("<body")
+    ? htmlPreview.replace(/<body([^>]*)>/, `<body$1 style="background-color: white;">`)
+    : `<body style="background-color: white;">${htmlPreview}</body>`;
+
   return (
     <div className={`min-h-screen flex flex-col items-center p-8 ${theme === "dark" ? "bg-gray-900 text-white" : "bg-gray-100 text-black"}`}>
       <div className="w-full max-w-5xl bg-white shadow-lg rounded-xl p-8">
-        <h1 className="text-3xl font-bold mb-4 text-center text-gray-800">{decodeURIComponent(title)}</h1>
+        <h1 className="text-3xl font-bold mb-4 text-center text-gray-800">{safeDecodeURIComponent(title)}</h1>
 
         <div className="flex justify-between mb-4">
           <div>
@@ -79,6 +109,7 @@ const CodeTestPage = () => {
           >
             <option value="javascript">JavaScript</option>
             <option value="html">HTML</option>
+            <option value="css">CSS</option>
             <option value="python">Python</option>
           </select>
         </div>
@@ -86,7 +117,23 @@ const CodeTestPage = () => {
         <div className="grid grid-cols-2 gap-4">
           <div className="p-4 border rounded-md bg-gray-100 text-gray-800">
             <h2 className="text-lg font-semibold">문제 설명</h2>
-            <p>{decodeURIComponent(problemDescription)}</p>
+            <div
+              className="text-base leading-7"
+              dangerouslySetInnerHTML={{ __html: safeDecodeURIComponent(problemDescription) }}
+            />
+
+            {(language === "javascript" || language === "python") && (
+              <div className="mt-4">
+                <h2 className="text-lg font-semibold">입력값</h2>
+                <textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="입력값을 작성하세요"
+                  className="w-full p-2 border rounded mt-2 text-gray-800"
+                  rows={4}
+                />
+              </div>
+            )}
           </div>
 
           <div className="border rounded-md p-4 bg-gray-100 text-gray-800">
@@ -96,6 +143,7 @@ const CodeTestPage = () => {
               extensions={[
                 language === "javascript" ? javascript() :
                 language === "html" ? html() :
+                language === "css" ? css() :
                 python()
               ]}
               onChange={(value) => setCode(value)}
@@ -106,22 +154,51 @@ const CodeTestPage = () => {
         </div>
 
         <div className="mt-4 p-4 border rounded-md bg-gray-100 text-gray-800">
-  <h2 className="text-lg font-semibold">실행 결과</h2>
-  <div className="border rounded p-2 min-h-[50px]">{result}</div>
-  {htmlPreview && (
-    <div className="mt-4 p-2 border rounded bg-white">
-      <div dangerouslySetInnerHTML={{ __html: htmlPreview }} />
-    </div>
-  )}
-</div>
-
+          <h2 className="text-lg font-semibold">실행 결과</h2>
+          <div className="border rounded p-2 min-h-[50px] bg-white font-mono text-sm">
+            {htmlPreview && (
+              <div className="mt-2">
+                <iframe
+                  srcDoc={withWhiteBackground}
+                  title="HTML/CSS Preview"
+                  className="w-full h-64 border rounded bg-white"
+                  sandbox="allow-same-origin allow-scripts"
+                />
+              </div>
+            )}
+            {(result || error) && !htmlPreview && (
+              <div className="mt-2">
+                {result && (
+                  <SyntaxHighlighter
+                    language="plaintext"
+                    style={vscDarkPlus}
+                    customStyle={{ background: "transparent", padding: 0, margin: 0 }}
+                  >
+                    {result}
+                  </SyntaxHighlighter>
+                )}
+                {error && (
+                  <SyntaxHighlighter
+                    language="plaintext"
+                    style={vscDarkPlus}
+                    customStyle={{ background: "transparent", padding: 0, margin: 0, color: "#f44747" }}
+                  >
+                    {error}
+                  </SyntaxHighlighter>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
 
         <div className="flex justify-end mt-4">
           <button
             className="px-4 py-2 bg-gray-500 text-white rounded mr-2"
             onClick={() => {
-              setCode(decodeURIComponent(initialCode));
+              setCode(safeDecodeURIComponent(initialCode));
+              setInput("");
               setResult("");
+              setError("");
               setHtmlPreview("");
             }}
           >
