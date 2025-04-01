@@ -166,17 +166,20 @@ const StudyMaterialsPage = () => {
                             코드 테스트 →
                           </button>
                           <button
-                            onClick={() =>
-                              navigate(
-                                `/terminal?language=${encodeURIComponent(category)}&code=${encodeURIComponent(
-                                  section.content
-                                )}&title=${encodeURIComponent(studyContent.title)}`
-                              )
-                            }
-                            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
-                          >
-                            터미널 실습 →
-                          </button>
+  onClick={() =>
+    navigate(
+      `/terminal?language=${encodeURIComponent(category)}&code=${encodeURIComponent(
+        section.content
+      )}&title=${encodeURIComponent(studyContent.title)}&problem_description=${encodeURIComponent(
+        section.problem_description || "코드를 실행하여 결과를 확인하세요."
+      )}`
+    )
+  }
+  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+>
+  터미널 실습 →
+</button>
+
                         </div>
                       </div>
                     )}
