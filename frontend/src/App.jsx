@@ -24,6 +24,14 @@ import QuizPage from "./pages/QuizPage"; // 퀴즈 페이지
 import QuizSolvePage from "./pages/QuizSolvePage";
 import QuizResultPage from "./pages/QuizResultPage";
 
+//게시판 페이지
+import "@toast-ui/editor/dist/toastui-editor.css";
+import BoardPage from "./pages/BoardPage";
+import BoardDetailPage from "./pages/BoardDetailPage";
+import BoardWritePage from "./pages/BoardWritePage";
+import { Navigate } from "react-router-dom";
+
+
 const App = () => {
   const [userData, setUserData] = useState({});
 
@@ -92,6 +100,12 @@ const App = () => {
             <Route path="/mypage/modify" element={<MyPageModify userData={userData} setUserData={setUserData} />} /> {/* ✅ 수정 시 반영 */}
             <Route path="/mypage/setting" element={<MyPageSetting userData={userData} />} />
             <Route path="/mypage/quiz-history" element={<MyPageQuizHistory userData={userData} />} />
+
+            {/* 게시판 페이지 관련 */}
+            <Route path="/board/:boardType" element={<BoardPage />} />
+            <Route path="/board/:boardType/write" element={<BoardWritePage />} />
+            <Route path="/board/:boardType/:postId" element={<BoardDetailPage />} />
+            <Route path="/board" element={<Navigate to="/board/free" />} />
             
           </Routes>
         </MainLayout>
