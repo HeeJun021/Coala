@@ -2,9 +2,9 @@ import React from "react";
 import { useLocation } from "react-router-dom";
 import PracticeQuiz from "./PracticeQuiz";
 import TestQuiz from "./TestQuiz";
-// import CustomQuiz from "./CustomQuiz";
+import UserQuiz from "./UserQuiz";
 
-const QuizPage = () => {
+const QuizPage = ( userData ) => {
   const location = useLocation();
 
   // ✅ 현재 URL에서 'category' 값 가져오기 (기본값: practice)
@@ -18,8 +18,8 @@ const QuizPage = () => {
         return <PracticeQuiz />;
       case "test":
         return <TestQuiz />;
-    //   case "custom":
-    //     return <CustomQuiz />;
+      case "user":
+        return <UserQuiz userData={userData}/>;
       default:
         return <PracticeQuiz />; // 기본값
     }
@@ -27,10 +27,7 @@ const QuizPage = () => {
 
   return (
     <div className="flex min-h-screen bg-white">
-
-      {/* ✅ 선택된 퀴즈 유형에 따른 콘텐츠 변경 */}
       <div className="ml-[250px] p-6 flex-1">{renderQuizComponent()}</div>
-      
     </div>
   );
 };

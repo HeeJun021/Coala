@@ -23,6 +23,7 @@ import MyPageQuizHistory from "./pages/MyPageQuizHistory";
 import QuizPage from "./pages/QuizPage"; // 퀴즈 페이지
 import QuizSolvePage from "./pages/QuizSolvePage";
 import QuizResultPage from "./pages/QuizResultPage";
+import CreateUserQuiz from "./pages/CreateUserQuiz";
 
 const App = () => {
   const [userData, setUserData] = useState({});
@@ -70,9 +71,10 @@ const App = () => {
             <Route path="/" element={<Home />} />
 
             {/* 퀴즈 페이지 */}
-            <Route path="/quizpage" element={<QuizPage />} />
+            <Route path="/quizpage" element = {<QuizPage userData={userData} />}  />
             <Route path="/quizsolve/:quizId" element={<QuizSolvePage userData={userData} />} />
             <Route path="/quiz-result/:quizId" element={<QuizResultPage userData={userData} />} />
+            <Route path="/user-quiz/create" element={<CreateUserQuiz userData={userData} />} />
 
             {/* 학습자료 관련 페이지 */}
             <Route path="/StudyMaterialsPage" element={<StudyMaterialsPage />} />

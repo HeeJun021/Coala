@@ -40,9 +40,9 @@ const QuizSideBar = () => {
       {/* ✅ 사용자 정의 퀴즈 */}
       <div
         className={`h-[54px] flex items-center pl-6 cursor-pointer ${
-          currentCategory === "custom" ? "bg-[#A7DA9B]" : "bg-[#EFEFEF]"
+          currentCategory === "user" ? "bg-[#A7DA9B]" : "bg-[#EFEFEF]"
         }`}
-        onClick={() => handleMenuClick("custom")}
+        onClick={() => handleMenuClick("user")}
       >
         <span className="text-[18px] font-normal text-black">사용자 정의 퀴즈</span>
       </div>
