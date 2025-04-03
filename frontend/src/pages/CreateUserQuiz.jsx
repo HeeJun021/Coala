@@ -7,6 +7,7 @@ const CreateUserQuiz = ({ userData }) => {
   const [content, setContent] = useState("");
   const [questions, setQuestions] = useState([]);
   const [showDialog, setShowDialog] = useState(false);
+  const [createdQuizId, setCreatedQuizId] = useState(null);
 
   const handleAddQuestion = () => {
     setQuestions([
@@ -17,7 +18,7 @@ const CreateUserQuiz = ({ userData }) => {
         correct_answer: "",
         explanation: "",
         categories: "",
-        question_type: 1, // ✅ 기본값 OX
+        question_type: 1,
       },
     ]);
   };
@@ -58,9 +59,7 @@ const CreateUserQuiz = ({ userData }) => {
         question_text: q.question_text,
         choices: q.question_type === 2 ? q.choices : null,
         correct_answer:
-          q.question_type === 2
-            ? q.correct_answer.join(",")
-            : q.correct_answer,
+          q.question_type === 2 ? q.correct_answer.join(",") : q.correct_answer,
         explanation: q.explanation,
         categories: q.categories,
         question_type: q.question_type,
@@ -74,7 +73,8 @@ const CreateUserQuiz = ({ userData }) => {
       };
 
       const response = await createUserQuiz(data);
-      setShowDialog(true); // ✅ 다이얼로그 띄우기
+      setCreatedQuizId(response.userquiz_id);
+      setShowDialog(true);
     } catch (error) {
       console.error(error);
       alert("퀴즈 생성 실패");
@@ -103,7 +103,6 @@ const CreateUserQuiz = ({ userData }) => {
           key={idx}
           className="mb-6 border border-gray-300 rounded p-4 bg-white shadow-sm"
         >
-          {/* 문제 입력 영역 */}
           <div className="flex items-center mb-3">
             <span className="mr-3 font-semibold">문제 {idx + 1}</span>
             <div className="flex gap-2">
@@ -219,8 +218,12 @@ const CreateUserQuiz = ({ userData }) => {
         </button>
       </div>
 
-      {/* ✅ 다이얼로그 */}
-      {showDialog && <UserQuizDialog onClose={() => setShowDialog(false)} />}
+      {showDialog && (
+        <UserQuizDialog
+          onClose={() => setShowDialog(false)}
+          createdQuizId={createdQuizId} // ✅ quiz id 전달
+        />
+      )}
     </div>
   );
 };

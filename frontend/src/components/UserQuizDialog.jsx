@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
-const UserQuizDialog = ({ onClose }) => {
+const UserQuizDialog = ({ onClose, createdQuizId }) => {
   const navigate = useNavigate();
 
   const handleGoToList = () => {
@@ -9,7 +9,8 @@ const UserQuizDialog = ({ onClose }) => {
   };
 
   const handleSolveQuiz = () => {
-    navigate("/quiz/solve-user-quiz");
+    if (!createdQuizId) return;
+    navigate(`/user-quiz-solve/${createdQuizId}`);
   };
 
   return (

@@ -143,7 +143,7 @@ const MyPageQuizHistory = ({ userData }) => {
                   </td>
                   <td className="px-4 py-2 text-center">
                     <button
-                      className="px-4 py-2 bg-blue-500 text-white text-sm rounded-lg"
+                      className="px-4 py-2 bg-accent text-white text-sm rounded-lg"
                       onClick={() => navigate(`/quiz-result/${quiz.quiz_id}`)}
                     >
                       보기
@@ -161,7 +161,7 @@ const MyPageQuizHistory = ({ userData }) => {
         <div className="flex justify-center mt-6 space-x-2">
           <button
             onClick={() => handlePageChange(currentPage - 1)}
-            className={`px-3 py-2 rounded-lg ${currentPage === 1 ? "bg-gray-300 text-gray-600" : "bg-blue-500 text-white"}`}
+            className={`px-3 py-2 rounded-lg ${currentPage === 1 ? "bg-gray-300 text-gray-600" : "bg-accent text-white"}`}
             disabled={currentPage === 1}
           >
             ◀
@@ -171,7 +171,7 @@ const MyPageQuizHistory = ({ userData }) => {
               key={index}
               onClick={() => handlePageChange(index + 1)}
               className={`px-4 py-2 rounded-lg ${
-                currentPage === index + 1 ? "bg-blue-600 text-white" : "bg-gray-300 text-gray-700"
+                currentPage === index + 1 ? "bg-accent text-white" : "bg-gray-300 text-gray-700"
               }`}
             >
               {index + 1}
@@ -179,7 +179,7 @@ const MyPageQuizHistory = ({ userData }) => {
           ))}
           <button
             onClick={() => handlePageChange(currentPage + 1)}
-            className={`px-3 py-2 rounded-lg ${currentPage === totalPages ? "bg-gray-300 text-gray-600" : "bg-blue-500 text-white"}`}
+            className={`px-3 py-2 rounded-lg ${currentPage === totalPages ? "bg-gray-300 text-gray-600" : "bg-accent text-white"}`}
             disabled={currentPage === totalPages}
           >
             ▶
