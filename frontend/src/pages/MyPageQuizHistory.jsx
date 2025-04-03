@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUserQuizHistory } from "../api/quizApi";
+import MyPageSidebar from "../Layout/MyPageSideBar";
 
 const MyPageQuizHistory = ({ userData }) => {
   const navigate = useNavigate();
@@ -83,6 +84,9 @@ const MyPageQuizHistory = ({ userData }) => {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
+      <div className="w-[250px]">
+        <MyPageSidebar />
+      </div>
       <h2 className="text-xl font-semibold mb-5">📜 퀴즈 풀이 내역</h2>
 
       {filteredHistory.length === 0 ? (

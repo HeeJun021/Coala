@@ -24,6 +24,7 @@ class Userquestions(Base):
     correct_answer = Column(Text, nullable=False)
     explanation = Column(Text, nullable=True)
     categories = Column(String(100), nullable=True)
+    question_type = Column(Integer, nullable=False)  # ✅ 추가 (1: OX, 2: 객관식, 3: 단답형)
     created_at = Column(TIMESTAMP, server_default="CURRENT_TIMESTAMP")
     updated_at = Column(TIMESTAMP, server_default="CURRENT_TIMESTAMP")
 

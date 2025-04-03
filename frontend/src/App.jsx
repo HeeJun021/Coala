@@ -24,6 +24,8 @@ import QuizPage from "./pages/QuizPage"; // 퀴즈 페이지
 import QuizSolvePage from "./pages/QuizSolvePage";
 import QuizResultPage from "./pages/QuizResultPage";
 import CreateUserQuiz from "./pages/CreateUserQuiz";
+import UserQuizSolvePage from "./pages/UserQuizSolvePage";
+import UserQuizResultPage from "./pages/UserQuizResultPage";
 
 const App = () => {
   const [userData, setUserData] = useState({});
@@ -75,7 +77,9 @@ const App = () => {
             <Route path="/quizsolve/:quizId" element={<QuizSolvePage userData={userData} />} />
             <Route path="/quiz-result/:quizId" element={<QuizResultPage userData={userData} />} />
             <Route path="/user-quiz/create" element={<CreateUserQuiz userData={userData} />} />
-
+            <Route path="/user-quiz-solve/:quizId" element={<UserQuizSolvePage userData={userData}/>} /> 
+            <Route path="/user-quiz-result/:uq_submission_id" element={<UserQuizResultPage userData={userData} />}
+/>
             {/* 학습자료 관련 페이지 */}
             <Route path="/StudyMaterialsPage" element={<StudyMaterialsPage />} />
             <Route path="/StudyMaterialsPage/materials/:language/:id" element={<StudyMaterialsPageDetails />} />

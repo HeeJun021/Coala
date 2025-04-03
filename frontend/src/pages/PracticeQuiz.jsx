@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createQuiz } from "../api/quizApi";
+import QuizSideBar from "../Layout/QuizSideBar";
 
 const PracticeQuiz = () => {
 
@@ -82,9 +83,10 @@ const PracticeQuiz = () => {
     };
 
   return (
-    <div className="flex justify-start items-start w-full">
+    <div className="flex w-full">
+      <QuizSideBar />
       {/* ✅ 퀴즈 설정 박스 */}
-      <div className="bg-white p-6 flex-1 shadow-lg rounded-lg w-[700px] mt-10">
+      <div className="flex-1 max-w-5xl pt-12 mx-auto">
         {/* ✅ 타이틀 */}
         <h2 className="text-2xl font-bold mb-6">연습 퀴즈 설정</h2>
 

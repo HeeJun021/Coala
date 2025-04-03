@@ -16,7 +16,7 @@ const QuizSideBar = () => {
   };
 
   return (
-    <div className="absolute top-[239px] left-[33px] w-[243px] bg-white rounded-md shadow-md">
+    <div className="absolute top-[140px] left-[70px] w-[243px] bg-white rounded-md shadow-md">
       {/* ✅ 연습 퀴즈 */}
       <div
         className={`h-[54px] flex items-center pl-6 cursor-pointer ${

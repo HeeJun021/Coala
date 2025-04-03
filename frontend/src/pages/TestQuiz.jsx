@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createQuiz } from "../api/quizApi";
+import QuizSideBar from "../Layout/QuizSideBar";
 
 const TestQuiz = () => {
     const [loading, setLoading] = useState(false);
@@ -53,8 +54,9 @@ const TestQuiz = () => {
     };
 
     return (
-        <div className="flex justify-start items-start w-full">
-            <div className="bg-white p-6 flex-1 shadow-lg rounded-lg w-[700px] mt-10">
+        <div className="flex w-full">
+            <QuizSideBar />
+            <div className="flex-1 max-w-5xl pt-12 mx-auto">
                 <h2 className="text-2xl font-bold mb-6">테스트 퀴즈 설정</h2>
 
                 {/* ✅ 문제 유형 (항상 OX, 단답형, 선택형 포함) */}
