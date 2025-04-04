@@ -27,7 +27,7 @@ const MainLayout = ({ children }) => {
     
 
       {/* ✅ 메인 컨텐츠 영역 */}
-      <main className="content flex-1 px-10 max-w-[1207px] min-h-screen mx-auto">
+      <main className="content flex-1 px-10 min-h-screen mx-auto w-full">
         {children} {/* ✅ 개별 페이지의 내용이 들어가는 자리 */}
       </main>
     </div>

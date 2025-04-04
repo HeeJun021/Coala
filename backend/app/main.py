@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import engine, get_db, Base
 from app.models import user, email_verification,study_materials,study_example, language  # ✅ 모든 모델 불러오기
-from app.routers import languages, user, auth, social_auth,study_example,code_runner,study_materials, code_terminal  # 사용자 관련 라우터 가져오기
+from app.routers import languages, user, auth, social_auth,study_example,code_runner,study_materials, code_terminal,code_execution # 사용자 관련 라우터 가져오기
 from app.schemas.user import UserUpdateSchema
 from datetime import datetime
 from sqlalchemy import text
@@ -33,6 +33,7 @@ app.include_router(study_example.router)
 app.include_router(study_materials.router)
 app.include_router(code_runner.router)
 app.include_router(code_terminal.router)
+app.include_router(code_execution.router, prefix="/code")
 
 # 기본 라우트
 @app.get("/", tags=["Root"])
