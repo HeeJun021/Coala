@@ -18,6 +18,7 @@ import MyPage from "./pages/MyPage";
 import MyPageModify from "./pages/MyPageModify";
 import MyPageSetting from "./pages/MyPageSetting";
 import MyPageQuizHistory from "./pages/MyPageQuizHistory";
+import MyPageUserQuizHistory from "./pages/MyPageUserQuizHistory";
 
 //퀴즈 페이지
 import QuizPage from "./pages/QuizPage"; // 퀴즈 페이지
@@ -60,7 +61,6 @@ const App = () => {
       }
     }
       
-
     fetchUserData();
   }, []);
 
@@ -98,6 +98,7 @@ const App = () => {
             <Route path="/mypage/modify" element={<MyPageModify userData={userData} setUserData={setUserData} />} /> {/* ✅ 수정 시 반영 */}
             <Route path="/mypage/setting" element={<MyPageSetting userData={userData} />} />
             <Route path="/mypage/quiz-history" element={<MyPageQuizHistory userData={userData} />} />
+            <Route path="/mypage/userquiz-history" element={<MyPageUserQuizHistory userData={userData} />} />
             
           </Routes>
         </MainLayout>

@@ -2,7 +2,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.models.user_quiz import Userquizzes, Userquestions, Userquizassignments, Userquizsubmissions, Userquizsubmissiondetails
 from app.models.user import User
-from app.schemas.user_quiz import UserQuizCreate, UserQuizResultResponse, UserQuizResultQuestion
+from app.schemas.user_quiz import UserQuizCreate, UserQuizResultResponse, UserQuizResultQuestion, UserQuizHistoryResponse, UserQuizHistoryItem
 
 
 def create_user_quiz(quiz_data: UserQuizCreate, db: Session):
@@ -118,3 +118,34 @@ def get_user_quiz_result_service(uq_submission_id: int, db: Session):
         correct_count=submission.correct_count,
         questions=questions
     )
+    
+def get_user_quiz_history(db: Session, user_id: int) -> UserQuizHistoryResponse:
+    results = (
+        db.query(
+            Userquizsubmissions.uq_submission_id,
+            Userquizsubmissions.userquiz_id,
+            Userquizzes.title,
+            Userquizsubmissions.correct_count,
+            Userquizsubmissions.submitted_at,
+            User.nickname.label("creator_name")
+        )
+        .join(Userquizzes, Userquizsubmissions.userquiz_id == Userquizzes.userquiz_id)
+        .filter(Userquizsubmissions.user_id == user_id)
+        .order_by(Userquizsubmissions.submitted_at.desc())
+        .all()
+    )
+
+    quizzes = [
+        UserQuizHistoryItem(
+            uq_submission_id=row.uq_submission_id,
+            userquiz_id=row.userquiz_id,
+            title=row.title,
+            correct_count=row.correct_count,
+            submitted_at=row.submitted_at,
+             creator_name=row.creator_name
+        )
+        for row in results
+    ]
+
+    return UserQuizHistoryResponse(quizzes=quizzes)    
+

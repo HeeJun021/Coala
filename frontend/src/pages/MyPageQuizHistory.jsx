@@ -92,7 +92,7 @@ const MyPageQuizHistory = ({ userData }) => {
       {filteredHistory.length === 0 ? (
         <p className="text-sm text-gray-500">해당 유형의 퀴즈 기록이 없습니다.</p>
       ) : (
-        <div className="bg-white shadow-md rounded-lg p-4">
+        <div className="bg-white shadow-md rounded-lg p-4 mt-12">
           <table className="w-full border-collapse border text-base">
             <thead>
               <tr className="bg-gray-100 text-sm">

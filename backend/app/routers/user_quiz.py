@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models.user_quiz import Userquizzes, Userquestions, Userquizassignments, Userquizsubmissions, Userquizsubmissiondetails
-from app.schemas.user_quiz import UserQuizCreate, UserQuizCreateResponse, UserQuizDetail, UserQuestionDetail, UserQuizSubmitRequest, UserQuizSubmitResponse, UserQuizResultResponse
+from app.schemas.user_quiz import UserQuizCreate, UserQuizCreateResponse, UserQuizDetail, UserQuestionDetail, UserQuizSubmitRequest, UserQuizSubmitResponse, UserQuizResultResponse, UserQuizHistoryResponse
 from app.services.user_quiz_service import create_user_quiz, get_all_user_quizzes, get_user_quiz_result_service
+from app.services import user_quiz_service
 from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/user-quiz", tags=["User Quiz"])
@@ -125,3 +126,7 @@ def submit_user_quiz(data: UserQuizSubmitRequest, db: Session = Depends(get_db))
 @router.get("/result/{uq_submission_id}", response_model=UserQuizResultResponse)
 def get_user_quiz_result(uq_submission_id: int, db: Session = Depends(get_db)):
     return get_user_quiz_result_service(uq_submission_id, db)
+
+@router.get("/userquiz-history/{user_id}", response_model=UserQuizHistoryResponse)
+def get_user_quiz_history(user_id: int, db: Session = Depends(get_db)):
+    return user_quiz_service.get_user_quiz_history(db, user_id)

@@ -43,3 +43,8 @@ export const getUserQuizResult = async (uq_submission_id) => {
     throw error;
   }
 };
+
+export const getUserQuizHistory = async (userId) => {
+  const response = await apiClient.get(`/user-quiz/userquiz-history/${userId}`);
+  return response.data.quizzes;
+};

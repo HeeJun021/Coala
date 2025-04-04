@@ -1,5 +1,6 @@
 from typing import List, Optional
 from pydantic import BaseModel
+from datetime import datetime
 
 # 문제 생성 스키마
 class UserQuestionCreate(BaseModel):
@@ -61,3 +62,14 @@ class UserQuizResultResponse(BaseModel):
     title: str
     correct_count: int
     questions: List[UserQuizResultQuestion]
+    
+class UserQuizHistoryItem(BaseModel):
+    uq_submission_id: int
+    userquiz_id: int
+    title: str
+    correct_count: int
+    submitted_at: datetime
+    creator_name: str
+
+class UserQuizHistoryResponse(BaseModel):
+    quizzes: List[UserQuizHistoryItem]
