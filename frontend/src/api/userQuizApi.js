@@ -5,12 +5,15 @@ export const createUserQuiz = async (quizData) => {
   return response.data;
 };
 
-export const getAllUserQuizzes = async (search = "") => {
-  const response = await apiClient.get("/user-quiz/all", {
-    params: { search },
-  });
-  return response.data;
+export const getAllUserQuizzes = async (search = "", userId = null) => {
+  const params = {};
+  if (search) params.search = search;
+  if (userId) params.user_id = userId;
+  console.log("🚀 API 호출 params:", params); 
+  const res = await apiClient.get("/user-quiz/user-quizzes", { params });
+  return res.data;
 };
+
 
 // ✅ 사용자 퀴즈 상세 조회
 export const getUserQuizDetail = async (userquizId) => {

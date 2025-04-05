@@ -48,7 +48,7 @@ from sqlalchemy import func
 from app.models.user_quiz import Userquizzes, Userquizsubmissions
 from app.models.user import User
 
-def get_all_user_quizzes(db: Session, search: str = None):
+def get_all_user_quizzes(db: Session, search: str = None, user_id: int = None):
     query = (
         db.query(
             Userquizzes,
@@ -63,6 +63,8 @@ def get_all_user_quizzes(db: Session, search: str = None):
 
     if search:
         query = query.filter(User.nickname.ilike(f"%{search}%"))
+    if user_id:
+        query = query.filter(User.user_id == user_id)
 
     results = query.all()
 

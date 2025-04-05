@@ -6,6 +6,7 @@ from app.schemas.user_quiz import UserQuizCreate, UserQuizCreateResponse, UserQu
 from app.services.user_quiz_service import create_user_quiz, get_all_user_quizzes, get_user_quiz_result_service
 from app.services import user_quiz_service
 from sqlalchemy.orm import Session
+from typing import Optional
 
 router = APIRouter(prefix="/user-quiz", tags=["User Quiz"])
 
@@ -17,12 +18,13 @@ def create_user_quiz_endpoint(
     result = create_user_quiz(quiz_data, db)
     return result
 
-@router.get("/all")
-def get_all_user_quizzes_endpoint(
-    search: str = Query(None, description="사용자 이름 검색"),
+@router.get("/user-quizzes")
+def get_user_quizzes(
+    search: Optional[str] = None,
+    user_id: Optional[int] = None,
     db: Session = Depends(get_db)
 ):
-    return get_all_user_quizzes(db, search)
+    return get_all_user_quizzes(db=db, search=search, user_id=user_id)
 
 @router.get("/{userquiz_id}", response_model=UserQuizDetail)
 def get_user_quiz_detail(userquiz_id: int, db: Session = Depends(get_db)):

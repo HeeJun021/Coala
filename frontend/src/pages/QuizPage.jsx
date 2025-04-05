@@ -4,7 +4,7 @@ import PracticeQuiz from "./PracticeQuiz";
 import TestQuiz from "./TestQuiz";
 import UserQuiz from "./UserQuiz";
 
-const QuizPage = ( userData ) => {
+const QuizPage = ({ userData }) => {
   const location = useLocation();
 
   // ✅ 현재 URL에서 'category' 값 가져오기 (기본값: practice)
