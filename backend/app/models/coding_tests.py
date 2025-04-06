@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, Boolean, Float, TIMESTAMP
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, Boolean, Float, TIMESTAMP, UniqueConstraint, DateTime
 from sqlalchemy.orm import relationship
 from app.database import Base
+from sqlalchemy.sql import func
 
 class CodingTests(Base):
     __tablename__ = "codingtests"
@@ -45,13 +46,16 @@ class CodingTestConstraints(Base):
 
     test = relationship("CodingTests", back_populates="constraints")
 
+class problemstartercode(Base):
+    __tablename__ = "problemstartercode"
 
-class LanguageStarterCode(Base):
-    __tablename__ = "languagestartercode"
-
-    starter_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    language = Column(String(50), nullable=False, unique=True)
+    starter_code_id = Column(Integer, primary_key=True, index=True)
+    test_id = Column(Integer, ForeignKey("codingtests.test_id", ondelete="CASCADE"), nullable=False)
+    language = Column(String(50), nullable=False)
     code = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (UniqueConstraint('test_id', 'language', name='uix_test_language'),)
 
 
 class CodingTestSubmissions(Base):

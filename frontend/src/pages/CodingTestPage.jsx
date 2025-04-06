@@ -250,7 +250,7 @@ const CodingTestPage = () => {
                   {problem.category || "-"}
                 </td>
                 <td className="p-3 w-[100px] text-center">
-                  {problem.correct_rate || 0}%
+                  {(parseFloat(problem.correct_rate) || 0).toFixed(1)}%
                 </td>
               </tr>
             ))}

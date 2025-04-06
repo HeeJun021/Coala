@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { cleanStderr } from "../utils/cleanStderr";
 import { HiOutlineRefresh } from "react-icons/hi";
 import { motion, AnimatePresence } from "framer-motion";
 import { useParams } from "react-router-dom";
@@ -11,12 +12,14 @@ import {
   getStarterCode,
   getSubmissionList,
   runCodeWithTestcases,
+  submitCode,
 } from "../api/codingTestApi";
 import "prismjs/components/prism-javascript";
 import "prismjs/components/prism-python";
 import "prismjs/components/prism-java";
 import "react-resizable/css/styles.css"; // 스타일 추가
 import "../index.css";
+import ResultModal from "../components/ResultModal"; // 상단에 추가
 
 const CodingTestDetailPage = () => {
   const { user } = useAuth();
@@ -29,6 +32,12 @@ const CodingTestDetailPage = () => {
   const [submissions, setSubmissions] = useState([]);
   const [showRefreshMessage, setShowRefreshMessage] = useState(false);
   const [executionResults, setExecutionResults] = useState([]);
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [resultData, setResultData] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRunning, setIsRunning] = useState(false);
+  const [isSubmitResult, setIsSubmitResult] = useState(false);
+  const [showCopyMessage, setShowCopyMessage] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -36,7 +45,7 @@ const CodingTestDetailPage = () => {
         const problemData = await getCodingTestDetail(id);
         setProblem(problemData);
 
-        const starter = await getStarterCode(language);
+        const starter = await getStarterCode(id, language);
         const formattedCode = starter.code.replace(/\\n/g, "\n");
         setCode(formattedCode);
       } catch (err) {
@@ -76,12 +85,13 @@ const CodingTestDetailPage = () => {
   // 실행 버튼 핸들러
   const handleRunCode = async () => {
     if (!problem) return;
+
+    setIsSubmitResult(false); // 실행 결과일 때는 제출 결과가 아님!
+
     try {
       const res = await runCodeWithTestcases(problem.id, code, language);
 
-      // 🔥 성공 여부 확인
       const hasPassedAll = res.results.every((r) => r.passed);
-
       setExecutionResults(res.results);
 
       if (hasPassedAll) {
@@ -105,12 +115,50 @@ const CodingTestDetailPage = () => {
 
   const handleResetCode = async () => {
     try {
-      const starter = await getStarterCode(language);
+      const starter = await getStarterCode(id, language);
       const formattedCode = starter.code.replace(/\\n/g, "\n"); // 🔥 개행 처리
       setCode(formattedCode);
     } catch (err) {
       console.error("초기화 실패:", err);
     }
+  };
+
+  const handleSubmitCode = async () => {
+    try {
+      setIsSubmitting(true);
+      setIsRunning(true);
+
+      const res = await submitCode({
+        user_id: user.user_id,
+        test_id: problem.id,
+        code,
+        language,
+      });
+
+      // 결과 테이블 먼저 표시
+      if (res.all_cases) {
+        setExecutionResults(res.all_cases);
+      }
+
+      // 🎯 결과 모달은 1초 후 띄우기
+      setTimeout(() => {
+        setResultData({
+          isCorrect: res.is_correct,
+          passed: res.passed_test_cases,
+          total: res.total_test_cases,
+        });
+        setShowResultModal(true);
+        setIsRunning(false); // 로딩 상태 종료
+      }, 1000); // 1초 딜레이
+    } catch (err) {
+      console.error("제출 중 오류:", err);
+      alert("제출 실패");
+      setIsRunning(false);
+    } finally {
+      setIsSubmitting(false);
+    }
+
+    fetchSubmissions();
   };
 
   const HoverHandle = () => {
@@ -190,6 +238,20 @@ const CodingTestDetailPage = () => {
             </motion.div>
           </div>
         )}
+
+        {showCopyMessage && (
+          <div className="fixed top-4 w-full flex justify-center z-[9999]">
+            <motion.div
+              initial={{ y: -50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className="bg-blue-500 text-white text-sm px-6 py-3 rounded shadow"
+            >
+              복사 완료!
+            </motion.div>
+          </div>
+        )}
       </AnimatePresence>
 
       <div className="codingtest-detail w-screen h-screen bg-[#3d4d63] text-white flex flex-col">
@@ -250,7 +312,7 @@ const CodingTestDetailPage = () => {
                     </span>
                   </div>
                   <div className="text-xs text-gray-300">
-                    정답률 {problem.correct_rate || 0}%
+                    정답률 {(problem.correct_rate || 0).toFixed(1)}%
                   </div>
                 </div>
                 <section className="space-y-4 text-sm leading-6">
@@ -293,14 +355,38 @@ const CodingTestDetailPage = () => {
                         className="border border-gray-500 p-3 mb-2 rounded"
                       >
                         <p className="text-xs text-gray-300 mb-1">입력</p>
-                        <div className="flex items-center bg-[#2c3544] p-2 rounded justify-between whitespace-pre-wrap">
+                        <div className="flex items-center bg-[#2c3544] p-2 rounded justify-between whitespace-pre-wrap relative">
                           <span>{ex.input.replace(/\\n/g, "\n")}</span>
-                          <span className="text-gray-400 text-xs">복사</span>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(
+                                ex.input.replace(/\\n/g, "\n")
+                              );
+                              setShowCopyMessage(true);
+                              setTimeout(() => setShowCopyMessage(false), 3000); // 3초 후 사라짐
+                            }}
+                            className="absolute top-1 right-2 text-xs bg-[#4b5b6e] text-white px-3 py-1 rounded hover:bg-[#5f6f82]"
+                            style={{ cursor: "pointer" }}
+                          >
+                            복사
+                          </button>
                         </div>
                         <p className="text-xs text-gray-300 mt-2 mb-1">출력</p>
-                        <div className="flex items-center bg-[#2c3544] p-2 rounded justify-between">
+                        <div className="flex items-center bg-[#2c3544] p-2 rounded justify-between whitespace-pre-wrap relative mt-2">
                           <span>{ex.output}</span>
-                          <span className="text-gray-400 text-xs">복사</span>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(
+                                ex.input.replace(/\\n/g, "\n")
+                              );
+                              setShowCopyMessage(true);
+                              setTimeout(() => setShowCopyMessage(false), 3000); // 3초 후 사라짐
+                            }}
+                            className="absolute top-1 right-2 text-xs bg-[#4b5b6e] text-white px-3 py-1 rounded hover:bg-[#5f6f82]"
+                            style={{ cursor: "pointer" }}
+                          >
+                            복사
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -324,11 +410,11 @@ const CodingTestDetailPage = () => {
                 <table className="w-full text-sm text-left">
                   <thead className="border-b border-gray-600 text-gray-300">
                     <tr>
-                      <th className="p-2">제출일시</th>
-                      <th className="p-2">언어</th>
-                      <th className="p-2">결과</th>
-                      <th className="p-2">제출 메모리</th>
-                      <th className="p-2">통과율</th>
+                      <th className="p-2 text-center">제출일시</th>
+                      <th className="p-2 text-center">언어</th>
+                      <th className="p-2 text-center">결과</th>
+                      <th className="p-2 text-center">제출 메모리</th>
+                      <th className="p-2 text-center">테스트 케이스 통과 수</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -345,17 +431,14 @@ const CodingTestDetailPage = () => {
                             )
                           }
                         >
-                          <td className="p-2">{s.submitted_at}</td>
-                          <td className="p-2">{s.language}</td>
-                          <td className="p-2">{s.is_correct ? "✅" : "❌"}</td>
-                          <td className="p-2">{s.memory}</td>
-                          <td className="p-2">
-                            {s.total_test_cases > 0
-                              ? `${Math.round(
-                                  (s.passed_test_cases / s.total_test_cases) *
-                                    100
-                                )}%`
-                              : "0%"}
+                          <td className="p-2 text-center">{s.submitted_at}</td>
+                          <td className="p-2 text-center">{s.language}</td>
+                          <td className="p-2 text-center">
+                            {s.is_correct ? "✅" : "❌"}
+                          </td>
+                          <td className="p-2 text-center">{s.memory}</td>
+                          <td className="p-2 text-center">
+                            {s.passed_test_cases}/{s.total_test_cases}
                           </td>
                         </tr>
                         {s.open && (
@@ -440,12 +523,18 @@ const CodingTestDetailPage = () => {
               }
             >
               <div className="border-t border-gray-600 p-4 text-sm overflow-auto bg-[#3d4d63] h-full">
-                <h3 className="text-white font-semibold mb-2">실행 결과</h3>
+                <h3 className="text-white font-semibold mb-2">
+                  {isSubmitResult ? "제출 실행 결과" : "실행 결과"}
+                </h3>
 
-                {executionResults.length === 0 ? (
-                  <p className="text-gray-300 text-xs mt-3">
-                    실행 결과가 여기에 표시됩니다.
-                  </p>
+                {isRunning ? (
+                  <div className="text-gray-300 text-sm mt-3 animate-pulse">
+                    ⏳ 제출 실행 중입니다...
+                  </div>
+                ) : executionResults.length === 0 ? (
+                  <div className="text-gray-300 text-sm mt-3">
+                    코드 실행 결과가 여기에 표시됩니다.
+                  </div>
                 ) : (
                   <>
                     <table className="w-full text-left border border-gray-500">
@@ -469,9 +558,10 @@ const CodingTestDetailPage = () => {
                             key={idx}
                             className="border-t border-gray-500 text-white"
                           >
-                            <td className="p-2 border-r border-gray-500">
-                              {result.input}
+                            <td className="p-2 border-r border-gray-500 whitespace-pre-line">
+                              {result.input.replace(/\\n/g, "\n")}
                             </td>
+
                             <td className="p-2 border-r border-gray-500">
                               {result.expected_output}
                             </td>
@@ -486,15 +576,47 @@ const CodingTestDetailPage = () => {
                                 </span>
                               )}
                             </td>
-                            <td className="p-2">{result.actual_output}</td>
+                            <td className="p-2">
+                              {result.actual_output !== undefined &&
+                              result.actual_output !== ""
+                                ? result.actual_output
+                                : "-"}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
-                    <p className="text-gray-300 text-xs mt-3">
-                      샘플 테스트 케이스를 통과했다는 의미로, 작성한 코드가
-                      문제의 정답은 아닐 수 있습니다.
-                    </p>
+                    {!isRunning && (
+                      <>
+                        {isSubmitResult ? (
+                          <div className="text-gray-300 text-xs mt-3">
+                            🎉{" "}
+                            <span className="text-green-300 font-medium">
+                              정답입니다!
+                            </span>
+                            <div>테스트케이스를 모두 통과하였습니다.</div>
+                          </div>
+                        ) : (
+                          <p className="text-gray-300 text-xs mt-3">
+                            샘플 테스트케이스를 통과했다는 의미로, 작성한 코드가
+                            문제의 정답은 아닐 수 있습니다.
+                          </p>
+                        )}
+
+                        {executionResults.some((r) => r.stderr) && (
+                          <div className="bg-[#2b2f38] border border-red-400 rounded-md p-4 mt-4 text-sm text-red-200 whitespace-pre-wrap">
+                            <pre className="leading-relaxed text-red-200 font-mono">
+                              {cleanStderr(
+                                executionResults
+                                  .map((r) => r.stderr)
+                                  .filter(Boolean)
+                                  .join("\n\n")
+                              )}
+                            </pre>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </>
                 )}
               </div>
@@ -527,12 +649,28 @@ const CodingTestDetailPage = () => {
               코드 실행
             </button>
 
-            <button className="text-xs bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600 transition">
-              코드 제출 후 채점
+            <button
+              onClick={handleSubmitCode}
+              disabled={!problem || isSubmitting}
+              className={`text-xs bg-blue-500 text-white px-3 py-2 rounded transition ${
+                !problem || isSubmitting
+                  ? "opacity-50 cursor-not-allowed"
+                  : "hover:bg-blue-600"
+              }`}
+            >
+              {isSubmitting ? "채점 중..." : "코드 제출 후 채점"}
             </button>
           </div>
         </div>
       </div>
+      {showResultModal && resultData && (
+        <ResultModal
+          isCorrect={resultData.isCorrect}
+          passed={resultData.passed}
+          total={resultData.total}
+          onClose={() => setShowResultModal(false)}
+        />
+      )}
     </>
   );
 };

@@ -34,8 +34,9 @@ async def execute_code(code: str, language: str, input_data: str = ""):
     os.makedirs(temp_path, exist_ok=True)
 
     file_path = f"{temp_path}/{config['file_name']}"
-    with open(file_path, "w") as f:
+    with open(file_path, "w", encoding="utf-8") as f:
         f.write(code)
+
 
     host_path = os.path.abspath(temp_path).replace("\\", "/")
 
@@ -46,6 +47,12 @@ async def execute_code(code: str, language: str, input_data: str = ""):
     config["image"],
     "sh", "-c", f'echo "{input_data}" | {config["run_cmd"]}'
 ]
+     # ✅ 로그 출력
+    print("🟡 [EXEC LOG] 언어:", language)
+    print("🟡 [EXEC LOG] 입력값:\n", input_data)
+    print("🟡 [EXEC LOG] 저장된 코드 파일 경로:", file_path)
+    print("🟡 [EXEC LOG] 실행될 Docker 명령어:\n", " ".join(docker_cmd))
+
 
 
     try:
@@ -58,6 +65,11 @@ async def execute_code(code: str, language: str, input_data: str = ""):
         )
         stdout = result.stdout
         stderr = result.stderr
+        
+        # ✅ 결과 로그
+        print("✅ [EXEC RESULT] STDOUT:\n", stdout)
+        print("❌ [EXEC RESULT] STDERR:\n", stderr)
+        
     except subprocess.TimeoutExpired:
         stdout = ""
         stderr = "Execution timed out."
@@ -70,3 +82,34 @@ async def execute_code(code: str, language: str, input_data: str = ""):
         pass
 
     return {"stdout": stdout, "stderr": stderr}
+
+
+async def run_code_against_testcases(code: str, language: str, testcases: list):
+    results = []
+
+    for case in testcases:
+        # 🔍 안전하게 출력
+        print("DEBUG:", case)
+
+        # case가 dict라면
+        if isinstance(case, dict):
+            input_data = case.get("example_input") or case.get("input")
+            expected_output = case.get("example_output") or case.get("expected_output")
+        else:
+            # ORM 객체일 경우
+            input_data = case.example_input
+            expected_output = case.example_output
+
+        result = await execute_code(code, language, input_data)
+
+        passed = result["stdout"].strip() == expected_output.strip()
+
+        results.append({
+            "input": input_data,
+            "expected_output": expected_output,
+            "actual_output": result["stdout"].strip(),
+            "passed": passed,
+            "stderr": result["stderr"]
+        })
+
+    return results

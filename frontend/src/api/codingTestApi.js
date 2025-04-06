@@ -12,11 +12,12 @@ export const getCodingTestDetail = async (testId) => {
   return res.data;
 };
 
-// 스타터 코드 조회
-export const getStarterCode = async (language) => {
-    const res = await apiClient.get(`/language-starter-code/${language}`);
-    return res.data;
-  };
+// 문제별 스타터 코드 조회
+export const getStarterCode = async (testId, language) => {
+  const res = await apiClient.get(`/problem-starter-code/${testId}/${language}`);
+  return res.data;
+};
+
 
 // 코드 제출
 export const submitCodingTest = async (data) => {
@@ -35,6 +36,17 @@ export const getSubmissionList = async (testId, userId) => {
 // 코드 실행 요청
 export const runCodeWithTestcases = async (testId, code, language) => {
   const res = await apiClient.post(`/code-exec/run/${testId}`, {
+    code,
+    language,
+  });
+  return res.data;
+};
+
+// 코드 제출 API
+export const submitCode = async ({ user_id, test_id, code, language }) => {
+  const res = await apiClient.post("/codingtest/submit", {
+    user_id,
+    test_id,
     code,
     language,
   });

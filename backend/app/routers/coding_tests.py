@@ -1,22 +1,22 @@
+# ✅ 최적화된 코딩 테스트 라우터
 import random
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query
+from sqlalchemy.orm import Session, aliased
 from app.database import get_db
 from typing import Optional
 from sqlalchemy import func
 from datetime import datetime
-from fastapi import Query
-
 from app.models.coding_tests import (
     CodingTests,
     CodingTestSubmissions,
     CodingTestCases,
     CodingTestConstraints,
     CorrectSubmissionStats,
-    CodingTestSubmissions,
 )
+from app.routers.coding_test_submission import update_correct_stats
 from app.schemas.coding_tests import CodingTestSubmissionCreate
-
+from app.services.coding_test_case_service import get_testcases
+from app.services.code_executor import run_code_against_testcases
 
 router = APIRouter(prefix="/codingtest", tags=["Coding Test"])
 
@@ -29,39 +29,45 @@ def get_coding_test_list(
     level: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
     category: Optional[str] = Query(None),
-    sort: str = "desc",  # ✅ 유지
+    sort: str = "desc",
     user_id: Optional[str] = Query(None),
 ):
-    query = db.query(CodingTests)
+    stats_alias = aliased(CorrectSubmissionStats)
 
-    # 검색
+    # 기본 쿼리 + 정답률 조인
+    query = (
+        db.query(CodingTests, stats_alias.correct_rate)
+        .outerjoin(stats_alias, CodingTests.test_id == stats_alias.test_id)
+    )
+
     if search:
         query = query.filter(CodingTests.title.ilike(f"%{search}%"))
 
-    # 난이도 필터
     if level and level.isdigit():
         query = query.filter(CodingTests.difficulty == int(level))
 
-    # 카테고리 필터
     if category:
         query = query.filter(CodingTests.category == category)
 
-    # 상태 및 solved 여부 처리
-    raw_problems = query.all()
+    if sort == "asc":
+        query = query.order_by(stats_alias.correct_rate.asc().nullsfirst())
+    elif sort == "desc":
+        query = query.order_by(stats_alias.correct_rate.desc().nullslast())
 
-    # 🔥 solved 처리
-    result = []
-    for p in raw_problems:
+    total = query.count()
+    rows = query.offset((page - 1) * 20).limit(20).all()
+
+    problems = []
+    for problem, correct_rate in rows:
         solved = False
         if user_id and user_id.isdigit():
             submission = (
                 db.query(CodingTestSubmissions)
                 .filter(
                     CodingTestSubmissions.user_id == int(user_id),
-                    CodingTestSubmissions.test_id == p.test_id,
+                    CodingTestSubmissions.test_id == problem.test_id,
                     CodingTestSubmissions.is_correct == True,
-                )
-                .first()
+                ).first()
             )
             solved = bool(submission)
 
@@ -70,35 +76,20 @@ def get_coding_test_list(
         if status == "unsolved" and solved:
             continue
 
-        result.append(
-            {
-                "id": p.test_id,
-                "title": p.title,
-                "level": p.difficulty,
-                "category": p.category,
-                "created_at": p.created_at,
-                "solved": solved if user_id else False,
-                "correct_rate": 0,  # 추후 계산 예정
-            }
-        )
+        problems.append({
+            "id": problem.test_id,
+            "title": problem.title,
+            "level": problem.difficulty,
+            "category": problem.category,
+            "created_at": problem.created_at,
+            "solved": solved,
+            "correct_rate": float(correct_rate) if correct_rate is not None else 0.0,
+        })
 
-    # 🔥 고정 랜덤 순서
-    random.seed(42)  # 원하는 seed값, seed 고정하면 항상 같은 순서
-    random.shuffle(result)
-
-    # 페이징
-    total = len(result)
-    start = (page - 1) * 20
-    end = start + 20
-    paginated_result = result[start:end]
-
-    # 카테고리 통계
     category_stats = (
         db.query(CodingTests.category, func.count(CodingTests.test_id))
-        .group_by(CodingTests.category)
-        .all()
+        .group_by(CodingTests.category).all()
     )
-
     category_counts = [
         {"category": c[0], "count": c[1]} for c in category_stats if c[0] is not None
     ]
@@ -106,28 +97,22 @@ def get_coding_test_list(
     return {
         "total": total,
         "page": page,
-        "problems": paginated_result,
+        "problems": problems,
         "category_counts": category_counts,
     }
 
 
 @router.get("/{test_id}")
 def get_coding_test_detail(
-    test_id: int, db: Session = Depends(get_db), user_id: int = None  # 선택적으로 받기
+    test_id: int, db: Session = Depends(get_db), user_id: int = None
 ):
     problem = db.query(CodingTests).filter(CodingTests.test_id == test_id).first()
     if not problem:
         raise HTTPException(status_code=404, detail="해당 문제를 찾을 수 없습니다.")
 
-    # 정답률 조회
-    stats = (
-        db.query(CorrectSubmissionStats)
-        .filter(CorrectSubmissionStats.test_id == test_id)
-        .first()
-    )
-    correct_rate = stats.correct_rate if stats else 0.0
+    stats = db.query(CorrectSubmissionStats).filter(CorrectSubmissionStats.test_id == test_id).first()
+    correct_rate = float(stats.correct_rate) if stats and stats.correct_rate is not None else 0.0
 
-    # 풀었는지 여부
     solved = False
     if user_id:
         submission = (
@@ -136,24 +121,12 @@ def get_coding_test_detail(
                 CodingTestSubmissions.user_id == user_id,
                 CodingTestSubmissions.test_id == test_id,
                 CodingTestSubmissions.is_correct == True,
-            )
-            .first()
+            ).first()
         )
         solved = bool(submission)
 
-    # 테스트케이스
-    testcases = (
-        db.query(CodingTestCases)
-        .filter(CodingTestCases.test_id == test_id, CodingTestCases.is_hidden == False)
-        .all()
-    )
-
-    # 제약조건
-    constraints = (
-        db.query(CodingTestConstraints)
-        .filter(CodingTestConstraints.test_id == test_id)
-        .all()
-    )
+    testcases = db.query(CodingTestCases).filter(CodingTestCases.test_id == test_id, CodingTestCases.is_hidden == False).all()
+    constraints = db.query(CodingTestConstraints).filter(CodingTestConstraints.test_id == test_id).all()
 
     return {
         "id": problem.test_id,
@@ -169,11 +142,7 @@ def get_coding_test_detail(
         "correct_rate": correct_rate,
         "solved": solved,
         "testcases": [
-            {
-                "input": tc.example_input,
-                "output": tc.example_output,
-                "type": tc.test_type,
-            }
+            {"input": tc.example_input, "output": tc.example_output, "type": tc.test_type}
             for tc in testcases
         ],
         "constraints": [
@@ -188,42 +157,49 @@ def get_coding_test_detail(
     }
 
 
-# 코딩테스트 제출
 @router.post("/submit")
-def submit_coding_test(
-    submission: CodingTestSubmissionCreate, db: Session = Depends(get_db)
+async def submit_coding_test(
+    submission: CodingTestSubmissionCreate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
 ):
-    # 1. 문제 존재 확인
-    problem = (
-        db.query(CodingTests).filter(CodingTests.test_id == submission.test_id).first()
-    )
+    problem = db.query(CodingTests).filter(CodingTests.test_id == submission.test_id).first()
     if not problem:
         raise HTTPException(status_code=404, detail="문제를 찾을 수 없습니다.")
 
-    # 2. 정답 확인 (임시로 '출력' 문자열 비교로 처리 → 추후 채점 서버와 연동 가능)
-    # 여기선 간단하게 '정답 코드'는 DB에 없으니 항상 False 처리
-    is_correct = False  # 임시 처리
+    testcases = get_testcases(db, submission.test_id, type="all")
+    results = await run_code_against_testcases(submission.code, submission.language, testcases)
+    passed_count = sum(1 for r in results if r["passed"])
+    total_count = len(results)
+    is_correct = passed_count == total_count
 
-    # 3. 제출 기록 저장
     new_submission = CodingTestSubmissions(
         user_id=submission.user_id,
         test_id=submission.test_id,
         code=submission.code,
-        language=submission.language,  # ✅ 반드시 추가해야 함
+        language=submission.language,
         is_correct=is_correct,
+        passed_test_cases=passed_count,
+        total_test_cases=total_count,
         submitted_at=datetime.utcnow(),
+        execution_log="",
     )
     db.add(new_submission)
     db.commit()
+    db.refresh(new_submission)
+
+    background_tasks.add_task(update_correct_stats, db=db, test_id=submission.test_id, is_correct=is_correct)
 
     return {
         "result": "success",
         "is_correct": is_correct,
-        "language": submission.language,
+        "submission_id": new_submission.ct_submission_id,
+        "passed_test_cases": passed_count,
+        "total_test_cases": total_count,
+        "all_cases": results,
     }
 
 
-# 제출 내역 조회
 @router.get("/submissions/{test_id}")
 def get_coding_test_submissions(
     test_id: int, user_id: int = Query(...), db: Session = Depends(get_db)
@@ -240,19 +216,15 @@ def get_coding_test_submissions(
 
     result = []
     for sub in submissions:
-        result.append(
-            {
-                "submission_id": sub.ct_submission_id,
-                "submitted_at": sub.submitted_at.strftime("%Y-%m-%d %H:%M"),
-                "language": (
-                    sub.language if hasattr(sub, "language") else "python"
-                ),  # 언어 칼럼 없으면 임시 처리
-                "is_correct": sub.is_correct,
-                "memory": f"{len(sub.code.encode('utf-8'))}B",  # 코드 크기 기준
-                "passed_test_cases": sub.passed_test_cases,
-                "total_test_cases": sub.total_test_cases,
-                "code": sub.code,
-            }
-        )
+        result.append({
+            "submission_id": sub.ct_submission_id,
+            "submitted_at": sub.submitted_at.strftime("%Y-%m-%d %H:%M"),
+            "language": sub.language,
+            "is_correct": sub.is_correct,
+            "memory": f"{len(sub.code.encode('utf-8'))}B",
+            "passed_test_cases": sub.passed_test_cases,
+            "total_test_cases": sub.total_test_cases,
+            "code": sub.code,
+        })
 
     return {"submissions": result}
