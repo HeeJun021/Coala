@@ -13,6 +13,7 @@ from app.models.coding_tests import (
     CodingTestConstraints,
     CorrectSubmissionStats,
 )
+from app.models.user import User
 from app.routers.coding_test_submission import update_correct_stats
 from app.schemas.coding_tests import CodingTestSubmissionCreate
 from app.services.coding_test_case_service import get_testcases
@@ -228,3 +229,33 @@ def get_coding_test_submissions(
         })
 
     return {"submissions": result}
+
+# 다른 사람의 정답 제출 목록 조회
+@router.get("/solutions/{test_id}")
+def get_solved_submissions_for_test(
+    test_id: int,
+    db: Session = Depends(get_db),
+):
+    submissions = (
+        db.query(CodingTestSubmissions, User.nickname, User.profile_image_url)
+        .join(User, User.user_id == CodingTestSubmissions.user_id)
+        .filter(
+            CodingTestSubmissions.test_id == test_id,
+            CodingTestSubmissions.is_correct == True,
+        )
+        .order_by(CodingTestSubmissions.submitted_at.desc())
+        .all()
+    )
+
+    result = []
+    for sub, nickname, profile_image_url in submissions:
+        result.append({
+            "user_id": sub.user_id,
+            "nickname": nickname,
+            "profile_image_url": profile_image_url,
+            "code": sub.code,
+            "language": sub.language,
+            "submitted_at": sub.submitted_at.strftime("%Y-%m-%d %H:%M"),
+        })
+
+    return result

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { FaCheck, FaSort, FaSearch, FaTimes } from "react-icons/fa";
 import { useSearchParams, Link } from "react-router-dom";
 import { getCodingTestList } from "../api/codingTestApi";
-import { useAuth } from "../context/AuthContext"; // ✅ 추가
+import { useAuth } from "../context/AuthContext";
 
 const levelColors = {
   1: "text-blue-500",
@@ -93,7 +93,7 @@ const CodingTestPage = () => {
     sort === "desc" ? "정답률이 높은 문제" : "정답률이 낮은 문제";
 
   return (
-    <div className="p-6 pt-[90px] bg-white min-h-screen">
+    <div className="p-6 bg-white min-h-screen">
       {/* 검색 & 필터 */}
       <div className="flex flex-col gap-2 mb-4">
         <div

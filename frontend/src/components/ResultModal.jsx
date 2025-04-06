@@ -1,6 +1,9 @@
 import React from "react";
+import { useNavigate } from "react-router-dom"; // ✅ 추가
 
-const ResultModal = ({ isCorrect, passed, total, onClose }) => {
+const ResultModal = ({ isCorrect, passed, total, onClose, testId }) => {
+  const navigate = useNavigate(); // ✅ navigate 함수 사용
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center">
       <div className="bg-white text-black rounded-xl shadow-xl p-8 max-w-md w-full text-center">
@@ -24,7 +27,7 @@ const ResultModal = ({ isCorrect, passed, total, onClose }) => {
           </button>
           {isCorrect && (
             <button
-              onClick={() => alert("✅ 다른 사람 풀이 보기 연결 예정")}
+              onClick={() => navigate(`/codingtest/correct/${testId}`)} // ✅ 실제 이동
               className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded"
             >
               다른 사람의 풀이 보기

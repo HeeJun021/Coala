@@ -17,6 +17,7 @@ import ResetPassword from "./pages/ResetPassword";
 import MyPage from "./pages/MyPage";
 import MyPageModify from "./pages/MyPageModify";
 import MyPageSetting from "./pages/MyPageSetting";
+import CorrectSolutionsPage from "./pages/CorrectSolutionsPage";
 
 // 코딩 테스트 페이지 가져오기
 import CodingTestPage from "./pages/CodingTestPage";
@@ -26,13 +27,15 @@ const BodyClassManager = () => {
   const location = useLocation();
 
   useEffect(() => {
-    if (location.pathname.startsWith("/codingtest/") && location.pathname !== "/codingtest") {
-      // ✅ 상세페이지일 때
+    if (
+      (location.pathname.startsWith("/codingtest/") && location.pathname !== "/codingtest") ||
+      location.pathname.startsWith("/codingtest/correct/")
+    ) {
       document.body.className = "fullscreen-body";
     } else {
-      // ✅ 나머지 페이지
       document.body.className = "default-body";
     }
+    
   }, [location.pathname]);
 
   return null;
@@ -74,6 +77,9 @@ const App = () => {
       <AuthProvider> {/* ✅ AuthProvider 적용 */}
         <BodyClassManager /> {/* ✅ 바디 클래스 상태 관리 */}
         <Routes>
+          {/* ✅ Layout 제외: 코딩테스트 상세 페이지 (풀화면) */}
+          <Route path="/codingtest/:id" element={<CodingTestDetailPage />} />
+          <Route path="/codingtest/correct/:testId" element={<CorrectSolutionsPage />} />
           {/* ✅ Layout 적용되는 페이지들 */}
           <Route
             path="/*"
@@ -110,9 +116,7 @@ const App = () => {
               </MainLayout>
             }
           />
-
-          {/* ✅ Layout 제외: 코딩테스트 상세 페이지 (풀화면) */}
-          <Route path="/codingtest/:id" element={<CodingTestDetailPage />} />
+          
         </Routes>
       </AuthProvider>
     </Router>

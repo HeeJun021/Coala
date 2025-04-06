@@ -52,3 +52,8 @@ export const submitCode = async ({ user_id, test_id, code, language }) => {
   });
   return res.data;
 };
+
+export const getCorrectSolutions = async (testId) => {
+  const res = await apiClient.get(`/codingtest/solutions/${testId}`);
+  return res.data;
+};

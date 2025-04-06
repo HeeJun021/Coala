@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { cleanStderr } from "../utils/cleanStderr";
 import { HiOutlineRefresh } from "react-icons/hi";
 import { motion, AnimatePresence } from "framer-motion";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { ResizableBox } from "react-resizable";
 import Editor from "react-simple-code-editor";
@@ -630,9 +630,12 @@ const CodingTestDetailPage = () => {
             질문 게시판 이동하기
           </button>
           <div className="flex gap-2">
-            <button className="text-xs text-white border border-gray-500 px-3 py-2 rounded hover:bg-gray-600 transition">
+            <Link
+              to={`/codingtest/correct/${problem.id}`}
+              className="text-xs text-white border border-gray-500 px-3 py-2 rounded hover:bg-gray-600 transition"
+            >
               다른 사람의 풀이
-            </button>
+            </Link>
             <button
               onClick={handleResetCode}
               className="text-xs text-white border border-gray-500 px-3 py-2 rounded hover:bg-gray-600 transition"
@@ -669,6 +672,7 @@ const CodingTestDetailPage = () => {
           passed={resultData.passed}
           total={resultData.total}
           onClose={() => setShowResultModal(false)}
+          testId={problem.id}
         />
       )}
     </>
