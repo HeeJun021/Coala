@@ -28,7 +28,7 @@ const CodingTestDetailPage = () => {
   const [activeTab, setActiveTab] = useState("info");
   const [code, setCode] = useState("// 여기에 코드를 입력하세요.");
   const [selectedLine, setSelectedLine] = useState(null);
-  const [language, setLanguage] = useState("javascript");
+  const [language, setLanguage] = useState("python");
   const [submissions, setSubmissions] = useState([]);
   const [showRefreshMessage, setShowRefreshMessage] = useState(false);
   const [executionResults, setExecutionResults] = useState([]);
@@ -288,9 +288,9 @@ const CodingTestDetailPage = () => {
               value={language}
               onChange={handleLanguageChange}
             >
-              <option value="javascript">JavaScript</option>
               <option value="python">Python</option>
               <option value="java">Java</option>
+              <option value="javascript">JavaScript</option>
             </select>
           </div>
         </div>
@@ -445,9 +445,14 @@ const CodingTestDetailPage = () => {
                           <tr className="border-b border-gray-600 bg-[#2c3544]">
                             <td colSpan="5" className="p-3 relative">
                               <button
-                                onClick={() =>
-                                  navigator.clipboard.writeText(s.code)
-                                }
+                                onClick={() => {
+                                  navigator.clipboard.writeText(s.code);
+                                  setShowCopyMessage(true);
+                                  setTimeout(
+                                    () => setShowCopyMessage(false),
+                                    3000
+                                  );
+                                }}
                                 className="absolute top-2 right-2 text-xs bg-[#4b5b6e] text-white px-3 py-1 rounded hover:bg-[#5f6f82] z-10"
                                 style={{ cursor: "pointer" }}
                               >
@@ -522,7 +527,7 @@ const CodingTestDetailPage = () => {
                 </span>
               }
             >
-              <div className="border-t border-gray-600 p-4 text-sm overflow-auto bg-[#3d4d63] h-full">
+              <div className="border-t border-gray-600 p-4 text-sm overflow-auto bg-[#3d4d63] h-full result-scrollbar">
                 <h3 className="text-white font-semibold mb-2">
                   {isSubmitResult ? "제출 실행 결과" : "실행 결과"}
                 </h3>

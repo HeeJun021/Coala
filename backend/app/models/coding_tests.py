@@ -71,6 +71,7 @@ class CodingTestSubmissions(Base):
     is_correct = Column(Boolean, default=False)
     submitted_at = Column(TIMESTAMP, nullable=True)
     language = Column(String(20), default="python")
+    viewed_others = Column(Boolean, default=False)
 
 
 class CorrectSubmissionStats(Base):
@@ -80,15 +81,6 @@ class CorrectSubmissionStats(Base):
     total_submissions = Column(Integer, default=0)
     correct_submissions = Column(Integer, default=0)
     correct_rate = Column(Float, default=0.0)
-
-
-class ViewedSubmissions(Base):
-    __tablename__ = "viewedsubmissions"
-
-    view_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    viewer_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"))
-    test_id = Column(Integer, ForeignKey("codingtests.test_id", ondelete="CASCADE"))
-    viewed_at = Column(TIMESTAMP, nullable=True)
 
 
 class WrongNote(Base):

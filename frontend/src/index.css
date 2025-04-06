@@ -25,21 +25,27 @@ html, body, #root {
 }
 
 /* 코딩테스트 & 에디터 스크롤바 커스텀 */
+.result-scrollbar::-webkit-scrollbar,
 .problem-info-scrollbar::-webkit-scrollbar,
 .editor-scrollbar::-webkit-scrollbar {
   width: 8px;
 }
 
+/* ✅ 스크롤바 thumb (움직이는 부분) */
+.result-scrollbar::-webkit-scrollbar-thumb,
 .problem-info-scrollbar::-webkit-scrollbar-thumb,
 .editor-scrollbar::-webkit-scrollbar-thumb {
   background-color: #2c3544;
-  border-radius: 2px;
+  border-radius: 4px;
 }
 
+/* ✅ 스크롤바 트랙 (배경) */
+.result-scrollbar::-webkit-scrollbar-track,
 .problem-info-scrollbar::-webkit-scrollbar-track,
 .editor-scrollbar::-webkit-scrollbar-track {
   background-color: #4b5b6e;
 }
+
 
 
 /* 코드 에디터 스타일 */
