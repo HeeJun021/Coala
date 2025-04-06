@@ -30,6 +30,7 @@ import BoardPage from "./pages/BoardPage";
 import BoardDetailPage from "./pages/BoardDetailPage";
 import BoardWritePage from "./pages/BoardWritePage";
 import { Navigate } from "react-router-dom";
+import BoardEditPage from "./pages/BoardEditPage";
 
 
 const App = () => {
@@ -106,6 +107,7 @@ const App = () => {
             <Route path="/board/:boardType/write" element={<BoardWritePage />} />
             <Route path="/board/:boardType/:postId" element={<BoardDetailPage />} />
             <Route path="/board" element={<Navigate to="/board/free" />} />
+            <Route path="/board/:boardType/edit/:postId" element={<BoardEditPage />} />
             
           </Routes>
         </MainLayout>

@@ -3,63 +3,7 @@ import BoardItem from "./BoardItem";
 import BoardSearchBar from "./BoardSearchBar";
 import BoardSortDropdown from "./BoardSortDropdown";
 import Pagination from "./Pagination";
-
-const dummyPosts = {
-  project: [
-    {
-      id: 1,
-      date: "4/2",
-      title: "프로젝트 게시글 제목 1",
-      photo: true,
-      members: "2/5",
-      likes: 8,
-    },
-    {
-      id: 2,
-      date: "4/1",
-      title: "프로젝트 게시글 제목 2",
-      photo: false,
-      members: "3/4",
-      likes: 5,
-    },
-  ],
-  free: [
-    {
-      id: 1,
-      date: "4/2",
-      title: "자유 게시판 글 제목 1",
-      photo: true,
-      comments: 3,
-      likes: 10,
-    },
-    {
-      id: 2,
-      date: "4/1",
-      title: "자유 게시판 글 제목 2",
-      photo: false,
-      comments: 1,
-      likes: 2,
-    },
-  ],
-  code: [
-    {
-      id: 1,
-      date: "4/2",
-      title: "코드 공유 게시글 1",
-      photo: true,
-      comments: 5,
-      likes: 7,
-    },
-    {
-      id: 2,
-      date: "4/1",
-      title: "코드 공유 게시글 2",
-      photo: false,
-      comments: 2,
-      likes: 3,
-    },
-  ],
-};
+import { BOARD_TYPES } from "../constants/boardConstants";
 
 const BoardList = ({ boardType }) => {
   const [posts, setPosts] = useState([]);
@@ -67,7 +11,8 @@ const BoardList = ({ boardType }) => {
   const [sortOrder, setSortOrder] = useState("최신 순");
 
   useEffect(() => {
-    setPosts(dummyPosts[boardType] || []);
+    // TODO: API 연결 시 fetchPosts 함수 구현 예정
+    setPosts([]); // 더미 데이터 제거
   }, [boardType]);
 
   const filteredPosts = Array.isArray(posts)
@@ -78,9 +23,9 @@ const BoardList = ({ boardType }) => {
     <div>
       {/* 게시판 이름 */}
       <h2 className="text-xl font-semibold mb-4 capitalize">
-        {boardType === "project"
+        {boardType === BOARD_TYPES.PROJECT
           ? "프로젝트 게시판"
-          : boardType === "free"
+          : boardType === BOARD_TYPES.FREE
           ? "자유게시판"
           : "코드 공유 게시판"}
       </h2>
@@ -101,7 +46,7 @@ const BoardList = ({ boardType }) => {
             <th className="border p-2 w-16">게시일</th>
             <th className="border p-2">제목</th>
             <th className="border p-2 w-24">사진첨부</th>
-            {boardType === "project" ? (
+            {boardType === BOARD_TYPES.PROJECT ? (
               <th className="border p-2 w-24">모집인원</th>
             ) : (
               <th className="border p-2 w-20">댓글</th>
