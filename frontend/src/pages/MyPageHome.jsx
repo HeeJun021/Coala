@@ -9,7 +9,6 @@ const MyPageHome = () => {
         username: "김희준",
         bio: "안녕하세요.",
         role: "프론트 엔드"
-        
     };
     
     return (

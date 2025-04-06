@@ -2,15 +2,143 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-    background-color: white; /* Tailwind config의 베이지색 */
-    margin: 0;
-    padding: 0;
-    font-family: 'Arial', sans-serif; /* 기본 폰트 설정 */
-    padding-top: 70px;
-  }
-  
-  html, body, #root {
-    height: 100%; /* 전체 화면을 채우도록 설정 */
-  }
-  
+/* 기본 바디 스타일 (대부분 페이지용) */
+body.default-body {
+  background-color: white; /* 기존 베이지 배경 */
+  margin: 0;
+  padding: 0;
+  font-family: 'Arial', sans-serif;
+  padding-top: 70px;
+}
+
+/* 코딩테스트 상세페이지 전용 스타일 */
+body.fullscreen-body {
+  background-color: #3d4d63; /* 어두운 배경 */
+  margin: 0;
+  padding: 0;
+  font-family: 'Arial', sans-serif;
+}
+
+/* 항상 전체 화면 */
+html, body, #root {
+  height: 100%;
+}
+
+/* 코딩테스트 & 에디터 스크롤바 커스텀 */
+.result-scrollbar::-webkit-scrollbar,
+.problem-info-scrollbar::-webkit-scrollbar,
+.editor-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+/* ✅ 스크롤바 thumb (움직이는 부분) */
+.result-scrollbar::-webkit-scrollbar-thumb,
+.problem-info-scrollbar::-webkit-scrollbar-thumb,
+.editor-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #2c3544;
+  border-radius: 4px;
+}
+
+/* ✅ 스크롤바 트랙 (배경) */
+.result-scrollbar::-webkit-scrollbar-track,
+.problem-info-scrollbar::-webkit-scrollbar-track,
+.editor-scrollbar::-webkit-scrollbar-track {
+  background-color: #4b5b6e;
+}
+
+
+
+/* 코드 에디터 스타일 */
+.editor-wrapper {
+  background-color: #3d4d63;
+  font-family: "Fira Code", monospace;
+  font-size: 14px;
+  padding: 1rem;
+  counter-reset: line;
+}
+
+.editor-pre {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.editor-textarea {
+  outline: none;
+}
+
+.editor-wrapper code {
+  display: block;
+  white-space: pre;
+}
+
+.editor-wrapper code span {
+  display: inline-block;
+  width: 100%;
+}
+
+.editor-wrapper code span::before {
+  counter-increment: line;
+  content: counter(line);
+  display: inline-block;
+  width: 2rem;
+  margin-right: 1rem;
+  color: #6b7280;
+}
+
+/* 선택된 줄 배경색 */
+.editor-wrapper code span.selected-line {
+  background-color: #202b3d;
+}
+
+/* Prism Syntax Highlight 색상 */
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: #6a9955;
+}
+
+.token.punctuation {
+  color: #d4d4d4;
+}
+
+.token.property,
+.token.tag,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: #569cd6;
+}
+
+.token.number {
+  color: #b5cea8;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+  color: #ce9178;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.token.variable {
+  color: #d4d4d4;
+}
+
+.token.keyword {
+  color: #c586c0;
+}
+
+.token.function {
+  color: #dcdcaa;
+}
+
+.token.regex,
+.token.important {
+  color: #d16969;
+}
