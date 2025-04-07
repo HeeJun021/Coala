@@ -11,7 +11,7 @@ const MyPageQuizHistory = ({ userData }) => {
 
   // ✅ 페이지네이션 상태
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
+  const itemsPerPage = 15;
 
   // ✅ 필터 상태
   const [filter, setFilter] = useState("all");
@@ -87,12 +87,12 @@ const MyPageQuizHistory = ({ userData }) => {
       <div className="w-[250px]">
         <MyPageSidebar />
       </div>
-      <h2 className="text-xl font-semibold mb-5">📜 퀴즈 풀이 내역</h2>
+      <h2 className="text-xl font-semibold mt-12">📜 퀴즈 풀이 내역</h2>
 
       {filteredHistory.length === 0 ? (
         <p className="text-sm text-gray-500">해당 유형의 퀴즈 기록이 없습니다.</p>
       ) : (
-        <div className="bg-white shadow-md rounded-lg p-4 mt-12">
+        <div className="bg-white shadow-md rounded-lg p-4 mt-4">
           <table className="w-full border-collapse border text-base">
             <thead>
               <tr className="bg-gray-100 text-sm">

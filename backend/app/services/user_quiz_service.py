@@ -1,18 +1,38 @@
 from sqlalchemy import func
 from sqlalchemy.orm import Session
-from app.models.user_quiz import Userquizzes, Userquestions, Userquizassignments, Userquizsubmissions, Userquizsubmissiondetails
+from sqlalchemy.orm import aliased
+from fastapi import HTTPException
+
+from app.models.user_quiz import (
+    Userquizzes,
+    Userquestions,
+    Userquizassignments,
+    Userquizsubmissions,
+    Userquizsubmissiondetails,
+)
 from app.models.user import User
-from app.schemas.user_quiz import UserQuizCreate, UserQuizResultResponse, UserQuizResultQuestion, UserQuizHistoryResponse, UserQuizHistoryItem
+from app.schemas.user_quiz import (
+    UserQuizCreate,
+    UserQuizCreateResponse,
+    UserQuizDetail,
+    UserQuestionDetail,
+    UserQuizSubmitRequest,
+    UserQuizSubmitResponse,
+    UserQuizResultResponse,
+    UserQuizResultQuestion,
+    UserQuizHistoryResponse,
+    UserQuizHistoryItem,
+)
 
 
-def create_user_quiz(quiz_data: UserQuizCreate, db: Session):
+def create_user_quiz(quiz_data: UserQuizCreate, db: Session) -> UserQuizCreateResponse:
     new_quiz = Userquizzes(
         user_id=quiz_data.user_id,
         title=quiz_data.title,
         content=quiz_data.content
     )
     db.add(new_quiz)
-    db.flush()  # await 제거
+    db.flush()
 
     question_ids = []
 
@@ -27,7 +47,7 @@ def create_user_quiz(quiz_data: UserQuizCreate, db: Session):
             question_type=q.question_type
         )
         db.add(new_question)
-        db.flush()  # await 제거
+        db.flush()
 
         assignment = Userquizassignments(
             userquiz_id=new_quiz.userquiz_id,
@@ -39,14 +59,11 @@ def create_user_quiz(quiz_data: UserQuizCreate, db: Session):
 
     db.commit()
 
-    return {
-        "userquiz_id": new_quiz.userquiz_id,
-        "question_ids": question_ids
-    }
+    return UserQuizCreateResponse(
+        userquiz_id=new_quiz.userquiz_id,
+        question_ids=question_ids
+    )
 
-from sqlalchemy import func
-from app.models.user_quiz import Userquizzes, Userquizsubmissions
-from app.models.user import User
 
 def get_all_user_quizzes(db: Session, search: str = None, user_id: int = None):
     query = (
@@ -62,7 +79,7 @@ def get_all_user_quizzes(db: Session, search: str = None, user_id: int = None):
     )
 
     if search:
-        query = query.filter(User.nickname.ilike(f"%{search}%"))
+        query = query.filter(Userquizzes.title.ilike(f"%{search}%"))
     if user_id:
         query = query.filter(User.user_id == user_id)
 
@@ -81,7 +98,104 @@ def get_all_user_quizzes(db: Session, search: str = None, user_id: int = None):
 
     return quizzes
 
-def get_user_quiz_result_service(uq_submission_id: int, db: Session):
+
+def get_user_quiz_detail(userquiz_id: int, db: Session) -> UserQuizDetail:
+    quiz = db.query(Userquizzes).filter(Userquizzes.userquiz_id == userquiz_id).first()
+    if not quiz:
+        raise HTTPException(status_code=404, detail="퀴즈를 찾을 수 없습니다.")
+
+    assignments = db.query(Userquizassignments).filter(
+        Userquizassignments.userquiz_id == userquiz_id
+    ).order_by(Userquizassignments.seq).all()
+
+    question_ids = [a.userquestion_id for a in assignments]
+
+    questions = db.query(Userquestions).filter(
+        Userquestions.userquestion_id.in_(question_ids)
+    ).all()
+
+    question_details = []
+    for q in questions:
+        question_details.append(
+            UserQuestionDetail(
+                userquestion_id=q.userquestion_id,
+                question_text=q.question_text,
+                question_type=q.question_type,
+                choices=q.choices,
+                explanation=q.explanation,
+            )
+        )
+
+    return UserQuizDetail(
+        userquiz_id=quiz.userquiz_id,
+        title=quiz.title,
+        content=quiz.content,
+        questions=question_details,
+    )
+
+
+def submit_user_quiz(data: UserQuizSubmitRequest, db: Session) -> UserQuizSubmitResponse:
+    quiz = db.query(Userquizzes).filter(Userquizzes.userquiz_id == data.userquiz_id).first()
+    if not quiz:
+        raise HTTPException(status_code=404, detail="퀴즈를 찾을 수 없습니다.")
+
+    assignments = db.query(Userquizassignments).filter(
+        Userquizassignments.userquiz_id == data.userquiz_id
+    ).order_by(Userquizassignments.seq).all()
+
+    question_ids = [a.userquestion_id for a in assignments]
+    questions = db.query(Userquestions).filter(
+        Userquestions.userquestion_id.in_(question_ids)
+    ).all()
+
+    correct_count = 0
+    details = []
+
+    for seq, assignment in enumerate(assignments):
+        q = next((q for q in questions if q.userquestion_id == assignment.userquestion_id), None)
+        if not q:
+            continue
+        user_answer = next(
+            (a["user_answer"] for a in data.answers if a["question_id"] == q.userquestion_id), ""
+        )
+        is_correct = str(user_answer).strip() == str(q.correct_answer).strip()
+        if is_correct:
+            correct_count += 1
+
+        details.append(
+            Userquizsubmissiondetails(
+                uq_submission_id=None,
+                seq=seq + 1,
+                question_text=q.question_text,
+                user_answer=user_answer,
+                correct_answer=q.correct_answer,
+                is_correct=is_correct
+            )
+        )
+
+    submission = Userquizsubmissions(
+        userquiz_id=data.userquiz_id,
+        user_id=data.user_id,
+        correct_count=correct_count
+    )
+    db.add(submission)
+    db.commit()
+    db.refresh(submission)
+
+    for d in details:
+        d.uq_submission_id = submission.uq_submission_id
+        db.add(d)
+
+    db.commit()
+
+    return UserQuizSubmitResponse(
+        uq_submission_id=submission.uq_submission_id,
+        correct_count=correct_count,
+        total_count=len(assignments),
+    )
+
+
+def get_user_quiz_result_service(uq_submission_id: int, db: Session) -> UserQuizResultResponse:
     submission = db.query(Userquizsubmissions).filter(
         Userquizsubmissions.uq_submission_id == uq_submission_id
     ).first()
@@ -96,20 +210,27 @@ def get_user_quiz_result_service(uq_submission_id: int, db: Session):
     if not quiz:
         raise HTTPException(status_code=404, detail="퀴즈 정보를 찾을 수 없습니다.")
 
+    # 🔥 서브미션 디테일 (question_text 기준으로만 저장됨)
     details = db.query(Userquizsubmissiondetails).filter(
         Userquizsubmissiondetails.uq_submission_id == uq_submission_id
     ).order_by(Userquizsubmissiondetails.seq).all()
 
-    questions = []
+    # 🔥 질문 전체 불러와서 question_text 기준 매핑
+    questions = db.query(Userquestions).all()
+    question_map = {q.question_text: q for q in questions}
+
+    questions_response = []
     for d in details:
-        questions.append(
+        match_question = question_map.get(d.question_text)
+
+        questions_response.append(
             UserQuizResultQuestion(
                 question_text=d.question_text,
                 user_answer=d.user_answer,
                 correct_answer=d.correct_answer,
                 is_correct=d.is_correct,
-                explanation=d.explanation if hasattr(d, "explanation") else "",  # 없으면 빈값
-                question_type=d.question_type if hasattr(d, "question_type") else 1  # 없으면 OX
+                explanation=match_question.explanation if match_question else "",
+                question_type=match_question.question_type if match_question else 1
             )
         )
 
@@ -118,10 +239,14 @@ def get_user_quiz_result_service(uq_submission_id: int, db: Session):
         title=quiz.title,
         submitted_at=submission.submitted_at,
         correct_count=submission.correct_count,
-        questions=questions
+        questions=questions_response
     )
-    
+
+
 def get_user_quiz_history(db: Session, user_id: int) -> UserQuizHistoryResponse:
+    # alias를 써서 "quiz_creator"라는 가상의 모델명으로 JOIN
+    quiz_creator = aliased(User)
+
     results = (
         db.query(
             Userquizsubmissions.uq_submission_id,
@@ -129,9 +254,13 @@ def get_user_quiz_history(db: Session, user_id: int) -> UserQuizHistoryResponse:
             Userquizzes.title,
             Userquizsubmissions.correct_count,
             Userquizsubmissions.submitted_at,
-            User.nickname.label("creator_name")
+            quiz_creator.nickname.label("creator_name")  # ← 제대로 된 creator
         )
+        # 1) 제출 정보와 퀴즈를 JOIN
         .join(Userquizzes, Userquizsubmissions.userquiz_id == Userquizzes.userquiz_id)
+        # 2) 퀴즈와 "퀴즈 만든 사람"을 JOIN
+        .join(quiz_creator, Userquizzes.user_id == quiz_creator.user_id)
+        # 3) 이 "제출"의 주인은 user_id
         .filter(Userquizsubmissions.user_id == user_id)
         .order_by(Userquizsubmissions.submitted_at.desc())
         .all()
@@ -144,10 +273,8 @@ def get_user_quiz_history(db: Session, user_id: int) -> UserQuizHistoryResponse:
             title=row.title,
             correct_count=row.correct_count,
             submitted_at=row.submitted_at,
-             creator_name=row.creator_name
+            creator_name=row.creator_name
         )
         for row in results
     ]
-
-    return UserQuizHistoryResponse(quizzes=quizzes)    
-
+    return UserQuizHistoryResponse(quizzes=quizzes)

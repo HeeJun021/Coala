@@ -90,7 +90,7 @@ const UserQuizResultPage = ({ userData }) => {
         </button>
         <button
           className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all"
-          onClick={() => navigate("/mypage/userquiz")}
+          onClick={() => navigate("/mypage/userquiz-history")}
         >
           마이페이지로 이동
         </button>

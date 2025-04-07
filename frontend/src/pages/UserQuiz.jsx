@@ -96,7 +96,7 @@ const UserQuiz = ({ userData }) => {
         <div className="flex gap-2">
           <input
             type="text"
-            placeholder="작성자 이름 검색"
+            placeholder="퀴즈 제목 검색"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="border p-2 flex-1"
@@ -174,18 +174,18 @@ const UserQuiz = ({ userData }) => {
                 ))}
               </div>
             )}
-
-            {/* ➕ 퀴즈 만들기 */}
-            <div className="flex justify-end mt-6">
-              <button
-                onClick={() => navigate("/user-quiz/create")}
-                className="bg-accent text-white px-4 py-2 rounded"
-              >
-                퀴즈 만들기
-              </button>
-            </div>
           </div>
         )}
+
+        {/* ➕ 퀴즈 만들기 (항상 표시) */}
+        <div className="flex justify-end mt-6">
+          <button
+            onClick={() => navigate("/user-quiz/create")}
+            className="bg-accent text-white px-4 py-2 rounded"
+          >
+            퀴즈 만들기
+          </button>
+        </div>
       </div>
     </div>
   );

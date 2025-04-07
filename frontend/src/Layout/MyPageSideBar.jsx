@@ -29,8 +29,9 @@ const MyPageSidebar = ({ userData }) => {
                     <li className="font-semibold">
                         <span className="block mb-2 text-gray-800">활동 내역</span>
                         <ul className="ml-4 space-y-1 text-sm text-gray-600">
-                            <li><Link to="/mypage/quiz-history">코딩 테스트 및 퀴즈 이력</Link></li>
+                            <li><Link to="/mypage/quiz-history">퀴즈 이력</Link></li>
                             <li><Link to="/mypage/userquiz-history">사용자 퀴즈 이력</Link></li>
+                            <li><Link to="/mypage/codingtest">코딩 테스트 이력</Link></li>
                             <li><Link to="/mypage/community">커뮤니티 활동 내역</Link></li>
                         </ul>
                     </li>

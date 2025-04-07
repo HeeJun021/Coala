@@ -14,13 +14,6 @@ const TestQuiz = () => {
         multiple: true
     };
 
-    // ✅ 문제 개수 5개, 난이도 Lv.3 고정
-    const settings = {
-        ox: { count: 5, difficulty: "Lv.3" },
-        short: { count: 5, difficulty: "Lv.3" },
-        multiple: { count: 5, difficulty: "Lv.3" }
-    };
-
     // ✅ "퀴즈 풀기" 버튼 클릭 시 API 호출
     const handleStartQuiz = async () => {
         setLoading(true);
