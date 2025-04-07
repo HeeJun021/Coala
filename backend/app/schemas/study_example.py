@@ -7,9 +7,11 @@ class StudyExampleResponse(BaseModel):
     language_id: int
     title: str
     content: str
-    sections: Optional[List[Dict[str, Any]]] = None  # ✅ JSON 필드 추가
+    sections: Optional[List[Dict[str, Any]]] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    is_completed: Optional[bool] = False  # ✅ 추가해야 response_model로 쓰기 가능
 
-    class Config:
-        from_attributes = True  # ✅ Pydantic v2에서는 orm_mode 대신 사용
+    model_config = {
+        "from_attributes": True
+    }

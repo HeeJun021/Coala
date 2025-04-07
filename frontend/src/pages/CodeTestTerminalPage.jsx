@@ -93,11 +93,11 @@ const CodeTestTerminalPage = () => {
 
   const handleRun = () => {
     // 🟢 HTML 코드 포함되면 실행 막기
-    if (code.includes("<script") || code.includes("<html>") || code.includes("<body>")) {
+    if (code.includes("<html>") || code.includes("<body>")) {
       termInstance.current.writeln("❗️ HTML/DOM 관련 코드는 Node.js 환경에서 실행할 수 없습니다.");
       return;
     }
-
+  
     if (socketRef.current && socketRef.current.readyState === 1) {
       sendCode();
     } else {

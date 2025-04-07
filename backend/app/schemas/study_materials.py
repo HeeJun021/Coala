@@ -1,14 +1,26 @@
 from pydantic import BaseModel
-from datetime import datetime
-from typing import Optional, List
+from typing import List, Union, Optional
+
+class Section(BaseModel):
+    type: str
+    style: Optional[str] = None
+    content: Union[str, dict, list]
+    title: Optional[str] = None
+    description: Optional[str] = None
+    problem_description: Optional[str] = None
+
+    model_config = {
+        "from_attributes": True
+    }
 
 class StudyMaterialResponse(BaseModel):
     material_id: int
-    language_id: int
     title: str
     content: str
-    file_url: Optional[str] = None
-    sections: List[dict] | None = None  # ✅ JSON 필드 수정 (더 명확한 타입)
+    language_id: int
+    sections: List[Section]
+    is_completed: Optional[bool] = False  # ✅ 학습 완료 여부
 
-    class Config:
-        from_attributes = True  # ✅ Pydantic v2에서 orm_mode 대신 사용
+    model_config = {
+        "from_attributes": True
+    }

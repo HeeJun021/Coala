@@ -34,7 +34,6 @@ app.include_router(study_materials.router)
 app.include_router(code_runner.router)
 app.include_router(code_terminal.router)
 app.include_router(code_execution.router, prefix="/code")
-
 # 기본 라우트
 @app.get("/", tags=["Root"])
 def read_root():
