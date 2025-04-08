@@ -173,10 +173,21 @@ async def submit_coding_test(
     passed_count = sum(1 for r in results if r["passed"])
     total_count = len(results)
     is_correct = passed_count == total_count
+    
+    # ✅ 자동 제목 지정
+    # 🔍 title 자동 생성 처리
+    submission_count = db.query(CodingTestSubmissions).filter(
+        CodingTestSubmissions.user_id == submission.user_id,
+        CodingTestSubmissions.test_id == submission.test_id
+    ).count()
+
+    title = submission.title or f"제출 {submission_count + 1}"
+
 
     new_submission = CodingTestSubmissions(
         user_id=submission.user_id,
         test_id=submission.test_id,
+        title=title,
         code=submission.code,
         language=submission.language,
         is_correct=is_correct,
