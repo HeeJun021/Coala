@@ -4,24 +4,34 @@ import BoardSearchBar from "./BoardSearchBar";
 import BoardSortDropdown from "./BoardSortDropdown";
 import Pagination from "./Pagination";
 import { BOARD_TYPES } from "../constants/boardConstants";
+import { getBoardList } from "../api/boardApi"; // ✅ API 연결
 
 const BoardList = ({ boardType }) => {
   const [posts, setPosts] = useState([]);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [sortOrder, setSortOrder] = useState("최신 순");
 
+  // ✅ 게시글 목록 불러오기
   useEffect(() => {
-    // TODO: API 연결 시 fetchPosts 함수 구현 예정
-    setPosts([]); // 더미 데이터 제거
+    const fetchPosts = async () => {
+      try {
+        const data = await getBoardList(boardType);
+        console.log("불러온 게시글 목록:", data);
+        setPosts(data);
+      } catch (err) {
+        console.error("게시글 목록 불러오기 실패:", err);
+      }
+    };
+
+    fetchPosts();
   }, [boardType]);
 
-  const filteredPosts = Array.isArray(posts)
-    ? posts.filter((post) => post.title.includes(searchKeyword))
-    : [];
+  const filteredPosts = posts.filter((post) =>
+    post.title.toLowerCase().includes(searchKeyword.toLowerCase())
+  );
 
   return (
     <div>
-      {/* 게시판 이름 */}
       <h2 className="text-xl font-semibold mb-4 capitalize">
         {boardType === BOARD_TYPES.PROJECT
           ? "프로젝트 게시판"
@@ -55,13 +65,20 @@ const BoardList = ({ boardType }) => {
           </tr>
         </thead>
         <tbody>
-          {filteredPosts.map((post) => (
-            <BoardItem key={post.id} post={post} boardType={boardType} />
-          ))}
+          {filteredPosts.length === 0 ? (
+            <tr>
+              <td colSpan="5" className="text-center p-4">
+                게시글이 없습니다.
+              </td>
+            </tr>
+          ) : (
+            filteredPosts.map((post) => (
+              <BoardItem key={post.post_id} post={post} boardType={boardType} />
+            ))
+          )}
         </tbody>
       </table>
 
-      {/* 페이지네이션 */}
       <Pagination totalPages={5} currentPage={1} />
     </div>
   );

@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import engine, get_db, Base
 from app.models import user, email_verification,study_materials,study_example, question  # ✅ 모든 모델 불러오기
-from app.routers import user, auth, social_auth,study_materials,study_example, question, quiz  # 사용자 관련 라우터 가져오기
+from app.routers import user, auth, social_auth,study_materials,study_example, question, quiz, board# 사용자 관련 라우터 가져오기
 from app.schemas.user import UserUpdateSchema
 from datetime import datetime
 from sqlalchemy import text
@@ -22,6 +22,7 @@ app.add_middleware(
 )
 
 # 라우터 등록
+app.include_router(board.router)
 app.include_router(user.router)
 app.include_router(auth.router)
 app.include_router(social_auth.router)  # ✅ 소셜 로그인 API 추가

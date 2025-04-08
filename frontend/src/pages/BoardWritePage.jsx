@@ -1,23 +1,46 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Editor } from "@toast-ui/react-editor";
-import "@toast-ui/editor/dist/toastui-editor.css"; // ✅ 반드시 추가
+import { useAuth } from "../context/AuthContext";
+import { createBoard } from "../api/boardApi"; // ✅ API 호출 추가
+import "@toast-ui/editor/dist/toastui-editor.css";
 
 const BoardWritePage = () => {
+  const { user } = useAuth();
   const { boardType } = useParams();
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
   const editorRef = useRef();
 
-  const handleSubmit = (e) => {
+  // 로그인 안 되어 있으면 로그인 페이지로 이동
+  useEffect(() => {
+    if (!user) {
+      alert("로그인 후 이용해주세요.");
+      navigate("/login");
+    }
+  }, [user, navigate]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const content =
       boardType === "code"
         ? editorRef.current.getInstance().getMarkdown()
         : editorRef.current.value;
 
-    console.log("작성된 게시글:", { title, content });
-    navigate(`/board/${boardType}`);
+    const payload = {
+      boardType,
+      title,
+      content,
+      user_id: user.user_id, // ✅ 서버에 보낼 유저 ID
+    };
+
+    try {
+      await createBoard(payload); // ✅ 게시글 생성 요청
+      navigate(`/board/${boardType}`); // ✅ 완료 후 이동
+    } catch (error) {
+      console.error("게시글 작성 실패:", error);
+      alert("게시글 작성 중 오류가 발생했습니다.");
+    }
   };
 
   return (

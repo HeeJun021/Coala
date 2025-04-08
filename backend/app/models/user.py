@@ -25,6 +25,8 @@ class User(Base):
      # 관계 설정
     tier = relationship("UserTier")  # User → UserTier 관계
     social_logins = relationship("SocialLogin", back_populates="user", cascade="all, delete")
+    posts = relationship("Post", back_populates="user", cascade="all, delete")
+    comments = relationship("Comment", back_populates="user", cascade="all, delete")
 
 # ✅ 자동으로 `tier_id` 업데이트
 @event.listens_for(User, "before_update")
