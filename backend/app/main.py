@@ -1,44 +1,62 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import engine, get_db, Base
-from app.models import user, email_verification, study_materials, study_example, question  # ✅ 모든 모델 불러오기
-from app.routers import coding_test_case, code_execution, problem_starter_code, user, auth, social_auth, study_materials, study_example, question, quiz, user_quiz  # 사용자 관련 라우터 가져오기
+
+# ✅ 모델 불러오기
+from app.models import user, email_verification, study_materials, study_example, question, language
+
+# ✅ 라우터 불러오기
+from app.routers import (
+    user, auth, social_auth, languages,
+    study_example, study_materials,
+    question, quiz, user_quiz,
+    coding_tests, coding_test_case, problem_starter_code,
+    code_execution, code_runner, code_terminal
+)
+
 from app.schemas.user import UserUpdateSchema
 from datetime import datetime
 from sqlalchemy import text
-from app.config import settings  # ✅ 설정 불러오기
-from app.routers import coding_tests
+from app.config import settings
 
 from fastapi.middleware.cors import CORSMiddleware
 
+# DB 초기화
+Base.metadata.create_all(bind=engine)
+
 app = FastAPI()
 
-# ✅ CORS 설정 추가
+# ✅ CORS 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # ✅ 프론트엔드 주소 허용
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
-    allow_methods=["*"],  # ✅ 모든 HTTP 메소드 허용 (POST, GET, OPTIONS 등)
-    allow_headers=["*"],  # ✅ 모든 헤더 허용
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# 라우터 등록
+# ✅ 라우터 등록
 app.include_router(user.router)
 app.include_router(auth.router)
-app.include_router(social_auth.router)  # ✅ 소셜 로그인 API 추가
-# app.include_router(study_example.router)
-# app.include_router(study_materials.router)
+app.include_router(social_auth.router)
+app.include_router(languages.router)
+
+app.include_router(study_example.router)
+app.include_router(study_materials.router)
+
 app.include_router(question.router)
 app.include_router(quiz.router)
 app.include_router(user_quiz.router)
-app.include_router(coding_tests.router)
-app.include_router(problem_starter_code.router)
-app.include_router(code_execution.router)
-app.include_router(coding_test_case.router)
 
+app.include_router(coding_tests.router)
+app.include_router(coding_test_case.router)
+app.include_router(problem_starter_code.router)
+
+app.include_router(code_runner.router)
+app.include_router(code_terminal.router)
+app.include_router(code_execution.router, prefix="/code")  # WebSocket용이면 prefix 유지 가능
 
 # 기본 라우트
 @app.get("/", tags=["Root"])
 def read_root():
-    """서버 상태 확인"""
     return {"message": "FastAPI is running!"}

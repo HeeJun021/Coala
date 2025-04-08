@@ -1,20 +1,27 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Route, Routes, useLocation } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext"; // ✅ 로그인 상태 관리
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+
+import { AuthProvider } from "./context/AuthContext";
 import { getCurrentUser } from "./api/authApi";
 import koala from "./assets/koala.jpg";
-import MainLayout from "./Layout/MainLayout"; // 공통 레이아웃
+
+// 레이아웃 & 기본
+import MainLayout from "./Layout/MainLayout";
 import Home from "./pages/Home";
 
-// 학습자료 페이지
+// 학습자료
 import StudyMaterialsPage from "./pages/StudyMaterialsPage";
 import StudyMaterialsPageDetails from "./pages/StudyMaterialsPageDetails";
+import CodeTestPage from "./pages/CodeTestPage";
+import CodeTestTerminalPage from "./pages/CodeTestTerminalPage";
 
-// 인증 관련
-import Signup from "./pages/Signup";
-import Login from "./pages/Login";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
+// 퀴즈
+import QuizPage from "./pages/QuizPage";
+import QuizSolvePage from "./pages/QuizSolvePage";
+import QuizResultPage from "./pages/QuizResultPage";
+import CreateUserQuiz from "./pages/CreateUserQuiz";
+import UserQuizSolvePage from "./pages/UserQuizSolvePage";
+import UserQuizResultPage from "./pages/UserQuizResultPage";
 
 // 마이페이지
 import MyPage from "./pages/MyPage";
@@ -23,18 +30,17 @@ import MyPageSetting from "./pages/MyPageSetting";
 import MyPageQuizHistory from "./pages/MyPageQuizHistory";
 import MyPageUserQuizHistory from "./pages/MyPageUserQuizHistory";
 
-// 퀴즈 관련
-import QuizPage from "./pages/QuizPage";
-import QuizSolvePage from "./pages/QuizSolvePage";
-import QuizResultPage from "./pages/QuizResultPage";
-import CreateUserQuiz from "./pages/CreateUserQuiz";
-import UserQuizSolvePage from "./pages/UserQuizSolvePage";
-import UserQuizResultPage from "./pages/UserQuizResultPage";
-import CorrectSolutionsPage from "./pages/CorrectSolutionsPage";
+// 인증
+import Signup from "./pages/Signup";
+import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 // 코딩 테스트
 import CodingTestPage from "./pages/CodingTestPage";
 import CodingTestDetailPage from "./pages/CodingTestDetailPage";
+import CorrectSolutionsPage from "./pages/CorrectSolutionsPage";
+
 
 const BodyClassManager = () => {
   const location = useLocation();
@@ -93,7 +99,7 @@ const App = () => {
           <Route path="/codingtest/:id" element={<CodingTestDetailPage />} />
           <Route path="/codingtest/correct/:testId" element={<CorrectSolutionsPage />} />
 
-          {/* 공통 레이아웃 포함 페이지들 */}
+          {/* 공통 레이아웃 포함 */}
           <Route
             path="/*"
             element={
@@ -101,7 +107,14 @@ const App = () => {
                 <Routes>
                   <Route path="/" element={<Home />} />
 
-                  {/* 퀴즈 관련 */}
+                  {/* 학습자료 */}
+                  <Route path="/StudyMaterialsPage" element={<StudyMaterialsPage />} />
+                  <Route path="/StudyMaterialsPage/materials/:language/:id" element={<StudyMaterialsPageDetails />} />
+                  <Route path="/StudyMaterialsPage/examples/:language/:id" element={<StudyMaterialsPageDetails />} />
+                  <Route path="/materials/:language/:id" element={<StudyMaterialsPageDetails />} />
+                  <Route path="/materials" element={<StudyMaterialsPage />} />
+
+                  {/* 퀴즈 */}
                   <Route path="/quizpage" element={<QuizPage userData={userData} />} />
                   <Route path="/quizsolve/:quizId" element={<QuizSolvePage userData={userData} />} />
                   <Route path="/quiz-result/:quizId" element={<QuizResultPage userData={userData} />} />
@@ -109,12 +122,12 @@ const App = () => {
                   <Route path="/user-quiz-solve/:quizId" element={<UserQuizSolvePage userData={userData} />} />
                   <Route path="/user-quiz-result/:uq_submission_id" element={<UserQuizResultPage userData={userData} />} />
 
-                  {/* 학습자료 */}
-                  <Route path="/StudyMaterialsPage" element={<StudyMaterialsPage />} />
-                  <Route path="/StudyMaterialsPage/materials/:language/:id" element={<StudyMaterialsPageDetails />} />
-                  <Route path="/StudyMaterialsPage/examples/:language/:id" element={<StudyMaterialsPageDetails />} />
-                  <Route path="/materials/:language/:id" element={<StudyMaterialsPageDetails />} />
-                  <Route path="/materials" element={<StudyMaterialsPage />} />
+                  {/* 코딩테스트 목록 */}
+                  <Route path="/codingtest" element={<CodingTestPage />} />
+
+                  {/* 실습 터미널 */}
+                  <Route path="/codetest" element={<CodeTestPage />} />
+                  <Route path="/terminal" element={<CodeTestTerminalPage />} />
 
                   {/* 인증 */}
                   <Route path="/signup" element={<Signup />} />
@@ -128,9 +141,6 @@ const App = () => {
                   <Route path="/mypage/setting" element={<MyPageSetting userData={userData} />} />
                   <Route path="/mypage/quiz-history" element={<MyPageQuizHistory userData={userData} />} />
                   <Route path="/mypage/userquiz-history" element={<MyPageUserQuizHistory userData={userData} />} />
-
-                  {/* 코딩 테스트 목록 */}
-                  <Route path="/codingtest" element={<CodingTestPage />} />
                 </Routes>
               </MainLayout>
             }

@@ -1,79 +1,280 @@
+import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { dracula } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { useAuth } from "../context/AuthContext";
 
-import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
-import Table from "../components/Table";
+const parseStyleString = (styleString) => {
+  if (!styleString) return {};
+  return Object.fromEntries(
+    styleString.split(";").map((style) => {
+      const [property, value] = style.split(":").map((s) => s.trim());
+      if (!property || !value) return [];
+      const camelCaseProp = property.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+      return [camelCaseProp, value];
+    }).filter(Boolean)
+  );
+};
 
 const StudyMaterialsPage = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
-  const initialCategory = queryParams.get("category") || "HTML";
+  const category = queryParams.get("category");
+  const materialId = queryParams.get("id");
+  const exampleId = queryParams.get("exampleId");
 
-  const [category, setCategory] = useState(initialCategory);
-  const [rows, setRows] = useState([]);
+  const { user } = useAuth();
+
+  const [studyContent, setStudyContent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isExample, setIsExample] = useState(false); // ✅ 예제인지 여부 확인
+  const [isCompleted, setIsCompleted] = useState(false);
+
+  const [selectedOptions, setSelectedOptions] = useState({});
+  const [submittedStatus, setSubmittedStatus] = useState({});
+  const [correctStatus, setCorrectStatus] = useState({});
 
   useEffect(() => {
-    setCategory(initialCategory);
-    setIsExample(initialCategory.startsWith("예제-")); // ✅ "예제-"로 시작하면 예제 데이터
-  }, [initialCategory]);
+    if (!category || (!materialId && !exampleId)) return;
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
-  
+    const fetchContent = async () => {
       try {
-        const endpoint = isExample ? "examples" : "materials";
-        const formattedCategory = category.replace("예제-", ""); // ✅ "예제-" 제거
-        const url = `http://localhost:8000/api/${endpoint}/${formattedCategory}`;
-  
-        console.log(`📡 API 요청: ${url}`);
-  
-        const response = await fetch(url, {
-          method: "GET",
-          mode: "cors",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-  
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`API 요청 실패 (HTTP ${response.status}): ${errorText}`);
-        }
-  
+        const apiUrl = materialId
+          ? `http://localhost:8000/api/materials/${category}/${materialId}`
+          : `http://localhost:8000/api/examples/${category}/${exampleId}`;
+        const response = await fetch(apiUrl);
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const data = await response.json();
-        console.log("📡 응답 데이터:", data); // ✅ 여기서 데이터 확인!
-  
-        // ✅ 데이터 확인을 위해 로그 추가
-        setRows(data);
+        setStudyContent(data);
+        setIsCompleted(data.is_completed); // ✅ 백엔드에서 직접 전달된 is_completed 사용
       } catch (err) {
-        console.error("🚨 API 요청 중 오류 발생:", err);
-        setError(err.message);
+        console.error("❌ 데이터 불러오기 실패:", err);
+        setError("데이터를 불러오는 중 오류가 발생했습니다.");
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
-  }, [category, isExample]);
+
+    fetchContent();
+  }, [category, materialId, exampleId]);
+
+  const formatCodeContent = (content) => {
+    return content.replace(/<br>/g, "\n").replace(/\\n/g, "\n");
+  };
+
+  const handleOptionChange = (index, option) => {
+    setSelectedOptions((prev) => ({ ...prev, [index]: option }));
+  };
+
+  const handleRetry = (index) => {
+    setSelectedOptions((prev) => ({ ...prev, [index]: null }));
+    setSubmittedStatus((prev) => ({ ...prev, [index]: false }));
+    setCorrectStatus((prev) => ({ ...prev, [index]: null }));
+  };
+
+  const handleSubmit = async (index, correctAnswer) => {
+    if (!user?.user_id) {
+      window.alert("❗ 퀴즈를 풀기 위해서는 로그인이 필요합니다.");
+      return;
+    }
+  
+    const isCorrect = selectedOptions[index] === correctAnswer;
+  
+    setCorrectStatus((prev) => ({ ...prev, [index]: isCorrect }));
+    setSubmittedStatus((prev) => ({ ...prev, [index]: true }));
+  
+    // 🎯 정답이면 완료 API 호출
+    if (isCorrect && user) {
+      const endpoint = materialId
+        ? `http://localhost:8000/api/study/material/${materialId}/complete`
+        : `http://localhost:8000/api/examples/${exampleId}/complete`;
+    
+      try {
+        await fetch(endpoint, {
+          method: "POST",
+          credentials: "include",  // ✅ 쿠키 기반 로그인 처리
+        });
+        setIsCompleted(true);
+      } catch (error) {
+        console.error("✅ 완료 처리 API 실패:", error);
+      }
+    }
+  }
+
+  const showTerminalButton = (category, title, content) => {
+    const isSafe = !content.includes("<html>") && !content.includes("<body>");
+    return ["javascript", "python"].includes(category?.toLowerCase()) && !title.includes("모듈과 패키지") && isSafe;
+  };
+
+  const showCodeTestButton = (category) => {
+    return ["html", "css"].includes(category?.toLowerCase());
+  };
 
   return (
-    <div className="flex mt-36">
-      <div className="ml-8 flex-1 bg-white rounded-lg shadow-lg p-0">
-        <h2 className="text-3xl font-bold mb-4 mt-4 ml-6">
-          {isExample ? "학습 예제" : "학습 자료"} - {category.replace("예제-", "")}
-        </h2>
+    <div className="bg-white shadow-lg rounded-xl p-8 max-w-5xl w-full mx-auto text-left">
+      {isCompleted && (
+        <div className="fixed top-10 right-10 z-[9999] bg-green-100 border border-green-400 text-green-700 px-4 py-2 rounded shadow-lg">
+          ✅ 이 학습자료는 완료되었습니다
+        </div>
+      )}
 
-        {loading ? (
-          <p className="text-center text-gray-600">데이터 로딩 중...</p>
-        ) : error ? (
-          <p className="text-center text-red-600">오류 발생: {error}</p>
-        ) : (
-          <Table rows={rows} type={isExample ? "examples" : "materials"} category={category} />
-        )}
-      </div>
+      {loading ? (
+        <div className="text-gray-500">로딩 중...</div>
+      ) : error ? (
+        <div className="text-red-500">{error}</div>
+      ) : studyContent ? (
+        <>
+          <h1 className="text-4xl font-bold text-gray-800 mb-4">
+            {studyContent.title}
+            {isCompleted && <span className="ml-4 text-green-600 text-xl font-semibold">✅ 학습 완료</span>}
+          </h1>
+          <p className="text-lg text-gray-700 leading-relaxed mb-6">{studyContent.content}</p>
+
+          {Array.isArray(studyContent.sections) && studyContent.sections.length > 0 && (
+            <div className="mt-6">
+              {studyContent.sections.map((section, index) => (
+                <React.Fragment key={`${section.type}-${index}`}>
+                  <div className="mt-4" style={parseStyleString(section.style)}>
+                    {section.type === "text" && (
+                      <div
+                        className="text-lg text-gray-700 [&_b]:font-bold [&_b]:text-green-600"
+                        dangerouslySetInnerHTML={{ __html: section.content }}
+                      />
+                    )}
+
+                    {section.type === "image" && (
+                      <img
+                        className="mt-2 w-full max-w-2xl rounded-lg shadow-md mx-auto"
+                        src={section.content}
+                        alt="설명 이미지"
+                      />
+                    )}
+
+                    {section.type === "video" && (
+                      <div className="mt-4">
+                        <iframe
+                          className="w-full max-w-3xl rounded-md mx-auto"
+                          style={{ aspectRatio: "16 / 9" }}
+                          src={section.content}
+                          title="YouTube Video"
+                          allowFullScreen
+                        ></iframe>
+                      </div>
+                    )}
+
+                    {section.type === "code" && (
+                      <div className="bg-gray-100 p-4 rounded-md mt-4 border border-gray-300 shadow-md">
+                        <h2 className="text-lg font-semibold text-gray-800 mb-2">{section.title}</h2>
+                        <SyntaxHighlighter
+                          language={category?.toLowerCase() || "text"}
+                          style={dracula}
+                          className="rounded-md"
+                          wrapLines={true}
+                          customStyle={{ whiteSpace: "pre-wrap", fontSize: "14px" }}
+                        >
+                          {formatCodeContent(section.content)}
+                        </SyntaxHighlighter>
+                        <p className="mt-2 text-sm text-gray-600">{section.problem_description}</p>
+                        <div className="flex gap-2 mt-4">
+                          {showCodeTestButton(category) && (
+                            <button
+                              onClick={() =>
+                                navigate(`/codetest?code=${encodeURIComponent(section.content)}&language=${encodeURIComponent(category)}&title=${encodeURIComponent(studyContent.title)}&problem_description=${encodeURIComponent(section.problem_description || "")}`)}
+                              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+                            >
+                              코드 테스트 →
+                            </button>
+                          )}
+                          {showTerminalButton(category, studyContent.title, section.content) ? (
+                            <button
+                              onClick={() =>
+                                navigate(`/terminal?language=${encodeURIComponent(category)}&code=${encodeURIComponent(section.content)}&title=${encodeURIComponent(studyContent.title)}&problem_description=${encodeURIComponent(section.problem_description || "")}`)}
+                              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+                            >
+                              터미널 실습 →
+                            </button>
+                          ) : (
+                            category?.toLowerCase() === "javascript" &&
+                            (section.content.includes("<html>") || section.content.includes("<body>")) && (
+                              <button
+                                onClick={() => window.alert("❗ HTML/DOM 코드가 포함된 학습자료는 실행할 수 없습니다.")}
+                                className="bg-gray-400 text-white px-4 py-2 rounded cursor-not-allowed"
+                              >
+                                실행 불가
+                              </button>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {section.type === "quiz" && section.content?.question && (
+                      <div className="bg-gray-900 text-white p-6 rounded-lg shadow-lg w-full max-w-3xl mt-6 mx-auto">
+                        <h2 className="text-2xl font-bold text-center mb-4">퀴즈</h2>
+                        <p className="text-lg text-center">{section.content.question}</p>
+                        <div className="mt-4">
+                          {section.content.options.map((option, optIdx) => (
+                            <label
+                              key={optIdx}
+                              className={`block bg-gray-700 rounded-md p-3 my-2 cursor-pointer transition-all ${
+                                selectedOptions[index] === option ? "ring-2 ring-green-400" : ""
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name={`quiz-${index}`}
+                                value={option}
+                                checked={selectedOptions[index] === option}
+                                onChange={() => handleOptionChange(index, option)}
+                                className="hidden"
+                              />
+                              {option}
+                            </label>
+                          ))}
+                        </div>
+                        <button
+                          onClick={() => handleSubmit(index, section.content.correct_answer)}
+                          className={`mt-4 w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 transition ${
+                            selectedOptions[index] == null ? "opacity-50 cursor-not-allowed" : ""
+                          }`}
+                          disabled={selectedOptions[index] == null}
+                        >
+                          정답 제출 →
+                        </button>
+                        {submittedStatus[index] && (
+                          <div className="mt-3 text-center">
+                            <p className={correctStatus[index] ? "text-green-400" : "text-red-500"}>
+                              {correctStatus[index] ? "✅ 정답입니다!" : "❌ 오답입니다!"}
+                            </p>
+                            {correctStatus[index] && (
+                              <p
+                                className="text-sm text-gray-300 mt-2 [&_b]:font-bold [&_b]:text-green-400"
+                                dangerouslySetInnerHTML={{ __html: section.content.explanation }}
+                              />
+                            )}
+                            <button
+                              onClick={() => handleRetry(index)}
+                              className="mt-2 bg-gray-500 text-white px-4 py-1 rounded hover:bg-gray-600 transition"
+                            >
+                              다시 시도
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  {index < studyContent.sections.length - 1 && (
+                    <hr className="border-t border-gray-300 my-8" />
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="text-gray-500">데이터를 찾을 수 없습니다.</div>
+      )}
     </div>
   );
 };

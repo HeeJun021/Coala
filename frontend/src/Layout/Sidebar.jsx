@@ -1,100 +1,163 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext"; // ✅ AuthContext에서 사용자 정보 가져오기
 
 const Sidebar = () => {
-  const navigate = useNavigate(); // ✅ 페이지 이동을 위한 `useNavigate` 훅
-  const location = useLocation(); // ✅ 현재 URL 정보를 가져오는 `useLocation` 훅
-
-  // ✅ 현재 URL에서 'category' 파라미터 가져오기
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth(); // ✅ 사용자 정보
   const queryParams = new URLSearchParams(location.search);
-  const currentCategory = queryParams.get("category") || "HTML"; // 기본값: "HTML"
-  const isExample = currentCategory.startsWith("예제"); // "예제-"로 시작하면 예제 카테고리
-  const initialSection = isExample ? "예제" : "학습자료"; // 기본적으로 예제인지 학습자료인지 확인
+  const initialCategory = queryParams.get("category") || "HTML";
+  const initialMaterialId = queryParams.get("id") || "";
+  const initialExampleId = queryParams.get("exampleId") || "";
 
-  // ✅ 상태(State) 정의
-  const [activeSection, setActiveSection] = useState(initialSection); // "학습자료" 또는 "예제"
-  const [activeSubMenu, setActiveSubMenu] = useState(currentCategory); // 현재 선택된 카테고리 (HTML, CSS, JavaScript 등)
+  const [languages, setLanguages] = useState([]);
+  const [studyMaterials, setStudyMaterials] = useState([]);
+  const [studyExamples, setStudyExamples] = useState([]);
+  const [selectedLanguage, setSelectedLanguage] = useState(initialCategory);
+  const [selectedMaterialId, setSelectedMaterialId] = useState(initialMaterialId);
+  const [selectedExampleId, setSelectedExampleId] = useState(initialExampleId);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // ✅ 컴포넌트가 처음 마운트되었을 때 URL에 맞춰서 상태 설정
   useEffect(() => {
-    if (!activeSubMenu) {
-      setActiveSubMenu(currentCategory);
-      setActiveSection(initialSection);
-    }
-  }, [currentCategory, initialSection, activeSubMenu]);
+    const fetchLanguages = async () => {
+      try {
+        const res = await fetch("http://localhost:8000/languages");
+        const data = await res.json();
+        setLanguages(data);
+      } catch (err) {
+        console.error("🚨 언어 목록 오류:", err);
+        setError("언어 데이터를 불러오는 중 오류 발생");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLanguages();
+  }, []);
 
-  // ✅ "학습자료" 또는 "예제" 버튼 클릭 시 호출되는 함수
-  const handleSectionClick = (section) => {
-    setActiveSection(section);
-    const defaultCategory = section === "학습자료" ? "HTML" : "예제-HTML"; // 학습자료: HTML / 예제: 예제-HTML
-    setActiveSubMenu(defaultCategory.replace("예제-", "")); // "예제-" 제거하여 상태 업데이트
-    navigate(`/StudyMaterialsPage?category=${defaultCategory}`); // ✅ URL 변경하여 페이지 이동
+  useEffect(() => {
+    const refreshSidebar = () => setRefreshTrigger((prev) => prev + 1);
+    window.addEventListener("refreshSidebar", refreshSidebar);
+    return () => window.removeEventListener("refreshSidebar", refreshSidebar);
+  }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+
+        const [materialsRes, examplesRes] = await Promise.all([
+          fetch(`http://localhost:8000/api/materials/${selectedLanguage}`, {
+            credentials: "include", // ✅ 로그인 사용자용
+          }),
+          fetch(`http://localhost:8000/api/examples/${selectedLanguage}`, {
+            credentials: "include",
+          }),
+        ]);
+
+        const materials = await materialsRes.json();
+        const examples = await examplesRes.json();
+
+        setStudyMaterials(Array.isArray(materials) ? materials : []);
+        setStudyExamples(Array.isArray(examples) ? examples : []);
+      } catch (err) {
+        console.error("❌ 자료 로딩 오류:", err);
+        setError("자료를 불러오는 중 오류가 발생했습니다.");
+        setStudyMaterials([]);
+        setStudyExamples([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (selectedLanguage) fetchData();
+  }, [selectedLanguage, user, refreshTrigger]); // ✅ user 정보 감지 포함
+
+  const handleMaterialClick = (materialId) => {
+    setSelectedMaterialId(String(materialId));
+    setSelectedExampleId("");
+    navigate(`/StudyMaterialsPage?category=${encodeURIComponent(selectedLanguage)}&id=${materialId}`);
   };
 
-  // ✅ 서브메뉴 (HTML, CSS, JavaScript) 클릭 시 호출되는 함수
-  const handleSubMenuClick = (menu) => {
-    const newCategory = activeSection === "예제" ? `예제-${menu}` : menu; // 예제라면 "예제-" 붙이기
-    setActiveSubMenu(newCategory); // 상태 업데이트
-    navigate(`/StudyMaterialsPage?category=${newCategory}`); // ✅ URL 변경하여 페이지 이동
+  const handleExampleClick = (exampleId) => {
+    setSelectedExampleId(String(exampleId));
+    setSelectedMaterialId("");
+    navigate(`/StudyMaterialsPage?category=${encodeURIComponent(selectedLanguage)}&exampleId=${exampleId}`);
   };
 
   return (
     <div className="absolute top-[239px] left-[33px] w-[243px] bg-white rounded-md shadow-md">
-      {/* ✅ 학습자료 섹션 */}
-      <div
-        className={`h-[54px] flex items-center pl-6 cursor-pointer ${
-          activeSection === "학습자료" ? "bg-[#A7DA9B]" : "bg-[#EFEFEF]"
-        }`}
-        onClick={() => handleSectionClick("학습자료")}
-      >
-        <h1 className={`text-[20px] font-normal ${activeSection === "학습자료" ? "text-black" : "text-gray-600"}`}>
-          학습자료
-        </h1>
+      <div className="h-[54px] flex items-center pl-6 bg-[#A7DA9B]">
+        <h1 className="text-[20px] font-normal text-black">학습자료</h1>
       </div>
 
-      {/* ✅ 학습자료 카테고리 (HTML, CSS, JavaScript) */}
-      {activeSection === "학습자료" && (
+      {loading ? (
+        <div className="h-[54px] flex items-center pl-6 text-gray-500">로딩 중...</div>
+      ) : error ? (
+        <div className="h-[54px] flex items-center pl-6 text-red-500">{error}</div>
+      ) : (
         <>
-          {["HTML", "CSS", "JavaScript"].map((menu) => (
+          {!languages.length ? (
+            <div className="h-[54px] flex items-center pl-6 text-gray-500">언어 목록이 없습니다.</div>
+          ) : (
+            languages.map((lang) => (
+              <div
+                key={lang.language_id}
+                className={`h-[54px] flex items-center pl-6 cursor-pointer transition-all ${
+                  selectedLanguage === lang.language ? "bg-[#A7DA9B] text-white font-bold" : "bg-white text-black"
+                } hover:bg-[#88C078] hover:text-white`}
+                onClick={() => setSelectedLanguage(lang.language)}
+              >
+                {lang.language}
+              </div>
+            ))
+          )}
+
+          <div className="pl-6 pt-2 font-bold text-lg">{selectedLanguage}</div>
+
+          {studyMaterials.map((material) => (
             <div
-              key={menu}
-              className={`h-[54px] flex items-center pl-6 cursor-pointer ${
-                activeSubMenu === menu ? "bg-gray-300" : "bg-white"
-              }`}
-              onClick={() => handleSubMenuClick(menu)}
+              key={material.material_id}
+              className={`pl-8 text-sm cursor-pointer transition-all flex justify-between pr-4 ${
+                selectedMaterialId === String(material.material_id)
+                  ? "bg-[#D9EAD3] text-black font-bold"
+                  : "text-gray-700"
+              } hover:bg-gray-200`}
+              onClick={() => handleMaterialClick(material.material_id)}
             >
-              {menu} {activeSubMenu === menu && ">"}
+              <div className="flex items-center gap-2">
+                <span>{material.title}</span>
+                {material.is_completed && <span className="text-green-500">✅</span>}
+              </div>
             </div>
           ))}
-        </>
-      )}
 
-      {/* ✅ 예제 섹션 */}
-      <div
-        className={`h-[54px] flex items-center pl-6 cursor-pointer ${
-          activeSection === "예제" ? "bg-[#A7DA9B]" : "bg-[#EFEFEF]"
-        }`}
-        onClick={() => handleSectionClick("예제")}
-      >
-        <h1 className={`text-[20px] font-normal ${activeSection === "예제" ? "text-black" : "text-gray-600"}`}>
-          예제
-        </h1>
-      </div>
+          <hr className="my-2 border-gray-300" />
 
-      {/* ✅ 예제 카테고리 (HTML, CSS, JavaScript) */}
-      {activeSection === "예제" && (
-        <>
-          {["HTML", "CSS", "JavaScript"].map((menu) => (
-            <div
-              key={menu}
-              className={`h-[54px] flex items-center pl-6 cursor-pointer ${
-                activeSubMenu === `예제-${menu}` ? "bg-gray-300" : "bg-white"
-              }`}
-              onClick={() => handleSubMenuClick(menu)}
-            >
-              {menu} {activeSubMenu === `예제-${menu}` && ">"}
-            </div>
-          ))}
+          <div className="pl-6 pt-2 font-bold text-lg">{selectedLanguage} Example</div>
+
+          {studyExamples.length ? (
+            studyExamples.map((example) => (
+              <div
+                key={example.example_id}
+                className={`pl-8 text-sm cursor-pointer transition-all flex justify-between pr-4 ${
+                  selectedExampleId === String(example.example_id)
+                    ? "bg-[#D9EAD3] text-black font-bold"
+                    : "text-gray-700"
+                } hover:bg-gray-200`}
+                onClick={() => handleExampleClick(example.example_id)}
+              >
+                <div className="flex items-center gap-2">
+                  <span>{example.title}</span>
+                  {example.is_completed && <span className="text-green-500">✅</span>}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="pl-6 text-gray-500">예제가 없습니다.</div>
+          )}
         </>
       )}
     </div>
