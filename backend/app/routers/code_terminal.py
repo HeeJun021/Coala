@@ -1,5 +1,5 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from app.services.code_executor import run_python_docker, run_node_docker, read_logs
+from app.services.code_terminal_executor import run_python_docker, run_node_docker, read_logs
 import json
 
 router = APIRouter()
