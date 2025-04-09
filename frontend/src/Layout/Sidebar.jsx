@@ -76,92 +76,99 @@ const Sidebar = () => {
   }, [selectedLanguage, user, refreshTrigger]); // ✅ user 정보 감지 포함
 
   const handleMaterialClick = (materialId) => {
+    if (selectedMaterialId === String(materialId)) return; // ✅ 이미 선택된 항목이면 중복 이동 막기
     setSelectedMaterialId(String(materialId));
     setSelectedExampleId("");
-    navigate(`/StudyMaterialsPage?category=${encodeURIComponent(selectedLanguage)}&id=${materialId}`);
+    navigate(`/StudyMaterialsPage?category=${encodeURIComponent(selectedLanguage)}&id=${materialId}`, { replace: false });
   };
-
+  
   const handleExampleClick = (exampleId) => {
+    if (selectedExampleId === String(exampleId)) return;
     setSelectedExampleId(String(exampleId));
     setSelectedMaterialId("");
-    navigate(`/StudyMaterialsPage?category=${encodeURIComponent(selectedLanguage)}&exampleId=${exampleId}`);
+    navigate(`/StudyMaterialsPage?category=${encodeURIComponent(selectedLanguage)}&exampleId=${exampleId}`, { replace: false });
   };
+  
 
   return (
-    <div className="absolute top-[239px] left-[33px] w-[243px] bg-white rounded-md shadow-md">
-      <div className="h-[54px] flex items-center pl-6 bg-[#A7DA9B]">
-        <h1 className="text-[20px] font-normal text-black">학습자료</h1>
+    <div className="absolute top-[239px] left-[33px] w-[260px] bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+      <div className="h-[56px] flex items-center px-6 bg-[#A7DA9B] rounded-t-2xl shadow-sm">
+        <h1 className="text-[18px] font-semibold text-white tracking-wide">📚 학습자료</h1>
       </div>
-
+  
       {loading ? (
-        <div className="h-[54px] flex items-center pl-6 text-gray-500">로딩 중...</div>
+        <div className="h-[54px] flex items-center px-6 text-gray-500">로딩 중...</div>
       ) : error ? (
-        <div className="h-[54px] flex items-center pl-6 text-red-500">{error}</div>
+        <div className="h-[54px] flex items-center px-6 text-red-500">{error}</div>
       ) : (
         <>
           {!languages.length ? (
-            <div className="h-[54px] flex items-center pl-6 text-gray-500">언어 목록이 없습니다.</div>
+            <div className="h-[54px] flex items-center px-6 text-gray-500">언어 목록이 없습니다.</div>
           ) : (
-            languages.map((lang) => (
-              <div
-                key={lang.language_id}
-                className={`h-[54px] flex items-center pl-6 cursor-pointer transition-all ${
-                  selectedLanguage === lang.language ? "bg-[#A7DA9B] text-white font-bold" : "bg-white text-black"
-                } hover:bg-[#88C078] hover:text-white`}
-                onClick={() => setSelectedLanguage(lang.language)}
-              >
-                {lang.language}
-              </div>
-            ))
+            <div className="divide-y divide-gray-100">
+              {languages.map((lang) => (
+                <div
+                  key={lang.language_id}
+                  className={`px-6 py-3 cursor-pointer text-[15px] transition-all duration-150 ${
+                    selectedLanguage === lang.language
+                      ? "bg-[#88C078] text-white font-bold"
+                      : "hover:bg-gray-100 text-gray-800"
+                  }`}
+                  onClick={() => setSelectedLanguage(lang.language)}
+                >
+                  {lang.language}
+                </div>
+              ))}
+            </div>
           )}
-
-          <div className="pl-6 pt-2 font-bold text-lg">{selectedLanguage}</div>
-
+  
+          <div className="px-6 mt-4 mb-2 font-semibold text-gray-700 text-[15px]">
+            📘 {selectedLanguage}
+          </div>
+  
           {studyMaterials.map((material) => (
             <div
               key={material.material_id}
-              className={`pl-8 text-sm cursor-pointer transition-all flex justify-between pr-4 ${
+              className={`flex items-center justify-between text-[14px] rounded-md mx-4 px-3 py-2 cursor-pointer transition-all duration-150 ${
                 selectedMaterialId === String(material.material_id)
-                  ? "bg-[#D9EAD3] text-black font-bold"
-                  : "text-gray-700"
-              } hover:bg-gray-200`}
+                  ? "bg-[#D9EAD3] text-black font-semibold"
+                  : "text-gray-700 hover:bg-gray-100"
+              }`}
               onClick={() => handleMaterialClick(material.material_id)}
             >
-              <div className="flex items-center gap-2">
-                <span>{material.title}</span>
-                {material.is_completed && <span className="text-green-500">✅</span>}
-              </div>
+              <span className="truncate">{material.title}</span>
+              {material.is_completed && <span className="text-green-500 text-xs ml-2">✅</span>}
             </div>
           ))}
-
-          <hr className="my-2 border-gray-300" />
-
-          <div className="pl-6 pt-2 font-bold text-lg">{selectedLanguage} Example</div>
-
+  
+          <hr className="my-4 border-gray-200 mx-4" />
+  
+          <div className="px-6 mb-2 font-semibold text-gray-700 text-[15px]">
+            🧪 {selectedLanguage} Example
+          </div>
+  
           {studyExamples.length ? (
             studyExamples.map((example) => (
               <div
                 key={example.example_id}
-                className={`pl-8 text-sm cursor-pointer transition-all flex justify-between pr-4 ${
+                className={`flex items-center justify-between text-[14px] rounded-md mx-4 px-3 py-2 cursor-pointer transition-all duration-150 ${
                   selectedExampleId === String(example.example_id)
-                    ? "bg-[#D9EAD3] text-black font-bold"
-                    : "text-gray-700"
-                } hover:bg-gray-200`}
+                    ? "bg-[#D9EAD3] text-black font-semibold"
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
                 onClick={() => handleExampleClick(example.example_id)}
               >
-                <div className="flex items-center gap-2">
-                  <span>{example.title}</span>
-                  {example.is_completed && <span className="text-green-500">✅</span>}
-                </div>
+                <span className="truncate">{example.title}</span>
+                {example.is_completed && <span className="text-green-500 text-xs ml-2">✅</span>}
               </div>
             ))
           ) : (
-            <div className="pl-6 text-gray-500">예제가 없습니다.</div>
+            <div className="px-6 text-gray-400 text-sm">예제가 없습니다.</div>
           )}
         </>
       )}
     </div>
-  );
+  );  
 };
 
 export default Sidebar;

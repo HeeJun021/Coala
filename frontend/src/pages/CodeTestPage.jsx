@@ -8,8 +8,9 @@ import { python } from "@codemirror/lang-python";
 import { dracula } from "@uiw/codemirror-theme-dracula";
 import { createTheme } from "@uiw/codemirror-themes";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { vscDarkPlus, prism } from "react-syntax-highlighter/dist/esm/styles/prism";
 import apiClient from "../api/apiClient";
+import { tags as t } from "@codemirror/highlight";
 
 const CodeTestPage = () => {
   const location = useLocation();
@@ -41,9 +42,26 @@ const CodeTestPage = () => {
     settings: {
       background: "#ffffff",
       foreground: "#000000",
-      selection: "#d6d6d6",
+      selection: "#cce3ff",
+      selectionMatch: "#aad2ff",
       cursor: "#000000",
     },
+    styles: [
+      { tag: t.keyword, color: "#d73a49" },
+      { tag: [t.name, t.deleted, t.character, t.propertyName, t.macroName], color: "#005cc5" },
+      { tag: [t.function(t.variableName), t.labelName], color: "#6f42c1" },
+      { tag: [t.color, t.constant(t.name), t.standard(t.name)], color: "#005cc5" },
+      { tag: [t.definition(t.name), t.separator], color: "#24292e" },
+      { tag: [t.typeName, t.className], color: "#e36209" },
+      { tag: [t.number, t.changed, t.annotation, t.modifier, t.self, t.namespace], color: "#005cc5" },
+      { tag: [t.string], color: "#032f62" },
+      { tag: [t.meta, t.comment], color: "#6a737d", fontStyle: "italic" },
+      { tag: [t.strong], fontWeight: "bold" },
+      { tag: [t.emphasis], fontStyle: "italic" },
+      { tag: [t.link], color: "#032f62", textDecoration: "underline" },
+      { tag: [t.heading], fontWeight: "bold", color: "#24292e" },
+      { tag: [t.atom, t.bool, t.special(t.variableName)], color: "#e36209" },
+    ]
   });
 
   const runCode = async () => {
@@ -83,9 +101,12 @@ const CodeTestPage = () => {
     : `<body style="background-color: white;">${htmlPreview}</body>`;
 
   return (
-    <div className={`min-h-screen flex flex-col items-center p-8 ${theme === "dark" ? "bg-gray-900 text-white" : "bg-gray-100 text-black"}`}>
-      <div className="w-full max-w-5xl bg-white shadow-lg rounded-xl p-8">
-        <h1 className="text-3xl font-bold mb-4 text-center text-gray-800">{safeDecodeURIComponent(title)}</h1>
+    <div className={`min-h-screen flex flex-col items-center p-8 transition-all duration-300
+      ${theme === "dark" ? "bg-gray-900 text-white" : "bg-gray-100 text-black"}`}>
+      <div className={`w-full max-w-5xl shadow-lg rounded-xl p-8 transition-all duration-300
+        ${theme === "dark" ? "bg-[#1e1e1e] text-white" : "bg-white text-black"}`}>
+        
+        <h1 className="text-3xl font-bold mb-4 text-center">{safeDecodeURIComponent(title)}</h1>
 
         <div className="flex justify-between mb-4">
           <div>
@@ -103,19 +124,22 @@ const CodeTestPage = () => {
             </button>
           </div>
           <select
-            className="border px-4 py-2 rounded"
-            value={language}
-            onChange={(e) => setLanguage(e.target.value)}
-          >
-            <option value="javascript">JavaScript</option>
-            <option value="html">HTML</option>
-            <option value="css">CSS</option>
-            <option value="python">Python</option>
-          </select>
+  className={`border px-4 py-2 rounded transition-all duration-200
+    ${theme === "dark" ? "bg-[#2d2d2d] text-white border-gray-500" : "bg-white text-black border-gray-300"}`}
+  value={language}
+  onChange={(e) => setLanguage(e.target.value)}
+>
+  <option value="javascript">JavaScript</option>
+  <option value="html">HTML</option>
+  <option value="css">CSS</option>
+  <option value="python">Python</option>
+</select>
+
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <div className="p-4 border rounded-md bg-gray-100 text-gray-800">
+          <div className={`p-4 border rounded-md transition-all duration-300
+            ${theme === "dark" ? "bg-[#2d2d2d] text-white" : "bg-gray-100 text-gray-800"}`}>
             <h2 className="text-lg font-semibold">문제 설명</h2>
             <div
               className="text-base leading-7"
@@ -129,14 +153,15 @@ const CodeTestPage = () => {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="입력값을 작성하세요"
-                  className="w-full p-2 border rounded mt-2 text-gray-800"
+                  className="w-full p-2 border rounded mt-2"
                   rows={4}
                 />
               </div>
             )}
           </div>
 
-          <div className="border rounded-md p-4 bg-gray-100 text-gray-800">
+          <div className={`border rounded-md p-4 transition-all duration-300
+            ${theme === "dark" ? "bg-[#2d2d2d] text-white" : "bg-gray-100 text-gray-800"}`}>
             <h2 className="text-lg font-semibold">코드 입력</h2>
             <CodeMirror
               value={code}
@@ -153,25 +178,29 @@ const CodeTestPage = () => {
           </div>
         </div>
 
-        <div className="mt-4 p-4 border rounded-md bg-gray-100 text-gray-800">
+        <div className={`mt-4 p-4 border rounded-md transition-all duration-300
+          ${theme === "dark" ? "bg-[#2d2d2d] text-white" : "bg-gray-100 text-gray-800"}`}>
           <h2 className="text-lg font-semibold">실행 결과</h2>
-          <div className="border rounded p-2 min-h-[50px] bg-white font-mono text-sm">
+          <div className={`border rounded p-2 min-h-[50px] font-mono text-sm
+            ${theme === "dark" ? "bg-[#1e1e1e] text-green-300" : "bg-white text-black"}`}>
+            
             {htmlPreview && (
               <div className="mt-2">
                 <iframe
                   srcDoc={withWhiteBackground}
                   title="HTML/CSS Preview"
-                  className="w-full h-64 border rounded bg-white"
+                  className="w-full h-64 border rounded"
                   sandbox="allow-same-origin allow-scripts"
                 />
               </div>
             )}
+
             {(result || error) && !htmlPreview && (
               <div className="mt-2">
                 {result && (
                   <SyntaxHighlighter
                     language="plaintext"
-                    style={vscDarkPlus}
+                    style={theme === "dark" ? vscDarkPlus : prism}
                     customStyle={{ background: "transparent", padding: 0, margin: 0 }}
                   >
                     {result}
@@ -180,7 +209,7 @@ const CodeTestPage = () => {
                 {error && (
                   <SyntaxHighlighter
                     language="plaintext"
-                    style={vscDarkPlus}
+                    style={theme === "dark" ? vscDarkPlus : prism}
                     customStyle={{ background: "transparent", padding: 0, margin: 0, color: "#f44747" }}
                   >
                     {error}
