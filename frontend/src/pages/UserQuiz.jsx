@@ -76,9 +76,11 @@ const UserQuiz = ({ userData }) => {
     }
   };
 
+  
   // ✅ 첫 로딩 시 전체 퀴즈 불러오기
   useEffect(() => {
     fetchAllQuizzes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
