@@ -9,7 +9,6 @@ export const getAllUserQuizzes = async (search = "", userId = null) => {
   const params = {};
   if (search) params.search = search;
   if (userId) params.user_id = userId;
-  console.log("🚀 API 호출 params:", params); 
   const res = await apiClient.get("/user-quiz/user-quizzes", { params });
   return res.data;
 };
@@ -21,7 +20,6 @@ export const getUserQuizDetail = async (userquizId) => {
     const response = await apiClient.get(`/user-quiz/${userquizId}`);
     return response.data;
   } catch (error) {
-    console.error("🚨 사용자 퀴즈 상세 조회 실패:", error);
     throw error;
   }
 };
@@ -32,7 +30,6 @@ export const submitUserQuiz = async (payload) => {
     const response = await apiClient.post(`/user-quiz/submit`, payload);
     return response.data;
   } catch (error) {
-    console.error("🚨 사용자 퀴즈 제출 실패:", error);
     throw error;
   }
 };
@@ -42,7 +39,6 @@ export const getUserQuizResult = async (uq_submission_id) => {
     const response = await apiClient.get(`/user-quiz/result/${uq_submission_id}`);
     return response.data;
   } catch (error) {
-    console.error("🚨 사용자 퀴즈 결과 조회 실패:", error);
     throw error;
   }
 };

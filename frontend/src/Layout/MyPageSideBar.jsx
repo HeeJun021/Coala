@@ -4,9 +4,6 @@ import { Link } from 'react-router-dom';
 import koala from '../assets/koala.jpg'
 
 const MyPageSidebar = ({ userData }) => {
-    console.log("🔍 MyPageSidebar userData:", JSON.stringify(userData, null, 2));
-
-
     return (
         <aside className="w-64 min-h-screen bg-gray-50 p-6 shadow-md flex-shrink-0 absolute left-4">
             <h1 className="text-2xl font-bold text-center mb-4">마이페이지</h1>

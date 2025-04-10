@@ -43,7 +43,7 @@ const Navbar = () => {
     },
     {
       label: "마이페이지",
-      path: user ? "/mypage" : "/login",
+      path: user ? "/mypage/modify" : "/login",
       children: ["내 정보", "포트폴리오", "내 학습 현황"],
     },
   ];

@@ -5,7 +5,6 @@ export const fetchQuestions = async (params) => {
     const response = await apiClient.get("/questions/", { params });
     return response.data;
   } catch (error) {
-    console.error("🚨 문제 가져오기 실패:", error);
     throw error;
   }
 };
@@ -15,7 +14,6 @@ export const createQuiz = async (quizData) => {
       const response = await apiClient.post("/quizzes/", quizData);
       return response.data;
     } catch (error) {
-      console.error("🚨 퀴즈 생성 실패:", error);
       throw error;
     }
   };
@@ -27,7 +25,6 @@ export const getQuizDetails = async (quizId) => {
     const response = await apiClient.get(`/quizzes/${quizId}`);
     return response.data;
   } catch (error) {
-    console.error("🚨 퀴즈 데이터를 불러오는 중 오류 발생:", error);
     throw error;
   }
 };
@@ -47,7 +44,6 @@ export const submitQuiz = async (quizId, userId, mode, answers) => {
 
     return response.data; // 서버 응답 데이터 반환
   } catch (error) {
-    console.error("🚨 퀴즈 제출 실패:", error);
     throw error;
   }
 };
@@ -58,7 +54,6 @@ export const getQuizResult = async (quizId, userId) => {
     const response = await apiClient.get(`/quizzes/${quizId}/result/${userId}`);
     return response.data;
   } catch (error) {
-    console.error("🚨 퀴즈 결과 불러오기 실패:", error);
     throw error;
   }
 };
@@ -69,7 +64,6 @@ export const getUserQuizHistory = async (userId) => {
     const response = await apiClient.get(`/quizzes/history/${userId}`);
     return response.data;
   } catch (error) {
-    console.error("🚨 퀴즈 기록 가져오기 실패:", error);
     throw error;
   }
 };
