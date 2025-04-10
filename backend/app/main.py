@@ -31,7 +31,7 @@ from app.routers import (
     code_execution,
     code_runner,
     code_terminal,
-    borad
+    board
 )
 from app.schemas.user import UserUpdateSchema
 from datetime import datetime
