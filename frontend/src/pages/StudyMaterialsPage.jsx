@@ -35,14 +35,21 @@ const StudyMaterialsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [fadeIn, setFadeIn] = useState(false);
 
   const [selectedOptions, setSelectedOptions] = useState({});
   const [submittedStatus, setSubmittedStatus] = useState({});
   const [correctStatus, setCorrectStatus] = useState({});
-
-  const [quizIndices, setQuizIndices] = useState([]); // 모든 퀴즈 인덱스 추적
+  const [quizIndices, setQuizIndices] = useState([]);
 
   useEffect(() => {
+    setFadeIn(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    const timeout = setTimeout(() => {
+      setFadeIn(true);
+    }, 100);
+
     if (!category || (!materialId && !exampleId)) return;
 
     const fetchContent = async () => {
@@ -56,7 +63,6 @@ const StudyMaterialsPage = () => {
         setStudyContent(data);
         setIsCompleted(data.is_completed);
 
-        // 퀴즈 인덱스 추출
         const quizIdx = data.sections
           .map((s, i) => (s.type === "quiz" ? i : null))
           .filter((i) => i !== null);
@@ -70,6 +76,7 @@ const StudyMaterialsPage = () => {
     };
 
     fetchContent();
+    return () => clearTimeout(timeout);
   }, [category, materialId, exampleId]);
 
   const formatCodeContent = (content) => {
@@ -93,12 +100,10 @@ const StudyMaterialsPage = () => {
     }
 
     const isCorrect = selectedOptions[index] === correctAnswer;
-
     const updatedCorrectStatus = { ...correctStatus, [index]: isCorrect };
     setCorrectStatus(updatedCorrectStatus);
     setSubmittedStatus((prev) => ({ ...prev, [index]: true }));
 
-    // 모든 퀴즈 정답을 맞췄는지 확인
     const allCorrect = quizIndices.every((i) => updatedCorrectStatus[i] === true);
 
     if (allCorrect && !isCompleted) {
@@ -119,8 +124,7 @@ const StudyMaterialsPage = () => {
   };
 
   const showTerminalButton = (category, title, content) => {
-    const isSafe =
-      !content.includes("<html>") && !content.includes("<body>");
+    const isSafe = !content.includes("<html>") && !content.includes("<body>");
     return (
       ["javascript", "python"].includes(category?.toLowerCase()) &&
       !title.includes("모듈과 패키지") &&
@@ -134,12 +138,26 @@ const StudyMaterialsPage = () => {
 
   return (
     <div className="bg-[#f9fafb] min-h-screen py-10">
-      <div className="bg-white shadow-md rounded-lg p-8 max-w-[1000px] w-full mx-auto text-left">
-      {isCompleted && (
-        <div className="fixed top-10 right-10 z-[9999] bg-green-100 border border-green-400 text-green-700 px-4 py-2 rounded shadow-lg">
-          ✅ 이 학습자료는 완료되었습니다
-        </div>
-      )}
+      <div className={`bg-white shadow-md rounded-lg p-8 max-w-[1000px] w-full mx-auto text-left transition-opacity duration-500 ${fadeIn ? "opacity-100" : "opacity-0"}`}>
+        {isCompleted && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+            <div className="bg-white rounded-xl shadow-xl px-8 py-6 text-center w-[340px] animate-fadeIn">
+              <h2 className="text-xl font-bold text-green-600 mb-1 whitespace-nowrap">
+                🎉 학습이 완료되었습니다!
+              </h2>
+              <p className="text-gray-700 text-sm mb-1">모든 퀴즈를 통과했어요!</p>
+              <p className="text-blue-600 font-semibold text-sm mb-4">
+                {quizIndices.length} / {quizIndices.length} 퀴즈 통과
+              </p>
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-gray-700 text-white px-5 py-2 rounded hover:bg-gray-800 transition"
+              >
+                닫기
+      </button>
+    </div>
+  </div>
+)}
 
       {loading ? (
         <div className="text-gray-500">로딩 중...</div>
@@ -191,72 +209,82 @@ const StudyMaterialsPage = () => {
                         </div>
                       )}
 
-                      {section.type === "code" && (
-                        <div className="bg-gray-100 p-4 rounded-md mt-4 border border-gray-300 shadow-md">
-                          <h2 className="text-lg font-semibold text-gray-800 mb-2">{section.title}</h2>
-                          <SyntaxHighlighter
-                            language={category?.toLowerCase() || "text"}
-                            style={dracula}
-                            className="rounded-md"
-                            wrapLines={true}
-                            customStyle={{ whiteSpace: "pre-wrap", fontSize: "15px" }}
-                          >
-                            {formatCodeContent(section.content)}
-                          </SyntaxHighlighter>
-                          <p className="mt-2 text-sm text-gray-600">{section.problem_description}</p>
-                          <div className="flex gap-2 mt-4">
-                            {showCodeTestButton(category) && (
-                              <button
-                                onClick={() =>
-                                  navigate(
-                                    `/codetest?code=${encodeURIComponent(section.content)}&language=${encodeURIComponent(
-                                      category
-                                    )}&title=${encodeURIComponent(
-                                      studyContent.title
-                                    )}&problem_description=${encodeURIComponent(
-                                      section.problem_description || ""
-                                    )}`
-                                  )
-                                }
-                                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-                              >
-                                코드 테스트 →
-                              </button>
-                            )}
-                            {showTerminalButton(category, studyContent.title, section.content) ? (
-                              <button
-                                onClick={() =>
-                                  navigate(
-                                    `/terminal?language=${encodeURIComponent(category)}&code=${encodeURIComponent(
-                                      section.content
-                                    )}&title=${encodeURIComponent(
-                                      studyContent.title
-                                    )}&problem_description=${encodeURIComponent(
-                                      section.problem_description || ""
-                                    )}`
-                                  )
-                                }
-                                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
-                              >
-                                터미널 실습 →
-                              </button>
-                            ) : (
-                              category?.toLowerCase() === "javascript" &&
-                              (section.content.includes("<html>") || section.content.includes("<body>")) && (
-                                <button
-                                  onClick={() =>
-                                    window.alert("❗ HTML/DOM 코드가 포함된 학습자료는 실행할 수 없습니다.")
-                                  }
-                                  className="bg-gray-400 text-white px-4 py-2 rounded cursor-not-allowed"
-                                >
-                                  실행 불가
-                                </button>
-                              )
-                            )}
-                          </div>
-                        </div>
-                      )}
+{section.type === "code" && (
+  <div className="bg-gray-100 p-4 rounded-md mt-4 border border-gray-300 shadow-md">
+    <h2 className="text-lg font-semibold text-gray-800 mb-2">{section.title}</h2>
 
+    {/* ✅ 코드 박스 fade-in 적용 */}
+    <div className="fade-in">
+    <SyntaxHighlighter
+  language={
+    (() => {
+      const lang = category?.toLowerCase();
+      if (lang === "html") return "html";
+      if (lang === "css") return "css";
+      if (lang === "javascript" || lang === "js") return "javascript";
+      if (lang === "python" || lang === "py") return "python";
+      return "text"; // fallback
+    })()
+  }
+  style={dracula}
+  className="rounded-md"
+  wrapLines={true}
+  customStyle={{ whiteSpace: "pre-wrap", fontSize: "15px" }}
+>
+  {formatCodeContent(section.content)}
+</SyntaxHighlighter>
+    </div>
+
+    <p className="mt-2 text-sm text-gray-600">{section.problem_description}</p>
+
+    {/* 버튼 영역 */}
+    <div className="flex gap-2 mt-4">
+      {showCodeTestButton(category) && (
+        <button
+          onClick={() =>
+            navigate(
+              `/codetest?code=${encodeURIComponent(section.content)}&language=${encodeURIComponent(
+                category
+              )}&title=${encodeURIComponent(
+                studyContent.title
+              )}&problem_description=${encodeURIComponent(section.problem_description || "")}`
+            )
+          }
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+        >
+          코드 테스트 →
+        </button>
+      )}
+
+      {showTerminalButton(category, studyContent.title, section.content) ? (
+        <button
+          onClick={() =>
+            navigate(
+              `/terminal?language=${encodeURIComponent(category)}&code=${encodeURIComponent(
+                section.content
+              )}&title=${encodeURIComponent(
+                studyContent.title
+              )}&problem_description=${encodeURIComponent(section.problem_description || "")}`
+            )
+          }
+          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+        >
+          터미널 실습 →
+        </button>
+      ) : (
+        category?.toLowerCase() === "javascript" &&
+        (section.content.includes("<html>") || section.content.includes("<body>")) && (
+          <button
+            onClick={() => window.alert("❗ HTML/DOM 코드가 포함된 학습자료는 실행할 수 없습니다.")}
+            className="bg-gray-400 text-white px-4 py-2 rounded cursor-not-allowed"
+          >
+            실행 불가
+          </button>
+        )
+      )}
+    </div>
+  </div>
+)}
                       {section.type === "quiz" && section.content?.question && (
                         <div className="bg-gray-900 text-white p-6 rounded-lg shadow-lg w-full max-w-3xl mt-6 mx-auto">
                           <h2 className="text-2xl font-bold text-center mb-4">퀴즈</h2>
