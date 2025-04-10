@@ -30,9 +30,9 @@ from app.routers import (
     problem_starter_code,
     code_execution,
     code_runner,
-    code_terminal
+    code_terminal,
+    borad
 )
-
 from app.schemas.user import UserUpdateSchema
 from datetime import datetime
 from sqlalchemy import text
@@ -55,6 +55,10 @@ app.add_middleware(
 )
 
 # ✅ 라우터 등록
+
+# 라우터 등록
+app.include_router(board.router)
+
 app.include_router(user.router)
 app.include_router(auth.router)
 app.include_router(social_auth.router)

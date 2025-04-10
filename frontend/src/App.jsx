@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
 
 import { AuthProvider } from "./context/AuthContext";
 import { getCurrentUser } from "./api/authApi";
@@ -41,6 +41,12 @@ import CodingTestPage from "./pages/CodingTestPage";
 import CodingTestDetailPage from "./pages/CodingTestDetailPage";
 import CorrectSolutionsPage from "./pages/CorrectSolutionsPage";
 
+// 게시판
+import "@toast-ui/editor/dist/toastui-editor.css";
+import BoardPage from "./pages/BoardPage";
+import BoardDetailPage from "./pages/BoardDetailPage";
+import BoardWritePage from "./pages/BoardWritePage";
+import BoardEditPage from "./pages/BoardEditPage";
 
 const BodyClassManager = () => {
   const location = useLocation();
@@ -122,7 +128,7 @@ const App = () => {
                   <Route path="/user-quiz-solve/:quizId" element={<UserQuizSolvePage userData={userData} />} />
                   <Route path="/user-quiz-result/:uq_submission_id" element={<UserQuizResultPage userData={userData} />} />
 
-                  {/* 코딩테스트 목록 */}
+                  {/* 코딩 테스트 목록 */}
                   <Route path="/codingtest" element={<CodingTestPage />} />
 
                   {/* 실습 터미널 */}
@@ -141,6 +147,13 @@ const App = () => {
                   <Route path="/mypage/setting" element={<MyPageSetting userData={userData} />} />
                   <Route path="/mypage/quiz-history" element={<MyPageQuizHistory userData={userData} />} />
                   <Route path="/mypage/userquiz-history" element={<MyPageUserQuizHistory userData={userData} />} />
+
+                  {/* 게시판 */}
+                  <Route path="/board/:boardType" element={<BoardPage />} />
+                  <Route path="/board/:boardType/write" element={<BoardWritePage />} />
+                  <Route path="/board/:boardType/:postId" element={<BoardDetailPage />} />
+                  <Route path="/board/:boardType/edit/:postId" element={<BoardEditPage />} />
+                  <Route path="/board" element={<Navigate to="/board/free" />} />
                 </Routes>
               </MainLayout>
             }
