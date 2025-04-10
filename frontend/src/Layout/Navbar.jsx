@@ -52,7 +52,7 @@ const Navbar = () => {
     <div className="relative z-50">
       {/* 상단 바 */}
       <nav
-        className="fixed top-0 left-0 w-full bg-white border-b shadow-sm h-[70px] flex items-center justify-between px-12"
+        className="fixed top-0 left-0 w-full bg-white border-b shadow-sm h-[70px] flex items-center justify-between px-12 z-50"
         onMouseEnter={() => setHovering(true)}
         onMouseLeave={() => setHovering(false)}
       >
@@ -60,46 +60,46 @@ const Navbar = () => {
           <img src="/coala.jpg" alt="Coala Logo" className="w-10 h-10 mr-2 rounded-full border" />
           <span className="text-2xl font-semibold text-green-700">Coala</span>
         </Link>
-
+  
         <div className="grid grid-cols-6 w-[900px] text-center">
-  {menuItems.map((item, idx) => (
-    <div key={idx} className="h-[50px] flex items-center justify-center">
-      {item.label === "학습자료" ? (
-        <span
-          onClick={async () => {
-            try {
-              const res = await fetch("http://localhost:8000/languages");
-              const languages = await res.json();
-              if (languages.length > 0) {
-                const lang = languages[0].language;
-                const mat = await fetch(`http://localhost:8000/api/materials/${lang}`, {
-                  credentials: "include",
-                });
-                const list = await mat.json();
-                if (list.length > 0) {
-                  navigate(`/StudyMaterialsPage?category=${lang}&id=${list[0].material_id}`);
-                }
-              }
-            } catch {
-              alert("오류 발생");
-            }
-          }}
-          className="cursor-pointer text-[17px] font-semibold text-gray-900 transition duration-200 hover:text-green-500 hover:scale-110 hover:font-bold"
-        >
-          {item.label}
-        </span>
-      ) : (
-        <Link
-          to={item.path}
-          className="text-[17px] font-semibold text-gray-900 transition duration-200 hover:text-green-500 hover:scale-110 hover:font-bold"
-        >
-          {item.label}
-        </Link>
-      )}
-    </div>
-  ))}
-</div>
-
+          {menuItems.map((item, idx) => (
+            <div key={idx} className="h-[50px] flex items-center justify-center">
+              {item.label === "학습자료" ? (
+                <span
+                  onClick={async () => {
+                    try {
+                      const res = await fetch("http://localhost:8000/languages");
+                      const languages = await res.json();
+                      if (languages.length > 0) {
+                        const lang = languages[0].language;
+                        const mat = await fetch(`http://localhost:8000/api/materials/${lang}`, {
+                          credentials: "include",
+                        });
+                        const list = await mat.json();
+                        if (list.length > 0) {
+                          navigate(`/StudyMaterialsPage?category=${lang}&id=${list[0].material_id}`);
+                        }
+                      }
+                    } catch {
+                      alert("오류 발생");
+                    }
+                  }}
+                  className="cursor-pointer text-[17px] font-semibold text-gray-900 transition duration-200 hover:text-green-500 hover:scale-110 hover:font-bold"
+                >
+                  {item.label}
+                </span>
+              ) : (
+                <Link
+                  to={item.path}
+                  className="text-[17px] font-semibold text-gray-900 transition duration-200 hover:text-green-500 hover:scale-110 hover:font-bold"
+                >
+                  {item.label}
+                </Link>
+              )}
+            </div>
+          ))}
+        </div>
+  
         <div className="flex items-center gap-4">
           {user ? (
             <>
@@ -129,31 +129,31 @@ const Navbar = () => {
           )}
         </div>
       </nav>
-
+  
       {/* 드롭다운 메뉴 */}
       {hovering && (
-  <div
-    className="fixed top-[70px] left-0 w-full bg-white border-b shadow-md py-6 z-40"
-    onMouseEnter={() => setHovering(true)}
-    onMouseLeave={() => setHovering(false)}
-  >
-    <div className="grid grid-cols-6 w-[900px] mx-auto transform -translate-x-[20px] gap-y-4">
-      {menuItems.map((item, idx) => (
-        <div key={idx} className="flex flex-col items-center gap-4 h-[200px]">
-          {item.children.map((child, i) => (
-            <span
-              key={i}
-              className="text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold"
-            >
-              {child}
-            </span>
-          ))}
+        <div
+          className="fixed top-[70px] left-0 w-full bg-white border-b shadow-md py-6 z-40"
+          onMouseEnter={() => setHovering(true)}
+          onMouseLeave={() => setHovering(false)}
+        >
+          <div className="grid grid-cols-6 w-[900px] mx-auto transform -translate-x-[20px] gap-y-4">
+            {menuItems.map((item, idx) => (
+              <div key={idx} className="flex flex-col items-center gap-4 h-[200px]">
+                {item.children.map((child, i) => (
+                  <span
+                    key={i}
+                    className="text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold"
+                  >
+                    {child}
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
-      ))}
-    </div>
-  </div>
-)}
-
+      )}
+  
       <div className="h-[70px]" />
     </div>
   );
