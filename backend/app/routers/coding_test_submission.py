@@ -1,7 +1,16 @@
 from sqlalchemy import update, insert, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from app.models.coding_tests import CorrectSubmissionStats
+from app.models.coding_tests import CorrectSubmissionStats, CodingTestSubmissions
+from fastapi import APIRouter, Depends, HTTPException
+from app.database import get_db
+from app.schemas.coding_tests import SubmissionTitleUpdate
+
+
+router = APIRouter(
+    prefix="/codingtestsubmissions",
+    tags=["CodingTestSubmissions"]
+)
 
 # 동기 버전으로 수정
 def update_correct_stats(db: Session, test_id: int, is_correct: bool):
@@ -42,3 +51,27 @@ def update_correct_stats(db: Session, test_id: int, is_correct: bool):
             pass
 
     db.commit()
+
+
+# ✅ 제출 제목 단독 수정 API
+@router.patch("/{submission_id}/title")
+def update_submission_title(
+    submission_id: int,
+    data: SubmissionTitleUpdate,
+    db: Session = Depends(get_db)
+):
+    submission = db.query(CodingTestSubmissions).filter(
+        CodingTestSubmissions.ct_submission_id == submission_id
+    ).first()
+
+    if not submission:
+        raise HTTPException(status_code=404, detail="제출을 찾을 수 없습니다.")
+
+    submission.title = data.title
+    db.commit()
+    db.refresh(submission)
+
+    return {
+        "result": "success",
+        "updated_title": submission.title
+    }

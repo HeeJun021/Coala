@@ -3,15 +3,34 @@ from sqlalchemy.orm import Session
 from app.database import engine, get_db, Base
 
 # ✅ 모델 불러오기
-from app.models import user, email_verification, study_materials, study_example, question, language
+from app.models import (
+    user,
+    email_verification,
+    study_materials,
+    study_example,
+    question,
+    language
+)
 
 # ✅ 라우터 불러오기
 from app.routers import (
-    user, auth, social_auth, languages,
-    study_example, study_materials,
-    question, quiz, user_quiz,
-    coding_tests, coding_test_case, problem_starter_code,
-    code_execution, code_runner, code_terminal
+    user,
+    auth,
+    social_auth,
+    study_materials,
+    study_example,
+    question,
+    quiz,
+    user_quiz,
+    wrong_note,
+    languages,
+    coding_tests,
+    coding_test_case,
+    coding_test_submission,
+    problem_starter_code,
+    code_execution,
+    code_runner,
+    code_terminal
 )
 
 from app.schemas.user import UserUpdateSchema
@@ -47,11 +66,12 @@ app.include_router(study_materials.router)
 app.include_router(question.router)
 app.include_router(quiz.router)
 app.include_router(user_quiz.router)
-
 app.include_router(coding_tests.router)
-app.include_router(coding_test_case.router)
 app.include_router(problem_starter_code.router)
-
+app.include_router(code_execution.router)
+app.include_router(coding_test_case.router)
+app.include_router(wrong_note.router)
+app.include_router(coding_test_submission.router)
 app.include_router(code_runner.router)
 app.include_router(code_terminal.router)
 app.include_router(code_execution.router, prefix="/code")  # WebSocket용이면 prefix 유지 가능
