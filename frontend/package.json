@@ -8,6 +8,8 @@
     "@codemirror/lang-html": "^6.4.9",
     "@codemirror/lang-javascript": "^6.2.3",
     "@codemirror/lang-python": "^6.1.7",
+    "@toast-ui/editor": "^3.2.2",
+    "@toast-ui/react-editor": "^3.2.3",
     "@uiw/codemirror-theme-dracula": "^4.23.10",
     "@uiw/codemirror-themes": "^4.23.10",
     "@uiw/react-codemirror": "^4.23.10",
