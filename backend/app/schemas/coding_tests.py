@@ -49,6 +49,7 @@ class WrongNoteResponse(BaseModel):
     ct_submission_id: int
     submitted_answer: str
     execution_result: str
+    title: Optional[str] = None  # ✅ 제출 제목 추가
     note: Optional[str] = None
     created_at: Optional[datetime]
 

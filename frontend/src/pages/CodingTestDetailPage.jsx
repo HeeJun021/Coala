@@ -19,7 +19,8 @@ import "prismjs/components/prism-python";
 import "prismjs/components/prism-java";
 import "react-resizable/css/styles.css"; // 스타일 추가
 import "../index.css";
-import ResultModal from "../components/ResultModal"; // 상단에 추가
+import ResultModal from "../components/ResultModal";
+import WrongNoteEditor from "../components/WrongNoteEditor";
 
 const CodingTestDetailPage = () => {
   const { user } = useAuth();
@@ -267,8 +268,8 @@ const CodingTestDetailPage = () => {
               key={tab}
               onClick={() => {
                 setActiveTab(tab);
-                if (tab === "submissions") {
-                  fetchSubmissions();
+                if (tab === "submissions" || tab === "notes") {
+                  fetchSubmissions(); // ✅ notes 탭에서도 제출 리스트 가져오게
                 }
               }}
               className={`py-3 ${
@@ -282,6 +283,7 @@ const CodingTestDetailPage = () => {
                 : "오답노트"}
             </button>
           ))}
+
           <div className="text-sm flex items-center gap-2 ml-auto">
             <select
               className="bg-[#4b5b6e] text-sm px-2 py-1 rounded text-white"
@@ -297,8 +299,12 @@ const CodingTestDetailPage = () => {
 
         {/* 콘텐츠 영역 */}
         <div className="flex flex-1 overflow-hidden">
-          {/* 좌측: 문제 정보 or 제출 내역 */}
-          <div className="w-1/2 p-6 overflow-y-auto problem-info-scrollbar">
+          {/* 좌측 영역 */}
+          <div
+            className={`${
+              activeTab === "notes" ? "w-[100%]" : "w-1/2"
+            } p-6 overflow-y-auto problem-info-scrollbar`}
+          >
             {activeTab === "info" && (
               <>
                 <h2 className="text-2xl font-bold mb-2">{problem.title}</h2>
@@ -483,150 +489,163 @@ const CodingTestDetailPage = () => {
                 </table>
               </>
             )}
-          </div>
-
-          {/* 우측: 코드 에디터 */}
-          <div className="w-1/2 flex flex-col border-l border-gray-600 bg-[#3d4d63]">
-            <div
-              className="flex-1 overflow-auto p-4 editor-wrapper editor-scrollbar"
-              onClick={handleClick}
-            >
-              <Editor
-                value={code}
-                onValueChange={(newCode) => setCode(newCode)}
-                highlight={highlightWithLineNumbers}
-                padding={12}
-                textareaClassName="editor-textarea"
-                preClassName="editor-pre"
+            {activeTab === "notes" && (
+              <WrongNoteEditor
+                submissionList={submissions}
+                codeSnapshot={code}
+                testResults={executionResults}
+                testId={problem.id}
+                userId={user.user_id}
               />
-            </div>
-
-            <ResizableBox
-              width={"100%"}
-              height={200}
-              minConstraints={[100, 100]}
-              maxConstraints={[Infinity, 500]}
-              resizeHandles={["n"]}
-              handle={
-                <span
-                  className="react-resizable-handle react-resizable-handle-n"
-                  style={{
-                    position: "absolute",
-                    top: "5px",
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                    height: "16px",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    cursor: "ns-resize",
-                    background: "transparent",
-                  }}
-                >
-                  <HoverHandle />
-                </span>
-              }
-            >
-              <div className="border-t border-gray-600 p-4 text-sm overflow-auto bg-[#3d4d63] h-full result-scrollbar">
-                <h3 className="text-white font-semibold mb-2">
-                  {isSubmitResult ? "제출 실행 결과" : "실행 결과"}
-                </h3>
-
-                {isRunning ? (
-                  <div className="text-gray-300 text-sm mt-3 animate-pulse">
-                    ⏳ 제출 실행 중입니다...
-                  </div>
-                ) : executionResults.length === 0 ? (
-                  <div className="text-gray-300 text-sm mt-3">
-                    코드 실행 결과가 여기에 표시됩니다.
-                  </div>
-                ) : (
-                  <>
-                    <table className="w-full text-left border border-gray-500">
-                      <thead>
-                        <tr className="bg-[#2c3544] text-white">
-                          <th className="p-2 border-r border-gray-500">
-                            입력값
-                          </th>
-                          <th className="p-2 border-r border-gray-500">
-                            기댓값
-                          </th>
-                          <th className="p-2 border-r border-gray-500">
-                            실행 결과
-                          </th>
-                          <th className="p-2">출력</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {executionResults.map((result, idx) => (
-                          <tr
-                            key={idx}
-                            className="border-t border-gray-500 text-white"
-                          >
-                            <td className="p-2 border-r border-gray-500 whitespace-pre-line">
-                              {result.input.replace(/\\n/g, "\n")}
-                            </td>
-
-                            <td className="p-2 border-r border-gray-500">
-                              {result.expected_output}
-                            </td>
-                            <td className="p-2 border-r border-gray-500">
-                              {result.passed ? (
-                                <span className="text-blue-400">
-                                  테스트를 통과하였습니다.
-                                </span>
-                              ) : (
-                                <span className="text-red-400">
-                                  테스트를 통과하지 못했습니다.
-                                </span>
-                              )}
-                            </td>
-                            <td className="p-2">
-                              {result.actual_output !== undefined &&
-                              result.actual_output !== ""
-                                ? result.actual_output
-                                : "-"}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    {!isRunning && (
-                      <>
-                        {isSubmitResult ? (
-                          <div className="text-gray-300 text-xs mt-3">
-                            🎉{" "}
-                            <span className="text-green-300 font-medium">
-                              정답입니다!
-                            </span>
-                            <div>테스트케이스를 모두 통과하였습니다.</div>
-                          </div>
-                        ) : (
-                          <p className="text-gray-300 text-xs mt-3">
-                            샘플 테스트케이스를 통과했다는 의미로, 작성한 코드가
-                            문제의 정답은 아닐 수 있습니다.
-                          </p>
-                        )}
-
-                        {executionResults.some((r) => r.stderr) && (
-                          <div className="bg-[#2b2f38] border border-red-400 rounded-md p-4 mt-4 text-sm text-red-200 whitespace-pre-wrap">
-                            <pre className="leading-relaxed text-red-200 font-mono">
-                              {cleanStderr(
-                                executionResults
-                                  .map((r) => r.stderr)
-                                  .filter(Boolean)
-                                  .join("\n\n")
-                              )}
-                            </pre>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </>
-                )}
-              </div>
-            </ResizableBox>
+            )}
           </div>
+
+          {/* 우측 영역 - 코드 에디터 + 실행결과는 notes 탭 아닐 때만 */}
+          {activeTab !== "notes" && (
+            <div
+            className="w-[40%] flex flex-col border-l border-gray-600 bg-[#3d4d63]"
+          >
+              <div
+                className="flex-1 overflow-auto p-4 editor-wrapper editor-scrollbar"
+                onClick={handleClick}
+              >
+                <Editor
+                  value={code}
+                  onValueChange={(newCode) => setCode(newCode)}
+                  highlight={highlightWithLineNumbers}
+                  padding={12}
+                  textareaClassName="editor-textarea"
+                  preClassName="editor-pre"
+                />
+              </div>
+
+              <ResizableBox
+                width={"100%"}
+                height={200}
+                minConstraints={[100, 100]}
+                maxConstraints={[Infinity, 500]}
+                resizeHandles={["n"]}
+                handle={
+                  <span
+                    className="react-resizable-handle react-resizable-handle-n"
+                    style={{
+                      position: "absolute",
+                      top: "5px",
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      height: "16px",
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      cursor: "ns-resize",
+                      background: "transparent",
+                    }}
+                  >
+                    <HoverHandle />
+                  </span>
+                }
+              >
+                <div className="border-t border-gray-600 p-4 text-sm overflow-auto bg-[#3d4d63] h-full result-scrollbar">
+                  <h3 className="text-white font-semibold mb-2">
+                    {isSubmitResult ? "제출 실행 결과" : "실행 결과"}
+                  </h3>
+
+                  {isRunning ? (
+                    <div className="text-gray-300 text-sm mt-3 animate-pulse">
+                      ⏳ 제출 실행 중입니다...
+                    </div>
+                  ) : executionResults.length === 0 ? (
+                    <div className="text-gray-300 text-sm mt-3">
+                      코드 실행 결과가 여기에 표시됩니다.
+                    </div>
+                  ) : (
+                    <>
+                      <table className="w-full text-left border border-gray-500">
+                        <thead>
+                          <tr className="bg-[#2c3544] text-white">
+                            <th className="p-2 border-r border-gray-500">
+                              입력값
+                            </th>
+                            <th className="p-2 border-r border-gray-500">
+                              기댓값
+                            </th>
+                            <th className="p-2 border-r border-gray-500">
+                              실행 결과
+                            </th>
+                            <th className="p-2">출력</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {executionResults.map((result, idx) => (
+                            <tr
+                              key={idx}
+                              className="border-t border-gray-500 text-white"
+                            >
+                              <td className="p-2 border-r border-gray-500 whitespace-pre-line">
+                                {result.input.replace(/\\n/g, "\n")}
+                              </td>
+
+                              <td className="p-2 border-r border-gray-500">
+                                {result.expected_output}
+                              </td>
+                              <td className="p-2 border-r border-gray-500">
+                                {result.passed ? (
+                                  <span className="text-blue-400">
+                                    테스트를 통과하였습니다.
+                                  </span>
+                                ) : (
+                                  <span className="text-red-400">
+                                    테스트를 통과하지 못했습니다.
+                                  </span>
+                                )}
+                              </td>
+                              <td className="p-2">
+                                {result.actual_output !== undefined &&
+                                result.actual_output !== ""
+                                  ? result.actual_output
+                                  : "-"}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {!isRunning && (
+                        <>
+                          {isSubmitResult ? (
+                            <div className="text-gray-300 text-xs mt-3">
+                              🎉{" "}
+                              <span className="text-green-300 font-medium">
+                                정답입니다!
+                              </span>
+                              <div>테스트케이스를 모두 통과하였습니다.</div>
+                            </div>
+                          ) : (
+                            <p className="text-gray-300 text-xs mt-3">
+                              샘플 테스트케이스를 통과했다는 의미로, 작성한
+                              코드가 문제의 정답은 아닐 수 있습니다.
+                            </p>
+                          )}
+
+                          {executionResults.some((r) => r.stderr) && (
+                            <div className="bg-[#2b2f38] border border-red-400 rounded-md p-4 mt-4 text-sm text-red-200 whitespace-pre-wrap">
+                              <pre className="leading-relaxed text-red-200 font-mono">
+                                {cleanStderr(
+                                  executionResults
+                                    .map((r) => r.stderr)
+                                    .filter(Boolean)
+                                    .join("\n\n")
+                                )}
+                              </pre>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </>
+                  )}
+                </div>
+              </ResizableBox>
+            </div>
+          )}
         </div>
 
         {/* 하단 버튼 */}
@@ -683,5 +702,4 @@ const CodingTestDetailPage = () => {
     </>
   );
 };
-
 export default CodingTestDetailPage;

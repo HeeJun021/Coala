@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Text, ForeignKey, Boolean, Float
 from sqlalchemy.orm import relationship
 from app.database import Base
 from sqlalchemy.sql import func
+from sqlalchemy.dialects.postgresql import JSONB
 
 class CodingTests(Base):
     __tablename__ = "codingtests"
@@ -66,7 +67,7 @@ class CodingTestSubmissions(Base):
     user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"))
     title = Column(String(255), nullable=True)
     code = Column(Text, nullable=False)
-    execution_log = Column(Text, nullable=True)
+    execution_result = Column(JSONB, nullable=True)
     passed_test_cases = Column(Integer, default=0)
     total_test_cases = Column(Integer, default=0)
     is_correct = Column(Boolean, default=False)

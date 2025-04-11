@@ -1,5 +1,5 @@
 # ✅ 최적화된 코딩 테스트 라우터
-import random
+import random, json
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query
 from sqlalchemy.orm import Session, aliased
 from app.database import get_db
@@ -194,7 +194,7 @@ async def submit_coding_test(
         passed_test_cases=passed_count,
         total_test_cases=total_count,
         submitted_at=datetime.utcnow(),
-        execution_log="",
+        execution_result=results
     )
     db.add(new_submission)
     db.commit()
@@ -236,7 +236,9 @@ def get_coding_test_submissions(
             "memory": f"{len(sub.code.encode('utf-8'))}B",
             "passed_test_cases": sub.passed_test_cases,
             "total_test_cases": sub.total_test_cases,
+            "title": sub.title if sub.title else "",  # ✅ 여기 수정!
             "code": sub.code,
+            "execution_result": sub.execution_result or [],  # ✅ 바로 사용 가능
         })
 
     return {"submissions": result}
