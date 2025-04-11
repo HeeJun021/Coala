@@ -46,6 +46,26 @@ html, body, #root {
   background-color: #4b5b6e;
 }
 
+/* 에디터 작성 영역(ProseMirror) + 뷰어(preview)에 적용 */
+.ProseMirror::-webkit-scrollbar,
+.toastui-editor-md-preview::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+/* 스크롤바 핸들 (움직이는 부분) */
+.ProseMirror::-webkit-scrollbar-thumb,
+.toastui-editor-md-preview::-webkit-scrollbar-thumb {
+  background-color: #5a6b85; /* 부드러운 블루그레이 */
+  border-radius: 6px;
+  border: 2px solid #1e1e1e; /* 테두리 추가로 입체감 */
+}
+
+/* 스크롤바 트랙 (배경) */
+.ProseMirror::-webkit-scrollbar-track,
+.toastui-editor-md-preview::-webkit-scrollbar-track {
+  background-color: #1e1e1e; /* 어두운 배경 */
+}
 
 
 /* 코드 에디터 스타일 */
