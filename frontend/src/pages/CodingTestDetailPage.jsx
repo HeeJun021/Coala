@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { cleanStderr } from "../utils/cleanStderr";
-import { HiOutlineRefresh } from "react-icons/hi";
+import { HiOutlineRefresh, HiChevronLeft } from "react-icons/hi";
 import { motion, AnimatePresence } from "framer-motion";
 import { useParams, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -258,8 +258,17 @@ const CodingTestDetailPage = () => {
       <div className="codingtest-detail w-screen h-screen bg-[#3d4d63] text-white flex flex-col">
         {/* 상단 헤더 */}
         <header className="flex items-center justify-between bg-[#2c3544] px-6 py-3">
-          <h1 className="text-xl font-bold">{problem.title}</h1>
-        </header>
+  <div className="flex items-center gap-3">
+    <Link
+      to="/codingtest"
+      className="text-white text-2xl hover:text-gray-300 transition"
+    >
+      <HiChevronLeft size={28} />
+    </Link>
+    <h1 className="text-xl font-bold">{problem.title}</h1>
+  </div>
+</header>
+
 
         {/* 탭 메뉴 */}
         <div className="flex gap-4 border-b border-gray-600 px-6">
@@ -416,7 +425,7 @@ const CodingTestDetailPage = () => {
                 </div>
 
                 <table className="w-full text-sm text-left">
-                  <thead className="border-b border-gray-600 text-gray-300">
+                  <thead className="border-b border-gray-600 text-white font-semibold tracking-wide">
                     <tr>
                       <th className="p-2 text-center">제출일시</th>
                       <th className="p-2 text-center">언어</th>
@@ -453,6 +462,19 @@ const CodingTestDetailPage = () => {
                         {s.open && (
                           <tr className="border-b border-gray-600 bg-[#2c3544]">
                             <td colSpan="5" className="p-3 relative">
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(s.code);
+                                  setShowCopyMessage(true);
+                                  setTimeout(
+                                    () => setShowCopyMessage(false),
+                                    3000
+                                  );
+                                }}
+                                className="absolute top-2 right-2 text-xs bg-[#4b5b6e] text-white px-3 py-1 rounded hover:bg-[#5f6f82] z-10"
+                              >
+                                📋 복사
+                              </button>
                               <AnimatePresence mode="wait">
                                 <motion.div
                                   key={`submission-${s.submission_id}`}
@@ -465,20 +487,6 @@ const CodingTestDetailPage = () => {
                                     ease: [0.25, 0.8, 0.25, 1],
                                   }}
                                 >
-                                  <button
-                                    onClick={() => {
-                                      navigator.clipboard.writeText(s.code);
-                                      setShowCopyMessage(true);
-                                      setTimeout(
-                                        () => setShowCopyMessage(false),
-                                        3000
-                                      );
-                                    }}
-                                    className="absolute top-2 right-2 text-xs bg-[#4b5b6e] text-white px-3 py-1 rounded hover:bg-[#5f6f82] z-10"
-                                  >
-                                    📋 복사
-                                  </button>
-
                                   <Editor
                                     value={s.code}
                                     onValueChange={() => {}}

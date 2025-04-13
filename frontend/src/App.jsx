@@ -61,6 +61,14 @@ const BodyClassManager = () => {
       document.body.className = "default-body";
     }
   }, [location.pathname]);
+//   const pathname = location.pathname;
+
+//   const isFullscreenRoute =
+//     (pathname.startsWith("/codingtest/") && pathname.split("/").length >= 3) || // /codingtest/:id
+//     pathname.startsWith("/codingtest/correct/");
+
+//   document.body.className = isFullscreenRoute ? "fullscreen-body" : "default-body";
+// }, [location.pathname]);
 
   return null;
 };
