@@ -449,39 +449,55 @@ const CodingTestDetailPage = () => {
                             {s.passed_test_cases}/{s.total_test_cases}
                           </td>
                         </tr>
+
                         {s.open && (
                           <tr className="border-b border-gray-600 bg-[#2c3544]">
                             <td colSpan="5" className="p-3 relative">
-                              <button
-                                onClick={() => {
-                                  navigator.clipboard.writeText(s.code);
-                                  setShowCopyMessage(true);
-                                  setTimeout(
-                                    () => setShowCopyMessage(false),
-                                    3000
-                                  );
-                                }}
-                                className="absolute top-2 right-2 text-xs bg-[#4b5b6e] text-white px-3 py-1 rounded hover:bg-[#5f6f82] z-10"
-                                style={{ cursor: "pointer" }}
-                              >
-                                📋 복사
-                              </button>
+                              <AnimatePresence mode="wait">
+                                <motion.div
+                                  key={`submission-${s.submission_id}`}
+                                  initial={{ opacity: 0, y: -20 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  exit={{ opacity: 0, y: -20 }}
+                                  transition={{
+                                    duration: 0.4,
+                                    delay: 0.05,
+                                    ease: [0.25, 0.8, 0.25, 1],
+                                  }}
+                                >
+                                  <button
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(s.code);
+                                      setShowCopyMessage(true);
+                                      setTimeout(
+                                        () => setShowCopyMessage(false),
+                                        3000
+                                      );
+                                    }}
+                                    className="absolute top-2 right-2 text-xs bg-[#4b5b6e] text-white px-3 py-1 rounded hover:bg-[#5f6f82] z-10"
+                                  >
+                                    📋 복사
+                                  </button>
 
-                              <Editor
-                                value={s.code}
-                                onValueChange={() => {}}
-                                highlight={(code) =>
-                                  Prism.highlight(
-                                    code,
-                                    Prism.languages[getPrismLang(s.language)],
-                                    s.language
-                                  )
-                                }
-                                padding={12}
-                                textareaClassName="editor-textarea"
-                                preClassName="editor-pre"
-                                readOnly
-                              />
+                                  <Editor
+                                    value={s.code}
+                                    onValueChange={() => {}}
+                                    highlight={(code) =>
+                                      Prism.highlight(
+                                        code,
+                                        Prism.languages[
+                                          getPrismLang(s.language)
+                                        ],
+                                        s.language
+                                      )
+                                    }
+                                    padding={12}
+                                    textareaClassName="editor-textarea"
+                                    preClassName="editor-pre"
+                                    readOnly
+                                  />
+                                </motion.div>
+                              </AnimatePresence>
                             </td>
                           </tr>
                         )}
@@ -505,7 +521,7 @@ const CodingTestDetailPage = () => {
 
           {/* 우측 영역 - 코드 에디터 + 실행결과는 notes 탭 아닐 때만 */}
           {activeTab !== "notes" && (
-            <div className="w-[40%] flex flex-col border-l border-gray-600 bg-[#3d4d63]">
+            <div className="w-[60%] flex flex-col border-l border-gray-600 bg-[#3d4d63]">
               <div
                 className="flex-1 overflow-auto p-4 editor-wrapper editor-scrollbar"
                 onClick={handleClick}
