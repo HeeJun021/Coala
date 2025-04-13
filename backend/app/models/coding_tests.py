@@ -16,7 +16,7 @@ class CodingTests(Base):
     output_format = Column(Text, nullable=True)
     time_limit = Column(Integer, nullable=False)
     memory_limit = Column(Integer, nullable=False, default=256)
-    created_at = Column(TIMESTAMP, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     test_cases = relationship("CodingTestCases", back_populates="test", cascade="all, delete")
     constraints = relationship("CodingTestConstraints", back_populates="test", cascade="all, delete")
@@ -71,7 +71,7 @@ class CodingTestSubmissions(Base):
     passed_test_cases = Column(Integer, default=0)
     total_test_cases = Column(Integer, default=0)
     is_correct = Column(Boolean, default=False)
-    submitted_at = Column(TIMESTAMP, nullable=True)
+    submitted_at = Column(DateTime(timezone=False), server_default=func.now())
     language = Column(String(20), default="python")
     viewed_others = Column(Boolean, default=False)
 
@@ -94,4 +94,5 @@ class WrongNote(Base):
     submitted_answer = Column(Text, nullable=False)
     execution_result = Column(Text, nullable=False)
     note = Column(Text, nullable=True)
-    created_at = Column(TIMESTAMP, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    

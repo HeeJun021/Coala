@@ -113,6 +113,7 @@ def get_coding_test_detail(
 
     stats = db.query(CorrectSubmissionStats).filter(CorrectSubmissionStats.test_id == test_id).first()
     correct_rate = float(stats.correct_rate) if stats and stats.correct_rate is not None else 0.0
+    total_submissions = stats.total_submissions if stats and stats.total_submissions is not None else 0
 
     solved = False
     if user_id:
@@ -140,6 +141,7 @@ def get_coding_test_detail(
         "time_limit": problem.time_limit,
         "memory_limit": problem.memory_limit,
         "created_at": problem.created_at,
+        "total_submissions": total_submissions,
         "correct_rate": correct_rate,
         "solved": solved,
         "testcases": [
@@ -193,7 +195,6 @@ async def submit_coding_test(
         is_correct=is_correct,
         passed_test_cases=passed_count,
         total_test_cases=total_count,
-        submitted_at=datetime.utcnow(),
         execution_result=results
     )
     db.add(new_submission)

@@ -319,7 +319,8 @@ const CodingTestDetailPage = () => {
                     </span>
                   </div>
                   <div className="text-xs text-gray-300">
-                    정답률 {(problem.correct_rate || 0).toFixed(1)}%
+                    총 {problem.total_submissions || 0}번의 풀이 | 정답률{" "}
+                    {(problem.correct_rate || 0).toFixed(1)}%
                   </div>
                 </div>
                 <section className="space-y-4 text-sm leading-6">

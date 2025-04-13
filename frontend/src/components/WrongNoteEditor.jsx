@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion"; // 애니메이션
 import "@toast-ui/editor/dist/toastui-editor.css";
 import "@toast-ui/editor/dist/theme/toastui-editor-dark.css"; // ✅ 다크 테마
 import { Editor } from "@toast-ui/react-editor";
@@ -146,72 +147,72 @@ const WrongNoteEditor = ({
               >
                 📄 {s.title || "제출 제목 없음"} - {s.submitted_at}
               </button>
-              {selectedSubmission?.submission_id === s.submission_id && (
-                <div className="ml-6 mt-2">
-                  <div className="flex justify-between items-center mb-2">
-                    <h4 className="text-sm font-semibold">
-                      📑 실패한 테스트케이스 목록
-                    </h4>
-                    {!existingNote && (
-                      <button
-                        className="text-xs px-3 py-1 rounded bg-blue-500 text-white hover:bg-blue-600"
-                        onClick={() => {
-                          setShowNoteEditor(true);
-                          setSelectedSubmission(s);
-                        }}
-                      >
-                        ✍️ 오답노트 작성
-                      </button>
-                    )}
-                  </div>
-                  <div className="text-sm space-y-2">
-                    {(() => {
-                      let parsed = [];
-                      try {
-                        parsed =
-                          typeof s.execution_result === "string"
-                            ? JSON.parse(s.execution_result)
-                            : s.execution_result || [];
-                      } catch (e) {
-                        console.warn("❗ JSON 파싱 실패:", e);
-                      }
-                      const failedCases = parsed.filter((r) => !r.passed);
-                      if (failedCases.length === 0) {
-                        return (
-                          <div className="text-gray-400">
-                            ❗실패한 테스트케이스 없음
-                          </div>
-                        );
-                      }
-                      return (
-                        <div className="text-sm space-y-4 pl-6 mt-1">
-                          {failedCases.slice(0, 2).map((r, idx) => (
-                            <div key={idx} className="text-white">
-                              <p className="text-base font-semibold">
-                                #{idx + 1}
-                              </p>
-                              <p>입력값 : {r.input}</p>
-                              <p>기대값 : {r.expected_output}</p>
-                              <p>
-                                출력값 : {r.actual_output}{" "}
-                                <span className="text-red-400 font-bold">
-                                  ❗오답
-                                </span>
-                              </p>
+              <AnimatePresence mode="wait">
+                {selectedSubmission?.submission_id === s.submission_id && (
+                  <motion.div
+                    key={s.submission_id}
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.25, ease: "easeOut" }}
+                    className="ml-6 mt-2 overflow-hidden"
+                  >
+                    <div className="ml-6 mt-2">
+                      <div className="flex justify-between items-center mb-2">
+                        <h4 className="text-sm font-semibold">
+                          📑 실패한 테스트케이스 목록
+                        </h4>
+                      </div>
+                      <div className="text-sm space-y-2">
+                        {(() => {
+                          let parsed = [];
+                          try {
+                            parsed =
+                              typeof s.execution_result === "string"
+                                ? JSON.parse(s.execution_result)
+                                : s.execution_result || [];
+                          } catch (e) {
+                            console.warn("❗ JSON 파싱 실패:", e);
+                          }
+                          const failedCases = parsed.filter((r) => !r.passed);
+                          if (failedCases.length === 0) {
+                            return (
+                              <div className="text-gray-400">
+                                ❗실패한 테스트케이스 없음
+                              </div>
+                            );
+                          }
+                          return (
+                            <div className="text-sm space-y-4 pl-6 mt-1">
+                              {failedCases.slice(0, 2).map((r, idx) => (
+                                <div key={idx} className="text-white">
+                                  <p className="text-base font-semibold">
+                                    #{idx + 1}
+                                  </p>
+                                  <p>입력값 : {r.input}</p>
+                                  <p>기대값 : {r.expected_output}</p>
+                                  <p>
+                                    출력값 : {r.actual_output}{" "}
+                                    <span className="text-red-400 font-bold">
+                                      ❗오답
+                                    </span>
+                                  </p>
+                                </div>
+                              ))}
+                              {failedCases.length > 2 && (
+                                <p className="text-xs italic text-gray-400 mt-2">
+                                  + 그 외 {failedCases.length - 2}개의 실패
+                                  케이스 더 있음
+                                </p>
+                              )}
                             </div>
-                          ))}
-                          {failedCases.length > 2 && (
-                            <p className="text-xs italic text-gray-400 mt-2">
-                              + 그 외 {failedCases.length - 2}개의 실패 케이스
-                              더 있음
-                            </p>
-                          )}
-                        </div>
-                      );
-                    })()}
-                  </div>
-                </div>
-              )}
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           ))}
         </div>
@@ -219,149 +220,199 @@ const WrongNoteEditor = ({
 
       {/* 우측 오답노트 영역 */}
       <div className="w-[65%] p-4">
-        {showNoteEditor && selectedSubmission && (
-          <>
-            <div className="flex justify-between items-center mb-4 flex-wrap gap-y-2">
-              {/* 제출 이름 + 제출 코드 불러오기 버튼 */}
-              <div className="flex items-center gap-2">
-                📄
-                {editingTitle ? (
-                  <input
-                    type="text"
-                    value={title}
-                    autoFocus
-                    onChange={(e) => setTitle(e.target.value)}
-                    onKeyDown={async (e) => {
-                      if (e.key === "Enter") await handleTitleSave();
-                    }}
-                    className="bg-[#2c3544] border border-gray-600 rounded px-2 py-1 text-white text-sm"
-                  />
-                ) : (
-                  <>
-                    {title} - {selectedSubmission.submitted_at}
-                  </>
-                )}
-                <button
-                  onClick={() => setEditingTitle(true)}
-                  className="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
-                >
-                  ✏️ 제출 이름 변경
-                </button>
-              </div>
-              {/* ✅ 오답노트가 없거나, 수정 중일 때만 표시 */}
-              {(!existingNote || isEditing) && (
-                <button
-                  onClick={() => {
-                    if (editorRef.current) {
-                      const editorInstance = editorRef.current.getInstance();
+        <AnimatePresence mode="wait">
+          {showNoteEditor && selectedSubmission && (
+            <motion.div
+              key={selectedSubmission.submission_id}
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 50 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+            >
+              <>
+                <div className="flex justify-between items-center mb-4 flex-wrap gap-y-2">
+                  {/* 제출 이름 + 제출 코드 불러오기 버튼 */}
+                  <div className="flex items-center gap-2">
+                    📄
+                    {editingTitle ? (
+                      <input
+                        type="text"
+                        value={title}
+                        autoFocus
+                        onChange={(e) => setTitle(e.target.value)}
+                        onKeyDown={async (e) => {
+                          if (e.key === "Enter") await handleTitleSave();
+                        }}
+                        className="bg-[#2c3544] border border-gray-600 rounded px-2 py-1 text-white text-sm"
+                      />
+                    ) : (
+                      <>
+                        {title} - {selectedSubmission.submitted_at}
+                      </>
+                    )}
+                    <button
+                      onClick={() => setEditingTitle(true)}
+                      className="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+                    >
+                      ✏️ 제출 이름 변경
+                    </button>
+                  </div>
+                  {/* ✅ 오답노트가 없거나, 수정 중일 때만 표시 */}
+                  {(!existingNote || isEditing) && (
+                    <button
+                      onClick={() => {
+                        if (editorRef.current) {
+                          const editorInstance =
+                            editorRef.current.getInstance();
 
-                      const formattedCode = `\`\`\`python\n${codeSnapshot}\n\`\`\`\n`;
+                          const formattedCode = `\`\`\`python\n${codeSnapshot}\n\`\`\`\n`;
 
-                      // getCursor() ❌ 필요 없음 → 그냥 insertText만 호출하면 커서에 삽입됨
-                      editorInstance.insertText(formattedCode);
-                    }
-                  }}
-                  className="text-xs bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-                >
-                  📥 제출 코드 불러오기
-                </button>
-              )}
-            </div>
+                          // getCursor() ❌ 필요 없음 → 그냥 insertText만 호출하면 커서에 삽입됨
+                          editorInstance.insertText(formattedCode);
+                        }
+                      }}
+                      className="text-xs bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                    >
+                      📥 제출 코드 불러오기
+                    </button>
+                  )}
+                </div>
 
-            <>
-              {existingNote ? (
                 <>
-                  {/* ✅ 읽기 전용일 땐 스타일 있는 div로 감싸기 */}
-                  {!isEditing ? (
-                    <div className="rounded border border-gray-700 bg-transparent overflow-hidden">
+                  {existingNote ? (
+                    <>
+                      {/* ✅ 읽기 전용일 땐 스타일 있는 div로 감싸기 */}
+                      <AnimatePresence mode="wait">
+                        {!isEditing ? (
+                          <motion.div
+                            key="readonly"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.25 }}
+                            className="rounded border border-gray-700 bg-transparent overflow-hidden"
+                          >
+                            <div className="rounded border border-gray-700 bg-transparent overflow-hidden">
+                              <Editor
+                                key="viewer"
+                                initialValue={noteContent || existingNote.note}
+                                previewStyle="tab" // 작성 영역만 기본으로 보임
+                                height="400px"
+                                theme="dark"
+                                usageStatistics={false}
+                                toolbarItems={[]} // ✅ 툴바 제거
+                                hideModeSwitch={true} // ✅ Markdown / WYSIWYG 탭 제거
+                                ref={editorRef}
+                                viewer={true}
+                              />
+                            </div>
+                          </motion.div>
+                        ) : (
+                          <motion.div
+                            key="editable"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.25 }}
+                          >
+                            <Editor
+                              key="editable"
+                              initialValue={noteContent || existingNote.note}
+                              previewStyle="tab" // 작성 영역만 기본으로 보임
+                              hideModeSwitch={true} // 전환 탭도 숨김
+                              height="400px"
+                              theme="dark"
+                              usageStatistics={false}
+                              toolbarItems={[
+                                ["bold", "italic", "strike"],
+                                ["code", "codeblock"],
+                                ["image", "link"],
+                              ]}
+                              ref={editorRef}
+                              viewer={false}
+                              onChange={() => {
+                                const markdown = editorRef.current
+                                  ?.getInstance()
+                                  .getMarkdown();
+                                setNoteContent(markdown);
+                              }}
+                            />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                      {/* ✅ 하단 버튼 */}
+                      <div className="flex justify-end mt-3 gap-2">
+                        {existingNote ? (
+                          isEditing ? (
+                            // 오답노트 있음 & 수정 중 → 저장 버튼
+                            <button
+                              onClick={handleSave}
+                              className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+                            >
+                              💾 오답노트 저장
+                            </button>
+                          ) : (
+                            // 오답노트 있음 & 읽기 상태 → 수정하기 버튼
+                            <button
+                              onClick={() => {
+                                setNoteContent(existingNote.note);
+                                setIsEditing(true);
+                              }}
+                              className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+                            >
+                              ✏️ 오답노트 수정하기
+                            </button>
+                          )
+                        ) : (
+                          // 오답노트 없음 → 저장 버튼
+                          <button
+                            onClick={handleSave}
+                            className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+                          >
+                            💾 오답노트 저장
+                          </button>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* 마크다운 에디터 */}
                       <Editor
-                        key="viewer"
-                        initialValue={noteContent || existingNote.note}
+                        initialValue={noteContent}
                         previewStyle="tab" // 작성 영역만 기본으로 보임
+                        hideModeSwitch={true} // 전환 탭도 숨김
                         height="400px"
                         theme="dark"
                         usageStatistics={false}
-                        toolbarItems={[]} // ✅ 툴바 제거
-                        hideModeSwitch={true} // ✅ Markdown / WYSIWYG 탭 제거
+                        toolbarItems={[
+                          ["bold", "italic", "strike"],
+                          ["code", "codeblock"],
+                          ["image", "link"],
+                        ]}
                         ref={editorRef}
-                        viewer={true}
-                      />
-                    </div>
-                  ) : (
-                    <Editor
-                      key="editable"
-                      initialValue={noteContent || existingNote.note}
-                      previewStyle="tab" // 작성 영역만 기본으로 보임
-                      hideModeSwitch={true} // 전환 탭도 숨김
-                      height="400px"
-                      theme="dark"
-                      usageStatistics={false}
-                      toolbarItems={[
-                        ["bold", "italic", "strike"],
-                        ["code", "codeblock"],
-                        ["image", "link"],
-                      ]}
-                      ref={editorRef}
-                      viewer={false}
-                      onChange={() => {
-                        const markdown = editorRef.current
-                          ?.getInstance()
-                          .getMarkdown();
-                        setNoteContent(markdown);
-                      }}
-                    />
-                  )}
-
-                  {/* ✅ 하단 버튼 */}
-                  <div className="flex justify-end mt-3 gap-2">
-                    {isEditing ? (
-                      <button
-                        onClick={handleSave}
-                        className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-                      >
-                        💾 오답노트 저장
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          setNoteContent(existingNote.note);
-                          setIsEditing(true);
+                        onChange={() => {
+                          const markdown = editorRef.current
+                            ?.getInstance()
+                            .getMarkdown();
+                          setNoteContent(markdown);
                         }}
-                        className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-                      >
-                        ✏️ 오답노트 수정하기
-                      </button>
-                    )}
-                  </div>
+                      />
+                      {/* ✅ 저장 버튼 추가 */}
+                      <div className="flex justify-end mt-3">
+                        <button
+                          onClick={handleSave}
+                          className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+                        >
+                          💾 오답노트 저장
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </>
-              ) : (
-                <>
-                  {/* 마크다운 에디터 */}
-                  <Editor
-                    initialValue={noteContent}
-                    previewStyle="tab" // 작성 영역만 기본으로 보임
-                    hideModeSwitch={true} // 전환 탭도 숨김
-                    height="400px"
-                    theme="dark"
-                    usageStatistics={false}
-                    toolbarItems={[
-                      ["bold", "italic", "strike"],
-                      ["code", "codeblock"],
-                      ["image", "link"],
-                    ]}
-                    ref={editorRef}
-                    onChange={() => {
-                      const markdown = editorRef.current
-                        ?.getInstance()
-                        .getMarkdown();
-                      setNoteContent(markdown);
-                    }}
-                  />
-                </>
-              )}
-            </>
-          </>
-        )}
+              </>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
