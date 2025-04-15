@@ -31,57 +31,69 @@ const QuizResultPage = ({ userData }) => {
     fetchQuizResult();
   }, [quizId, userData]);
 
-  if (loading) return <p>로딩 중...</p>;
-  if (error) return <p>{error}</p>;
+  if (loading) return <p className="p-6">로딩 중...</p>;
+  if (error) return <p className="p-6 text-red-500">{error}</p>;
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <h2 className="text-2xl font-bold mb-4">{quizResult.title}</h2>
-      <p className="text-lg mb-2">
-        <strong>퀴즈 유형:</strong>{" "}
-        {quizResult.quiz_type === "test" ? "📝 퀴즈 테스트" : "🎯 연습 퀴즈"}
-      </p>
-      <p className="text-sm text-gray-600 mb-6">
-        <strong>제출 시간:</strong>{" "}
-        {new Date(quizResult.submitted_at).toLocaleString()}
-      </p>
+    <div className="bg-white min-h-screen py-10 px-4">
+      <div className="max-w-4xl mx-auto">
+        <h2 className="text-3xl font-bold text-center mb-4 text-gray-900">
+          {quizResult.title}
+        </h2>
 
-      {/* 문제별 상세 결과 표시 */}
-      {quizResult.questions.map((q, index) => (
-        <div
-          key={q.question_id}
-          className={`mb-6 p-4 rounded-xl border-2 ${
-            q.is_correct ? "border-green-300 bg-green-50" : "border-red-300 bg-red-50"
-          }`}
-        >
-          <p className="font-semibold text-lg mb-2">
-            문제 {index + 1} ({q.question_type?.toUpperCase()}) 🧠
+        <div className="text-center mb-8">
+          <p className="text-lg text-gray-800">
+            <strong>퀴즈 유형:</strong>{" "}
+            {quizResult.quiz_type === "test" ? "📝 퀴즈 테스트" : "🎯 연습 퀴즈"}
           </p>
-          <p className="mb-2">{q.question_text}</p>
-
-          <div className="mb-2">
-            <span className="font-medium text-gray-700">제출한 정답:</span>{" "}
-            <span className={q.is_correct ? "text-green-600" : "text-red-600"}>
-              {q.user_answer}
-            </span>
-          </div>
-
-          <div className="mb-2">
-            <span className="font-medium text-gray-700">정답:</span>{" "}
-            <span className="text-blue-600">{q.correct_answer}</span>
-          </div>
-
-          <div className="mb-2 text-sm text-gray-700">
-            <span className="font-medium">설명:</span>{" "}
-            {q.explanation || "설명이 제공되지 않았습니다."}
-          </div>
+          <p className="text-sm text-gray-500 mt-1">
+            <strong>제출 시간:</strong>{" "}
+            {new Date(quizResult.submitted_at).toLocaleString()}
+          </p>
         </div>
-      ))}
 
-      {/* 레이팅 변화 표시 */}
-      {quizResult.quiz_type === "test" && (
-        <div className="mt-4 text-lg font-semibold">
-          <p>
+        <div className="space-y-6">
+          {quizResult.questions.map((q, index) => (
+            <div
+              key={q.question_id}
+              className="relative border border-gray-200 shadow-sm rounded-xl p-6"
+            >
+              {/* 좌측 색 바 */}
+              <div
+                className={`absolute top-0 left-0 h-full w-2 rounded-l-xl ${
+                  q.is_correct ? "bg-green-400" : "bg-red-400"
+                }`}
+              ></div>
+
+              <div className="pl-4">
+                <p className="text-lg font-semibold text-gray-900 mb-2">
+                  문제 {index + 1} 🧠 ({q.question_type?.toUpperCase()})
+                </p>
+                <p className="text-gray-800 mb-3">{q.question_text}</p>
+
+                <div className="mb-2 text-sm">
+                  <span className="font-medium text-gray-700">제출한 정답:</span>{" "}
+                  <span className={q.is_correct ? "text-green-600" : "text-red-600"}>
+                    {q.user_answer}
+                  </span>
+                </div>
+
+                <div className="mb-2 text-sm">
+                  <span className="font-medium text-gray-700">정답:</span>{" "}
+                  <span className="text-blue-600">{q.correct_answer}</span>
+                </div>
+
+                <div className="text-sm text-gray-700">
+                  <span className="font-medium">설명:</span>{" "}
+                  {q.explanation || "설명이 제공되지 않았습니다."}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {quizResult.quiz_type === "test" && (
+          <div className="mt-10 text-center text-lg font-semibold">
             획득 레이팅:{" "}
             <span
               className={
@@ -97,24 +109,23 @@ const QuizResultPage = ({ userData }) => {
                 : quizResult.rating_change}
             </span>{" "}
             점
-          </p>
-        </div>
-      )}
+          </div>
+        )}
 
-      {/* 다시 풀기 & 마이페이지 이동 */}
-      <div className="mt-6 flex justify-between">
-        <button
-          className="px-4 py-2 bg-navbar text-white rounded-lg hover:bg-green-600 transition-all"
-          onClick={() => navigate(`/quizpage?mode=${quizResult.quiz_type}`)}
-        >
-          다시 풀기
-        </button>
-        <button
-          className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all"
-          onClick={() => navigate("/mypage/quiz-history")}
-        >
-          마이페이지로 이동
-        </button>
+        <div className="mt-10 flex justify-center gap-4">
+          <button
+            className="px-6 py-2 rounded-lg border border-navbar text-navbar font-semibold hover:bg-[#f1f9f1] transition"
+            onClick={() => navigate(`/quizpage?mode=${quizResult.quiz_type}`)}
+          >
+            다시 풀기
+          </button>
+          <button
+            className="px-6 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition"
+            onClick={() => navigate("/mypage/quiz-history")}
+          >
+            마이페이지로 이동
+          </button>
+        </div>
       </div>
     </div>
   );

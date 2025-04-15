@@ -18,7 +18,7 @@ const QuizSideBar = () => {
       style={{ top: "239px" }}
     >
       {/* ✅ 상단 헤더 */}
-      <div className="h-[56px] flex items-center px-6 bg-[#A7DA9B] rounded-t-2xl shadow-sm">
+      <div className="h-[56px] flex items-center px-6 bg-[#88C078] rounded-t-2xl shadow-sm">
         <h1 className="text-[18px] font-semibold text-white tracking-wide">🧠 퀴즈</h1>
       </div>
 
@@ -28,7 +28,7 @@ const QuizSideBar = () => {
         <div
           className={`px-6 py-4 cursor-pointer text-[16px] font-semibold transition-all duration-150 ${
             currentCategory === "practice"
-              ? "bg-[#88C078] text-white"
+              ? "bg-[#A7DA9B] text-white"
               : "hover:bg-gray-100 text-gray-800"
           }`}
           onClick={() => handleMenuClick("practice")}
@@ -40,7 +40,7 @@ const QuizSideBar = () => {
         <div
           className={`px-6 py-4 cursor-pointer text-[16px] font-semibold transition-all duration-150 ${
             currentCategory === "test"
-              ? "bg-[#88C078] text-white"
+              ? "bg-[#A7DA9B] text-white"
               : "hover:bg-gray-100 text-gray-800"
           }`}
           onClick={() => handleMenuClick("test")}
@@ -52,7 +52,7 @@ const QuizSideBar = () => {
         <div
           className={`px-6 py-4 cursor-pointer text-[16px] font-semibold transition-all duration-150 ${
             currentCategory === "user"
-              ? "bg-[#88C078] text-white"
+              ? "bg-[#A7DA9B] text-white"
               : "hover:bg-gray-100 text-gray-800"
           }`}
           onClick={() => handleMenuClick("user")}

@@ -69,11 +69,7 @@ const PracticeQuiz = () => {
 
         if (newQuiz && newQuiz.quiz_id) {
           navigate(`/quizsolve/${newQuiz.quiz_id}`);
-        } else {
-          alert("퀴즈 생성은 되었지만 id를 찾을 수 없습니다.")
-        }
-
-        alert("퀴즈가 생성되었습니다!"); // ✅ 퀴즈 생성 성공 알림
+        }// ✅ 퀴즈 생성 성공 알림
         } catch (error) {
             console.error("🚨 퀴즈 생성 실패:", error);
             alert("퀴즈 생성 중 오류가 발생했습니다.");
