@@ -41,8 +41,6 @@ def create_wrong_note(note_data: WrongNoteCreate, db: Session = Depends(get_db))
 
     return new_note
 
-
-# ✅ 특정 제출 ID로 오답노트 조회
 @router.get("/by-submission/{submission_id}", response_model=WrongNoteResponse)
 def get_wrong_note_by_submission(
     submission_id: int = Path(..., description="ct_submission_id"),
@@ -53,7 +51,21 @@ def get_wrong_note_by_submission(
     if not note:
         raise HTTPException(status_code=404, detail="오답노트를 찾을 수 없습니다.")
 
-    return note
+    submission = db.query(CodingTestSubmissions).filter(
+        CodingTestSubmissions.ct_submission_id == submission_id
+    ).first()
+
+    # ✅ dict로 응답을 커스터마이징 (title 포함)
+    return {
+        "note_id": note.note_id,
+        "user_id": note.user_id,
+        "ct_submission_id": note.ct_submission_id,
+        "submitted_answer": note.submitted_answer,
+        "execution_result": note.execution_result,
+        "note": note.note,
+        "created_at": note.created_at,
+        "title": submission.title if submission else ""
+    }
 
 
 
