@@ -1,6 +1,13 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('./fonts/JetBrainsMono-Regular.ttf') format('truetype');  /* ✅ src 기준 상대경로 */
+  font-weight: normal;
+  font-style: normal;
+}
+
 
 /* 기본 바디 스타일 (대부분 페이지용) */
 body.default-body {
@@ -44,6 +51,7 @@ html, body, #root {
 .problem-info-scrollbar::-webkit-scrollbar-track,
 .editor-scrollbar::-webkit-scrollbar-track {
   background-color: #4b5b6e;
+  border-radius: 4px; 
 }
 
 /* 에디터 작성 영역(ProseMirror) + 뷰어(preview)에 적용 */
@@ -67,48 +75,124 @@ html, body, #root {
   background-color: #1e1e1e; /* 어두운 배경 */
 }
 
-
-/* 코드 에디터 스타일 */
-.editor-wrapper {
-  background-color: #141b2d;
-  font-family: "Fira Code", monospace;
-  font-size: 14px;
-  padding: 1rem;
-  counter-reset: line;
+/* ✅ CodeMirror 기본 배경, 글씨색 */
+.cm-editor {
+  background-color: #30435D !important;
+  color: #d4d4d4 !important;
+  font-family: 'JetBrains Mono', 'Noto Sans KR', monospace !important;
+  font-size: 16px !important;
+  /* padding-left: 12px !important;  ✅ 줄번호 왼쪽 여백 늘리기 */
+}
+.cm-scroller::-webkit-scrollbar {
+  width: 8px;                       /* ✅ 스크롤바 두께 */
 }
 
-.editor-pre {
-  margin: 0;
-  line-height: 1.5;
+.cm-scroller::-webkit-scrollbar-thumb {
+  background-color: #2c3544;        /* ✅ thumb 색상 */
+  border-radius: 4px;               /* ✅ 둥글기 */
 }
 
-.editor-textarea {
-  outline: none;
+.cm-scroller::-webkit-scrollbar-track {
+  background-color: #4b5b6e;        /* ✅ 트랙 색상 */
+  border-radius: 4px; 
 }
 
-.editor-wrapper code {
-  display: block;
-  white-space: pre;
+
+.cm-editor .cm-line {
+  font-family: 'JetBrains Mono', 'Noto Sans KR', monospace !important;
 }
 
-.editor-wrapper code span {
-  display: inline-block;
-  width: 100%;
+.cm-gutters {
+  background-color: #30435D !important;
+  color: #6b7280 !important;
+  border: none !important;
+  font-family: 'JetBrains Mono', 'Noto Sans KR', monospace !important;
+  font-size: 16px !important;
 }
 
-.editor-wrapper code span::before {
-  counter-increment: line;
-  content: counter(line);
-  display: inline-block;
-  width: 2rem;
-  margin-right: 1rem;
-  color: #6b7280;
+.cm-selectionBackground {
+  background-color: rgba(255, 255, 255, 0.2) !important;  /* ✅ 흰색 + 투명도 */
 }
 
-/* 선택된 줄 배경색 */
-.editor-wrapper code span.selected-line {
-  background-color: #202b3d;
+.cm-cursor {
+  border-left: 2px solid white !important;  /* ✅ 커서 색상: 흰색 */
 }
+
+
+.cm-activeLine {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.cm-activeLineGutter {
+  background-color: #ffffff0d !important;
+}
+
+.cm-editor.cm-focused {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.cm-gutters span[title="Fold line"] {
+  display: none !important;  /* ✅ 접기 아이콘만 숨김 */
+}
+
+/* 코드 단축 및 도움 스타일 */
+.cm-tooltip-autocomplete {
+  background-color: #2c3544 !important;  /* ✅ 배경색 */
+  color: #d4d4d4 !important;              /* ✅ 글씨색 */
+  border: 1px solid #4b5b6e !important;   /* ✅ 테두리 */
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 14px !important;
+}
+
+.cm-tooltip-autocomplete .cm-completionLabel {
+  color: #d4d4d4 !important;              /* ✅ 항목 기본 글씨색 */
+}
+
+.cm-tooltip-autocomplete .cm-completionMatchedText {
+  color: #f7768e !important;              /* ✅ 일치하는 텍스트 색상 */
+  font-weight: bold;
+}
+
+.cm-tooltip-autocomplete .cm-completionIcon {
+  color: #569cd6 !important;              /* ✅ 아이콘 색상 */
+}
+
+.cm-tooltip-autocomplete .cm-completionSelected {
+  background-color: #3d4d63 !important;   /* ✅ 선택된 항목 배경 */
+  color: white !important;
+}
+
+.cm-tooltip-autocomplete .cm-completionLabel,
+.cm-tooltip-autocomplete .cm-completionMatchedText,
+.cm-tooltip-autocomplete .cm-completionIcon {
+  font-family: 'JetBrains Mono', 'Noto Sans KR', monospace !important;  /* ✅ 동일 폰트 */
+  font-size: 14px !important;                                           /* ✅ 폰트 크기 */
+}
+
+.cm-tooltip-autocomplete .cm-completionDetail {
+  font-style: normal !important;               /* ✅ 이탤릭 해제 */
+  color: #a0aec0 !important;                   /* ✅ 글씨 색상 (선택) */
+  font-size: 12px !important;                  /* ✅ 크기 조정 (선택) */
+  font-family: 'JetBrains Mono', 'Noto Sans KR', monospace !important;  /* ✅ 폰트 통일 */
+}
+
+
+.cm-tooltip-autocomplete ul::-webkit-scrollbar {
+  width: 8px;                            /* ✅ 폭 동일 */
+}
+
+.cm-tooltip-autocomplete ul::-webkit-scrollbar-thumb {
+  background-color: #5a6b85;              /* ✅ thumb 색상 동일 */
+  border-radius: 6px;
+  border: 2px solid #1e1e1e;              /* ✅ 테두리 동일 */
+}
+
+.cm-tooltip-autocomplete ul::-webkit-scrollbar-track {
+  background-color: #1e1e1e;              /* ✅ track 색상 동일 */
+}
+
+
 
 /* Prism Syntax Highlight 색상 */
 .token.comment,

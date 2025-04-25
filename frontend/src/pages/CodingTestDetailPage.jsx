@@ -1,12 +1,20 @@
+// 📦 React & 라이브러리
 import React, { useEffect, useState, useCallback } from "react";
-import { cleanStderr } from "../utils/cleanStderr";
-import { HiOutlineRefresh, HiChevronLeft } from "react-icons/hi";
 import { motion, AnimatePresence } from "framer-motion";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { ResizableBox } from "react-resizable";
-import Editor from "react-simple-code-editor";
+
+// 🖍️ PrismJS (코드 하이라이트 + 라인 넘버)
 import Prism from "prismjs";
+import "prismjs/components/prism-javascript";
+import "prismjs/components/prism-python";
+import "prismjs/components/prism-java";
+
+// 🔥 라인 넘버 플러그인
+import "prismjs/plugins/line-numbers/prism-line-numbers.css";
+import "prismjs/plugins/line-numbers/prism-line-numbers.js";
+
+// 🔗 API
 import {
   getCodingTestDetail,
   getStarterCode,
@@ -14,13 +22,22 @@ import {
   runCodeWithTestcases,
   submitCode,
 } from "../api/codingTestApi";
-import "prismjs/components/prism-javascript";
-import "prismjs/components/prism-python";
-import "prismjs/components/prism-java";
-import "react-resizable/css/styles.css"; // 스타일 추가
-import "../index.css";
+
+// 🧩 컴포넌트
 import ResultModal from "../components/ResultModal";
 import WrongNoteEditor from "../components/WrongNoteEditor";
+
+// 🎨 스타일
+import "react-resizable/css/styles.css";
+import "../index.css";
+
+// 리팩토링 임포트
+import CodingTestHeader from "../components/CodingTest/CodingTestHeader";
+import CodingTestTabMenu from "../components/CodingTest/CodingTestTabMenu";
+import CodingTestProblemInfo from "../components/CodingTest/CodingTestProblemInfo";
+import CodingTestSubmissionList from "../components/CodingTest/CodingTestSubmissionList";
+import CodingTestEditorPanel from "../components/CodingTest/CodingTestEditorPanel";
+import CodingTestFooterButtons from "../components/CodingTest/CodingTestFooterButtons";
 
 const CodingTestDetailPage = () => {
   const { user } = useAuth();
@@ -196,11 +213,10 @@ const CodingTestDetailPage = () => {
       .split("\n")
       .map(
         (line, i) =>
-          `<span class="${
-            selectedLine === i + 1 ? "selected-line" : ""
-          }" data-line="${i + 1}">${line}</span>`
+          `<span class="${selectedLine === i + 1 ? "selected-line" : ""}" data-line="${i + 1}">${line}</span>`
       )
       .join("\n");
+  
 
   const handleClick = (e) => {
     const lineNumber = e.target.getAttribute("data-line-number");
@@ -255,57 +271,17 @@ const CodingTestDetailPage = () => {
         )}
       </AnimatePresence>
 
-      <div className="codingtest-detail w-screen h-screen bg-[#141b2d] text-white flex flex-col">
+      <div className="codingtest-detail w-screen h-screen bg-[#30435d] text-white flex flex-col">
         {/* 상단 헤더 */}
-        <header className="flex items-center justify-between bg-[#2c3544] px-6 py-3">
-  <div className="flex items-center gap-3">
-    <Link
-      to="/codingtest"
-      className="text-white text-2xl hover:text-gray-300 transition"
-    >
-      <HiChevronLeft size={28} />
-    </Link>
-    <h1 className="text-xl font-bold">{problem.title}</h1>
-  </div>
-</header>
+        <CodingTestHeader title={problem.title} />
 
-
-        {/* 탭 메뉴 */}
-        <div className="flex gap-4 border-b border-gray-600 px-6">
-          {["info", "submissions", "notes"].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => {
-                setActiveTab(tab);
-                if (tab === "submissions" || tab === "notes") {
-                  fetchSubmissions(); // ✅ notes 탭에서도 제출 리스트 가져오게
-                }
-              }}
-              className={`py-3 ${
-                activeTab === tab ? "border-b-2 border-white font-semibold" : ""
-              }`}
-            >
-              {tab === "info"
-                ? "문제 정보"
-                : tab === "submissions"
-                ? "제출 내역"
-                : "오답노트"}
-            </button>
-          ))}
-          {activeTab !== "notes" && (
-            <div className="text-sm flex items-center gap-2 ml-auto">
-              <select
-                className="bg-[#4b5b6e] text-sm px-2 py-1 rounded text-white"
-                value={language}
-                onChange={handleLanguageChange}
-              >
-                <option value="python">Python</option>
-                <option value="java">Java</option>
-                <option value="javascript">JavaScript</option>
-              </select>
-            </div>
-          )}
-        </div>
+        <CodingTestTabMenu
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          fetchSubmissions={fetchSubmissions}
+          language={language}
+          handleLanguageChange={handleLanguageChange}
+        />
 
         {/* 콘텐츠 영역 */}
         <div className="flex flex-1 overflow-hidden">
@@ -316,205 +292,23 @@ const CodingTestDetailPage = () => {
             } p-6 overflow-y-auto problem-info-scrollbar`}
           >
             {activeTab === "info" && (
-              <>
-                <h2 className="text-2xl font-bold mb-2">{problem.title}</h2>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <span className="bg-[#e5f4db] text-green-700 text-xs px-2 py-1 rounded">
-                      LV.{problem.difficulty}
-                    </span>
-                    <span className="text-xs text-gray-300">
-                      | 카테고리 {problem.category}
-                    </span>
-                  </div>
-                  <div className="text-xs text-gray-300">
-                    총 {problem.total_submissions || 0}번의 풀이 | 정답률{" "}
-                    {(problem.correct_rate || 0).toFixed(1)}%
-                  </div>
-                </div>
-                <section className="space-y-4 text-sm leading-6">
-                  <div>
-                    <h2 className="font-semibold mb-2">문제 설명</h2>
-                    <p className="whitespace-pre-line">{problem.description}</p>
-                  </div>
-                  <div>
-                    <hr className="border-gray-500 my-2" />
-                    <h2 className="font-semibold mb-2">입력 형식</h2>
-                    <p className="whitespace-pre-line">
-                      {problem.input_format}
-                    </p>
-                  </div>
-                  <div>
-                    <hr className="border-gray-500 my-2" />
-                    <h2 className="font-semibold mb-2">출력 형식</h2>
-                    <p className="whitespace-pre-line">
-                      {problem.output_format}
-                    </p>
-                  </div>
-                  <div>
-                    <hr className="border-gray-500 mb-2" />
-                    <h2 className="font-semibold mb-2">제약조건</h2>
-                    {problem.constraints.map((con, idx) => (
-                      <div
-                        key={idx}
-                        className="text-sm whitespace-pre-line mb-2"
-                      >
-                        {con.description}
-                      </div>
-                    ))}
-                  </div>
-                  <div>
-                    <hr className="border-gray-500 my-2" />
-                    <h2 className="font-semibold mb-2">입출력 예제</h2>
-                    {problem.testcases.map((ex, idx) => (
-                      <div
-                        key={idx}
-                        className="border border-gray-500 p-3 mb-2 rounded"
-                      >
-                        <p className="text-xs text-gray-300 mb-1">입력</p>
-                        <div className="flex items-center bg-[#2c3544] p-2 rounded justify-between whitespace-pre-wrap relative">
-                          <span>{ex.input.replace(/\\n/g, "\n")}</span>
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(
-                                ex.input.replace(/\\n/g, "\n")
-                              );
-                              setShowCopyMessage(true);
-                              setTimeout(() => setShowCopyMessage(false), 3000); // 3초 후 사라짐
-                            }}
-                            className="absolute top-1 right-2 text-xs bg-[#4b5b6e] text-white px-3 py-1 rounded hover:bg-[#5f6f82]"
-                            style={{ cursor: "pointer" }}
-                          >
-                            복사
-                          </button>
-                        </div>
-                        <p className="text-xs text-gray-300 mt-2 mb-1">출력</p>
-                        <div className="flex items-center bg-[#2c3544] p-2 rounded justify-between whitespace-pre-wrap relative mt-2">
-                          <span>{ex.output}</span>
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(
-                                ex.input.replace(/\\n/g, "\n")
-                              );
-                              setShowCopyMessage(true);
-                              setTimeout(() => setShowCopyMessage(false), 3000); // 3초 후 사라짐
-                            }}
-                            className="absolute top-1 right-2 text-xs bg-[#4b5b6e] text-white px-3 py-1 rounded hover:bg-[#5f6f82]"
-                            style={{ cursor: "pointer" }}
-                          >
-                            복사
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              </>
+              <CodingTestProblemInfo
+                problem={problem}
+                setShowCopyMessage={setShowCopyMessage}
+              />
             )}
+
             {activeTab === "submissions" && (
-              <>
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold">제출 내역</h2>
-                  <button
-                    onClick={handleRefreshSubmissions}
-                    className="flex items-center gap-1 text-sm text-gray-300 hover:text-white"
-                  >
-                    <HiOutlineRefresh className="w-4 h-4" />
-                    새로고침
-                  </button>
-                </div>
-
-                <table className="w-full text-sm text-left">
-                  <thead className="border-b border-gray-600 text-white font-semibold tracking-wide">
-                    <tr>
-                      <th className="p-2 text-center">제출일시</th>
-                      <th className="p-2 text-center">언어</th>
-                      <th className="p-2 text-center">결과</th>
-                      <th className="p-2 text-center">제출 메모리</th>
-                      <th className="p-2 text-center">테스트 케이스 통과 수</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {/* submissions map 돌리는 부분 */}
-                    {submissions.map((s, idx) => (
-                      <React.Fragment key={s.submission_id}>
-                        <tr
-                          className="border-b border-gray-600 hover:bg-[#2c3544] cursor-pointer"
-                          onClick={() =>
-                            setSubmissions((prev) =>
-                              prev.map((item, i) =>
-                                i === idx ? { ...item, open: !item.open } : item
-                              )
-                            )
-                          }
-                        >
-                          <td className="p-2 text-center">{s.submitted_at}</td>
-                          <td className="p-2 text-center">{s.language}</td>
-                          <td className="p-2 text-center">
-                            {s.is_correct ? "✅" : "❌"}
-                          </td>
-                          <td className="p-2 text-center">{s.memory}</td>
-                          <td className="p-2 text-center">
-                            {s.passed_test_cases}/{s.total_test_cases}
-                          </td>
-                        </tr>
-
-                        {s.open && (
-                          <tr className="border-b border-gray-600 bg-[#2c3544]">
-                            <td colSpan="5" className="p-3 relative">
-                              <button
-                                onClick={() => {
-                                  navigator.clipboard.writeText(s.code);
-                                  setShowCopyMessage(true);
-                                  setTimeout(
-                                    () => setShowCopyMessage(false),
-                                    3000
-                                  );
-                                }}
-                                className="absolute top-2 right-2 text-xs bg-[#4b5b6e] text-white px-3 py-1 rounded hover:bg-[#5f6f82] z-10"
-                              >
-                                📋 복사
-                              </button>
-                              <AnimatePresence mode="wait">
-                                <motion.div
-                                  key={`submission-${s.submission_id}`}
-                                  initial={{ opacity: 0, y: -20 }}
-                                  animate={{ opacity: 1, y: 0 }}
-                                  exit={{ opacity: 0, y: -20 }}
-                                  transition={{
-                                    duration: 0.4,
-                                    delay: 0.05,
-                                    ease: [0.25, 0.8, 0.25, 1],
-                                  }}
-                                >
-                                  <Editor
-                                    value={s.code}
-                                    onValueChange={() => {}}
-                                    highlight={(code) =>
-                                      Prism.highlight(
-                                        code,
-                                        Prism.languages[
-                                          getPrismLang(s.language)
-                                        ],
-                                        s.language
-                                      )
-                                    }
-                                    padding={12}
-                                    textareaClassName="editor-textarea"
-                                    preClassName="editor-pre"
-                                    readOnly
-                                  />
-                                </motion.div>
-                              </AnimatePresence>
-                            </td>
-                          </tr>
-                        )}
-                      </React.Fragment>
-                    ))}
-                  </tbody>
-                </table>
-              </>
+              <CodingTestSubmissionList
+                submissions={submissions}
+                setSubmissions={setSubmissions}
+                fetchSubmissions={handleRefreshSubmissions}
+                showCopyMessage={showCopyMessage}
+                setShowCopyMessage={setShowCopyMessage}
+                getPrismLang={getPrismLang}
+              />
             )}
+
             {activeTab === "notes" && (
               <WrongNoteEditor
                 submissionList={submissions}
@@ -529,205 +323,28 @@ const CodingTestDetailPage = () => {
 
           {/* 우측 영역 - 코드 에디터 + 실행결과는 notes 탭 아닐 때만 */}
           {activeTab !== "notes" && (
-            <div className="w-[60%] flex flex-col border-l border-gray-600">
-              <div
-                className="flex-1 overflow-auto p-4 editor-wrapper editor-scrollbar"
-                onClick={handleClick}
-              >
-                <Editor
-                  value={code}
-                  onValueChange={(newCode) => setCode(newCode)}
-                  highlight={highlightWithLineNumbers}
-                  padding={12}
-                  textareaClassName="editor-textarea"
-                  preClassName="editor-pre"
-                />
-              </div>
-
-              <ResizableBox
-                width={"100%"}
-                height={200}
-                minConstraints={[100, 100]}
-                maxConstraints={[Infinity, 500]}
-                resizeHandles={["n"]}
-                handle={
-                  <span
-                    className="react-resizable-handle react-resizable-handle-n"
-                    style={{
-                      position: "absolute",
-                      top: "5px",
-                      left: "50%",
-                      transform: "translateX(-50%)",
-                      height: "16px",
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      cursor: "ns-resize",
-                      background: "transparent",
-                    }}
-                  >
-                    <HoverHandle />
-                  </span>
-                }
-              >
-                <div className="border-t border-gray-600 p-4 text-sm overflow-auto bg-[#141b2d] h-full result-scrollbar">
-                  <h3 className="text-white font-semibold mb-2">
-                    {isSubmitResult ? "제출 실행 결과" : "실행 결과"}
-                  </h3>
-
-                  {isRunning ? (
-                    <div className="text-gray-300 text-sm mt-3 animate-pulse">
-                      ⏳ 제출 실행 중입니다...
-                    </div>
-                  ) : executionResults.length === 0 ? (
-                    <div className="text-gray-300 text-sm mt-3">
-                      코드 실행 결과가 여기에 표시됩니다.
-                    </div>
-                  ) : (
-                    <>
-                      <table className="w-full text-left border border-gray-500">
-                        <thead>
-                          <tr className="bg-[#2c3544] text-white">
-                            <th className="p-2 border-r border-gray-500">
-                              입력값
-                            </th>
-                            <th className="p-2 border-r border-gray-500">
-                              기댓값
-                            </th>
-                            <th className="p-2 border-r border-gray-500">
-                              실행 결과
-                            </th>
-                            <th className="p-2">출력</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {executionResults.map((result, idx) => (
-                            <tr
-                              key={idx}
-                              className="border-t border-gray-500 text-white"
-                            >
-                              <td className="p-2 border-r border-gray-500 whitespace-pre-line">
-                                {result.input.replace(/\\n/g, "\n")}
-                              </td>
-
-                              <td className="p-2 border-r border-gray-500">
-                                {result.expected_output}
-                              </td>
-                              <td className="p-2 border-r border-gray-500">
-                                {result.passed ? (
-                                  <span className="text-blue-400">
-                                    테스트를 통과하였습니다.
-                                  </span>
-                                ) : (
-                                  <span className="text-red-400">
-                                    테스트를 통과하지 못했습니다.
-                                  </span>
-                                )}
-                              </td>
-                              <td className="p-2">
-                                {result.actual_output !== undefined &&
-                                result.actual_output !== ""
-                                  ? result.actual_output
-                                  : "-"}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      {!isRunning && (
-                        <>
-                          {isSubmitResult ? (
-                            <div className="text-gray-300 text-xs mt-3">
-                              🎉{" "}
-                              <span className="text-green-300 font-medium">
-                                정답입니다!
-                              </span>
-                              <div>테스트케이스를 모두 통과하였습니다.</div>
-                            </div>
-                          ) : (
-                            <p className="text-gray-300 text-xs mt-3">
-                              샘플 테스트케이스를 통과했다는 의미로, 작성한
-                              코드가 문제의 정답은 아닐 수 있습니다.
-                            </p>
-                          )}
-
-                          {executionResults.some((r) => r.stderr) && (
-                            <div className="bg-[#2b2f38] border border-red-400 rounded-md p-4 mt-4 text-sm text-red-200 whitespace-pre-wrap">
-                              <pre className="leading-relaxed text-red-200 font-mono">
-                                {cleanStderr(
-                                  executionResults
-                                    .map((r) => r.stderr)
-                                    .filter(Boolean)
-                                    .join("\n\n")
-                                )}
-                              </pre>
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </>
-                  )}
-                </div>
-              </ResizableBox>
-            </div>
+            <CodingTestEditorPanel
+              code={code}
+              setCode={setCode}
+              language={language}
+              handleClick={handleClick}
+              highlightWithLineNumbers={highlightWithLineNumbers}
+              HoverHandle={HoverHandle}
+              executionResults={executionResults}
+              isSubmitResult={isSubmitResult}
+              isRunning={isRunning}
+            />
           )}
         </div>
 
-        {activeTab === "notes" ? (
-          // ✅ 오답노트 탭 전용 하단 버튼
-          <div className="flex gap-2 justify-end items-center p-3 border-t border-gray-600 bg-[#2c3544]">
-            <Link
-              to={`/codingtest/correct/${problem.id}`}
-              className="text-xs text-white border border-gray-500 px-3 py-2 rounded hover:bg-gray-600 transition"
-            >
-              다른 사람의 풀이
-            </Link>
-          </div>
-        ) : (
-          // ✅ 기존 일반 탭용 하단 버튼
-          <div className="flex justify-between items-center p-3 border-t border-gray-600 bg-[#2c3544]">
-            <button className="text-xs text-white border border-gray-500 px-3 py-2 rounded hover:bg-gray-600 transition">
-              질문 게시판 이동하기
-            </button>
-            <div className="flex gap-2">
-              <Link
-                to={`/codingtest/correct/${problem.id}`}
-                className="text-xs text-white border border-gray-500 px-3 py-2 rounded hover:bg-gray-600 transition"
-              >
-                다른 사람의 풀이
-              </Link>
-              <button
-                onClick={handleResetCode}
-                className="text-xs text-white border border-gray-500 px-3 py-2 rounded hover:bg-gray-600 transition"
-              >
-                초기화
-              </button>
-              <button
-                onClick={handleRunCode}
-                disabled={!problem}
-                className={`text-xs text-white border border-gray-500 px-3 py-2 rounded transition ${
-                  !problem
-                    ? "opacity-50 cursor-not-allowed"
-                    : "hover:bg-gray-600"
-                }`}
-              >
-                코드 실행
-              </button>
-
-              <button
-                onClick={handleSubmitCode}
-                disabled={!problem || isSubmitting}
-                className={`text-xs bg-blue-500 text-white px-3 py-2 rounded transition ${
-                  !problem || isSubmitting
-                    ? "opacity-50 cursor-not-allowed"
-                    : "hover:bg-blue-600"
-                }`}
-              >
-                {isSubmitting ? "채점 중..." : "코드 제출 후 채점"}
-              </button>
-            </div>
-          </div>
-        )}
+        <CodingTestFooterButtons
+          problem={problem}
+          activeTab={activeTab}
+          handleResetCode={handleResetCode}
+          handleRunCode={handleRunCode}
+          handleSubmitCode={handleSubmitCode}
+          isSubmitting={isSubmitting}
+        />
       </div>
       {showResultModal && resultData && (
         <ResultModal
