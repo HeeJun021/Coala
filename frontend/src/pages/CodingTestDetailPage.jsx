@@ -255,7 +255,7 @@ const CodingTestDetailPage = () => {
         )}
       </AnimatePresence>
 
-      <div className="codingtest-detail w-screen h-screen bg-[#3d4d63] text-white flex flex-col">
+      <div className="codingtest-detail w-screen h-screen bg-[#141b2d] text-white flex flex-col">
         {/* 상단 헤더 */}
         <header className="flex items-center justify-between bg-[#2c3544] px-6 py-3">
   <div className="flex items-center gap-3">
@@ -529,7 +529,7 @@ const CodingTestDetailPage = () => {
 
           {/* 우측 영역 - 코드 에디터 + 실행결과는 notes 탭 아닐 때만 */}
           {activeTab !== "notes" && (
-            <div className="w-[60%] flex flex-col border-l border-gray-600 bg-[#3d4d63]">
+            <div className="w-[60%] flex flex-col border-l border-gray-600">
               <div
                 className="flex-1 overflow-auto p-4 editor-wrapper editor-scrollbar"
                 onClick={handleClick}
@@ -570,7 +570,7 @@ const CodingTestDetailPage = () => {
                   </span>
                 }
               >
-                <div className="border-t border-gray-600 p-4 text-sm overflow-auto bg-[#3d4d63] h-full result-scrollbar">
+                <div className="border-t border-gray-600 p-4 text-sm overflow-auto bg-[#141b2d] h-full result-scrollbar">
                   <h3 className="text-white font-semibold mb-2">
                     {isSubmitResult ? "제출 실행 결과" : "실행 결과"}
                   </h3>
