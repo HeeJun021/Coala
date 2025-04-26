@@ -7,6 +7,7 @@
   font-weight: normal;
   font-style: normal;
 }
+@import 'prismjs/themes/prism-tomorrow.css';  /* 🔥 다크 테마 (or prism.css) */
 
 
 /* 기본 바디 스타일 (대부분 페이지용) */
@@ -191,6 +192,12 @@ html, body, #root {
 .cm-tooltip-autocomplete ul::-webkit-scrollbar-track {
   background-color: #1e1e1e;              /* ✅ track 색상 동일 */
 }
+
+/* Write 탭 숨기기 (CSS) */
+.toastui-editor-tabs .tab-item[aria-label="Write"] {
+  display: none !important;
+}
+
 
 
 

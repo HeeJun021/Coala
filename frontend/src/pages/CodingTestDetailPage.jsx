@@ -317,6 +317,7 @@ const CodingTestDetailPage = () => {
                 testResults={executionResults}
                 testId={problem.id}
                 userId={user.user_id}
+                key={activeTab}  // 🔥 추가: 탭 바뀔 때 Editor 리셋
               />
             )}
           </div>

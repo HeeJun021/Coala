@@ -39,7 +39,7 @@ const CodingTestEditorPanel = ({
       {/* 실행 결과 */}
       <ResizableBox
         width={"100%"}
-        height={200}
+        height={350}
         minConstraints={[100, 100]}
         maxConstraints={[Infinity, 500]}
         resizeHandles={["n"]}

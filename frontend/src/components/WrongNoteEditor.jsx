@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import "@toast-ui/editor/dist/toastui-editor.css";
 import "@toast-ui/editor/dist/theme/toastui-editor-dark.css";
 import { Editor } from "@toast-ui/react-editor";
+
+
 import {
   createWrongNote,
   getWrongNoteBySubmissionId,
@@ -133,6 +135,16 @@ const WrongNoteEditor = ({
       alert("제출 제목 수정 중 오류 발생");
     }
   };
+
+  useEffect(() => {
+    if (!isEditing && editorRef.current) {
+      const previewTab = document.querySelector(
+        '.tab-item[aria-label="Preview"]'
+      );
+      if (previewTab) previewTab.click();
+    }
+  }, [noteContent, isEditing]);
+
   return (
     <div className="flex h-full">
       <div className="w-[35%] p-4 border-r border-gray-500">
@@ -224,18 +236,23 @@ const WrongNoteEditor = ({
                             <div className="text-sm space-y-4 pl-6 mt-1">
                               {failedCases.slice(0, 2).map((r, idx) => (
                                 <div key={idx} className="text-white">
-                                  <p className="text-base font-semibold">#{idx + 1}</p>
+                                  <p className="text-base font-semibold">
+                                    #{idx + 1}
+                                  </p>
                                   <p>입력값 : {r.input}</p>
                                   <p>기대값 : {r.expected_output}</p>
                                   <p>
                                     출력값 : {r.actual_output}{" "}
-                                    <span className="text-red-400 font-bold">❗오답</span>
+                                    <span className="text-red-400 font-bold">
+                                      ❗오답
+                                    </span>
                                   </p>
                                 </div>
                               ))}
                               {failedCases.length > 2 && (
                                 <p className="text-xs italic text-gray-400 mt-2">
-                                  + 그 외 {failedCases.length - 2}개의 실패 케이스 더 있음
+                                  + 그 외 {failedCases.length - 2}개의 실패
+                                  케이스 더 있음
                                 </p>
                               )}
                             </div>
@@ -288,7 +305,8 @@ const WrongNoteEditor = ({
                     ✏️ 제출 이름 변경
                   </button>
                 </div>
-                {(!existingNoteMap[selectedSubmission.submission_id]?.note || isEditing) && (
+                {(!existingNoteMap[selectedSubmission.submission_id]?.note ||
+                  isEditing) && (
                   <button
                     onClick={() => {
                       if (editorRef.current) {
@@ -307,12 +325,14 @@ const WrongNoteEditor = ({
               {existingNoteMap[selectedSubmission.submission_id] ? (
                 isEditing ? (
                   <>
+                    {/* ✅ 수정 모드: WYSIWYG 에디터 */}
                     <Editor
                       key="editable"
                       initialValue={noteContent}
-                      previewStyle="tab"
-                      hideModeSwitch={true}
-                      height="400px"
+                      previewStyle="tab" // ✅ 탭 구조
+                      initialEditType="wysiwyg" // ✅ 처음부터 WYSIWYG 모드!
+                      hideModeSwitch={true} // ✅ 하단 탭 스위치 숨김
+                      height="600px"
                       theme="dark"
                       usageStatistics={false}
                       toolbarItems={[
@@ -329,6 +349,7 @@ const WrongNoteEditor = ({
                         setNoteContent(markdown);
                       }}
                     />
+
                     <div className="flex justify-end mt-3 gap-2">
                       <button
                         onClick={handleSave}
@@ -341,17 +362,20 @@ const WrongNoteEditor = ({
                 ) : (
                   <>
                     <div className="rounded border border-gray-700 bg-transparent overflow-hidden">
+                      {/* ✅ 뷰어 모드: 읽기 전용 Markdown Preview */}
                       <Editor
                         key="viewer"
                         initialValue={noteContent}
-                        previewStyle="tab"
-                        height="400px"
+                        previewStyle="tab" // ✅ 탭 구조 유지
+                        initialEditType="markdown" // ✅ Markdown 기반 (탭 구조니까)
+                        hideModeSwitch={true} // ✅ 하단 스위치 숨김
+                        height="600px"
                         theme="dark"
                         usageStatistics={false}
-                        toolbarItems={[]}
-                        hideModeSwitch={true}
+                        toolbarItems={[]} // ✅ 툴바 없음
                         ref={editorRef}
-                        viewer={true}
+                        viewer={true} // ✅ 에디터 모드 (viewer 아님)
+                        readOnly={true} // ✅ 수정 불가
                       />
                     </div>
                     <div className="flex justify-end mt-3 gap-2">
@@ -369,11 +393,12 @@ const WrongNoteEditor = ({
                 )
               ) : (
                 <>
+                  {/* ✅ 신규 작성: WYSIWYG 에디터 */}
                   <Editor
                     initialValue={noteContent}
                     previewStyle="tab"
                     hideModeSwitch={true}
-                    height="400px"
+                    height="600px"
                     theme="dark"
                     usageStatistics={false}
                     toolbarItems={[
