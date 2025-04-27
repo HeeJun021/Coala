@@ -57,8 +57,15 @@ const ProjectBoardDetail = ({ post, user }) => {
 
   return (
     <div className="max-w-4xl mx-auto p-8 bg-white min-h-screen">
-      {/* 게시판 이름 표시 */}
-      <h1 className="text-xl font-bold mb-4 text-green-700">프로젝트 게시판</h1>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-xl font-bold text-green-700">프로젝트 게시판</h1>
+        <button
+          onClick={() => navigate(-1)}
+          className="px-4 py-2 bg-gray-300 text-black rounded-md"
+        >
+          뒤로가기
+        </button>
+      </div>
 
       <h2 className="text-2xl font-semibold mb-4">{post.title}</h2>
 

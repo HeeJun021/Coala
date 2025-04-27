@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Editor } from "@toast-ui/react-editor";
 import { useAuth } from "../context/AuthContext";
-import { createBoard } from "../api/boardApi"; // ✅ API 호출 추가
+import { createBoard } from "../api/boardApi";
 import "@toast-ui/editor/dist/toastui-editor.css";
 
 const BoardWritePage = () => {
@@ -12,7 +12,6 @@ const BoardWritePage = () => {
   const [title, setTitle] = useState("");
   const editorRef = useRef();
 
-  // 로그인 안 되어 있으면 로그인 페이지로 이동
   useEffect(() => {
     if (!user) {
       alert("로그인 후 이용해주세요.");
@@ -31,12 +30,12 @@ const BoardWritePage = () => {
       boardType,
       title,
       content,
-      user_id: user.user_id, // ✅ 서버에 보낼 유저 ID
+      user_id: user.user_id,
     };
 
     try {
-      await createBoard(payload); // ✅ 게시글 생성 요청
-      navigate(`/board/${boardType}`); // ✅ 완료 후 이동
+      await createBoard(payload);
+      navigate(`/board/${boardType}`);
     } catch (error) {
       console.error("게시글 작성 실패:", error);
       alert("게시글 작성 중 오류가 발생했습니다.");
@@ -45,6 +44,14 @@ const BoardWritePage = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-8 bg-white min-h-screen">
+      {/* 🔙 뒤로가기 버튼 */}
+      <button
+        className="mb-4 px-4 py-2 bg-gray-300 text-black rounded-md"
+        onClick={() => navigate(-1)}
+      >
+        ← 뒤로가기
+      </button>
+
       <h2 className="text-2xl font-semibold mb-6">
         {boardType === "free"
           ? "자유게시판 글쓰기"
@@ -63,7 +70,6 @@ const BoardWritePage = () => {
           required
         />
 
-        {/* 코드 게시판 전용 에디터 */}
         {boardType === "code" ? (
           <Editor
             ref={editorRef}

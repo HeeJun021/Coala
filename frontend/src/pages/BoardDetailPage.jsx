@@ -69,6 +69,7 @@ const BoardDetailPage = () => {
         await Promise.all(
           data.map(async (c) => {
             const { liked, count } = await checkCommentLiked(c.comment_id, user.user_id);
+            console.log(`댓글 ${c.comment_id} 좋아요 상태:`, liked, count);  // 🔥 여기 추가
             updatedLikes[c.comment_id] = { liked, count };
           })
         );
@@ -102,6 +103,7 @@ const BoardDetailPage = () => {
   };
 
   const handleReport = async () => {
+    console.log("신고 postId:", postId);
     if (!user) return alert("로그인이 필요합니다.");
     try {
       await reportBoard({ post_id: parseInt(postId, 10), user_id: user.user_id, reason: "부적절한 게시글" });
@@ -171,7 +173,7 @@ const BoardDetailPage = () => {
             ...prev,
             [commentId]: {
               liked: true,
-              count: prev[commentId] ? prev[commentId].count + 1 : 1,
+              count: (prev[commentId]?.count || 0) + 1,  // 안전하게 0으로 시작
             },
           }));
         }
