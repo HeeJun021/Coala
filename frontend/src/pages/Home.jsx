@@ -44,7 +44,7 @@ const Home = () => {
               개념부터 실습까지 한 페이지 안에서 자연스러운 학습
             </p>
             <div className="text-right">
-              <Link to="/StudyMaterialsPage?category=HTML&id=39" className="text-blue-600 font-semibold hover:underline">
+              <Link to="/StudyMaterialsPage?category=HTML&id=2" className="text-blue-600 font-semibold hover:underline">
                 학습자료 살펴보기 →
               </Link>
             </div>
