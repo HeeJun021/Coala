@@ -113,7 +113,7 @@ const handleVerificationRequest = async () => {
   };
 
   return (
-<div className="flex items-center justify-center min-h-screen mt-[-90px]">
+<div className="flex items-center justify-center min-h-screen mt-[0px]" >
   <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-[625px] text-left">
     <h2 className="text-3xl font-extrabold text-center mb-10 text-navbar">
       회원가입
@@ -206,7 +206,7 @@ const handleVerificationRequest = async () => {
         <button
           type="button"
           onClick={handleVerificationRequest}
-          className="ml-4 bg-accent text-white px-4 py-1.5 rounded-md min-w-[105px] hover:bg-green-400"
+          className="ml-4 bg-accent text-white px-4 py-1.5 rounded-md min-w-[105px] hover:bg-[#17a94d]"
         >
           인증 요청
         </button>
@@ -225,7 +225,7 @@ const handleVerificationRequest = async () => {
         <button
           type="button"
           onClick={handleVerificationConfirm}
-          className="ml-4 bg-accent text-white px-4 py-1.5 rounded-md min-w-[105px] hover:bg-green-400"
+          className="ml-4 bg-accent text-white px-4 py-1.5 rounded-md min-w-[105px] hover:bg-[#17a94d]"
         >
           인증 확인
         </button>
@@ -275,11 +275,14 @@ const handleVerificationRequest = async () => {
       <div className="flex justify-center mt-6">
         <button
           type="submit"
-          className={`bg-accent text-white px-8 py-3 rounded-full font-bold hover:bg-green-400 shadow-lg ${
+          className={`bg-accent text-white px-8 py-3 rounded-full font-bold hover:bg-[#17a94d] shadow-lg ${
             isEmailVerified && password && !passwordError
               ? ""
               : "opacity-50 cursor-not-allowed"
           }`}
+          
+          
+          
           disabled={!isEmailVerified || passwordError}
         >
           회원가입
