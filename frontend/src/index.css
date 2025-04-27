@@ -19,6 +19,10 @@ body.default-body {
   padding-top: 70px;
 }
 
+body.gray-body {
+  background-color: #F9FAFB; /* 로그인, 회원가입, 비밀번호 찾기 배경 */
+}
+
 /* 코딩테스트 상세페이지 전용 스타일 */
 body.fullscreen-body {
   background-color: #3d4d63; /* 어두운 배경 */

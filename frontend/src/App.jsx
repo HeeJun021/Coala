@@ -52,24 +52,23 @@ const BodyClassManager = () => {
   const location = useLocation();
 
   useEffect(() => {
-    if (
-      (location.pathname.startsWith("/codingtest/") && location.pathname !== "/codingtest") ||
-      location.pathname.startsWith("/codingtest/correct/")
-    ) {
-      document.body.className = "fullscreen-body";
+    const path = location.pathname;
+
+    const isFullscreenRoute =
+      (path.startsWith("/codingtest/") && path !== "/codingtest") ||
+      path.startsWith("/codingtest/correct/");
+
+    const isAuthPage =
+      path === "/login" || path === "/signup" || path === "/forgot-password" || path === "/reset-password";
+
+    if (isFullscreenRoute) {
+      document.body.className = "fullscreen-body"; // ✅ 기존 코딩테스트 전용
+    } else if (isAuthPage) {
+      document.body.className = "gray-body"; // ✅ 로그인, 회원가입, 비번찾기
     } else {
-      document.body.className = "default-body";
+      document.body.className = "default-body"; // ✅ 나머지
     }
   }, [location.pathname]);
-//   const pathname = location.pathname;
-
-//   const isFullscreenRoute =
-//     (pathname.startsWith("/codingtest/") && pathname.split("/").length >= 3) || // /codingtest/:id
-//     pathname.startsWith("/codingtest/correct/");
-
-//   document.body.className = isFullscreenRoute ? "fullscreen-body" : "default-body";
-// }, [location.pathname]);
-
   return null;
 };
 

@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FaEnvelope, FaLock } from "react-icons/fa";
-import { loginUser } from "../api/authApi"; 
-import SocialLogin from "../components/SocialLogin";  // ✅ 추가
+import { loginUser } from "../api/authApi";
+import SocialLogin from "../components/SocialLogin"; // ✅ 추가
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -21,10 +21,27 @@ const Login = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen mt-[-70px]">
-      <div className="bg-white p-16 rounded-lg shadow-lg w-full max-w-[450px] text-left">
-        <h2 className="text-3xl font-extrabold text-center mb-6 text-navbar">로그인</h2>
-        <p className="text-center text-dark mb-8">Coala에 오신 것을 환영합니다!</p>
+    <div className="flex items-center justify-center min-h-[105vh] bg-gray-50 px-4 gap-24">
+      {/* 좌측 설명 영역 */}
+      <div className="flex-1 max-w-[500px] text-left -mt-40">
+        <h1 className="text-5xl font-extrabold text-navbar mb-4">Coala</h1>
+        <p className="text-lg text-black leading-8">
+          <span className="font-semibold text-gray-800">
+            코드를 배우고, 문제를 해결하며
+          </span>
+          <br />
+          함께 성장하는 개발 학습 플랫폼입니다.
+        </p>
+      </div>
+
+      {/* 우측 로그인 박스 */}
+      <div className="w-full max-w-[450px] bg-white p-16 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-gray-100 text-left mt-12 md:mt-0">
+        <h2 className="text-3xl font-extrabold text-center mb-6 text-navbar">
+          로그인
+        </h2>
+        <p className="text-center text-dark mb-8">
+          Coala에 오신 것을 환영합니다!
+        </p>
 
         <form className="flex flex-col gap-6" onSubmit={handleLogin}>
           <div className="flex items-center border-b border-gray-200 pb-2">
@@ -50,16 +67,23 @@ const Login = () => {
           </div>
 
           <div className="flex justify-center mt-8">
-            <button type="submit" className="bg-accent text-white px-8 py-3 rounded-full font-bold hover:bg-green-400 shadow-lg w-full">
+            <button
+              type="submit"
+              className="bg-accent text-white px-8 py-3 rounded-full font-bold hover:bg-[#17a94d] shadow-lg w-full"
+            >
               로그인
             </button>
           </div>
         </form>
 
         <div className="flex justify-center gap-6 mt-8 text-dark text-sm">
-          <Link to="/signup" className="hover:underline">회원가입</Link>
+          <Link to="/signup" className="hover:underline">
+            회원가입
+          </Link>
           <span className="text-gray-300">|</span>
-          <Link to="/forgot-password" className="hover:underline">비밀번호 찾기</Link>
+          <Link to="/forgot-password" className="hover:underline">
+            비밀번호 찾기
+          </Link>
         </div>
 
         <div className="flex items-center my-6">
@@ -68,7 +92,7 @@ const Login = () => {
           <hr className="flex-grow border-gray-300" />
         </div>
 
-        {/* ✅ 소셜 로그인 버튼을 컴포넌트로 사용 */}
+        {/* ✅ 소셜 로그인 버튼 */}
         <SocialLogin />
       </div>
     </div>

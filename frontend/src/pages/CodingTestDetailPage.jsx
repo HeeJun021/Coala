@@ -213,10 +213,11 @@ const CodingTestDetailPage = () => {
       .split("\n")
       .map(
         (line, i) =>
-          `<span class="${selectedLine === i + 1 ? "selected-line" : ""}" data-line="${i + 1}">${line}</span>`
+          `<span class="${
+            selectedLine === i + 1 ? "selected-line" : ""
+          }" data-line="${i + 1}">${line}</span>`
       )
       .join("\n");
-  
 
   const handleClick = (e) => {
     const lineNumber = e.target.getAttribute("data-line-number");
@@ -309,17 +310,22 @@ const CodingTestDetailPage = () => {
               />
             )}
 
-            {activeTab === "notes" && (
-              <WrongNoteEditor
-                submissionList={submissions}
-                setSubmissionList={setSubmissions} // ✅ 꼭 필요
-                codeSnapshot={code}
-                testResults={executionResults}
-                testId={problem.id}
-                userId={user.user_id}
-                key={activeTab}  // 🔥 추가: 탭 바뀔 때 Editor 리셋
-              />
-            )}
+            {activeTab === "notes" &&
+              (user ? (
+                <WrongNoteEditor
+                  submissionList={submissions}
+                  setSubmissionList={setSubmissions}
+                  codeSnapshot={code}
+                  testResults={executionResults}
+                  testId={problem.id}
+                  userId={user.user_id}
+                  key={activeTab}
+                />
+              ) : (
+                <div className="text-white text-center mt-10">
+                  오답노트는 로그인 후 이용할 수 있습니다. 😎
+                </div>
+              ))}
           </div>
 
           {/* 우측 영역 - 코드 에디터 + 실행결과는 notes 탭 아닐 때만 */}

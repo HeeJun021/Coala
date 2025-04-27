@@ -8,7 +8,7 @@ module.exports = {
       },
       colors: {
         navbar: "#81A978", // 상단바 기본 색깔
-        accent: "#A7DA9B", // 버튼 등 약간 밝은 초록색
+        accent: "#1CCC5D", // 버튼 등 약간 밝은 초록색
         dark: "#959595", // 하이라이트 죽은 색
         white: "#FFFFFF", // 흰색
         popup: "#F3EDCD", // 팝업 버튼이나 마이페이지에 둘 색
