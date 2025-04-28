@@ -45,11 +45,17 @@ const BoardDetailTemplate = ({
 
   return (
     <div className="max-w-4xl mx-auto p-8 bg-white min-h-screen">
-      {/* 게시판 이름 */}
-      <h1 className="text-xl font-bold text-gray-700 mb-2">📌 {boardName}</h1>
+      {/* 작성자 정보 */}  
+      <div className="flex items-center gap-2 mb-4 text-gray-600 text-sm">  
+        <span>작성자:</span>  
+        <span className="font-semibold">{post.author_nickname}</span>  
+      </div>
 
       {/* 제목 */}
       <h2 className="text-2xl font-semibold mb-4">{post.title}</h2>
+
+      {/* 본문 */}
+      <p className="mb-6 whitespace-pre-line">{post.content}</p>
 
       {/* 좋아요, 신고 */}
       <div className="flex items-center gap-3 mb-4">
@@ -65,8 +71,6 @@ const BoardDetailTemplate = ({
         </button>
       </div>
 
-      {/* 본문 */}
-      <p className="mb-6 whitespace-pre-line">{post.content}</p>
 
       {/* 수정/삭제 버튼 */}
       {isAuthor && (

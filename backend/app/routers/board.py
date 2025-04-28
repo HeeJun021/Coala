@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Dict, Any
 from app.database import get_db
 from app.services import board_service
 from app.schemas.board import (
@@ -17,10 +17,17 @@ router = APIRouter(prefix="/board", tags=["Board"])
 def create_post(post: PostCreate, db: Session = Depends(get_db)):
     return board_service.create_post(post, db)
 
-# ✅ 게시글 목록 조회
-@router.get("/posts/{board_type}", response_model=List[PostResponse])
-def get_posts(board_type: str, db: Session = Depends(get_db)):
-    return board_service.get_posts(board_type, db)
+# ✅ 게시글 목록 조회 (페이지네이션 적용)
+@router.get("/posts/{board_type}")
+def get_posts(
+    board_type: str,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1),
+    sort_order: str = Query("최신 순"),
+    db: Session = Depends(get_db)
+):
+    return board_service.get_posts(board_type, page, page_size, sort_order, db)
+
 
 # ✅ 게시글 단건 조회
 @router.get("/post/{post_id}", response_model=PostResponse)

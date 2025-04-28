@@ -1,71 +1,23 @@
-// src/pages/CommonBoardDetail.jsx
-
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import BoardDetailTemplate from "./BoardDetailTemplate";
 
-const CommonBoardDetail = ({
-  post,
-  user,
-  liked,
-  likeCount,
-  handleLike,
-  handleReport,
-  isAuthor,
-  handleEdit,
-  handleDelete,
-  handleCommentSubmit,
-  parentComments,
-  childComments,
-  commentLikes,
-  handleCommentLike,
-  handleCommentEdit,
-  handleCommentDelete,
-  editingId,
-  editContent,
-  setEditingId,
-  setEditContent,
-  replyTargetId,
-  setReplyTargetId,
-  replyContent,
-  setReplyContent,
-  handleReplySubmit,
-  handleReplyCancel,
-  handleCommentReport,
-  handleReplyReport,
-}) => {
+const CommonBoardDetail = (props) => {
+  const navigate = useNavigate();
+
   return (
-    <BoardDetailTemplate
-      boardName="자유 게시판"
-      post={post}
-      user={user}
-      liked={liked}
-      likeCount={likeCount}
-      handleLike={handleLike}
-      handleReport={handleReport}
-      isAuthor={isAuthor}
-      handleEdit={handleEdit}
-      handleDelete={handleDelete}
-      handleCommentSubmit={handleCommentSubmit}
-      parentComments={parentComments}
-      childComments={childComments}
-      commentLikes={commentLikes}
-      handleCommentLike={handleCommentLike}
-      handleCommentEdit={handleCommentEdit}
-      handleCommentDelete={handleCommentDelete}
-      editingId={editingId}
-      editContent={editContent}
-      setEditingId={setEditingId}
-      setEditContent={setEditContent}
-      replyTargetId={replyTargetId}
-      setReplyTargetId={setReplyTargetId}
-      replyContent={replyContent}
-      setReplyContent={setReplyContent}
-      handleReplySubmit={handleReplySubmit}
-      handleReplyCancel={handleReplyCancel}
-      handleCommentReport={handleCommentReport}
-      handleReplyReport={handleReplyReport}
-      commentType="basic" // ✅ 일반 게시판은 textarea 사용
-    />
+    <div className="max-w-4xl mx-auto p-8 bg-white min-h-screen">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-xl font-bold text-green-700">자유 게시판</h1>
+        <button
+          onClick={() => navigate(-1)}
+          className="px-4 py-2 bg-gray-300 text-black rounded-md"
+        >
+          뒤로가기
+        </button>
+      </div>
+      <BoardDetailTemplate {...props} commentType="basic" />
+    </div>
   );
 };
 

@@ -8,39 +8,34 @@ import { getBoardList } from "../api/boardApi"; // ✅ API 연결
 
 const BoardList = ({ boardType }) => {
   const [posts, setPosts] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(1);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [sortOrder, setSortOrder] = useState("최신 순");
+  const pageSize = 10;
 
   // ✅ 게시글 목록 불러오기
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const data = await getBoardList(boardType);
-        console.log("불러온 게시글 목록:", data);
-        setPosts(data);
+        const res = await getBoardList(boardType, page, sortOrder);  // ✅ 페이지와 정렬 전달
+        setPosts(res.posts);
+        setTotalCount(res.total);                         // ✅ 전체 개수 저장
       } catch (err) {
         console.error("게시글 목록 불러오기 실패:", err);
       }
     };
-
     fetchPosts();
-  }, [boardType]);
+  }, [boardType, page, sortOrder]);
 
   const filteredPosts = posts.filter((post) =>
     post.title.toLowerCase().includes(searchKeyword.toLowerCase())
   );
 
+  const totalPages = Math.ceil(totalCount / pageSize);
+
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-4 capitalize">
-        {boardType === BOARD_TYPES.PROJECT
-          ? "프로젝트 게시판"
-          : boardType === BOARD_TYPES.FREE
-          ? "자유게시판"
-          : "코드 공유 게시판"}
-      </h2>
-
-      {/* 검색 + 정렬 */}
       <div className="flex items-center mb-4">
         <BoardSearchBar
           value={searchKeyword}
@@ -49,7 +44,6 @@ const BoardList = ({ boardType }) => {
         <BoardSortDropdown value={sortOrder} onChange={setSortOrder} />
       </div>
 
-      {/* 게시글 테이블 */}
       <table className="w-full border border-gray-300">
         <thead className="bg-gray-100">
           <tr>
@@ -79,7 +73,7 @@ const BoardList = ({ boardType }) => {
         </tbody>
       </table>
 
-      <Pagination totalPages={5} currentPage={1} />
+      <Pagination totalPages={totalPages} currentPage={page} onPageChange={setPage} />
     </div>
   );
 };
