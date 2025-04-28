@@ -5,7 +5,7 @@ import { useAuth } from "../context/AuthContext";
 const Navbar = () => {
   const { user, handleLogout, loading } = useAuth();
   const navigate = useNavigate();
-  const [hovering, setHovering] = useState(false);
+  const [hoverIndex, setHoverIndex] = useState(null); // ✅ 인덱스 기반으로 변경
 
   const logoutAndRedirect = async () => {
     await handleLogout();
@@ -34,7 +34,7 @@ const Navbar = () => {
     {
       label: "코딩테스트",
       path: "/codingtest",
-      children: ["문제 목록", "내 제출", "정답 보기"],
+      children: ["문제 목록", "내 제출"],
     },
     {
       label: "게시판",
@@ -49,35 +49,49 @@ const Navbar = () => {
   ];
 
   return (
-    <div className="relative z-50">
+    <div
+      className="relative z-50"
+      onMouseLeave={() => setHoverIndex(null)} // ✅ 전체 영역 나갈 때 초기화
+    >
       {/* 상단 바 */}
-      <nav
-        className="fixed top-0 left-0 w-full bg-white border-b shadow-sm h-[70px] flex items-center justify-between px-12 z-50"
-        onMouseEnter={() => setHovering(true)}
-        onMouseLeave={() => setHovering(false)}
-      >
+      <nav className="fixed top-0 left-0 w-full bg-white border-b shadow-sm h-[70px] flex items-center justify-between px-12 z-50">
         <Link to="/" className="flex items-center">
-          <img src="/coala.jpg" alt="Coala Logo" className="w-10 h-10 mr-2 rounded-full border" />
+          <img
+            src="/coala.jpg"
+            alt="Coala Logo"
+            className="w-10 h-10 mr-2 rounded-full border"
+          />
           <span className="text-2xl font-semibold text-green-700">Coala</span>
         </Link>
-  
+
         <div className="grid grid-cols-6 w-[900px] text-center">
           {menuItems.map((item, idx) => (
-            <div key={idx} className="h-[50px] flex items-center justify-center">
+            <div
+              key={idx}
+              className="h-[50px] flex items-center justify-center relative"
+              onMouseEnter={() => setHoverIndex(idx)} // ✅ 마우스 인덱스 감지
+            >
               {item.label === "학습자료" ? (
                 <span
                   onClick={async () => {
                     try {
-                      const res = await fetch("http://localhost:8000/languages");
+                      const res = await fetch(
+                        "http://localhost:8000/languages"
+                      );
                       const languages = await res.json();
                       if (languages.length > 0) {
                         const lang = languages[0].language;
-                        const mat = await fetch(`http://localhost:8000/api/materials/${lang}`, {
-                          credentials: "include",
-                        });
+                        const mat = await fetch(
+                          `http://localhost:8000/api/materials/${lang}`,
+                          {
+                            credentials: "include",
+                          }
+                        );
                         const list = await mat.json();
                         if (list.length > 0) {
-                          navigate(`/StudyMaterialsPage?category=${lang}&id=${list[0].material_id}`);
+                          navigate(
+                            `/StudyMaterialsPage?category=${lang}&id=${list[0].material_id}`
+                          );
                         }
                       }
                     } catch {
@@ -99,7 +113,7 @@ const Navbar = () => {
             </div>
           ))}
         </div>
-  
+
         <div className="flex items-center gap-4">
           {user ? (
             <>
@@ -129,31 +143,54 @@ const Navbar = () => {
           )}
         </div>
       </nav>
-  
+
       {/* 드롭다운 메뉴 */}
-      {hovering && (
-        <div
-          className="fixed top-[70px] left-0 w-full bg-white border-b shadow-md py-6 z-40"
-          onMouseEnter={() => setHovering(true)}
-          onMouseLeave={() => setHovering(false)}
-        >
-          <div className="grid grid-cols-6 w-[900px] mx-auto transform -translate-x-[20px] gap-y-4">
-            {menuItems.map((item, idx) => (
-              <div key={idx} className="flex flex-col items-center gap-4 h-[200px]">
-                {item.children.map((child, i) => (
-                  <span
-                    key={i}
-                    className="text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold"
-                  >
-                    {child}
-                  </span>
-                ))}
-              </div>
-            ))}
-          </div>
+      <div
+        className={`fixed top-[70px] left-0 w-full bg-white border-b shadow-md z-40 overflow-hidden transition-all duration-300 ${
+          hoverIndex !== null
+            ? "max-h-[250px] py-6 opacity-100"
+            : "max-h-0 opacity-0"
+        }`}
+      >
+        <div className="grid grid-cols-6 w-[900px] mx-auto transform -translate-x-[20px] gap-y-4">
+          {menuItems.map((item, idx) => (
+            <div
+              key={idx}
+              className="flex flex-col items-center gap-4 h-[200px]"
+            >
+              {item.children.map((child, i) => {
+                // ✅ 코딩테스트 메뉴 & 문제 목록만 링크로
+                if (item.label === "코딩테스트" && child === "문제 목록") {
+                  return (
+                    <Link
+                      key={i}
+                      to="/codingtest"
+                      className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
+                        hoverIndex === idx ? "" : "opacity-50"
+                      }`}
+                    >
+                      {child}
+                    </Link>
+                  );
+                } else {
+                  // ✅ 나머지는 그냥 span
+                  return (
+                    <span
+                      key={i}
+                      className={`text-[15px] font-medium text-gray-800 cursor-default ${
+                        hoverIndex === idx ? "" : "opacity-50"
+                      }`}
+                    >
+                      {child}
+                    </span>
+                  );
+                }
+              })}
+            </div>
+          ))}
         </div>
-      )}
-  
+      </div>
+
       <div className="h-[70px]" />
     </div>
   );

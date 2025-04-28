@@ -93,10 +93,30 @@ const CodingTestPage = () => {
     sort === "desc" ? "정답률이 높은 문제" : "정답률이 낮은 문제";
 
   return (
-    <div className="p-6 bg-white min-h-screen">
-      <div className="max-w-6xl mx-auto">
+    <div className="p-6 bg-whit min-h-screen">
+      <div className="max-w-6xl mx-auto bg-white shadow-xl rounded-2xl border border-gray-300 p-7">
+        {/* 페이지 타이틀 */}
+        <div className="mb-8">
+        <h1 className="text-4xl font-extrabold text-gray-800 mb-4 tracking-wide">
+        <span className="text-teal-600">CODING</span>
+
+  <span className="text-black">TEST</span>
+</h1>
+
+
+          <p className="text-gray-500 text-sm">
+            다양한 문제를 풀며{" "}
+            <span className="font-medium text-gray-700">알고리즘 사고력</span>을
+            키워보세요!
+          </p>
+        </div>
+
         {/* 검색 & 필터 */}
         <div className="flex flex-col gap-2 mb-4">
+          <h2 className="text-lg font-medium text-gray-700 mb-2">
+            문제 검색 및 필터링
+          </h2>
+
           <div
             className={`flex items-center border rounded-md w-[500px] bg-white px-2 ${
               searchTerm
@@ -124,7 +144,7 @@ const CodingTestPage = () => {
             />
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 mt-2">
             {user && (
               <select
                 value={status}
@@ -281,7 +301,7 @@ const CodingTestPage = () => {
                 window.scrollTo({ top: 0, behavior: "smooth" }); // 스크롤 최상단 smooth 이동
               }}
               className={`px-3 py-1 rounded-md border ${
-                page === i + 1 ? "bg-gray-300" : "hover:bg-gray-200"
+                page === i + 1 ? "bg-green-600 text-white" : "hover:bg-gray-200"
               }`}
             >
               {i + 1}

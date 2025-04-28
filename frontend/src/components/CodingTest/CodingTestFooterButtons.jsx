@@ -22,9 +22,13 @@ const CodingTestFooterButtons = ({
   ) : (
     // 일반 탭용 하단 버튼
     <div className="flex justify-between items-center p-3 border-t border-gray-600 bg-[#2c3544]">
-      <button className="text-xs text-white border border-gray-500 px-3 py-2 rounded hover:bg-gray-600 transition">
-        질문 게시판 이동하기
-      </button>
+      <Link
+        to="/board/free"
+        className="text-xs text-white border border-gray-500 px-3 py-2 rounded hover:bg-gray-600 transition"
+      >
+        게시판 이동하기
+      </Link>
+
       <div className="flex gap-2">
         <Link
           to={`/codingtest/correct/${problem.id}`}

@@ -113,7 +113,7 @@ const handleVerificationRequest = async () => {
   };
 
   return (
-<div className="flex items-center justify-center min-h-screen mt-[0px]" >
+<div className="flex items-center justify-center min-h-screen mt-[-40px]" >
   <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-[625px] text-left">
     <h2 className="text-3xl font-extrabold text-center mb-10 text-navbar">
       회원가입
