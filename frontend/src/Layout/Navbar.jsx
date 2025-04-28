@@ -5,7 +5,7 @@ import { useAuth } from "../context/AuthContext";
 const Navbar = () => {
   const { user, handleLogout, loading } = useAuth();
   const navigate = useNavigate();
-  const [hoverIndex, setHoverIndex] = useState(null); // ✅ 인덱스 기반으로 변경
+  const [hoverIndex, setHoverIndex] = useState(null);
 
   const logoutAndRedirect = async () => {
     await handleLogout();
@@ -24,7 +24,7 @@ const Navbar = () => {
     {
       label: "퀴즈문제",
       path: "/quizpage",
-      children: ["퀴즈 풀기", "퀴즈 만들기", "사용자 퀴즈"],
+      children: ["퀴즈 풀기", "퀴즈 만들기"],
     },
     {
       label: "자율코딩",
@@ -49,10 +49,7 @@ const Navbar = () => {
   ];
 
   return (
-    <div
-      className="relative z-50"
-      onMouseLeave={() => setHoverIndex(null)} // ✅ 전체 영역 나갈 때 초기화
-    >
+    <div className="relative z-50" onMouseLeave={() => setHoverIndex(null)}>
       {/* 상단 바 */}
       <nav className="fixed top-0 left-0 w-full bg-white border-b shadow-sm h-[70px] flex items-center justify-between px-12 z-50">
         <Link to="/" className="flex items-center">
@@ -69,23 +66,19 @@ const Navbar = () => {
             <div
               key={idx}
               className="h-[50px] flex items-center justify-center relative"
-              onMouseEnter={() => setHoverIndex(idx)} // ✅ 마우스 인덱스 감지
+              onMouseEnter={() => setHoverIndex(idx)}
             >
               {item.label === "학습자료" ? (
                 <span
                   onClick={async () => {
                     try {
-                      const res = await fetch(
-                        "http://localhost:8000/languages"
-                      );
+                      const res = await fetch("http://localhost:8000/languages");
                       const languages = await res.json();
                       if (languages.length > 0) {
                         const lang = languages[0].language;
                         const mat = await fetch(
                           `http://localhost:8000/api/materials/${lang}`,
-                          {
-                            credentials: "include",
-                          }
+                          { credentials: "include" }
                         );
                         const list = await mat.json();
                         if (list.length > 0) {
@@ -147,17 +140,12 @@ const Navbar = () => {
       {/* 드롭다운 메뉴 */}
       <div
         className={`fixed top-[70px] left-0 w-full bg-white border-b shadow-md z-40 overflow-hidden transition-all duration-300 ${
-          hoverIndex !== null
-            ? "max-h-[250px] py-6 opacity-100"
-            : "max-h-0 opacity-0"
+          hoverIndex !== null ? "max-h-[250px] py-6 opacity-100" : "max-h-0 opacity-0"
         }`}
       >
         <div className="grid grid-cols-6 w-[900px] mx-auto transform -translate-x-[20px] gap-y-4">
           {menuItems.map((item, idx) => (
-            <div
-              key={idx}
-              className="flex flex-col items-center gap-4 h-[200px]"
-            >
+            <div key={idx} className="flex flex-col items-center gap-4 h-[200px]">
               {item.children.map((child, i) => {
                 // ✅ 코딩테스트 메뉴 & 문제 목록만 링크로
                 if (item.label === "코딩테스트" && child === "문제 목록") {
@@ -172,19 +160,54 @@ const Navbar = () => {
                       {child}
                     </Link>
                   );
-                } else {
-                  // ✅ 나머지는 그냥 span
+                }
+                // ✅ 퀴즈문제 메뉴 링크 처리
+                if (item.label === "퀴즈문제") {
+                  let link = "";
+                  if (child === "퀴즈 풀기") link = "/quizpage";
+                  if (child === "퀴즈 만들기") link = "/quizpage?category=user";
+
                   return (
-                    <span
+                    <Link
                       key={i}
-                      className={`text-[15px] font-medium text-gray-800 cursor-default ${
+                      to={link}
+                      className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
                         hoverIndex === idx ? "" : "opacity-50"
                       }`}
                     >
                       {child}
-                    </span>
+                    </Link>
                   );
                 }
+                if (item.label === "마이페이지") {
+                  let link = "";
+                  if (child === "내 정보") link = "/mypage/modify";
+                  if (child === "내 학습 현황") link = "/mypage/quiz-history";
+                  if (link) {
+                    return (
+                      <Link
+                        key={i}
+                        to={link}
+                        className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
+                          hoverIndex === idx ? "" : "opacity-50"
+                        }`}
+                      >
+                        {child}
+                      </Link>
+                    );
+                  }
+                }
+                // ✅ 나머지는 그냥 span
+                return (
+                  <span
+                    key={i}
+                    className={`text-[15px] font-medium text-gray-800 cursor-default ${
+                      hoverIndex === idx ? "" : "opacity-50"
+                    }`}
+                  >
+                    {child}
+                  </span>
+                );
               })}
             </div>
           ))}
