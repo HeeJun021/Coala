@@ -21,9 +21,10 @@ class PostResponse(PostBase):
     comment_count: int
     created_at: datetime
     updated_at: datetime
+    author_nickname: Optional[str] = None  # ✅ 작성자 닉네임 추가
 
     model_config = {
-        "from_attributes": True  # ✅ pydantic v2 방식
+        "from_attributes": True
     }
 
 # ===== 댓글 관련 =====

@@ -1,11 +1,12 @@
 from sqlalchemy import func
-from sqlalchemy.orm import Session, aliased
+from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from app.models.board import (
     Post, Comment,
     PostLike, CommentLike,
     PostReport, CommentReport
 )
+from app.models.user import User  # ✅ User 모델 추가
 from app.schemas.board import (
     PostCreate, PostResponse,
     CommentCreate, CommentResponse,
@@ -21,7 +22,7 @@ def create_post(post: PostCreate, db: Session):
     db.refresh(new_post)
     return new_post
 
-# 포스트 목록 조회 (페이지네이션 적용 + 좌화수 계산)
+# 포스트 목록 조회 (페이지네이션 적용 + 좋아요/댓글수 계산)
 def get_posts(board_type: str, page: int, page_size: int, sort_order: str, db: Session):
     like_subq = db.query(
         PostLike.post_id, func.count(PostLike.user_id).label("like_count")
@@ -42,12 +43,12 @@ def get_posts(board_type: str, page: int, page_size: int, sort_order: str, db: S
      .outerjoin(comment_subq, Post.post_id == comment_subq.c.post_id) \
      .filter(Post.board_type == board_type)
 
-    # 🔥 정렬 기준 적용
+    # 정렬 기준 적용
     if sort_order == "좋아요 많은 순":
         query = query.order_by(func.coalesce(like_subq.c.like_count, 0).desc(), Post.created_at.desc())
     elif sort_order == "댓글 많은 순":
         query = query.order_by(func.coalesce(comment_subq.c.comment_count, 0).desc(), Post.created_at.desc())
-    else:  # 최신 순 (기본값)
+    else:  # 최신 순
         query = query.order_by(Post.created_at.desc())
 
     posts = query.offset((page - 1) * page_size).limit(page_size).all()
@@ -61,19 +62,22 @@ def get_posts(board_type: str, page: int, page_size: int, sort_order: str, db: S
 
     return {"posts": result, "total": total}
 
-
-# 포스트 단간 조회
+# 포스트 단건 조회 (작성자 닉네임 포함)
 def get_post(post_id: int, db: Session):
-    post = db.query(Post).filter(Post.post_id == post_id).first()
-    if not post:
-        raise HTTPException(status_code=404, detail="게시구를 찾을 수 없습니다.")
-    return post
+    post_query = db.query(Post, User.nickname).join(User, Post.user_id == User.user_id).filter(Post.post_id == post_id).first()
+    if not post_query:
+        raise HTTPException(status_code=404, detail="게시글을 찾을 수 없습니다.")
+
+    post, nickname = post_query
+    result = PostResponse.model_validate(post).model_dump()
+    result["author_nickname"] = nickname  # ✅ 닉네임 추가
+    return result
 
 # 포스트 수정
 def update_post(post_id: int, post: PostCreate, db: Session):
     existing_post = db.query(Post).filter(Post.post_id == post_id).first()
     if not existing_post:
-        raise HTTPException(status_code=404, detail="게시구가 존재하지 않습니다.")
+        raise HTTPException(status_code=404, detail="게시글이 존재하지 않습니다.")
     for key, value in post.dict().items():
         setattr(existing_post, key, value)
     db.commit()
@@ -84,7 +88,7 @@ def update_post(post_id: int, post: PostCreate, db: Session):
 def delete_post(post_id: int, db: Session):
     post = db.query(Post).filter(Post.post_id == post_id).first()
     if not post:
-        raise HTTPException(status_code=404, detail="게시구가 존재하지 않습니다.")
+        raise HTTPException(status_code=404, detail="게시글이 존재하지 않습니다.")
     db.delete(post)
     db.commit()
 
@@ -126,45 +130,45 @@ def delete_comment(comment_id: int, db: Session):
 def get_comments(post_id: int, db: Session):
     return db.query(Comment).filter(Comment.post_id == post_id).order_by(Comment.created_at).all()
 
-# 포스트 좌화수 등록
+# 포스트 좋아요 등록
 def like_post(payload: PostLikeCreate, db: Session):
     existing = db.query(PostLike).filter_by(post_id=payload.post_id, user_id=payload.user_id).first()
     if existing:
-        raise HTTPException(status_code=400, detail="이미 좌화수를 누른 상황입니다.")
+        raise HTTPException(status_code=400, detail="이미 좋아요를 누른 상황입니다.")
     db.add(PostLike(**payload.dict()))
     db.commit()
 
-# 포스트 좌화수 취소
+# 포스트 좋아요 취소
 def unlike_post(payload: PostLikeCreate, db: Session):
     like = db.query(PostLike).filter_by(post_id=payload.post_id, user_id=payload.user_id).first()
     if not like:
-        raise HTTPException(status_code=404, detail="좌화수 기록이 없습니다.")
+        raise HTTPException(status_code=404, detail="좋아요 기록이 없습니다.")
     db.delete(like)
     db.commit()
 
-# 포스트 좌화수 조회
+# 포스트 좋아요 조회
 def check_post_liked(post_id: int, user_id: int, db: Session):
     liked = db.query(PostLike).filter_by(post_id=post_id, user_id=user_id).first() is not None
     count = db.query(PostLike).filter_by(post_id=post_id).count()
     return {"liked": liked, "count": count}
 
-# 댓글 좌화수 등록
+# 댓글 좋아요 등록
 def like_comment(payload: CommentLikeCreate, db: Session):
     existing = db.query(CommentLike).filter_by(comment_id=payload.comment_id, user_id=payload.user_id).first()
     if existing:
-        raise HTTPException(status_code=400, detail="이미 좌화수를 누른 상황입니다.")
+        raise HTTPException(status_code=400, detail="이미 좋아요를 누른 상황입니다.")
     db.add(CommentLike(**payload.dict()))
     db.commit()
 
-# 댓글 좌화수 취소
+# 댓글 좋아요 취소
 def unlike_comment(payload: CommentLikeCreate, db: Session):
     existing = db.query(CommentLike).filter_by(comment_id=payload.comment_id, user_id=payload.user_id).first()
     if not existing:
-        raise HTTPException(status_code=404, detail="좌화수 기록이 없습니다.")
+        raise HTTPException(status_code=404, detail="좋아요 기록이 없습니다.")
     db.delete(existing)
     db.commit()
 
-# 댓글 좌화수 조회
+# 댓글 좋아요 조회
 def check_comment_liked(comment_id: int, user_id: int, db: Session):
     liked = db.query(CommentLike).filter_by(comment_id=comment_id, user_id=user_id).first() is not None
     count = db.query(CommentLike).filter_by(comment_id=comment_id).count()
@@ -174,7 +178,7 @@ def check_comment_liked(comment_id: int, user_id: int, db: Session):
 def report_post(payload: PostReportCreate, db: Session):
     existing = db.query(PostReport).filter_by(post_id=payload.post_id, user_id=payload.user_id).first()
     if existing:
-        raise HTTPException(status_code=400, detail="이미 신고한 게시구입니다.")
+        raise HTTPException(status_code=400, detail="이미 신고한 게시글입니다.")
     db.add(PostReport(**payload.dict()))
     db.commit()
 

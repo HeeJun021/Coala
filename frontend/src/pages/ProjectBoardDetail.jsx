@@ -1,8 +1,8 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { deleteBoard } from "../api/boardApi"; // ✅ 게시글 삭제
-import { likeBoard, unlikeBoard } from "../api/likeApi"; // ✅ 좋아요 처리
-import { reportBoard } from "../api/reportApi"; // ✅ 신고 처리
+import { deleteBoard } from "../api/boardApi";
+import { likeBoard, unlikeBoard } from "../api/likeApi";
+import { reportBoard } from "../api/reportApi";
 
 const ProjectBoardDetail = ({ post, user }) => {
   const navigate = useNavigate();
@@ -42,6 +42,8 @@ const ProjectBoardDetail = ({ post, user }) => {
     }
   };
 
+  const handleEdit = () => navigate(`/board/${boardType}/edit/${postId}`);
+
   const handleDelete = async () => {
     const confirmDelete = window.confirm("정말 삭제하시겠습니까?");
     if (confirmDelete) {
@@ -57,54 +59,58 @@ const ProjectBoardDetail = ({ post, user }) => {
 
   return (
     <div className="max-w-4xl mx-auto p-8 bg-white min-h-screen">
-      <div className="flex justify-between items-center mb-4">
+      {/* 상단: 게시판 이름 + 뒤로가기 */}
+      <div className="flex justify-between items-center border-b pb-4 mb-6">
         <h1 className="text-xl font-bold text-green-700">프로젝트 게시판</h1>
         <button
           onClick={() => navigate(-1)}
-          className="px-4 py-2 bg-gray-300 text-black rounded-md"
+          className="px-4 py-1 bg-gray-200 text-sm rounded-md"
         >
-          뒤로가기
+          ← 뒤로가기
         </button>
       </div>
 
-      <h2 className="text-2xl font-semibold mb-4">{post.title}</h2>
+      {/* 본문: 제목 + 작성자 정보 */}
+      <div className="mb-6">
+        <h2 className="text-2xl font-semibold mb-2">{post.title}</h2>
+        <div className="flex items-center text-sm text-gray-500">
+          <span className="font-medium">{post.author_nickname}</span>
+          <span className="mx-2">|</span>
+          <span>{new Date(post.created_at).toLocaleString()}</span>
+        </div>
+      </div>
 
-      <div className="flex items-center gap-3 mb-4">
-        <button onClick={handleLike} className="text-red-500 text-2xl">
-          {liked ? "❤️" : "🤍"}
+      {/* 내용 */}
+      <div className="mb-6 whitespace-pre-line text-gray-700 leading-relaxed">
+        {post.content}
+      </div>
+
+      {/* 액션 버튼 */}
+      <div className="flex items-center gap-4 border-t pt-4 mb-8">
+        <button onClick={handleLike} className="flex items-center gap-1 text-red-500">
+        {liked ? "❤️" : "🤍"} <span className="text-sm">{likeCount}</span>
         </button>
-        <span className="text-sm">{likeCount}명 좋아요</span>
-
-        <button
-          className="text-sm text-gray-500 underline"
-          onClick={handleReport}
-        >
+        <button onClick={handleReport} className="text-sm text-gray-500 underline">
           신고
         </button>
+        {isAuthor && (
+          <>
+            <button onClick={handleEdit} className="text-sm text-yellow-600">
+              수정
+            </button>
+            <button onClick={handleDelete} className="text-sm text-red-600">
+              삭제
+            </button>
+          </>
+        )}
       </div>
 
-      <p className="mb-6 whitespace-pre-line">{post.content}</p>
-
-      {isAuthor && (
-        <div className="flex gap-2 mb-6">
-          <button
-            className="px-3 py-1 bg-yellow-400 text-white rounded"
-            onClick={() => navigate(`/board/${boardType}/edit/${postId}`)}
-          >
-            수정
-          </button>
-          <button
-            className="px-3 py-1 bg-red-500 text-white rounded"
-            onClick={handleDelete}
-          >
-            삭제
-          </button>
-        </div>
-      )}
-
-      <button className="px-4 py-2 bg-green-500 text-white rounded-md mb-8">
-        참여 신청하기
-      </button>
+      {/* 참여 신청 버튼 */}
+      <div className="flex justify-end">
+        <button className="px-4 py-2 bg-green-500 text-white rounded-md">
+          참여 신청하기
+        </button>
+      </div>
     </div>
   );
 };
