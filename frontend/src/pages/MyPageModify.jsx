@@ -30,7 +30,7 @@ const MyPageModify = ({ userData, setUserData }) => {
     };
 
     return (
-        <div className="flex bg-white min-h-screen">
+        <div className="flex min-h-screen">
             <div className="w-[250px]">
                 <MyPageSidebar />
             </div>

@@ -21,7 +21,7 @@ const Login = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[105vh] bg-gray-50 px-4 gap-24">
+    <div className="flex items-center justify-center min-h-[90vh] bg-gray-50 px-4 gap-24">
       {/* 좌측 설명 영역 */}
       <div className="flex-1 max-w-[500px] text-left -mt-40">
         <h1 className="text-5xl font-extrabold text-navbar mb-4">Coala</h1>

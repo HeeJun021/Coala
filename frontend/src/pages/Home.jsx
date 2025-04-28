@@ -8,7 +8,7 @@ const Home = () => {
   return (
     <div className="w-full">
       {/* 히어로 영역 */}
-      <section className="text-center py-24 bg-white">
+      <section className="text-center py-24">
         <h1 className="text-4xl font-bold mb-4">웹 개발을 배우는 가장 실용적인 방법</h1>
         <p className="text-gray-600 mb-6">퀴즈부터 실습까지, 지금 바로 시작해보세요!</p>
         <div className="space-x-4">

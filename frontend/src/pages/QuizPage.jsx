@@ -26,7 +26,7 @@ const QuizPage = ({ userData }) => {
   };
 
   return (
-    <div className="flex min-h-screen bg-white">
+    <div className="flex min-h-screen">
       <div className="ml-[250px] p-6 flex-1">{renderQuizComponent()}</div>
     </div>
   );

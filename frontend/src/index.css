@@ -12,15 +12,20 @@
 
 /* 기본 바디 스타일 (대부분 페이지용) */
 body.default-body {
-  background-color: white; /* 기존 베이지 배경 */
+  background-color: #F9FAFB;
   margin: 0;
   padding: 0;
   font-family: 'Arial', sans-serif;
   padding-top: 70px;
 }
 
-body.gray-body {
-  background-color: #F9FAFB; /* 로그인, 회원가입, 비밀번호 찾기 배경 */
+/* 홈 화면 전용 (흰색 배경) */
+body.white-body {
+  background-color: white;
+  margin: 0;
+  padding: 0;
+  font-family: 'Arial', sans-serif;
+  padding-top: 70px;
 }
 
 /* 코딩테스트 상세페이지 전용 스타일 */

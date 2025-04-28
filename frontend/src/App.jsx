@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useLocation,
+  Navigate,
+} from "react-router-dom";
 
 import { AuthProvider } from "./context/AuthContext";
 import { getCurrentUser } from "./api/authApi";
@@ -58,17 +64,15 @@ const BodyClassManager = () => {
       (path.startsWith("/codingtest/") && path !== "/codingtest") ||
       path.startsWith("/codingtest/correct/");
 
-    const isAuthPage =
-      path === "/login" || path === "/signup" || path === "/forgot-password" || path === "/reset-password";
-
-    if (isFullscreenRoute) {
-      document.body.className = "fullscreen-body"; // ✅ 기존 코딩테스트 전용
-    } else if (isAuthPage) {
-      document.body.className = "gray-body"; // ✅ 로그인, 회원가입, 비번찾기
+    if (path === "/") {
+      document.body.className = "white-body"; // ✅ 홈 화면 전용 (흰색 배경)
+    } else if (isFullscreenRoute) {
+      document.body.className = "fullscreen-body"; // ✅ 코딩테스트 전용
     } else {
       document.body.className = "default-body"; // ✅ 나머지
     }
   }, [location.pathname]);
+
   return null;
 };
 
@@ -110,7 +114,10 @@ const App = () => {
         <Routes>
           {/* 코딩 테스트 전체화면 전용 */}
           <Route path="/codingtest/:id" element={<CodingTestDetailPage />} />
-          <Route path="/codingtest/correct/:testId" element={<CorrectSolutionsPage />} />
+          <Route
+            path="/codingtest/correct/:testId"
+            element={<CorrectSolutionsPage />}
+          />
 
           {/* 공통 레이아웃 포함 */}
           <Route
@@ -121,19 +128,49 @@ const App = () => {
                   <Route path="/" element={<Home />} />
 
                   {/* 학습자료 */}
-                  <Route path="/StudyMaterialsPage" element={<StudyMaterialsPage />} />
-                  <Route path="/StudyMaterialsPage/materials/:language/:id" element={<StudyMaterialsPageDetails />} />
-                  <Route path="/StudyMaterialsPage/examples/:language/:id" element={<StudyMaterialsPageDetails />} />
-                  <Route path="/materials/:language/:id" element={<StudyMaterialsPageDetails />} />
+                  <Route
+                    path="/StudyMaterialsPage"
+                    element={<StudyMaterialsPage />}
+                  />
+                  <Route
+                    path="/StudyMaterialsPage/materials/:language/:id"
+                    element={<StudyMaterialsPageDetails />}
+                  />
+                  <Route
+                    path="/StudyMaterialsPage/examples/:language/:id"
+                    element={<StudyMaterialsPageDetails />}
+                  />
+                  <Route
+                    path="/materials/:language/:id"
+                    element={<StudyMaterialsPageDetails />}
+                  />
                   <Route path="/materials" element={<StudyMaterialsPage />} />
 
                   {/* 퀴즈 */}
-                  <Route path="/quizpage" element={<QuizPage userData={userData} />} />
-                  <Route path="/quizsolve/:quizId" element={<QuizSolvePage userData={userData} />} />
-                  <Route path="/quiz-result/:quizId" element={<QuizResultPage userData={userData} />} />
-                  <Route path="/user-quiz/create" element={<CreateUserQuiz userData={userData} />} />
-                  <Route path="/user-quiz-solve/:quizId" element={<UserQuizSolvePage userData={userData} />} />
-                  <Route path="/user-quiz-result/:uq_submission_id" element={<UserQuizResultPage userData={userData} />} />
+                  <Route
+                    path="/quizpage"
+                    element={<QuizPage userData={userData} />}
+                  />
+                  <Route
+                    path="/quizsolve/:quizId"
+                    element={<QuizSolvePage userData={userData} />}
+                  />
+                  <Route
+                    path="/quiz-result/:quizId"
+                    element={<QuizResultPage userData={userData} />}
+                  />
+                  <Route
+                    path="/user-quiz/create"
+                    element={<CreateUserQuiz userData={userData} />}
+                  />
+                  <Route
+                    path="/user-quiz-solve/:quizId"
+                    element={<UserQuizSolvePage userData={userData} />}
+                  />
+                  <Route
+                    path="/user-quiz-result/:uq_submission_id"
+                    element={<UserQuizResultPage userData={userData} />}
+                  />
 
                   {/* 코딩 테스트 목록 */}
                   <Route path="/codingtest" element={<CodingTestPage />} />
@@ -149,18 +186,50 @@ const App = () => {
                   <Route path="/reset-password" element={<ResetPassword />} />
 
                   {/* 마이페이지 */}
-                  <Route path="/mypage/*" element={<MyPage userData={userData} />} />
-                  <Route path="/mypage/modify" element={<MyPageModify userData={userData} setUserData={setUserData} />} />
-                  <Route path="/mypage/setting" element={<MyPageSetting userData={userData} />} />
-                  <Route path="/mypage/quiz-history" element={<MyPageQuizHistory userData={userData} />} />
-                  <Route path="/mypage/userquiz-history" element={<MyPageUserQuizHistory userData={userData} />} />
+                  <Route
+                    path="/mypage/*"
+                    element={<MyPage userData={userData} />}
+                  />
+                  <Route
+                    path="/mypage/modify"
+                    element={
+                      <MyPageModify
+                        userData={userData}
+                        setUserData={setUserData}
+                      />
+                    }
+                  />
+                  <Route
+                    path="/mypage/setting"
+                    element={<MyPageSetting userData={userData} />}
+                  />
+                  <Route
+                    path="/mypage/quiz-history"
+                    element={<MyPageQuizHistory userData={userData} />}
+                  />
+                  <Route
+                    path="/mypage/userquiz-history"
+                    element={<MyPageUserQuizHistory userData={userData} />}
+                  />
 
                   {/* 게시판 */}
                   <Route path="/board/:boardType" element={<BoardPage />} />
-                  <Route path="/board/:boardType/write" element={<BoardWritePage />} />
-                  <Route path="/board/:boardType/:postId" element={<BoardDetailPage />} />
-                  <Route path="/board/:boardType/edit/:postId" element={<BoardEditPage />} />
-                  <Route path="/board" element={<Navigate to="/board/free" />} />
+                  <Route
+                    path="/board/:boardType/write"
+                    element={<BoardWritePage />}
+                  />
+                  <Route
+                    path="/board/:boardType/:postId"
+                    element={<BoardDetailPage />}
+                  />
+                  <Route
+                    path="/board/:boardType/edit/:postId"
+                    element={<BoardEditPage />}
+                  />
+                  <Route
+                    path="/board"
+                    element={<Navigate to="/board/free" />}
+                  />
                 </Routes>
               </MainLayout>
             }
