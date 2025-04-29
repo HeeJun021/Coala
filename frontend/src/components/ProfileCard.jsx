@@ -162,7 +162,7 @@ const ProfileCard = ({ userData, setUserData }) => {
 
                     {/* 수정 버튼 */}
                     <button
-                        className="absolute bottom-0 text-white right-0 bg-accent px-4 py-2 rounded-lg hover:bg-[#6b8d63] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent"
+                        className="absolute bottom-0 text-white right-0 bg-accent px-4 py-1 rounded-lg hover:bg-[#6b8d63] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent"
                         onClick={toggleEditMode} 
                     >
                         수정
