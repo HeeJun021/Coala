@@ -31,7 +31,8 @@ from app.routers import (
     code_execution,
     code_runner,
     code_terminal,
-    board
+    board,
+    chat_rest
 )
 from app.schemas.user import UserUpdateSchema
 from datetime import datetime
@@ -79,6 +80,9 @@ app.include_router(coding_test_submission.router)
 app.include_router(code_runner.router)
 app.include_router(code_terminal.router)
 app.include_router(code_execution.router, prefix="/code")  # WebSocket용이면 prefix 유지 가능
+
+# 채팅
+app.include_router(chat_rest.router)
 
 # 기본 라우트
 @app.get("/", tags=["Root"])
