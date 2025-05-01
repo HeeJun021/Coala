@@ -21,3 +21,44 @@ class ChatRoomListItem(BaseModel):
     last_message: Optional[str]
     last_message_time: Optional[datetime]
     unread_count: int
+
+# 채팅 보내기 요청, 응답
+class ChatMessageCreateRequest(BaseModel):
+    message: Optional[str] = None
+    message_type: str = "text"  # 'text', 'file', 'image'
+    file_url: Optional[str] = None
+
+
+class ChatMessageCreateResponse(BaseModel):
+    message_id: int
+    room_id: int
+    sender_id: int
+    message: Optional[str]
+    message_type: str
+    file_url: Optional[str]
+    sent_at: datetime
+    
+# 채팅 조회 스키마
+class ChatMessageItem(BaseModel):
+    message_id: int
+    sender_id: int
+    message: Optional[str]
+    message_type: str
+    file_url: Optional[str]
+    sent_at: datetime
+
+# 채팅방 초대(요청 및 응답)
+class ChatRoomInviteRequest(BaseModel):
+    user_ids: List[int]  # 초대할 유저 ID 목록
+    
+class ChatRoomInviteResponse(BaseModel):
+    room_id: int
+    invited_user_ids: List[int]
+    invited_user_nicknames: List[str]
+
+
+    
+# 채팅방 나가기 응답
+class ChatRoomLeaveResponse(BaseModel):
+    room_id: int
+    room_deleted: bool
