@@ -1,6 +1,8 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from app.database import engine, get_db, Base
+
 
 # ✅ 모델 불러오기
 from app.models import (
@@ -34,7 +36,8 @@ from app.routers import (
     code_runner,
     code_terminal,
     board,
-    chat_rest
+    chat_rest,
+    chat_upload
 )
 from app.schemas.user import UserUpdateSchema
 from datetime import datetime
@@ -87,6 +90,10 @@ app.include_router(code_execution.router, prefix="/code")  # WebSocket용이면 
 app.include_router(chat_ws.router)
 app.include_router(chat_rest.router)
 app.include_router(follow.router)
+
+app.include_router(chat_upload.router, prefix="", tags=["파일 업로드"])
+
+app.mount("/static", StaticFiles(directory="uploaded_files"), name="static")
 
 # 기본 라우트
 @app.get("/", tags=["Root"])

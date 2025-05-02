@@ -46,8 +46,8 @@ def jwt_login(request: Request, response: Response, login_data: LoginRequest, db
         key="access_token",
         value=access_token,
         httponly=True,  # ✅ JavaScript에서 접근 불가 (보안 강화)
-        secure=True,    # ✅ 개발 환경에서는 False (배포 환경에서는 True)
-        samesite="None",  # ✅ 크로스 사이트 요청에서도 유지
+        secure=False,        # ✅ HTTPS에서만 전송 제한 해제
+        samesite="Lax",      # ← 개발 중이면 Lax나 None 둘 다 가능
         max_age=1209600
     )
 
