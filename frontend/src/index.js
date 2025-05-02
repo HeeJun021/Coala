@@ -5,6 +5,12 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { RecoilRoot } from "recoil";
 
+window.addEventListener("error", (e) => {
+  if (e.message === "ResizeObserver loop completed with undelivered notifications.") {
+    e.preventDefault(); // 콘솔 오류까지 완전히 제거
+  }
+});
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   //<React.StrictMode>

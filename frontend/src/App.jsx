@@ -48,6 +48,17 @@ import BoardDetailPage from "./pages/BoardDetailPage";
 import BoardWritePage from "./pages/BoardWritePage";
 import BoardEditPage from "./pages/BoardEditPage";
 
+// 자율학습
+import SelfCodingPage from "./pages/SelfCodingPage";
+import SelfCodingTemplatePage from "./pages/SelfCodingTemplatePage";
+
+const observerError = /ResizeObserver loop completed/;
+window.addEventListener("error", (e) => {
+  if (observerError.test(e.message)) {
+    e.stopImmediatePropagation();
+  }
+});
+
 const BodyClassManager = () => {
   const location = useLocation();
 
@@ -101,6 +112,11 @@ const App = () => {
       <AuthProvider>
         <BodyClassManager />
         <Routes>
+          
+                  {/* 자율코딩 */}
+                  <Route path="/self-coding" element={<SelfCodingPage />} />
+                  <Route path="/self-coding/templates" element={<SelfCodingTemplatePage />} />
+                  
           {/* 코딩 테스트 전체화면 전용 */}
           <Route path="/codingtest/:id" element={<CodingTestDetailPage />} />
           <Route path="/codingtest/correct/:testId" element={<CorrectSolutionsPage />} />
