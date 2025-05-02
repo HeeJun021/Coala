@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 from typing import Optional
 from datetime import date, datetime
 
@@ -62,3 +62,11 @@ class UserResponse(UserBase):
     pass
 
 # 요청 데이터를 처리할 경우 필요 시 추가 스키마 정의 가능
+
+# 팔로우 목록 조회를 위한 스키마
+class UserSimpleInfo(BaseModel):
+    user_id: int
+    nickname: str
+    profile_image: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)

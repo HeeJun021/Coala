@@ -14,6 +14,8 @@ from app.models import (
 
 # ✅ 라우터 불러오기
 from app.routers import (
+    chat_ws,
+    follow,
     user,
     auth,
     social_auth,
@@ -82,7 +84,9 @@ app.include_router(code_terminal.router)
 app.include_router(code_execution.router, prefix="/code")  # WebSocket용이면 prefix 유지 가능
 
 # 채팅
+app.include_router(chat_ws.router)
 app.include_router(chat_rest.router)
+app.include_router(follow.router)
 
 # 기본 라우트
 @app.get("/", tags=["Root"])

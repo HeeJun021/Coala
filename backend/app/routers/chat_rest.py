@@ -1,9 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from pydantic import BaseModel
-from typing import List
+from sqlalchemy.sql import func
+from sqlalchemy.dialects.postgresql import insert  # upsert용
 from sqlalchemy.orm import Session
+from sqlalchemy import and_
+from typing import List
 from app.database import get_db
-from app.models.chat import ChatRoom, ChatRoomParticipant, ChatMessage
+from app.models.chat import ChatRoom, ChatRoomParticipant, ChatMessage, ChatMessageRead
+from app.models.user import UserFollow
 from app.models.user import User
 from app.dependencies.auth import get_current_user
 from app.schemas.chat import (
@@ -16,7 +20,15 @@ from app.schemas.chat import (
     ChatRoomInviteRequest,
     ChatRoomInviteResponse,
     ChatRoomLeaveResponse,
+    ChatRoomRenameRequest,
+    ChatRoomRenameResponse,
+    ChatMessageReadRequest,
+    ChatRoomPinToggleRequest,
+    ChatRoomPinToggleResponse,
+    ChatRoomArchiveToggleRequest,
+    ChatRoomArchiveToggleResponse,
 )
+from app.schemas.user import UserSimpleInfo
 
 router = APIRouter(prefix="/api/chat", tags=["Chat (REST)"])
 
@@ -62,24 +74,27 @@ def create_chat_room(
     return ChatRoomCreateResponse(room_id=new_room.room_id)
 
 
-# 2. 채팅방 목록 조회 API
+# 2. 채팅방 목록 조회 API(핀 고정 기능 포함)
 @router.get("/list", response_model=List[ChatRoomListItem])
 def get_chat_rooms(
     current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
-    # 기본 채팅방 정보 + 참여 정보
     results = (
         db.query(
             ChatRoomParticipant.room_id,
             ChatRoom.room_type,
             ChatRoom.is_group,
             ChatRoom.room_name,
+            ChatRoomParticipant.custom_room_name,  # ✅ 추가
             ChatRoomParticipant.is_pinned,
             ChatRoomParticipant.joined_at,
             ChatRoomParticipant.last_read_message_id,
         )
         .join(ChatRoom, ChatRoomParticipant.room_id == ChatRoom.room_id)
-        .filter(ChatRoomParticipant.user_id == current_user.user_id)
+        .filter(
+            ChatRoomParticipant.user_id == current_user.user_id,
+            ChatRoomParticipant.is_archived == False,  # ✅ 보관함에서 숨김
+        )
         .order_by(
             ChatRoomParticipant.is_pinned.desc(), ChatRoomParticipant.joined_at.desc()
         )
@@ -109,12 +124,15 @@ def get_chat_rooms(
                 .count()
             )
 
+        # 🔸 사용자 설정 이름 우선 적용
+        display_name = row.custom_room_name if row.custom_room_name else row.room_name
+
         chat_room_list.append(
             ChatRoomListItem(
                 room_id=row.room_id,
                 room_type=row.room_type,
                 is_group=row.is_group,
-                room_name=row.room_name,
+                room_name=display_name,
                 is_pinned=row.is_pinned,
                 joined_at=row.joined_at,
                 last_message=last_msg.message if last_msg else None,
@@ -140,7 +158,6 @@ def send_message(
         .filter_by(room_id=room_id, user_id=current_user.user_id)
         .first()
     )
-
     if not participant:
         raise HTTPException(status_code=403, detail="채팅방 참여자가 아닙니다.")
 
@@ -156,6 +173,16 @@ def send_message(
     db.commit()
     db.refresh(new_message)
 
+    # ✅ 3. 보낸 사람은 자동으로 읽은 것으로 처리
+    stmt = (
+        insert(ChatMessageRead)
+        .values(message_id=new_message.message_id, user_id=current_user.user_id)
+        .on_conflict_do_nothing()
+    )
+    db.execute(stmt)
+    db.commit()
+
+    # 4. 응답 반환
     return ChatMessageCreateResponse(
         message_id=new_message.message_id,
         room_id=new_message.room_id,
@@ -167,7 +194,7 @@ def send_message(
     )
 
 
-# 채팅방 메시지 조회(읽기 기능 포함)
+# 채팅방 메시지 조회(본인 자동 읽기 기능 포함)
 @router.get("/{room_id}/messages", response_model=List[ChatMessageItem])
 def get_messages(
     room_id: int,
@@ -182,11 +209,10 @@ def get_messages(
         .filter_by(room_id=room_id, user_id=current_user.user_id)
         .first()
     )
-
     if not participant:
         raise HTTPException(status_code=403, detail="채팅방 참여자가 아닙니다.")
 
-    # 2. 메시지 조회
+    # 2. 메시지 조회 (최신순)
     messages = (
         db.query(ChatMessage)
         .filter_by(room_id=room_id)
@@ -196,10 +222,9 @@ def get_messages(
         .all()
     )
 
-    # ✅ 3. 마지막 메시지 기준으로 읽음 처리 업데이트
+    # 3. 읽음 처리: 가장 최신 메시지를 읽은 것으로 간주
     if messages:
         newest_message = messages[0]
-        # 이미 읽은 메시지보다 최신이라면 갱신
         if (
             participant.last_read_message_id is None
             or newest_message.message_id > participant.last_read_message_id
@@ -208,22 +233,39 @@ def get_messages(
             participant.last_read_at = newest_message.sent_at
             db.commit()
 
-    # 4. 응답 반환
+    # 4. read_count 조회
+    message_ids = [m.message_id for m in messages]
+    read_counts_raw = (
+        db.query(ChatMessageRead.message_id, func.count(ChatMessageRead.user_id))
+        .filter(ChatMessageRead.message_id.in_(message_ids))
+        .group_by(ChatMessageRead.message_id)
+        .all()
+    )
+    read_count_map = {msg_id: count for msg_id, count in read_counts_raw}
+
+    # 5. 응답 반환
     return [
         ChatMessageItem(
             message_id=msg.message_id,
             sender_id=msg.sender_id,
-            message=msg.message,
+            message=(
+                "파일을 보냈습니다."
+                if msg.message_type == "file"
+                else (
+                    "사진을 보냈습니다." if msg.message_type == "image" else msg.message
+                )  # 기본: 텍스트
+            ),
             message_type=msg.message_type,
             file_url=msg.file_url,
             sent_at=msg.sent_at,
+            read_count=read_count_map.get(msg.message_id, 0),
         )
         for msg in messages
     ]
 
 
 # 채팅방 초대(시스템 메시지도 구현 완)
-@router.post("/{room_id}/invite", response_model=ChatRoomInviteResponse)
+@router.post("/{room_id}/invite", status_code=204)
 def invite_users_to_chat_room(
     room_id: int,
     data: ChatRoomInviteRequest,
@@ -245,6 +287,21 @@ def invite_users_to_chat_room(
     existing_user_ids = set(user_id for (user_id,) in existing_user_ids)
     new_user_ids = [uid for uid in data.user_ids if uid not in existing_user_ids]
 
+    # ✅ 내가 팔로우하지 않은 유저가 포함되어 있다면 초대 차단
+    not_followed_ids = [
+        uid
+        for uid in new_user_ids
+        if not db.query(UserFollow)
+        .filter_by(follower_id=current_user.user_id, following_id=uid)
+        .first()
+    ]
+    if not_followed_ids:
+        raise HTTPException(
+            status_code=403,
+            detail=f"팔로우하지 않은 유저는 초대할 수 없습니다: {not_followed_ids}",
+        )
+
+    # 실제 초대 수행
     for uid in new_user_ids:
         db.add(ChatRoomParticipant(room_id=room_id, user_id=uid))
     db.commit()
@@ -264,7 +321,10 @@ def invite_users_to_chat_room(
             f"{inviter_nick}님이 {', '.join(invited_user_nicknames)}님을 초대했습니다."
         )
         system_msg = ChatMessage(
-            room_id=room_id, sender_id=None, message=system_text, message_type="system"
+            room_id=room_id,
+            sender_id=current_user.user_id,
+            message=system_text,
+            message_type="system",
         )
         db.add(system_msg)
         db.commit()
@@ -308,9 +368,227 @@ def leave_chat_room(
         leaver_nick = current_user.nickname
         system_text = f"{leaver_nick}님이 나갔습니다."
         system_msg = ChatMessage(
-            room_id=room_id, sender_id=None, message=system_text, message_type="system"
+            room_id=room_id,
+            sender_id=current_user.user_id,  # ✅ 나간 사용자를 sender로 지정
+            message=system_text,
+            message_type="system",
         )
         db.add(system_msg)
         db.commit()
 
     return ChatRoomLeaveResponse(room_id=room_id, room_deleted=room_deleted)
+
+
+# 사용자 별 채팅 이름 바꾸기
+@router.post("/{room_id}/rename", response_model=ChatRoomRenameResponse)
+def rename_chat_room(
+    room_id: int,
+    data: ChatRoomRenameRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    participant = (
+        db.query(ChatRoomParticipant)
+        .filter_by(room_id=room_id, user_id=current_user.user_id)
+        .first()
+    )
+
+    if not participant:
+        raise HTTPException(status_code=403, detail="참여 중인 채팅방이 아닙니다.")
+
+    participant.custom_room_name = data.new_name
+    db.commit()
+
+    return ChatRoomRenameResponse(room_id=room_id, custom_room_name=data.new_name)
+
+
+# 메시지 읽음
+@router.post("/{room_id}/read", status_code=204)
+def mark_message_as_read(
+    room_id: int,
+    data: ChatMessageReadRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # ✅ 참여 확인
+    participant = (
+        db.query(ChatRoomParticipant)
+        .filter_by(room_id=room_id, user_id=current_user.user_id)
+        .first()
+    )
+
+    if not participant:
+        raise HTTPException(status_code=403, detail="참여 중인 채팅방이 아닙니다.")
+
+    # ✅ 해당 room의 읽지 않은 메시지 중 last_read_message_id 이하 메시지 모두 가져오기
+    messages_to_mark = (
+        db.query(ChatMessage.message_id)
+        .filter(
+            ChatMessage.room_id == room_id,
+            ChatMessage.message_id <= data.last_read_message_id,
+        )
+        .all()
+    )
+
+    # ✅ 중복 방지를 위해 upsert 수행 (PostgreSQL 전용)
+    for (message_id,) in messages_to_mark:
+        stmt = (
+            insert(ChatMessageRead)
+            .values(message_id=message_id, user_id=current_user.user_id)
+            .on_conflict_do_nothing()
+        )
+        db.execute(stmt)
+
+    # ✅ ChatRoomParticipants 기준 최신 메시지도 갱신
+    if (
+        participant.last_read_message_id is None
+        or data.last_read_message_id > participant.last_read_message_id
+    ):
+        participant.last_read_message_id = data.last_read_message_id
+        participant.last_read_at = func.now()
+
+    db.commit()
+    return
+
+
+# 채팅방 핀 기능
+@router.patch("/{room_id}/pin", response_model=ChatRoomPinToggleResponse)
+def toggle_chat_room_pin(
+    room_id: int,
+    data: ChatRoomPinToggleRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    participant = (
+        db.query(ChatRoomParticipant)
+        .filter_by(room_id=room_id, user_id=current_user.user_id)
+        .first()
+    )
+
+    if not participant:
+        raise HTTPException(status_code=404, detail="채팅방에 참여 중이지 않습니다.")
+
+    participant.is_pinned = data.pinned
+    db.commit()
+
+    return ChatRoomPinToggleResponse(room_id=room_id, is_pinned=participant.is_pinned)
+
+# 보관함 채팅방 조회
+@router.get("/archived", response_model=List[ChatRoomListItem])
+def get_archived_chat_rooms(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    results = (
+        db.query(
+            ChatRoomParticipant.room_id,
+            ChatRoom.room_type,
+            ChatRoom.is_group,
+            ChatRoom.room_name,
+            ChatRoomParticipant.custom_room_name,
+            ChatRoomParticipant.is_pinned,
+            ChatRoomParticipant.joined_at,
+            ChatRoomParticipant.last_read_message_id,
+        )
+        .join(ChatRoom, ChatRoomParticipant.room_id == ChatRoom.room_id)
+        .filter(
+            ChatRoomParticipant.user_id == current_user.user_id,
+            ChatRoomParticipant.is_archived == True  # ✅ 보관된 방만 조회
+        )
+        .order_by(
+            ChatRoomParticipant.is_pinned.desc(),
+            ChatRoomParticipant.joined_at.desc()
+        )
+        .all()
+    )
+
+    chat_room_list = []
+
+    for row in results:
+        last_msg = (
+            db.query(ChatMessage)
+            .filter(ChatMessage.room_id == row.room_id)
+            .order_by(ChatMessage.sent_at.desc())
+            .first()
+        )
+
+        unread_count = 0
+        if row.last_read_message_id is not None:
+            unread_count = (
+                db.query(ChatMessage)
+                .filter(
+                    ChatMessage.room_id == row.room_id,
+                    ChatMessage.message_id > row.last_read_message_id,
+                )
+                .count()
+            )
+
+        display_name = row.custom_room_name if row.custom_room_name else row.room_name
+
+        chat_room_list.append(
+            ChatRoomListItem(
+                room_id=row.room_id,
+                room_type=row.room_type,
+                is_group=row.is_group,
+                room_name=display_name,
+                is_pinned=row.is_pinned,
+                joined_at=row.joined_at,
+                last_message=last_msg.message if last_msg else None,
+                last_message_time=last_msg.sent_at if last_msg else None,
+                unread_count=unread_count,
+            )
+        )
+
+    return chat_room_list
+
+
+# 채팅방 보관함 이동
+@router.patch("/{room_id}/archive", response_model=ChatRoomArchiveToggleResponse)
+def toggle_chat_room_archive(
+    room_id: int,
+    data: ChatRoomArchiveToggleRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    participant = (
+        db.query(ChatRoomParticipant)
+        .filter_by(room_id=room_id, user_id=current_user.user_id)
+        .first()
+    )
+
+    if not participant:
+        raise HTTPException(status_code=404, detail="채팅방에 참여 중이지 않습니다.")
+
+    participant.is_archived = data.archived
+    db.commit()
+
+    return ChatRoomArchiveToggleResponse(
+        room_id=room_id, is_archived=participant.is_archived
+    )
+
+
+# 채팅방 참여자 조회
+@router.get("/{room_id}/participants", response_model=List[UserSimpleInfo])
+def get_chat_participants(
+    room_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # ✅ 현재 유저가 이 방에 참여 중인지 확인
+    is_participant = db.query(ChatRoomParticipant).filter_by(
+        room_id=room_id,
+        user_id=current_user.user_id
+    ).first()
+
+    if not is_participant:
+        raise HTTPException(status_code=403, detail="채팅방에 참여 중인 사용자만 조회할 수 있습니다.")
+
+    # ✅ 채팅방 참여자 정보 조회
+    users = (
+        db.query(User)
+        .join(ChatRoomParticipant, User.user_id == ChatRoomParticipant.user_id)
+        .filter(ChatRoomParticipant.room_id == room_id)
+        .all()
+    )
+
+    return users

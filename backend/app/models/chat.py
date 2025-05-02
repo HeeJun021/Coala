@@ -27,6 +27,7 @@ class ChatRoomParticipant(Base):
     last_read_at = Column(TIMESTAMP, nullable=True)
     is_archived = Column(Boolean, default=False)
     is_muted = Column(Boolean, default=False)
+    custom_room_name = Column(String(100), nullable=True)
 
 
 # 3. 채팅 메시지 테이블
@@ -41,9 +42,27 @@ class ChatMessage(Base):
     file_url = Column(Text, nullable=True)
     sent_at = Column(TIMESTAMP, server_default=func.now())
     read_count = Column(Integer, default=0)
+    
+    
+# 4. 메시지 읽은 수, 읽은 사람
+class ChatMessageRead(Base):
+    __tablename__ = "chatmessagereads"
+
+    message_id = Column(
+        Integer,
+        ForeignKey("chatmessages.message_id", ondelete="CASCADE"),
+        primary_key=True
+    )
+    user_id = Column(
+        Integer,
+        ForeignKey("users.user_id", ondelete="CASCADE"),
+        primary_key=True
+    )
+    read_at = Column(TIMESTAMP, server_default=func.now())
 
 
-# 4. 친구 관계 테이블
+
+# 5. 친구 관계 테이블
 class UserFriend(Base):
     __tablename__ = "userfriends"
 

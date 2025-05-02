@@ -5,19 +5,10 @@ from app.database import SessionLocal
 from app.models.chat import ChatMessage
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
+from app.database import get_db
 
 router = APIRouter()
 manager = ConnectionManager()
-
-
-# DB 세션 의존성
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 
 @router.websocket("/ws/user/{user_id}")
 async def websocket_endpoint(websocket: WebSocket, user_id: int, db: Session = Depends(get_db)):
