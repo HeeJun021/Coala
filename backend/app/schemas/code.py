@@ -6,22 +6,31 @@ from pydantic import BaseModel, Field
 #  코드 파일
 # --------------------------
 
+# 공통 필드 정의
 class CodeBase(BaseModel):
     title: str
     content: str
     language_id: int
 
+# 코드 생성 시 사용
 class CodeCreate(CodeBase):
-    pass
+    folder_id: int
 
+# 응답용
 class CodeResponse(CodeBase):
     code_id: int
-    user_id: int
     created_at: datetime
     updated_at: datetime
 
     class Config:
         from_attributes = True
+
+class CodeUpdate(BaseModel):
+    content: str
+    language_id: int
+    
+class CodeTitleUpdate(BaseModel):
+    title: str
 
 # --------------------------
 #  코드 폴더
@@ -42,6 +51,9 @@ class CodeFolderResponse(CodeFolderBase):
 
     class Config:
         from_attributes = True
+
+class FolderRename(BaseModel):
+    folder_name: str
 
 # --------------------------
 #  코드-폴더 매핑
