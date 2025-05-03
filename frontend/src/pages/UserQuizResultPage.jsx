@@ -18,10 +18,10 @@ const UserQuizResultPage = ({ userData }) => {
 
       try {
         const response = await getUserQuizResult(uq_submission_id);
-        console.log("✅ 사용자 퀴즈 결과:", response);
+        console.log("사용자 퀴즈 결과:", response);
         setQuizResult(response);
       } catch (err) {
-        console.error("🚨 퀴즈 결과 불러오기 실패:", err);
+        console.error("퀴즈 결과 불러오기 실패:", err);
         setError("퀴즈 결과를 불러오는 중 오류가 발생했습니다.");
       } finally {
         setLoading(false);
@@ -66,7 +66,7 @@ const UserQuizResultPage = ({ userData }) => {
 
               <div className="pl-4">
                 <p className="text-lg font-semibold text-gray-900 mb-2">
-                  문제 {index + 1} 🧠 (
+                  문제 {index + 1} (
                   {q.question_type === 1
                     ? "O/X"
                     : q.question_type === 2

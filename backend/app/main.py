@@ -24,6 +24,7 @@ from app.routers import (
     user_quiz,
     wrong_note,
     languages,
+    code,
     coding_tests,
     coding_test_case,
     coding_test_submission,
@@ -31,7 +32,7 @@ from app.routers import (
     code_execution,
     code_runner,
     code_terminal,
-    board
+    board,
 )
 from app.schemas.user import UserUpdateSchema
 from datetime import datetime
@@ -79,6 +80,8 @@ app.include_router(coding_test_submission.router)
 app.include_router(code_runner.router)
 app.include_router(code_terminal.router)
 app.include_router(code_execution.router, prefix="/code")  # WebSocket용이면 prefix 유지 가능
+
+app.include_router(code.router)
 
 # 기본 라우트
 @app.get("/", tags=["Root"])

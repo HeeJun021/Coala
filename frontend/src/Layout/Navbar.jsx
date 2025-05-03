@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { initRootCodeFolder } from "../api/codeApi"; // ✅ 추가
 
 const Navbar = () => {
   const { user, handleLogout, loading } = useAuth();
@@ -50,7 +51,6 @@ const Navbar = () => {
 
   return (
     <div className="relative z-50" onMouseLeave={() => setHoverIndex(null)}>
-      {/* 상단 바 */}
       <nav className="fixed top-0 left-0 w-full bg-white border-b shadow-sm h-[70px] flex items-center justify-between px-12 z-50">
         <Link to="/" className="flex items-center">
           <img
@@ -89,6 +89,21 @@ const Navbar = () => {
                       }
                     } catch {
                       alert("오류 발생");
+                    }
+                  }}
+                  className="cursor-pointer text-[17px] font-semibold text-gray-900 transition duration-200 hover:text-green-500 hover:scale-110 hover:font-bold"
+                >
+                  {item.label}
+                </span>
+              ) : item.label === "자율코딩" ? (
+                <span
+                  onClick={async () => {
+                    try {
+                      await initRootCodeFolder(); // ✅ 최상위 폴더 자동 생성
+                      navigate(item.path);        // ✅ 이동
+                    } catch (err) {
+                      console.error("폴더 생성 오류:", err);
+                      alert("자율코딩 초기화 중 오류가 발생했습니다.");
                     }
                   }}
                   className="cursor-pointer text-[17px] font-semibold text-gray-900 transition duration-200 hover:text-green-500 hover:scale-110 hover:font-bold"
@@ -137,7 +152,7 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* 드롭다운 메뉴 */}
+      {/* 드롭다운 */}
       <div
         className={`fixed top-[70px] left-0 w-full bg-white border-b shadow-md z-40 overflow-hidden transition-all duration-300 ${
           hoverIndex !== null ? "max-h-[250px] py-6 opacity-100" : "max-h-0 opacity-0"
@@ -147,7 +162,6 @@ const Navbar = () => {
           {menuItems.map((item, idx) => (
             <div key={idx} className="flex flex-col items-center gap-4 h-[200px]">
               {item.children.map((child, i) => {
-                // ✅ 코딩테스트 메뉴 & 문제 목록만 링크로
                 if (item.label === "코딩테스트" && child === "문제 목록") {
                   return (
                     <Link
@@ -161,7 +175,7 @@ const Navbar = () => {
                     </Link>
                   );
                 }
-                // ✅ 퀴즈문제 메뉴 링크 처리
+
                 if (item.label === "퀴즈문제") {
                   let link = "";
                   if (child === "퀴즈 풀기") link = "/quizpage";
@@ -179,10 +193,12 @@ const Navbar = () => {
                     </Link>
                   );
                 }
+
                 if (item.label === "마이페이지") {
                   let link = "";
                   if (child === "내 정보") link = "/mypage/modify";
                   if (child === "내 학습 현황") link = "/mypage/quiz-history";
+
                   if (link) {
                     return (
                       <Link
@@ -197,7 +213,7 @@ const Navbar = () => {
                     );
                   }
                 }
-                // ✅ 나머지는 그냥 span
+
                 return (
                   <span
                     key={i}
