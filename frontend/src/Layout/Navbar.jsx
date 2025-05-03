@@ -29,7 +29,7 @@ const Navbar = () => {
     },
     {
       label: "자율코딩",
-      path: "/coding",
+      path: "/self-coding",
       children: ["실습 에디터", "코드 저장소"],
     },
     {
