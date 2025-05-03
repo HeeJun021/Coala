@@ -98,24 +98,36 @@ def create_child_folder(
     return new_folder
 
 def create_code_with_mapping(db: Session, user: dict, code_data: CodeCreate) -> CodeResponse:
+    from os.path import splitext
+
     user_id = user["user_id"]
 
+    # 1. 폴더 존재 및 권한 확인
     folder = db.query(CodeFolder).filter(
         CodeFolder.folder_id == code_data.folder_id,
         CodeFolder.user_id == user_id
     ).first()
     if not folder:
         raise HTTPException(status_code=403, detail="해당 폴더에 대한 권한이 없습니다.")
-    if code_data.language_id not in [1, 2, 3, 4]:
-        raise HTTPException(status_code=400, detail="지원하지 않는 언어입니다.")
 
-    title_with_ext = append_extension(code_data.title, code_data.language_id)
+    # 2. 확장자로 언어 판별
+    EXTENSION_TO_LANGUAGE_ID = {
+        ".html": 1,
+        ".css": 2,
+        ".js": 3,
+        ".py": 4,
+    }
+    ext = splitext(code_data.title)[1]
+    language_id = EXTENSION_TO_LANGUAGE_ID.get(ext)
+    if not language_id:
+        raise HTTPException(status_code=400, detail="지원하지 않는 확장자입니다.")
 
+    # 3. 코드 저장
     new_code = Code(
         user_id=user_id,
-        title=title_with_ext,
+        title=code_data.title,
         content=code_data.content,
-        language_id=code_data.language_id,
+        language_id=language_id,
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
     )
@@ -123,6 +135,7 @@ def create_code_with_mapping(db: Session, user: dict, code_data: CodeCreate) -> 
     db.commit()
     db.refresh(new_code)
 
+    # 4. 매핑 저장
     mapping = CodeFolderMapping(
         folder_id=code_data.folder_id,
         code_id=new_code.code_id,
@@ -131,7 +144,14 @@ def create_code_with_mapping(db: Session, user: dict, code_data: CodeCreate) -> 
     db.add(mapping)
     db.commit()
 
-    return CodeResponse.model_validate(new_code)
+    return CodeResponse(
+        code_id=new_code.code_id,
+        title=new_code.title,
+        content=new_code.content,
+        language_id=new_code.language_id,
+        created_at=new_code.created_at,
+        updated_at=new_code.updated_at
+    )
 
 def get_root_folder(db: Session, user: dict) -> CodeFolder:
     """
