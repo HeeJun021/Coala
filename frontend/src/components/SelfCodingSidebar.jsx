@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect} from "react";
+import React, { useState } from "react";
 import {
   FaBars,
   FaFileAlt,
@@ -6,6 +6,8 @@ import {
   FaSave,
   FaCog,
 } from "react-icons/fa";
+import SelfCodingMenuPanel from "./SelfCodingMenuPanel";
+import SelfCodingSettingsPanel from "./SelfCodingSettingsPanel";
 
 const icons = [
   { name: "menu", icon: <FaBars />, tooltip: "메뉴" },
@@ -15,46 +17,23 @@ const icons = [
 ];
 
 const SelfCodingSidebar = ({ activePanel, setActivePanel }) => {
-  const [menuDropdownOpen, setMenuDropdownOpen] = useState(false);
-  const menuRef = useRef(null);
+  const [showMenu, setShowMenu] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (menuDropdownOpen && menuRef.current && !menuRef.current.contains(e.target)) {
-        setMenuDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [menuDropdownOpen]);
-  
   return (
     <div className="w-12 bg-[#f3f3f3] text-black flex flex-col items-center py-2 border-r border-gray-300">
-      {menuDropdownOpen && (
-        <div
-          ref={menuRef}
-          className="absolute top-[70px] left-[48px] z-50 bg-white border border-gray-300 shadow-md rounded w-40"
-        >
-          {["File", "Edit", "View", "Go", "Run", "Terminal", "Help"].map((item) => (
-            <div
-              key={item}
-              className="px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 cursor-pointer"
-            >
-              {item}
-            </div>
-          ))}
-        </div>
-      )}
       {icons.map((item) => (
         <button
           key={item.name}
           title={item.tooltip}
           onClick={() => {
             if (item.name === "menu") {
-              setMenuDropdownOpen((prev) => !prev);
-            } else {
+              setShowMenu((prev) => !prev);
+              setShowSettings(false);
+            } else if (item.name === "explorer" || item.name === "git" || item.name === "save") {
               setActivePanel(item.name);
-              setMenuDropdownOpen(false);
+              setShowMenu(false);
+              setShowSettings(false);
             }
           }}
           className={`w-full h-12 flex items-center justify-center text-[20px] transition-colors duration-150 ${
@@ -67,10 +46,15 @@ const SelfCodingSidebar = ({ activePanel, setActivePanel }) => {
       <div
         className="mt-auto w-full h-12 flex items-center justify-center text-[20px] text-gray-500 hover:text-black cursor-pointer"
         title="설정"
-        onClick={() => setActivePanel("settings")}
+        onClick={() => {
+          setShowSettings((prev) => !prev);
+          setShowMenu(false);
+        }}
       >
         <FaCog />
       </div>
+      {showMenu && <SelfCodingMenuPanel onClose={() => setShowMenu(false)} />}
+      {showSettings && <SelfCodingSettingsPanel onClose={() => setShowSettings(false)} />}
     </div>
   );
 };
