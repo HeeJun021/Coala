@@ -49,7 +49,7 @@ export const updateCodeFile = async (codeId, updateData) => {
 };
 
 // 코드 제목(파일명) 수정
-export const renameCodeTitle = async (codeId, newTitle) => {
+export const renameCodeFile = async (codeId, newTitle) => {
   const res = await apiClient.patch(`/freecode/codes/${codeId}/title`, {
     title: newTitle,
   });

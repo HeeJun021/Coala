@@ -1,8 +1,9 @@
-import React, { useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { FaTimes } from "react-icons/fa";
 import Split from "react-split";
 import CodeMirror from "@uiw/react-codemirror";
 import { debounce } from "lodash";
+import { getCodeById, updateCodeFile } from "../api/codeApi";
 
 const SelfCodingEditorPreview = ({
   tabs,
@@ -13,7 +14,6 @@ const SelfCodingEditorPreview = ({
   setSelectedFilename,
   selectedFileContent,
   setSelectedFileContent,
-  folders,
   previewTabs,
   setPreviewTabs,
   activePreviewTab,
@@ -24,6 +24,10 @@ const SelfCodingEditorPreview = ({
   templateDescriptions,
 }) => {
   const editorRef = useRef(null);
+  const [originalContent, setOriginalContent] = useState("");
+  const [unsaved, setUnsaved] = useState(false);
+  const [languageId, setLanguageId] = useState(null); 
+
   const debouncedLayout = debounce(() => {
     if (editorRef.current) {
       editorRef.current.layout();
@@ -37,6 +41,49 @@ const SelfCodingEditorPreview = ({
       });
     }
   };
+
+  const handleSave = async () => {
+    if (!activeTab) return;
+    const codeId = parseInt(activeTab.replace("code-", ""));
+    try {
+      await updateCodeFile(codeId, { content: selectedFileContent, language_id: languageId });
+      setOriginalContent(selectedFileContent);
+      setUnsaved(false);
+    } catch (err) {
+      console.error("파일 저장 실패", err);
+      alert("저장 실패");
+    }
+  };
+
+  useEffect(() => {
+    const fetchContent = async () => {
+      if (!activeTab) return;
+      try {
+        const id = parseInt(activeTab.replace("code-", ""));
+        const code = await getCodeById(id);
+        setSelectedFilename(code.title);
+        setSelectedFileContent(code.content);
+        setOriginalContent(code.content);
+        setLanguageId(code.language_id);
+        setUnsaved(false);
+      } catch (err) {
+        console.error("파일 내용 불러오기 실패", err);
+        setSelectedFileContent("// 파일 불러오기 실패");
+      }
+    };
+    fetchContent();
+  }, [activeTab, setSelectedFilename, setSelectedFileContent]);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        handleSave();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedFileContent]);
 
   return (
     <div className="flex-1 overflow-hidden" style={{ width: "100%", height: "100%" }}>
@@ -56,6 +103,7 @@ const SelfCodingEditorPreview = ({
                   const fileName = tab.split("/").pop();
                   const emoji = templateDescriptions[templateId]?.emoji || "📄";
                   const isActive = tab === activeTab;
+                  const isUnsaved = isActive && unsaved;
                   return (
                     <div
                       key={tab}
@@ -64,17 +112,10 @@ const SelfCodingEditorPreview = ({
                           ? "bg-white text-black border-t border-l border-r border-gray-300"
                           : "bg-[#e0e0e0] text-gray-600 hover:bg-[#d5d5d5] border border-transparent"
                       }`}
-                      onClick={() => {
-                        setActiveTab(tab);
-                        setSelectedFilename(tab);
-                        const parts = tab.split("/");
-                        let content = folders;
-                        for (const p of parts) content = content[p];
-                        setSelectedFileContent(content);
-                      }}
+                      onClick={() => setActiveTab(tab)}
                     >
                       <span className="mr-2">{emoji}</span>
-                      <span>{fileName}</span>
+                      <span>{selectedFilename}{isUnsaved && " ●"}</span>
                       <FaTimes
                         className="ml-2 text-xs hover:text-red-500"
                         onClick={(e) => {
@@ -84,14 +125,7 @@ const SelfCodingEditorPreview = ({
                             const nextTab = tabs.find((t) => t !== tab);
                             setActiveTab(nextTab || "");
                             setSelectedFilename(nextTab || "");
-                            if (nextTab) {
-                              const parts = nextTab.split("/");
-                              let content = folders;
-                              for (const p of parts) content = content[p];
-                              setSelectedFileContent(content);
-                            } else {
-                              setSelectedFileContent("");
-                            }
+                            setSelectedFileContent("");
                           }
                         }}
                       />
@@ -99,8 +133,14 @@ const SelfCodingEditorPreview = ({
                   );
                 })}
               </div>
-              <div className="px-4 py-1 text-xs text-gray-500 border-b border-gray-200 bg-white font-mono">
-                {selectedFilename || "파일을 선택하세요"}
+              <div className="flex justify-between items-center px-4 py-1 text-xs text-gray-500 border-b border-gray-200 bg-white font-mono">
+                <div>{selectedFilename || "파일을 선택하세요"}</div>
+                <button
+                  className="text-[12px] text-blue-600 hover:text-blue-800 px-2 py-0.5 border border-blue-300 rounded"
+                  onClick={handleSave}
+                >
+                  💾 저장
+                </button>
               </div>
               <div className="flex-1 p-4 overflow-auto">
                 <CodeMirror
@@ -109,14 +149,16 @@ const SelfCodingEditorPreview = ({
                   height="100%"
                   theme="light"
                   extensions={[getLanguageExtension(selectedFilename)]}
-                  onChange={(value) => setSelectedFileContent(value)}
-                  basicSetup={{
-                    lineNumbers: true,
+                  onChange={(value) => {
+                    setSelectedFileContent(value);
+                    setUnsaved(value !== originalContent);
                   }}
+                  basicSetup={{ lineNumbers: true }}
                   style={{
-                    fontFamily: "'Fira Code', 'JetBrains Mono', Menlo, Monaco, Consolas, 'Courier New', monospace",
-                    fontSize: '14px',
-                    lineHeight: '1.5',
+                    fontFamily:
+                      "'Fira Code', 'JetBrains Mono', Menlo, Monaco, Consolas, 'Courier New', monospace",
+                    fontSize: "14px",
+                    lineHeight: "1.5",
                   }}
                 />
               </div>

@@ -37,7 +37,6 @@ class CodeTitleUpdate(BaseModel):
 # --------------------------
 
 class CodeFolderBase(BaseModel):
-    user_folder_index: int
     folder_name: str
     parent_folder_id: Optional[int] = None
 
@@ -47,6 +46,7 @@ class CodeFolderCreate(CodeFolderBase):
 class CodeFolderResponse(CodeFolderBase):
     folder_id: int
     user_id: int
+    user_folder_index: int
     created_at: datetime
 
     class Config:
