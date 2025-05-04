@@ -81,8 +81,6 @@ app.include_router(coding_test_submission.router)
 app.include_router(code_runner.router)
 app.include_router(code_terminal.router)
 app.include_router(code_execution.router, prefix="/code")  # WebSocket용이면 prefix 유지 가능
-app.include_router(code.router, prefix="/freecode", tags=["자율코딩"])  # ✅ 추가!
-
 app.include_router(code.router)
 
 # 기본 라우트
