@@ -13,6 +13,7 @@ from app.dependencies.auth import get_current_user
 from app.schemas.chat import (
     ChatRoomCreateRequest,
     ChatRoomCreateResponse,
+    ChatParticipant,
     ChatRoomListItem,
     ChatMessageCreateRequest,
     ChatMessageCreateResponse,
@@ -32,7 +33,7 @@ from app.schemas.user import UserSimpleInfo
 
 router = APIRouter(prefix="/api/chat", tags=["Chat (REST)"])
 
-
+# 방 생성
 @router.post("/create", response_model=ChatRoomCreateResponse)
 def create_chat_room(
     data: ChatRoomCreateRequest,
@@ -42,36 +43,46 @@ def create_chat_room(
     if current_user is None:
         raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
 
-    # 1. 참여자 목록 구성 (자기 자신 + 초대한 사람들)
+    # 1. 참여자 구성
     all_participants = set(data.participant_ids)
     all_participants.add(current_user.user_id)
 
-    # 2. 닉네임 정렬하여 room_name 구성
-    nicknames = (
-        db.query(User.nickname)
-        .filter(User.user_id.in_(all_participants))
-        .order_by(User.nickname.asc())
-        .all()
-    )
-    room_name = ", ".join(n for (n,) in nicknames)
+    # ✅ 1:1 여부 판별
+    is_group = not (len(data.participant_ids) == 1)
 
-    # 3. 채팅방 생성
+    # ✅ 채팅방 이름 생성
+    if not is_group:
+        target_id = data.participant_ids[0]
+        target_nickname = db.query(User.nickname).filter(User.user_id == target_id).scalar()
+        room_name = target_nickname or "이름 없음"
+    else:
+        nicknames = (
+            db.query(User.nickname)
+            .filter(User.user_id.in_(all_participants))
+            .order_by(User.nickname.asc())
+            .all()
+        )
+        room_name = ", ".join(n for (n,) in nicknames)
+
+    # 2. 채팅방 생성
     new_room = ChatRoom(
         room_type=data.room_type,
-        is_group=data.is_group,
-        room_name=room_name,  # ✅ 자동 생성된 room_name 지정
+        is_group=is_group,  # ← 프론트에 의존하지 않고 백엔드에서 판단
+        room_name=room_name,
     )
     db.add(new_room)
     db.commit()
     db.refresh(new_room)
 
-    # 4. 참여자 추가
+    # 3. 참여자 추가
     for user_id in all_participants:
-        participant = ChatRoomParticipant(room_id=new_room.room_id, user_id=user_id)
-        db.add(participant)
+        db.add(ChatRoomParticipant(room_id=new_room.room_id, user_id=user_id))
 
     db.commit()
     return ChatRoomCreateResponse(room_id=new_room.room_id)
+
+
+
 
 
 # 2. 채팅방 목록 조회 API(핀 고정 기능 포함)
@@ -126,6 +137,24 @@ def get_chat_rooms(
 
         # 🔸 사용자 설정 이름 우선 적용
         display_name = row.custom_room_name if row.custom_room_name else row.room_name
+        
+        # 여기에 참여자 조회 추가
+        participant_rows = (
+            db.query(User.user_id, User.nickname, User.profile_image_url)
+            .join(ChatRoomParticipant, ChatRoomParticipant.user_id == User.user_id)
+            .filter(ChatRoomParticipant.room_id == row.room_id)
+            .limit(4)
+            .all()
+        )
+
+        participants = [
+            ChatParticipant(
+                user_id=p.user_id,
+                nickname=p.nickname,
+                profile_url=p.profile_image_url,
+            )
+            for p in participant_rows
+        ]
 
         chat_room_list.append(
             ChatRoomListItem(
@@ -138,6 +167,7 @@ def get_chat_rooms(
                 last_message=last_msg.message if last_msg else None,
                 last_message_time=last_msg.sent_at if last_msg else None,
                 unread_count=unread_count,
+                participants=participants  # ✅ 추가
             )
         )
 

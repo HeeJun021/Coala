@@ -12,6 +12,10 @@ class ChatRoomCreateRequest(BaseModel):
 class ChatRoomCreateResponse(BaseModel):
     room_id: int
 
+class ChatParticipant(BaseModel):
+    user_id: int
+    nickname: str
+    profile_url: Optional[str] = None  # 없어도 되도록 처리
 
 # 채팅방 목록 항목 스키마
 class ChatRoomListItem(BaseModel):
@@ -24,6 +28,7 @@ class ChatRoomListItem(BaseModel):
     last_message: Optional[str]
     last_message_time: Optional[datetime]
     unread_count: int
+    participants: List[ChatParticipant]  # ✅ 추가
 
 
 # 채팅 보내기 요청, 응답

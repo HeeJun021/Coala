@@ -1,30 +1,15 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useAuth } from "../../context/AuthContext";
 import { FaSearch, FaCog, FaPen } from "react-icons/fa";
 import ReactDOM from "react-dom";
 import ChatListSettingsPanel from "./ChatListSettingsPanel";
 import NewChatModal from "./NewChatModal";
+import { getChatRooms } from "../../api/chatApi";
 
 const ChatListPanel = ({ onClose, onSelectRoom }) => {
   const [contextMenu, setContextMenu] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
-  const [chatRooms, setChatRooms] = useState([
-    {
-      id: 1,
-      name: "사용자 1",
-      preview: "코딩이 어려워?(미리보기 메시지)",
-      time: "12:03",
-      unread: 1,
-      group: false,
-    },
-    {
-      id: 2,
-      name: "팀 프로젝트 톡방",
-      preview: "사진을 보냈습니다.",
-      time: "11:52",
-      unread: 3,
-      group: true,
-    },
-  ]);
+  const [chatRooms, setChatRooms] = useState([]);
 
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [renameTarget, setRenameTarget] = useState(null);
@@ -38,11 +23,92 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
 
   const [showNewChat, setShowNewChat] = useState(false);
 
+  const { user } = useAuth(); // ✅ 이렇게 수정
+
   const menuRef = useRef();
 
   const handleContextMenu = (e, roomId) => {
     e.preventDefault();
     setContextMenu({ roomId, x: e.clientX, y: e.clientY });
+  };
+
+  const renderAvatars = (participants) => {
+    if (!Array.isArray(participants)) return null;
+
+    // 본인을 제외한 참가자만 필터링
+    const others = participants.filter((p) => p.user_id !== user?.user_id);
+    const displayUsers = others.slice(0, 4);
+
+    const baseStyle =
+      "absolute w-5 h-5 rounded-full border-2 border-white object-cover";
+    const layoutStyles = [
+      // 2명
+      [
+        "top-1/2 left-[40%] -translate-y-1/2 -translate-x-1/2",
+        "top-1/2 left-[60%] -translate-y-1/2 -translate-x-1/2",
+      ],
+      // 3명
+      [
+        "top-[10%] left-1/2 -translate-x-1/2",
+        "bottom-[10%] left-[30%] -translate-x-1/2",
+        "bottom-[10%] right-[30%] translate-x-1/2",
+      ],
+      // 4명
+      ["top-1 left-1", "top-1 right-1", "bottom-1 left-1", "bottom-1 right-1"],
+    ];
+
+    // ✅ 1명만 있을 경우: 프로필 이미지 전체에 표시
+    if (displayUsers.length === 1) {
+      const onlyUser = displayUsers[0];
+      const hasImage = onlyUser.profile_url?.trim();
+      return hasImage ? (
+        <img
+          src={onlyUser.profile_url}
+          alt={onlyUser.nickname}
+          className="w-full h-full rounded-full object-cover"
+        />
+      ) : (
+        <div className="w-full h-full rounded-full bg-[#DBDBDB] flex items-center justify-center">
+          <img
+            src="/default-avatar.png" // 흰색 사람 아이콘
+            alt="default"
+            className="w-5 h-5"
+          />
+        </div>
+      );
+    }
+
+    // ✅ 2~4명: 각 위치에 표시
+    const layout = layoutStyles[displayUsers.length - 2] || layoutStyles[2];
+
+    return (
+      <>
+        {displayUsers.map((user, index) => {
+          const hasImage = user.profile_url?.trim();
+          const position = layout[index];
+
+          return hasImage ? (
+            <img
+              key={user.user_id}
+              src={user.profile_url}
+              alt={user.nickname}
+              className={`${baseStyle} ${position}`}
+            />
+          ) : (
+            <div
+              key={user.user_id}
+              className={`${baseStyle} ${position} bg-[#DBDBDB] flex items-center justify-center`}
+            >
+              <img
+                src="/default-avatar.png"
+                alt="default"
+                className="w-3 h-3"
+              />
+            </div>
+          );
+        })}
+      </>
+    );
   };
 
   const handleContextMenuClick = (action) => {
@@ -74,9 +140,41 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const filteredRooms = chatRooms.filter((room) =>
-    room.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredRooms = chatRooms.filter(
+    (room) =>
+      typeof room.name === "string" &&
+      room.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  useEffect(() => {
+    const fetchChatRooms = async () => {
+      try {
+        const data = await getChatRooms();
+        console.log("✅ 서버 응답:", data);
+
+        const transformed = data.map((room) => ({
+          id: room.room_id,
+          name: room.room_name ?? "이름 없음",
+          preview: room.last_message || "(아직 메시지가 없습니다)",
+          time: room.last_message_time
+            ? new Date(room.last_message_time).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : "",
+          unread: room.unread_count ?? 0,
+          group: room.is_group ?? false,
+          participants: room.participants ?? [], // ✅ 반드시 포함시켜야 함!!
+        }));
+
+        setChatRooms(transformed);
+      } catch (error) {
+        console.error("🚨 채팅방 목록 불러오기 실패:", error);
+      }
+    };
+
+    fetchChatRooms();
+  }, []);
 
   return (
     <>
@@ -134,9 +232,10 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
               onClick={() => onSelectRoom && onSelectRoom(room)}
               className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer border-b"
             >
-              <div className="w-10 h-10 rounded-full bg-purple-200 flex items-center justify-center text-white text-lg">
-                {room.group ? "👥" : "👤"}
+              <div className="w-10 h-10 rounded-full bg-purple-200 relative">
+                {renderAvatars(room.participants)}
               </div>
+
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium text-gray-900 truncate">
                   {room.name}
