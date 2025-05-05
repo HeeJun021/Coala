@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from pydantic import BaseModel
 from sqlalchemy.sql import func
+from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import insert  # upsert용
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
@@ -113,7 +114,7 @@ def get_chat_rooms(
             ChatRoom.room_type,
             ChatRoom.is_group,
             ChatRoom.room_name,
-            ChatRoomParticipant.custom_room_name,  # ✅ 추가
+            ChatRoomParticipant.custom_room_name,
             ChatRoomParticipant.is_pinned,
             ChatRoomParticipant.joined_at,
             ChatRoomParticipant.last_read_message_id,
@@ -121,10 +122,11 @@ def get_chat_rooms(
         .join(ChatRoom, ChatRoomParticipant.room_id == ChatRoom.room_id)
         .filter(
             ChatRoomParticipant.user_id == current_user.user_id,
-            ChatRoomParticipant.is_archived == False,  # ✅ 보관함에서 숨김
+            ChatRoomParticipant.is_archived == False,
         )
         .order_by(
-            ChatRoomParticipant.is_pinned.desc(), ChatRoomParticipant.joined_at.desc()
+            ChatRoomParticipant.is_pinned.desc(),
+            ChatRoomParticipant.joined_at.desc(),
         )
         .all()
     )
@@ -140,23 +142,22 @@ def get_chat_rooms(
             .first()
         )
 
-        # 🔸 읽지 않은 메시지 수
-        unread_count = 0
-        if row.last_read_message_id is not None:
-            unread_count = (
-                db.query(ChatMessage)
-                .filter(
-                    ChatMessage.room_id == row.room_id,
-                    ChatMessage.message_id > row.last_read_message_id,
-                    ChatMessage.sender_id != current_user.user_id  # 🔥 내 메시지는 제외
-                )
-                .count()
+        # 🔸 읽지 않은 메시지 수 (내 메시지는 제외)
+        unread_count = (
+            db.query(ChatMessage)
+            .filter(
+                ChatMessage.room_id == row.room_id,
+                ChatMessage.message_id > func.coalesce(row.last_read_message_id, -1),
+                ChatMessage.sender_id != current_user.user_id,
+                ChatMessage.message_type != "system",
             )
+            .count()
+        )
 
         # 🔸 사용자 설정 이름 우선 적용
         display_name = row.custom_room_name if row.custom_room_name else row.room_name
-        
-        # 여기에 참여자 조회 추가
+
+        # 🔸 참여자 목록 조회
         participant_rows = (
             db.query(User.user_id, User.nickname, User.profile_image_url)
             .join(ChatRoomParticipant, ChatRoomParticipant.user_id == User.user_id)
@@ -185,7 +186,7 @@ def get_chat_rooms(
                 last_message=last_msg.message if last_msg else None,
                 last_message_time=last_msg.sent_at if last_msg else None,
                 unread_count=unread_count,
-                participants=participants  # ✅ 추가
+                participants=participants,
             )
         )
 
@@ -244,11 +245,24 @@ def send_message(
 
 from app.schemas.chat import ChatMessageItem, UserSimpleInfo  # 필요 시 import 추가
 
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.orm import Session
+from sqlalchemy.sql import func
+from sqlalchemy import and_
+from typing import List, Optional
+from app.database import get_db
+from app.models.chat import ChatRoomParticipant, ChatMessage, ChatMessageRead
+from app.models.user import User
+from app.dependencies.auth import get_current_user
+from app.schemas.chat import ChatMessageItem
+from app.schemas.user import UserSimpleInfo
+
+# 채팅 조회
 @router.get("/{room_id}/messages", response_model=List[ChatMessageItem])
 def get_messages(
     room_id: int,
     limit: int = Query(20, ge=1, le=100),
-    offset: int = Query(0, ge=0),
+    before_message_id: Optional[int] = Query(None),  # 🔄 offset → cursor 방식
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -261,12 +275,15 @@ def get_messages(
     if not participant:
         raise HTTPException(status_code=403, detail="채팅방 참여자가 아닙니다.")
 
-    # 2. 메시지 조회 (최신순)
+    # 2. 메시지 조회 쿼리 (최신순)
+    query = db.query(ChatMessage).filter(ChatMessage.room_id == room_id)
+
+    # ✅ 이전 메시지만 가져오도록 조건 추가 (cursor 방식)
+    if before_message_id:
+        query = query.filter(ChatMessage.message_id < before_message_id)
+
     messages = (
-        db.query(ChatMessage)
-        .filter_by(room_id=room_id)
-        .order_by(ChatMessage.sent_at.desc())
-        .offset(offset)
+        query.order_by(ChatMessage.sent_at.desc())
         .limit(limit)
         .all()
     )
@@ -292,14 +309,14 @@ def get_messages(
     )
     read_count_map = {msg_id: count for msg_id, count in read_counts_raw}
 
-    # 5. 유저 정보 미리 조회해서 캐싱 (N+1 쿼리 방지)
+    # 5. 유저 정보 캐싱
     sender_ids = {m.sender_id for m in messages}
     sender_info_map = {
         u.user_id: u
         for u in db.query(User).filter(User.user_id.in_(sender_ids)).all()
     }
 
-    # 6. 응답 생성
+    # 6. 응답 생성 (최신순으로 받은 후 프론트에서 .reverse() 해야 함)
     return [
         ChatMessageItem(
             message_id=msg.message_id,
@@ -316,6 +333,7 @@ def get_messages(
         )
         for msg in messages
     ]
+
 
 
 

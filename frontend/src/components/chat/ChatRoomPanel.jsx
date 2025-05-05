@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   FaArrowLeft,
   FaSearch,
@@ -15,69 +15,81 @@ import {
 import { useAuth } from "../../context/AuthContext";
 
 const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
-  const { user } = useAuth(); // 현재 로그인한 사용자 정보
-
+  const { user } = useAuth();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
+  const [hasMore, setHasMore] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
-
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
 
-  const messageEndRef = useRef(null);
+  const containerRef = useRef(null);
+  const topRef = useRef(null);
+  const LIMIT = 20;
 
-  useEffect(() => {
-    const fetchMessages = async () => {
+  const fetchMessages = useCallback(
+    async (beforeMessageId = null, append = false) => {
       try {
-        const res = await getMessages(room.id);
-        const reversed = res.reverse(); // 최신이 아래쪽
-        setMessages(reversed);
+        const res = await getMessages(room.id, LIMIT, beforeMessageId);
+        const hasMoreData = res.length === LIMIT;
+        const reversed = res.reverse();
 
-        // ✅ 마지막 메시지 기준으로 읽음 처리
-        if (reversed.length > 0) {
-          const lastMessageId = reversed[reversed.length - 1].message_id;
+        setMessages((prev) => (append ? [...reversed, ...prev] : reversed));
+        setHasMore(hasMoreData);
+
+        if (res.length > 0) {
+          const lastMessageId = res[res.length - 1].message_id;
           await markMessagesAsRead(room.id, {
             last_read_message_id: lastMessageId,
           });
-
-          // ✅ 읽음 처리 후 다시 불러오기 (read_count 업데이트 반영 목적)
-          const updated = await getMessages(room.id);
-          setMessages(updated.reverse());
         }
       } catch (err) {
         console.error("메시지 불러오기 실패:", err);
       }
-    };
-    fetchMessages();
-  }, [room.id]);
+    },
+    [room.id]
+  );
 
   useEffect(() => {
-    const fetchMessages = async () => {
-      try {
-        const res = await getMessages(room.id);
-        setMessages(res.reverse()); // 최신 메시지가 아래쪽
-      } catch (err) {
-        console.error("메시지 불러오기 실패:", err);
+    fetchMessages(null, false);
+  }, [fetchMessages]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || isSearching) return;
+
+    const handleScroll = () => {
+      if (container.scrollTop === 0 && hasMore && messages.length > 0) {
+        const oldestMessageId = messages[0]?.message_id;
+        const currentHeight = container.scrollHeight;
+
+        fetchMessages(oldestMessageId, true).then(() => {
+          requestAnimationFrame(() => {
+            container.scrollTop = container.scrollHeight - currentHeight;
+          });
+        });
       }
     };
-    fetchMessages();
-  }, [room.id]);
+
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, [messages, hasMore, isSearching, fetchMessages]);
 
   useEffect(() => {
-    if (!isSearching && messageEndRef.current) {
-      messageEndRef.current.scrollIntoView({ behavior: "auto" });
+    if (!isSearching && containerRef.current) {
+      containerRef.current.scrollTop = containerRef.current.scrollHeight;
     }
   }, [messages, isSearching]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
     try {
-      const res = await sendMessage(room.id, {
+      await sendMessage(room.id, {
         message: input,
         message_type: "text",
       });
-      setMessages((prev) => [...prev, res]);
       setInput("");
+      await fetchMessages(0, false);
     } catch (err) {
       console.error("메시지 전송 실패:", err);
     }
@@ -98,6 +110,21 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
       )
     : messages;
 
+  const getFormattedTime = (dateStr) =>
+    new Date(dateStr).toLocaleTimeString("ko-KR", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+
+  const findPrevTextMessage = (i, conditionFn = () => true) => {
+    for (let j = i - 1; j >= 0; j--) {
+      const m = filteredMessages[j];
+      if (m.message_type === "text" && conditionFn(m)) return m;
+    }
+    return null;
+  };
+
   if (showInfo) {
     return (
       <ChatRoomInfoPanel
@@ -105,8 +132,8 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
         onBack={() => setShowInfo(false)}
         refreshRoom={refreshRoom}
         onLeaveRoom={() => {
-          handleLeaveRoom(); // ✅ ChatListPanel로 이동
-          setShowInfo(false); // ✅ info 패널 닫기
+          handleLeaveRoom();
+          setShowInfo(false);
         }}
       />
     );
@@ -129,13 +156,13 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
             className="cursor-pointer hover:text-black"
             onClick={() => setIsSearching((prev) => !prev)}
           />
-
           <FaBars
             className="cursor-pointer hover:text-black"
             onClick={() => setShowInfo(true)}
           />
         </div>
       </div>
+
       {isSearching && (
         <div className="px-3 py-1 bg-white border-b border-gray-300">
           <input
@@ -149,35 +176,56 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
       )}
 
       {/* 메시지 목록 */}
-      <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2 flex flex-col">
-        {filteredMessages.map((msg, index) => {
-          const isMine = msg.sender_id === user?.user_id;
+      <div
+        ref={containerRef}
+        className="flex-1 overflow-y-auto px-3 py-2 space-y-2 flex flex-col"
+      >
+        {[...filteredMessages].map((msg, index) => {
+          const isFirstMessage = index === 0;
+          const isMine = msg.sender?.user_id === user?.user_id;
           const isSystem = msg.message_type === "system";
-          const formattedTime = new Date(msg.sent_at).toLocaleTimeString(
-            "ko-KR",
-            {
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: false,
+
+          const findNextTextMessage = (startIndex, condition = () => true) => {
+            for (let i = startIndex + 1; i < filteredMessages.length; i++) {
+              const m = filteredMessages[i];
+              if (m.message_type !== "system" && condition(m)) {
+                return m;
+              }
             }
+            return null;
+          };
+
+          const prevOtherMsg = findPrevTextMessage(
+            index,
+            (m) => m.sender?.user_id !== user?.user_id
           );
 
-          const currentTimeKey = formattedTime;
-          const prevMsg = messages[index + 1]; // ← index - 1 ❌
+          const currentTime = getFormattedTime(msg.sent_at);
+          const prevOtherTime = prevOtherMsg
+            ? getFormattedTime(prevOtherMsg.sent_at)
+            : null;
+
+          const nextMsg = findNextTextMessage(index);
 
           const isLastOfBundle =
-            !prevMsg ||
-            prevMsg.sender_id !== msg.sender_id ||
-            new Date(prevMsg.sent_at).toLocaleTimeString("ko-KR", {
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: false,
-            }) !== currentTimeKey;
+            !nextMsg || // 다음 메시지가 없거나
+            nextMsg.sender?.user_id !== msg.sender?.user_id || // 다음 메시지의 보낸 사람 다르거나
+            getFormattedTime(nextMsg.sent_at) !== currentTime; // 다음 메시지 시간 다르면
+
+          const showProfile = isSearching
+            ? true
+            : !prevOtherMsg ||
+              prevOtherMsg.sender_id !== msg.sender_id ||
+              prevOtherTime !== currentTime;
+
+          const isLastMessage = index === filteredMessages.length - 1;
+          const isLastOfBundleOrLastMessage = isLastOfBundle || isLastMessage;
 
           if (isSystem) {
             return (
               <div
                 key={msg.message_id}
+                ref={isFirstMessage ? topRef : null}
                 className="text-center text-xs text-gray-500 my-2"
               >
                 {msg.message}
@@ -192,80 +240,70 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
                 isMine ? "justify-end" : "justify-start"
               }`}
             >
-              {/* 왼쪽(상대방) 프로필 or 빈 공간 */}
-              {!isMine && (
-                <div className="flex flex-col items-center mr-2 min-w-[40px]">
-                  {index === 0 ||
-                  messages[index - 1]?.sender?.user_id !==
-                    msg.sender.user_id ? (
-                    <>
-                      <div className="text-[10px] text-gray-600 mb-1">
-                        {msg.sender.nickname}
-                      </div>
-                      {msg.sender.profile_image_url ? (
-                        <img
-                          src={msg.sender.profile_image_url}
-                          alt="프로필"
-                          onError={(e) => {
-                            e.target.src = "/default-profile.png";
-                          }}
-                          className="w-8 h-8 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-[#DBDBDB] flex items-center justify-center">
-                          <img
-                            src="/default-avatar.png"
-                            alt="default"
-                            className="w-5 h-5"
-                          />
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="w-8 h-8" />
-                  )}
-                </div>
-              )}
-
-              {/* 메시지 + 시간 */}
               {isMine ? (
-                <div className="flex w-full justify-end items-end gap-1">
-                  <div className="flex flex-col items-end text-[10px] text-gray-500 leading-tight mb-0.5">
-                    {msg.read_count !== undefined &&
-                      msg.read_count < room.participants.length && (
-                        <span className="text-yellow-600 font-semibold">
-                          {room.participants.length - msg.read_count}
-                        </span>
-                      )}
-                    {isLastOfBundle && <span>{formattedTime}</span>}
+                <div className="w-full flex justify-end items-end gap-1">
+                  <div className="flex flex-col items-end text-[10px] text-gray-500 min-w-[40px]">
+                    {msg.read_count < room.participants.length && (
+                      <span>{room.participants.length - msg.read_count}</span>
+                    )}
+                    {isLastOfBundleOrLastMessage && <span>{currentTime}</span>}
                   </div>
-                  <div className="px-3 py-2 rounded-xl text-sm whitespace-pre-line shadow leading-snug bg-yellow-200 text-right max-w-[70%]">
+                  <div className="px-3 py-2 rounded-xl text-sm whitespace-pre-line shadow leading-snug bg-[#FFF36C] text-black max-w-[70%]">
                     {msg.message}
                   </div>
                 </div>
               ) : (
-                <div className="flex items-end max-w-[80%] gap-1">
-                  <div className="px-3 py-2 rounded-xl text-sm whitespace-pre-line shadow leading-snug bg-white text-left">
-                    {msg.message}
+                <>
+                  <div className="flex flex-col items-center mr-2 min-w-[40px]">
+                    {showProfile ? (
+                      <>
+                        <div className="text-[10px] text-gray-600 mb-1">
+                          {msg.sender?.nickname || "알 수 없음"}
+                        </div>
+                        {msg.sender?.profile_image_url ? (
+                          <img
+                            src={msg.sender.profile_image_url}
+                            alt="프로필"
+                            onError={(e) =>
+                              (e.target.src = "/default-profile.png")
+                            }
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-[#DBDBDB] flex items-center justify-center">
+                            <img
+                              src="/default-avatar.png"
+                              alt="default"
+                              className="w-5 h-5"
+                            />
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="w-8 h-8" />
+                    )}
                   </div>
-                  <div className="flex flex-col items-end justify-end text-[10px] leading-tight h-full mb-0.5">
-                    {msg.read_count !== undefined &&
-                      msg.read_count < room.participants.length && (
+
+                  <div className="flex items-end max-w-[80%] gap-1">
+                    <div className="px-3 py-2 rounded-xl text-sm whitespace-pre-line shadow leading-snug bg-white text-left">
+                      {msg.message}
+                    </div>
+                    <div className="flex flex-col items-end justify-end text-[10px] leading-tight h-full mb-0.5">
+                      {msg.read_count < room.participants.length && (
                         <span className="text-yellow-600 font-semibold">
                           {room.participants.length - msg.read_count}
                         </span>
                       )}
-                    {isLastOfBundle && (
-                      <span className="text-gray-500">{formattedTime}</span>
-                    )}
+                      {isLastOfBundle && (
+                        <span className="text-gray-500">{currentTime}</span>
+                      )}
+                    </div>
                   </div>
-                </div>
+                </>
               )}
             </div>
           );
         })}
-
-        <div ref={messageEndRef}></div>
       </div>
 
       {/* 입력창 */}

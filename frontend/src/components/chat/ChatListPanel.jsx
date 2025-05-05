@@ -153,7 +153,7 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
       try {
         const data = await getChatRooms();
         console.log("✅ 서버 응답:", data);
-
+  
         const transformed = data.map((room) => ({
           id: room.room_id,
           name: room.room_name ?? "이름 없음",
@@ -164,19 +164,28 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
                 minute: "2-digit",
               })
             : "",
+          rawTime: room.last_message_time || null, // 👉 정렬용 원본 시간 저장
           unread: room.unread_count ?? 0,
           group: room.is_group ?? false,
-          participants: room.participants ?? [], // ✅ 반드시 포함시켜야 함!!
+          participants: room.participants ?? [],
         }));
-
+  
+        // ✅ 최신순 정렬
+        transformed.sort((a, b) => {
+          if (!a.rawTime) return 1;
+          if (!b.rawTime) return -1;
+          return new Date(b.rawTime) - new Date(a.rawTime);
+        });
+  
         setChatRooms(transformed);
       } catch (error) {
         console.error("🚨 채팅방 목록 불러오기 실패:", error);
       }
     };
-
+  
     fetchChatRooms();
   }, []);
+  
 
   if (selectedRoom) {
     return (

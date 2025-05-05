@@ -75,12 +75,17 @@ export const sendMessage = async (roomId, payload) => {
 };
 
 // ✅ 메시지 목록 조회 (페이징)
-export const getMessages = async (roomId, limit = 20, offset = 0) => {
+export const getMessages = async (roomId, limit = 20, beforeMessageId = null) => {
   const response = await apiClient.get(`/api/chat/${roomId}/messages`, {
-    params: { limit, offset },
+    params: {
+      limit,
+      ...(beforeMessageId && { before_message_id: beforeMessageId }), // ✅ 조건부 파라미터
+    },
   });
   return response.data;
 };
+
+
 
 // ✅ 메시지 읽음 처리
 export const markMessagesAsRead = async (roomId, data) => {
