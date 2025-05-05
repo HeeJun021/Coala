@@ -53,6 +53,8 @@ import BoardPage from "./pages/BoardPage";
 import BoardDetailPage from "./pages/BoardDetailPage";
 import BoardWritePage from "./pages/BoardWritePage";
 import BoardEditPage from "./pages/BoardEditPage";
+import ProjectApplicantsPage from "./pages/ProjectApplicantsPage"; // ✅ 지원자 목록 페이지
+
 
 const BodyClassManager = () => {
   const location = useLocation();
@@ -230,6 +232,11 @@ const App = () => {
                     path="/board"
                     element={<Navigate to="/board/free" />}
                   />
+                  <Route
+                    path="/board/:boardType/applicants/:postId"
+                    element={<ProjectApplicantsPage />}
+                  />
+
                 </Routes>
               </MainLayout>
             }

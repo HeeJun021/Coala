@@ -8,7 +8,7 @@ const BoardItem = ({ post, boardType }) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    navigate(`/board/${boardType}/${post.post_id}`); // ✅ post.id → post.post_id
+    navigate(`/board/${boardType}/${post.post_id}`);
   };
 
   return (
@@ -35,12 +35,14 @@ const BoardItem = ({ post, boardType }) => {
 
       {/* 댓글 수 or 모집인원 */}
       {boardType === BOARD_TYPES.PROJECT ? (
-        <td className="border p-2 text-center">-</td> // 모집인원 기능은 별도 구현 필요
+        <td className="border p-2 text-center">
+          {post.accepted_count ?? 1} / {post.recruit_limit ?? "-"}
+        </td>
       ) : (
         <td className="border p-2">
           <div className="flex justify-center items-center gap-1">
             <FaRegComment className="text-gray-600 text-sm" />
-            <span>{post.comment_count}</span> {/* ✅ post.comments → post.comment_count */}
+            <span>{post.comment_count}</span>
           </div>
         </td>
       )}
@@ -49,7 +51,7 @@ const BoardItem = ({ post, boardType }) => {
       <td className="border p-2">
         <div className="flex justify-center items-center gap-1 text-red-500">
           <FaHeart className="text-sm" />
-          <span>{post.like_count}</span> {/* ✅ post.likes → post.like_count */}
+          <span>{post.like_count}</span>
         </div>
       </td>
     </tr>

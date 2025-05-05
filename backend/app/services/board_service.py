@@ -4,14 +4,16 @@ from fastapi import HTTPException
 from app.models.board import (
     Post, Comment,
     PostLike, CommentLike,
-    PostReport, CommentReport
+    PostReport, CommentReport,
+    ProjectApplicant
 )
 from app.models.user import User  # ✅ User 모델 추가
 from app.schemas.board import (
     PostCreate, PostResponse,
     CommentCreate, CommentResponse,
     PostLikeCreate, CommentLikeCreate,
-    PostReportCreate, CommentReportCreate
+    PostReportCreate, CommentReportCreate,
+    ProjectApplicantCreate, ProjectApplicantResponse
 )
 
 # 포스트 생성
@@ -31,6 +33,10 @@ def get_posts(board_type: str, page: int, page_size: int, sort_order: str, db: S
     comment_subq = db.query(
         Comment.post_id, func.count(Comment.comment_id).label("comment_count")
     ).group_by(Comment.post_id).subquery()
+    
+    accepted_subq = db.query(
+    ProjectApplicant.post_id, func.count().label("accepted_count")
+    ).filter(ProjectApplicant.status == "수락").group_by(ProjectApplicant.post_id).subquery()
 
     base_query = db.query(Post).filter(Post.board_type == board_type)
     total = base_query.count()
@@ -38,11 +44,12 @@ def get_posts(board_type: str, page: int, page_size: int, sort_order: str, db: S
     query = db.query(
         Post,
         func.coalesce(like_subq.c.like_count, 0).label("like_count"),
-        func.coalesce(comment_subq.c.comment_count, 0).label("comment_count")
+        func.coalesce(comment_subq.c.comment_count, 0).label("comment_count"),
+        func.coalesce(accepted_subq.c.accepted_count, 1).label("accepted_count")  # ✅ 모집 인원 필드 추가
     ).outerjoin(like_subq, Post.post_id == like_subq.c.post_id) \
-     .outerjoin(comment_subq, Post.post_id == comment_subq.c.post_id) \
-     .filter(Post.board_type == board_type)
-
+    .outerjoin(comment_subq, Post.post_id == comment_subq.c.post_id) \
+    .outerjoin(accepted_subq, Post.post_id == accepted_subq.c.post_id) \
+    .filter(Post.board_type == board_type)
     # 정렬 기준 적용
     if sort_order == "좋아요 많은 순":
         query = query.order_by(func.coalesce(like_subq.c.like_count, 0).desc(), Post.created_at.desc())
@@ -54,11 +61,14 @@ def get_posts(board_type: str, page: int, page_size: int, sort_order: str, db: S
     posts = query.offset((page - 1) * page_size).limit(page_size).all()
 
     result = []
-    for post, like_count, comment_count in posts:
+    for post, like_count, comment_count, accepted_count in posts:
         post_data = PostResponse.model_validate(post).model_dump()
         post_data["like_count"] = like_count
         post_data["comment_count"] = comment_count
+        post_data["accepted_count"] = accepted_count
+        post_data["recruit_limit"] = post.recruit_limit  # ✅ Post 모델에서 바로 가져옴
         result.append(post_data)
+
 
     return {"posts": result, "total": total}
 
@@ -189,3 +199,68 @@ def report_comment(payload: CommentReportCreate, db: Session):
         raise HTTPException(status_code=400, detail="이미 신고한 댓글입니다.")
     db.add(CommentReport(**payload.dict()))
     db.commit()
+
+def apply_to_project(post_id: int, data: ProjectApplicantCreate, db: Session):
+    exists = db.query(ProjectApplicant).filter_by(post_id=post_id, user_id=data.user_id).first()
+    if exists:
+        raise HTTPException(status_code=400, detail="이미 신청하셨습니다.")
+
+    new_applicant = ProjectApplicant(
+        post_id=post_id,
+        user_id=data.user_id,
+        introduction=data.introduction,
+        skills=",".join(data.skills),
+        links=data.links,
+    )
+    db.add(new_applicant)
+    db.commit()
+    db.refresh(new_applicant)
+
+    # ✅ 닉네임을 가져오기 위한 유저 조회 추가
+    user = db.query(User).filter(User.user_id == new_applicant.user_id).first()
+
+    return ProjectApplicantResponse(
+        applicant_id=new_applicant.applicant_id,
+        user_id=new_applicant.user_id,
+        nickname=user.nickname,  # ✅ 이제 인식됩니다
+        introduction=new_applicant.introduction,
+        skills=new_applicant.skills.split(",") if new_applicant.skills else [],
+        links=new_applicant.links,
+        status=new_applicant.status,
+        applied_at=new_applicant.applied_at,
+    )
+
+
+def get_applicants(post_id: int, db: Session):
+    results = (
+        db.query(ProjectApplicant, User.nickname)
+        .join(User, ProjectApplicant.user_id == User.user_id)
+        .filter(ProjectApplicant.post_id == post_id)
+        .all()
+    )
+
+    return [
+        ProjectApplicantResponse(
+            applicant_id=app.applicant_id,
+            user_id=app.user_id,
+            nickname=nickname,
+            introduction=app.introduction,
+            skills=app.skills.split(",") if app.skills else [],
+            links=app.links,
+            status=app.status,
+            applied_at=app.applied_at,
+        )
+        for app, nickname in results
+    ]
+
+def update_applicant_status(applicant_id: int, status: str, db: Session):
+    applicant = db.query(ProjectApplicant).filter_by(applicant_id=applicant_id).first()
+    if not applicant:
+        raise HTTPException(status_code=404, detail="지원자를 찾을 수 없습니다.")
+    applicant.status = status
+    db.commit()
+    return {"message": f"상태가 '{status}'로 변경되었습니다."}
+
+# 수락된 지원자 수 조회 함수
+def get_accepted_count(post_id: int, db: Session):
+    return db.query(ProjectApplicant).filter_by(post_id=post_id, status="수락").count()

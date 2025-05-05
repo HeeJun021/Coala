@@ -9,7 +9,9 @@ const BoardWritePage = () => {
   const { user } = useAuth();
   const { boardType } = useParams();
   const navigate = useNavigate();
+
   const [title, setTitle] = useState("");
+  const [recruitLimit, setRecruitLimit] = useState(""); // ✅ 모집 인원 상태
   const editorRef = useRef();
 
   useEffect(() => {
@@ -31,6 +33,9 @@ const BoardWritePage = () => {
       title,
       content,
       user_id: user.user_id,
+      ...(boardType === "project" && {
+        recruit_limit: parseInt(recruitLimit, 10),
+      }), // ✅ 프로젝트일 경우만 포함
     };
 
     try {
@@ -44,7 +49,6 @@ const BoardWritePage = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-8 bg-white min-h-screen">
-      {/* 🔙 뒤로가기 버튼 */}
       <button
         className="mb-4 px-4 py-2 bg-gray-300 text-black rounded-md"
         onClick={() => navigate(-1)}
@@ -69,6 +73,22 @@ const BoardWritePage = () => {
           className="w-full border p-2"
           required
         />
+
+        {/* ✅ 프로젝트일 경우에만 모집 인원 입력란 표시 */}
+        {boardType === "project" && (
+          <div>
+            <label className="block mb-1 text-sm font-medium">모집 인원 수</label>
+            <input
+              type="number"
+              min="1"
+              placeholder="예: 3"
+              value={recruitLimit}
+              onChange={(e) => setRecruitLimit(e.target.value)}
+              className="w-full border p-2"
+              required
+            />
+          </div>
+        )}
 
         {boardType === "code" ? (
           <Editor

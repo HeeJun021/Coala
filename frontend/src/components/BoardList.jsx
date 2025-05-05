@@ -4,7 +4,7 @@ import BoardSearchBar from "./BoardSearchBar";
 import BoardSortDropdown from "./BoardSortDropdown";
 import Pagination from "./Pagination";
 import { BOARD_TYPES } from "../constants/boardConstants";
-import { getBoardList } from "../api/boardApi"; // ✅ API 연결
+import { getBoardList } from "../api/boardApi";
 
 const BoardList = ({ boardType }) => {
   const [posts, setPosts] = useState([]);
@@ -14,13 +14,12 @@ const BoardList = ({ boardType }) => {
   const [sortOrder, setSortOrder] = useState("최신 순");
   const pageSize = 10;
 
-  // ✅ 게시글 목록 불러오기
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const res = await getBoardList(boardType, page, sortOrder);  // ✅ 페이지와 정렬 전달
+        const res = await getBoardList(boardType, page, sortOrder);
         setPosts(res.posts);
-        setTotalCount(res.total);                         // ✅ 전체 개수 저장
+        setTotalCount(res.total);
       } catch (err) {
         console.error("게시글 목록 불러오기 실패:", err);
       }
@@ -73,7 +72,11 @@ const BoardList = ({ boardType }) => {
         </tbody>
       </table>
 
-      <Pagination totalPages={totalPages} currentPage={page} onPageChange={setPage} />
+      <Pagination
+        totalPages={totalPages}
+        currentPage={page}
+        onPageChange={setPage}
+      />
     </div>
   );
 };
