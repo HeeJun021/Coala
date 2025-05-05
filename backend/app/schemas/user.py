@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import BaseModel, EmailStr, ConfigDict, Field
 from typing import Optional
 from datetime import date, datetime
 
@@ -67,6 +67,6 @@ class UserResponse(UserBase):
 class UserSimpleInfo(BaseModel):
     user_id: int
     nickname: str
-    profile_image: Optional[str] = None
+    profile_image: Optional[str] = Field(alias="profile_image_url")  # ✅ DB 컬럼명을 alias로
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)

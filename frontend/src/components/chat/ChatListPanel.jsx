@@ -5,6 +5,7 @@ import ReactDOM from "react-dom";
 import ChatListSettingsPanel from "./ChatListSettingsPanel";
 import NewChatModal from "./NewChatModal";
 import { getChatRooms } from "../../api/chatApi";
+import ChatRoomPanel from "./ChatRoomPanel";
 
 const ChatListPanel = ({ onClose, onSelectRoom }) => {
   const [contextMenu, setContextMenu] = useState(null);
@@ -22,8 +23,9 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
   const [searchQuery, setSearchQuery] = useState(""); // 검색어
 
   const [showNewChat, setShowNewChat] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState(null); // ✅ 현재 선택된 채팅방
 
-  const { user } = useAuth(); // ✅ 이렇게 수정
+  const { user } = useAuth();
 
   const menuRef = useRef();
 
@@ -175,6 +177,21 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
 
     fetchChatRooms();
   }, []);
+
+  if (selectedRoom) {
+    return (
+      <ChatRoomPanel
+        room={selectedRoom}
+        onBack={() => setSelectedRoom(null)}
+        refreshRoom={() => {
+          // 필요시 목록 새로고침
+        }}
+        handleLeaveRoom={() => {
+          setSelectedRoom(null);
+        }}
+      />
+    );
+  }
 
   return (
     <>

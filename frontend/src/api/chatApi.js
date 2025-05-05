@@ -29,11 +29,12 @@ export const createChatRoom = async (userIds) => {
 
 // ✅ 채팅방 이름 변경
 export const renameChatRoom = async (roomId, newName) => {
-  const response = await apiClient.patch(`/api/chat/${roomId}/rename`, {
-    name: newName,
+  const response = await apiClient.post(`/api/chat/${roomId}/rename`, {
+    new_name: newName, // ✅ 정확한 키 이름
   });
   return response.data;
 };
+
 
 // ✅ 채팅방 나가기
 export const leaveChatRoom = async (roomId) => {
@@ -82,10 +83,10 @@ export const getMessages = async (roomId, limit = 20, offset = 0) => {
 };
 
 // ✅ 메시지 읽음 처리
-export const markMessagesAsRead = async (roomId) => {
-  const response = await apiClient.patch(`/api/chat/${roomId}/read`);
-  return response.data;
+export const markMessagesAsRead = async (roomId, data) => {
+  await apiClient.post(`/api/chat/${roomId}/read`, data);
 };
+
 
 // ✅ 파일 업로드 (이미지/파일)
 export const uploadFile = async (formData) => {

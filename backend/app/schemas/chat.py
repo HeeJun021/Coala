@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
+from app.schemas.user import UserSimpleInfo
 
 
 class ChatRoomCreateRequest(BaseModel):
@@ -51,12 +52,13 @@ class ChatMessageCreateResponse(BaseModel):
 # 채팅 조회 스키마
 class ChatMessageItem(BaseModel):
     message_id: int
-    sender_id: int
+    sender: UserSimpleInfo  # ✅ 통합 구조
     message: Optional[str]
     message_type: str
     file_url: Optional[str]
     sent_at: datetime
-    read_count: int  # ✅ 추가
+    read_count: int
+
 
 
 # 채팅방 초대(요청 및 응답)

@@ -43,7 +43,7 @@ def create_chat_room(
     if current_user is None:
         raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
 
-    # 1. 참여자 구성
+    # 1. 참여자 구성 (중복 제거 + 본인 추가)
     all_participants = set(data.participant_ids)
     all_participants.add(current_user.user_id)
 
@@ -67,21 +67,38 @@ def create_chat_room(
     # 2. 채팅방 생성
     new_room = ChatRoom(
         room_type=data.room_type,
-        is_group=is_group,  # ← 프론트에 의존하지 않고 백엔드에서 판단
+        is_group=is_group,
         room_name=room_name,
     )
     db.add(new_room)
     db.commit()
     db.refresh(new_room)
 
-    # 3. 참여자 추가
+    # 3. 참여자 추가 + 초대 메시지용 닉네임 수집
+    invited_user_ids = list(all_participants - {current_user.user_id})
+    invited_user_nicknames = []
+
     for user_id in all_participants:
         db.add(ChatRoomParticipant(room_id=new_room.room_id, user_id=user_id))
+        if user_id != current_user.user_id:
+            nickname = db.query(User.nickname).filter(User.user_id == user_id).scalar()
+            invited_user_nicknames.append(nickname)
+
+    # 4. 시스템 메시지 생성
+    if invited_user_nicknames:
+        inviter_nickname = current_user.nickname
+        system_text = f"{inviter_nickname}님이 {', '.join(invited_user_nicknames)}님을 초대했습니다."
+        system_msg = ChatMessage(
+            room_id=new_room.room_id,
+            sender_id=current_user.user_id,
+            message=system_text,
+            message_type="system"
+        )
+        db.add(system_msg)
 
     db.commit()
+
     return ChatRoomCreateResponse(room_id=new_room.room_id)
-
-
 
 
 
@@ -131,6 +148,7 @@ def get_chat_rooms(
                 .filter(
                     ChatMessage.room_id == row.room_id,
                     ChatMessage.message_id > row.last_read_message_id,
+                    ChatMessage.sender_id != current_user.user_id  # 🔥 내 메시지는 제외
                 )
                 .count()
             )
@@ -224,7 +242,8 @@ def send_message(
     )
 
 
-# 채팅방 메시지 조회(본인 자동 읽기 기능 포함)
+from app.schemas.chat import ChatMessageItem, UserSimpleInfo  # 필요 시 import 추가
+
 @router.get("/{room_id}/messages", response_model=List[ChatMessageItem])
 def get_messages(
     room_id: int,
@@ -273,17 +292,22 @@ def get_messages(
     )
     read_count_map = {msg_id: count for msg_id, count in read_counts_raw}
 
-    # 5. 응답 반환
+    # 5. 유저 정보 미리 조회해서 캐싱 (N+1 쿼리 방지)
+    sender_ids = {m.sender_id for m in messages}
+    sender_info_map = {
+        u.user_id: u
+        for u in db.query(User).filter(User.user_id.in_(sender_ids)).all()
+    }
+
+    # 6. 응답 생성
     return [
         ChatMessageItem(
             message_id=msg.message_id,
-            sender_id=msg.sender_id,
+            sender=UserSimpleInfo.model_validate(sender_info_map[msg.sender_id]),
             message=(
-                "파일을 보냈습니다."
-                if msg.message_type == "file"
-                else (
-                    "사진을 보냈습니다." if msg.message_type == "image" else msg.message
-                )  # 기본: 텍스트
+                "파일을 보냈습니다." if msg.message_type == "file"
+                else "사진을 보냈습니다." if msg.message_type == "image"
+                else msg.message
             ),
             message_type=msg.message_type,
             file_url=msg.file_url,
@@ -292,6 +316,8 @@ def get_messages(
         )
         for msg in messages
     ]
+
+
 
 
 # 채팅방 초대(시스템 메시지도 구현 완)
@@ -316,20 +342,6 @@ def invite_users_to_chat_room(
     )
     existing_user_ids = set(user_id for (user_id,) in existing_user_ids)
     new_user_ids = [uid for uid in data.user_ids if uid not in existing_user_ids]
-
-    # ✅ 내가 팔로우하지 않은 유저가 포함되어 있다면 초대 차단
-    not_followed_ids = [
-        uid
-        for uid in new_user_ids
-        if not db.query(UserFollow)
-        .filter_by(follower_id=current_user.user_id, following_id=uid)
-        .first()
-    ]
-    if not_followed_ids:
-        raise HTTPException(
-            status_code=403,
-            detail=f"팔로우하지 않은 유저는 초대할 수 없습니다: {not_followed_ids}",
-        )
 
     # 실제 초대 수행
     for uid in new_user_ids:
@@ -552,6 +564,14 @@ def get_archived_chat_rooms(
                 )
                 .count()
             )
+        else:
+            # 아예 읽은 메시지가 없는 경우 → 전체 메시지 개수가 unread
+            unread_count = (
+                db.query(ChatMessage)
+                .filter(ChatMessage.room_id == row.room_id)
+                .count()
+            )
+
 
         display_name = row.custom_room_name if row.custom_room_name else row.room_name
 

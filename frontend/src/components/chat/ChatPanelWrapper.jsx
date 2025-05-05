@@ -14,7 +14,11 @@ const ChatPanelWrapper = ({ onClose }) => {
   };
 
   return selectedRoom ? (
-    <ChatRoomPanel room={selectedRoom} onBack={handleBack} />
+    <ChatRoomPanel
+      room={selectedRoom}
+      onBack={handleBack}
+      handleLeaveRoom={() => setSelectedRoom(null)}
+    />
   ) : (
     <ChatListPanel onSelectRoom={handleSelectRoom} onClose={onClose} />
   );
