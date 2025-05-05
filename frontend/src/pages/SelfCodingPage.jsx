@@ -3,9 +3,11 @@ import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "../Layout/Navbar";
 import SelfCodingSidebar from "../components/SelfCodingSidebar";
 import SelfCodingPanel from "../components/SelfCodingPanel";
-import SelfCodingEditorPreview from "../components/SelfCodingEditorPreview";
+import SelfCodingEditorPanel from "../components/SelfCodingEditorPanel";
+import SelfCodingPreviewPanel from "../components/SelfCodingPreviewPanel";
 import { templateDescriptions, templateFiles, getLanguageExtension } from "../data/templateData";
 import "../index.css";
+import Split from "react-split";
 
 const SelfCodingPage = () => {
   const location = useLocation();
@@ -20,6 +22,8 @@ const SelfCodingPage = () => {
   const [previewSrcDoc, setPreviewSrcDoc] = useState("");
   const [selectedFilename, setSelectedFilename] = useState("");
   const [selectedFileContent, setSelectedFileContent] = useState("");
+  const [unsaved, setUnsaved] = useState(false);
+  const [languageId, setLanguageId] = useState(null);
 
   return (
     <div className="h-screen w-screen overflow-hidden">
@@ -55,25 +59,44 @@ const SelfCodingPage = () => {
           templateDescriptions={templateDescriptions}
           isGithubConnected={false}
         />
-        <SelfCodingEditorPreview
-          tabs={tabs}
-          setTabs={setTabs}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          selectedFilename={selectedFilename}
-          setSelectedFilename={setSelectedFilename}
-          selectedFileContent={selectedFileContent}
-          setSelectedFileContent={setSelectedFileContent}
-          folders={folders}
-          previewTabs={previewTabs}
-          setPreviewTabs={setPreviewTabs}
-          activePreviewTab={activePreviewTab}
-          setActivePreviewTab={setActivePreviewTab}
-          previewSrcDoc={previewSrcDoc}
-          templateId={templateId}
-          getLanguageExtension={getLanguageExtension}
-          templateDescriptions={templateDescriptions}
-        />
+        <Split
+          className="flex flex-1"
+          direction="horizontal"
+          sizes={[50, 50]}
+          minSize={200}
+          gutterSize={8}
+          gutterClassName="gutter"
+        >
+          <SelfCodingEditorPanel
+            tabs={tabs}
+            setTabs={setTabs}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            selectedFilename={selectedFilename}
+            setSelectedFilename={setSelectedFilename}
+            selectedFileContent={selectedFileContent}
+            setSelectedFileContent={setSelectedFileContent}
+            templateId={templateId}
+            getLanguageExtension={getLanguageExtension}
+            templateDescriptions={templateDescriptions}
+            setUnsaved={setUnsaved}
+            unsaved={unsaved}
+            languageId={languageId}
+            setLanguageId={setLanguageId}
+            setPreviewSrcDoc={setPreviewSrcDoc}
+            setPreviewTabs={setPreviewTabs}
+            setActivePreviewTab={setActivePreviewTab}
+          />
+          <SelfCodingPreviewPanel
+            previewTabs={previewTabs}
+            setPreviewTabs={setPreviewTabs}
+            activePreviewTab={activePreviewTab}
+            setActivePreviewTab={setActivePreviewTab}
+            previewSrcDoc={previewSrcDoc}
+            templateId={templateId}
+            templateDescriptions={templateDescriptions}
+          />
+        </Split>
       </div>
     </div>
   );

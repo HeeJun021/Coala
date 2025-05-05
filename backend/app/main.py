@@ -33,6 +33,7 @@ from app.routers import (
     code_runner,
     code_terminal,
     board,
+    preview,
 )
 
 from app.schemas.user import UserUpdateSchema
@@ -82,6 +83,7 @@ app.include_router(code_runner.router)
 app.include_router(code_terminal.router)
 app.include_router(code_execution.router, prefix="/code")  # WebSocket용이면 prefix 유지 가능
 app.include_router(code.router)
+app.include_router(preview.router)
 
 # 기본 라우트
 @app.get("/", tags=["Root"])

@@ -4,6 +4,7 @@ import Split from "react-split";
 import CodeMirror from "@uiw/react-codemirror";
 import { debounce } from "lodash";
 import { getCodeById, updateCodeFile } from "../api/codeApi";
+import { runJsPreview } from "../api/previewApi";
 
 const SelfCodingEditorPreview = ({
   tabs,
@@ -18,6 +19,7 @@ const SelfCodingEditorPreview = ({
   setPreviewTabs,
   activePreviewTab,
   setActivePreviewTab,
+  setPreviewSrcDoc,
   previewSrcDoc,
   templateId,
   getLanguageExtension,
@@ -27,6 +29,7 @@ const SelfCodingEditorPreview = ({
   const [originalContent, setOriginalContent] = useState("");
   const [unsaved, setUnsaved] = useState(false);
   const [languageId, setLanguageId] = useState(null); 
+  const extension = selectedFilename?.split(".").pop();
 
   const debouncedLayout = debounce(() => {
     if (editorRef.current) {
@@ -53,6 +56,63 @@ const SelfCodingEditorPreview = ({
       console.error("파일 저장 실패", err);
       alert("저장 실패");
     }
+  };
+
+  const handleRunJs = async () => {
+    try {
+      const result = await runJsPreview(selectedFileContent);
+      const jsOutput = `
+        <html>
+          <body>
+            <pre>${result.output ?? " "}</pre>
+            <script>
+              try {
+                ${selectedFileContent}
+              } catch (e) {
+                document.body.innerHTML = "<pre style='color:red;'>Error: " + e.message + "</pre>";
+              }
+            </script>
+          </body>
+        </html>
+      `;
+      setPreviewSrcDoc(jsOutput);
+      setPreviewTabs((prev) => {
+        const newTabs = [...prev];
+        if (!newTabs.includes(activeTab)) newTabs.push(activeTab);
+        return newTabs;
+      });
+      setActivePreviewTab(activeTab);
+    } catch (err) {
+      console.error("JS 실행 실패", err);
+      alert("실행 중 오류가 발생했습니다.");
+    }
+  };
+  
+  const renderActionButton = () => {
+    if (unsaved || extension === "css") {
+      return (
+        <button
+          className="text-[12px] text-blue-600 hover:text-blue-800 px-2 py-0.5 border border-blue-300 rounded"
+          onClick={handleSave}
+        >
+          💾 저장
+        </button>
+      );
+    }
+  
+    // 실행 버튼: 저장됨 + .js 파일
+    if (selectedFilename.endsWith(".js")) {
+      return (
+        <button
+          className="text-[12px] text-green-600 hover:text-green-800 px-2 py-0.5 border border-green-300 rounded"
+          onClick={handleRunJs}
+        >
+          ▶ 실행
+        </button>
+      );
+    }
+  
+    return null;
   };
 
   useEffect(() => {
@@ -135,12 +195,7 @@ const SelfCodingEditorPreview = ({
               </div>
               <div className="flex justify-between items-center px-4 py-1 text-xs text-gray-500 border-b border-gray-200 bg-white font-mono">
                 <div>{selectedFilename || "파일을 선택하세요"}</div>
-                <button
-                  className="text-[12px] text-blue-600 hover:text-blue-800 px-2 py-0.5 border border-blue-300 rounded"
-                  onClick={handleSave}
-                >
-                  💾 저장
-                </button>
+                {renderActionButton()}
               </div>
               <div className="flex-1 p-4 overflow-auto">
                 <CodeMirror
