@@ -2,13 +2,13 @@ import React, { useEffect, useRef, useState } from "react";
 import { FaTimes } from "react-icons/fa";
 import CodeMirror from "@uiw/react-codemirror";
 import { getCodeById, updateCodeFile } from "../api/codeApi";
-import { runJsPreview } from "../api/previewApi";
-import { debounce } from "lodash";
+import { runJsPreview, runHtmlPreview } from "../api/previewApi";
 
 const SelfCodingEditorPanel = ({
   tabs,
   setTabs,
   activeTab,
+  currentFolderId,
   setActiveTab,
   selectedFilename,
   setSelectedFilename,
@@ -86,6 +86,24 @@ const SelfCodingEditorPanel = ({
     }
   };
   
+  const handleRunHtml = async () => {
+    try {
+      const codeId = parseInt(activeTab?.replace("code-", ""));
+      if (!codeId) throw new Error("올바른 코드 ID가 아닙니다.");
+  
+      const result = await runHtmlPreview(codeId); // 🔄 이제 codeId만 넘긴다
+  
+      setPreviewSrcDoc(result.srcdoc);
+      setPreviewTabs((prev) => {
+        if (!prev.includes(result.html_filename)) return [...prev, result.html_filename];
+        return prev;
+      });
+      setActivePreviewTab(result.html_filename);
+    } catch (err) {
+      console.error("HTML 실행 실패 Error:", err.message);
+      alert("HTML 실행 중 오류: " + err.message);
+    }
+  };
 
   useEffect(() => {
     const fetchContent = async () => {
@@ -128,16 +146,29 @@ const SelfCodingEditorPanel = ({
         </button>
       );
     }
+  
     if (selectedFilename.endsWith(".js")) {
       return (
         <button
           className="text-[12px] text-green-600 hover:text-green-800 px-2 py-0.5 border border-green-300 rounded"
           onClick={handleRunJs}
         >
-          ▶ 실행
+          ▶ JS 실행
         </button>
       );
     }
+  
+    if (selectedFilename.endsWith(".html")) {
+      return (
+        <button
+          className="text-[12px] text-purple-600 hover:text-purple-800 px-2 py-0.5 border border-purple-300 rounded"
+          onClick={() => handleRunHtml(currentFolderId)}  // ⚠️ 여기에 폴더 ID 필요
+        >
+          🌐 HTML 실행
+        </button>
+      );
+    }
+  
     return null;
   };
 

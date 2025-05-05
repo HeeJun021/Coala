@@ -47,10 +47,10 @@ const SelfCodingPreviewPanel = ({
       <div className="flex-1 overflow-auto">
         {activePreviewTab && previewSrcDoc ? (
           <iframe
-            title="preview"
-            srcDoc={previewSrcDoc}
-            className="w-full h-full border rounded"
-            sandbox="allow-scripts allow-same-origin"
+          title="preview"
+          srcDoc={previewSrcDoc}
+          className="w-full h-full border rounded"
+          sandbox="allow-scripts allow-modals allow-same-origin"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm italic">

@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
 from app.models.user import User
+from app.models.code import CodeFolderMapping
 from app.routers.auth import get_current_user
 from app.schemas.code import CodeFolderResponse, CodeFolderCreate, CodeCreate, CodeResponse, CodeUpdate, CodeTitleUpdate, FolderRename
 from app.services.code import (
@@ -144,3 +145,19 @@ def delete_folder(
 ):
     delete_folder_and_contents(db, user, folder_id)
     return {"message": "폴더 및 내부 코드가 삭제되었습니다."}
+
+@router.get("/codes/{code_id}/folder-id")
+def get_folder_id_by_code_id(
+    code_id: int,
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
+):
+    mapping = (
+        db.query(CodeFolderMapping)
+        .join(Code)
+        .filter(CodeFolderMapping.code_id == code_id, Code.user_id == user["id"])
+        .first()
+    )
+    if not mapping:
+        raise HTTPException(status_code=404, detail="해당 코드의 폴더를 찾을 수 없습니다.")
+    return {"folder_id": mapping.folder_id}

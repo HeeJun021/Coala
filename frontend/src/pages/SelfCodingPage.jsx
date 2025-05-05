@@ -24,6 +24,7 @@ const SelfCodingPage = () => {
   const [selectedFileContent, setSelectedFileContent] = useState("");
   const [unsaved, setUnsaved] = useState(false);
   const [languageId, setLanguageId] = useState(null);
+  const [selectedFolderId] = useState(null);
 
   return (
     <div className="h-screen w-screen overflow-hidden">
@@ -86,6 +87,7 @@ const SelfCodingPage = () => {
             setPreviewSrcDoc={setPreviewSrcDoc}
             setPreviewTabs={setPreviewTabs}
             setActivePreviewTab={setActivePreviewTab}
+            currentFolderId={selectedFolderId}
           />
           <SelfCodingPreviewPanel
             previewTabs={previewTabs}
