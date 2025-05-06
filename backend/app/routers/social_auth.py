@@ -11,7 +11,7 @@ from app.database import get_db
 from app.models.user import User
 from app.models.social_login import SocialLogin
 from app.utils.jwt import create_access_token
-
+from app.dependencies.auth import get_current_user
 
 router = APIRouter(prefix="/auth/social", tags=["Social Authentication"])
 
@@ -81,8 +81,8 @@ def parse_birth_date(birthyear: Optional[str], birthday: Optional[str]) -> Optio
             return None  # 잘못된 날짜 형식일 경우 None 반환
     return None  # birthyear 또는 birthday가 없으면 None 반환
 
-# ✅ 소셜 로그인 사용자 조회 및 생성
-def get_or_create_user(db: Session, provider: str, provider_user_id: str, email: str, name: str, picture: str, birth_date: Optional[str]):
+# ✅ 소셜 로그인 사용자 조회 및 생성 (access_token 추가)
+def get_or_create_user(db: Session, provider: str, provider_user_id: str, email: str, name: str, picture: str, birth_date: Optional[str], access_token: str = None):
     """ 사용자를 조회하고, 없으면 생성하며, 소셜 로그인 중복을 방지 """
     
     # ✅ 소셜 로그인 중복 검사
@@ -90,6 +90,9 @@ def get_or_create_user(db: Session, provider: str, provider_user_id: str, email:
 
     if social_login:
         user = db.query(User).filter_by(user_id=social_login.user_id).first()
+        if access_token:
+            social_login.access_token = access_token
+            db.commit()
         return user  # ✅ 기존 사용자 반환
 
     # ✅ 동일한 이메일이 있는지 확인 (기존 회원이 있는 경우 소셜 계정 연결)
@@ -97,7 +100,7 @@ def get_or_create_user(db: Session, provider: str, provider_user_id: str, email:
 
     if existing_user:
         # ✅ 기존 사용자와 소셜 로그인 연결
-        new_social_login = SocialLogin(user_id=existing_user.user_id, provider=provider, provider_user_id=provider_user_id)
+        new_social_login = SocialLogin(user_id=existing_user.user_id, provider=provider, provider_user_id=provider_user_id, access_token=access_token)
         db.add(new_social_login)
         db.commit()
         return existing_user  # ✅ 기존 사용자 반환
@@ -125,12 +128,11 @@ def get_or_create_user(db: Session, provider: str, provider_user_id: str, email:
     db.refresh(new_user)
 
     # ✅ 소셜 로그인 정보 저장
-    new_social_login = SocialLogin(user_id=new_user.user_id, provider=provider, provider_user_id=provider_user_id)
+    new_social_login = SocialLogin(user_id=new_user.user_id, provider=provider, provider_user_id=provider_user_id, access_token=access_token)
     db.add(new_social_login)
     db.commit()
 
     return new_user  # ✅ 새 사용자 반환
-
 
 # ✅ 로그인 URL 생성
 @router.get("/{provider}/login")
@@ -152,7 +154,7 @@ def social_login(provider: str):
 
     return RedirectResponse(auth_url)
 
-# ✅ 콜백 처리
+# ✅ 콜백 처리 (access_token 저장 추가)
 @router.get("/{provider}/callback")
 def social_callback(provider: str, code: str, db: Session = Depends(get_db)):
     if provider not in PROVIDERS:
@@ -265,8 +267,7 @@ def social_callback(provider: str, code: str, db: Session = Depends(get_db)):
     birth_date = parse_birth_date(birthyear, birthday)  # ✅ YYYY-MM-DD → DATE 변환
 
     # ✅ 사용자 조회 또는 생성
-    user = get_or_create_user(db, provider, provider_user_id, email, name, picture, birth_date)
-
+    user = get_or_create_user(db, provider, provider_user_id, email, name, picture, birth_date, access_token)
 
     jwt_token = create_access_token(user.user_id)
 
@@ -283,3 +284,12 @@ def social_callback(provider: str, code: str, db: Session = Depends(get_db)):
     )
 
     return response
+
+# ✅ GitHub 연동 해제 추가
+@router.post("/unlink/github")
+def unlink_github(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    social_login = db.query(SocialLogin).filter_by(user_id=current_user.user_id, provider="github").first()
+    if social_login:
+        db.delete(social_login)
+        db.commit()
+    return {"message": "GitHub 연동 해제 완료"}

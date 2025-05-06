@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { FaChevronRight, FaChevronDown, FaPlusCircle, FaFolder, FaFile } from "react-icons/fa";
-
 import {
   getRootCodeFolder,
   getChildFolders,
@@ -13,11 +12,11 @@ import {
   deleteCodeFile,
   deleteFolder
 } from "../api/codeApi";
+import { useLocation } from "react-router-dom";
+import { templateFiles, templateDescriptions } from "../data/templateData";
 
 const SelfCodingExplorerPanel = ({
   navigate,
-  templateId,
-  setTemplateId,
   folders,
   setFolders,
   tabs,
@@ -34,11 +33,7 @@ const SelfCodingExplorerPanel = ({
   setSelectedFilename,
   selectedFileContent,
   setSelectedFileContent,
-  location,
-  templateFiles,
-  templateDescriptions,
 }) => {
-  const [showTemplateInfo, setShowTemplateInfo] = useState(false);
   const [showFileTree, setShowFileTree] = useState(true);
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
@@ -46,10 +41,22 @@ const SelfCodingExplorerPanel = ({
   const [creatingItem, setCreatingItem] = useState(null);
   const [newItemName, setNewItemName] = useState("");
   const [renamingItem, setRenamingItem] = useState(null);
-  const [expandedFolders, setExpandedFolders] = useState({});
-  const folderIndexRef = useRef(1);
   const renamingInputRef = useRef(null);
   const [folderTree, setFolderTree] = useState(null);
+  const location = useLocation();
+  const templateIdFromNav = location.state?.templateId;
+  const hasInsertedTemplateRef = useRef(false);
+const EXT_MAP = {
+  html: 1,
+  css: 2,
+  js: 3,
+  py: 4,
+  jsx: 3, // JavaScript와 동일
+  vue: 3, // JavaScript와 동일
+  json: 5, // 기타
+  "config.js": 5, // 기타
+  txt: 5, // 기타
+};
 
   useEffect(() => {
     const loadRoot = async () => {
@@ -66,9 +73,96 @@ const SelfCodingExplorerPanel = ({
         console.error("루트 폴더 불러오기 실패", err);
       }
     };
-  
     loadRoot();
   }, []);
+
+  useEffect(() => {
+    const applyTemplate = async () => {
+      if (!templateIdFromNav || !templateFiles[templateIdFromNav] || hasInsertedTemplateRef.current) return;
+      hasInsertedTemplateRef.current = true;
+  
+      try {
+        // 루트 폴더가 없으면 생성
+        if (!folderTree) {
+          const root = await getRootCodeFolder();
+          setFolderTree({
+            ...root,
+            children: [],
+            codes: [],
+            expanded: false,
+            loaded: false,
+          });
+        }
+  
+        await insertTemplateToDB(templateIdFromNav, folderTree.folder_id);
+  
+        const [children, codes] = await Promise.all([
+          getChildFolders(folderTree.folder_id),
+          getCodesInFolder(folderTree.folder_id),
+        ]);
+        setFolderTree({
+          ...folderTree,
+          children: children.map(child => ({
+            ...child,
+            children: [],
+            codes: [],
+            expanded: false,
+            loaded: false,
+          })),
+          codes,
+          expanded: true,
+          loaded: true,
+        });
+      } catch (err) {
+        console.error("템플릿 생성 실패:", err);
+        alert("템플릿 생성에 실패했습니다. 네트워크를 확인하세요.");
+        hasInsertedTemplateRef.current = false;
+      }
+    };
+    applyTemplate();
+  }, [folderTree, templateIdFromNav]);
+
+  const insertTemplateToDB = async (templateId, rootFolderId) => {
+    const structure = templateFiles[templateId];
+    let baseFolderName = templateDescriptions[templateId]?.name || templateId;
+    let folderName = baseFolderName;
+    let suffix = 1;
+  
+    const existingFolders = await getChildFolders(rootFolderId);
+    while (existingFolders.some(f => f.folder_name === folderName)) {
+      suffix++;
+      folderName = `${baseFolderName}(${suffix})`;
+    }
+
+    const templateFolder = await createChildFolder({
+      parent_folder_id: rootFolderId,
+      folder_name: folderName,
+    });
+
+    const createRecursively = async (node, parentId) => {
+      for (const name in node) {
+        const value = node[name];
+        if (typeof value === "string") {
+          const ext = name.includes(".") ? name.split(".").pop() : "";
+          const langId = EXT_MAP[ext] || EXT_MAP[name] || 5; // 기본값: 기타
+          await saveCodeFile({
+            title: name,
+            content: value,
+            language_id: langId,
+            folder_id: parentId,
+          });
+        } else if (typeof value === "object") {
+          const newFolder = await createChildFolder({
+            parent_folder_id: parentId,
+            folder_name: name,
+          });
+          await createRecursively(value, newFolder.folder_id);
+        }
+      }
+    };
+  
+    await createRecursively(structure, templateFolder.folder_id);
+  };
 
   const handleFolderToggle = async (node, path = []) => {
     if (!node.loaded) {
@@ -77,7 +171,7 @@ const SelfCodingExplorerPanel = ({
           getChildFolders(node.folder_id),
           getCodesInFolder(node.folder_id),
         ]);
-  
+
         node.children = children.map((child) => ({
           ...child,
           children: [],
@@ -91,9 +185,9 @@ const SelfCodingExplorerPanel = ({
         console.error("하위 항목 불러오기 실패", err);
       }
     }
-  
+
     node.expanded = !node.expanded;
-    setFolderTree({ ...folderTree }); // 리렌더링 유도
+    setFolderTree({ ...folderTree });
   };
 
   const handleFileClick = async (file) => {
@@ -105,7 +199,7 @@ const SelfCodingExplorerPanel = ({
         setTabs((prev) => [...prev, tabId]);
       }
       
-      setActiveTab(tabId); // <- 여기 중요
+      setActiveTab(tabId);
       setSelectedFilename(full.title);
       setSelectedFileContent(full.content);
     } catch (err) {
@@ -113,7 +207,6 @@ const SelfCodingExplorerPanel = ({
       alert("파일을 불러올 수 없습니다.");
     }
   };
-  
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -154,54 +247,6 @@ const SelfCodingExplorerPanel = ({
     return () => document.removeEventListener("mousedown", handleClickOutsideRename);
   }, [renamingItem]);
 
-  const addTemplateFolder = useCallback((newTemplate) => {
-    const nextIndex = folderIndexRef.current.toString();
-    folderIndexRef.current += 1;
-  
-    setFolders((prev) => ({
-      ...prev,
-      "내 파일": {
-        ...prev["내 파일"],
-        [nextIndex]: newTemplate,
-      },
-    }));
-  }, [setFolders]);
-
-  useEffect(() => {
-    const id = location.state?.templateId;
-    if (!id || templateId === id || !templateFiles[id]) return;
-
-    const newTemplate = templateFiles[id];
-    let htmlCode = newTemplate["index.html"] || newTemplate["public"]?.["index.html"] || "";
-    let jsCode = newTemplate["script.js"] || "";
-    let cssCode = newTemplate["style.css"] || "";
-    let fullHtml = "";
-
-    addTemplateFolder(newTemplate);
-
-    if (id === "react" || id === "vue" || id === "next") {
-      fullHtml = "";
-    } else {
-      fullHtml = htmlCode.includes("<html")
-        ? htmlCode
-            .replace("</head>", `<style>${cssCode}</style></head>`)
-            .replace("</body>", `<script>${jsCode}</script></body>`)
-        : `
-          <!DOCTYPE html>
-          <html>
-            <head><style>${cssCode}</style></head>
-            <body>
-              ${htmlCode}
-              <script>${jsCode}</script>
-            </body>
-          </html>
-        `;
-    }
-
-    setPreviewSrcDoc(fullHtml);
-    setTemplateId(id);
-  }, [location.state, templateId, templateFiles, setPreviewSrcDoc, setTemplateId, addTemplateFolder]);
-
   const handleContextMenu = (e) => {
     e.preventDefault();
     setMenuVisible(false);
@@ -226,12 +271,11 @@ const SelfCodingExplorerPanel = ({
         alert("폴더 안에서만 작업할 수 있습니다.");
         return;
       }
-  
-      // 새 파일 생성
+
       if (label === "새 파일") {
         const folderIdStr = contextMenu.targetId?.replace("folder-", "");
         const folderId = parseInt(folderIdStr);
-  
+
         const openNode = findFolderNode(folderTree, folderId);
         const showInput = () => {
           setCreatingItem({
@@ -240,7 +284,7 @@ const SelfCodingExplorerPanel = ({
           });
           setNewItemName("");
         };
-  
+
         if (openNode) {
           if (!openNode.expanded) {
             await handleFolderToggle(openNode);
@@ -249,16 +293,15 @@ const SelfCodingExplorerPanel = ({
         } else {
           showInput();
         }
-  
+
         setMenuVisible(false);
         return;
       }
-  
-      // 새 폴더 생성
+
       if (label === "새 폴더") {
         const folderIdStr = contextMenu.targetId?.replace("folder-", "");
         const folderId = parseInt(folderIdStr);
-  
+
         const openNode = findFolderNode(folderTree, folderId);
         const showInput = () => {
           setCreatingItem({
@@ -267,7 +310,7 @@ const SelfCodingExplorerPanel = ({
           });
           setNewItemName("");
         };
-  
+
         if (openNode) {
           if (!openNode.expanded) {
             await handleFolderToggle(openNode);
@@ -276,12 +319,11 @@ const SelfCodingExplorerPanel = ({
         } else {
           showInput();
         }
-  
+
         setMenuVisible(false);
         return;
       }
-  
-      // 이름 바꾸기
+
       if (label === "이름 바꾸기") {
         if (contextMenu.targetId?.startsWith("folder-")) {
           const folderIdStr = contextMenu.targetId.replace("folder-", "");
@@ -293,11 +335,11 @@ const SelfCodingExplorerPanel = ({
             setRenamingItem({ path: `folder-${folderId}`, name: targetNode.folder_name });
           }
         }
-  
+
         if (contextMenu.targetId?.startsWith("code-")) {
           const codeIdStr = contextMenu.targetId.replace("code-", "");
           const codeId = parseInt(codeIdStr);
-  
+
           const searchFile = (node) => {
             const found = node.codes.find((c) => c.code_id === codeId);
             if (found) return found;
@@ -307,7 +349,7 @@ const SelfCodingExplorerPanel = ({
             }
             return null;
           };
-  
+
           const foundFile = searchFile(folderTree);
           if (foundFile) {
             const [nameOnly] = foundFile.title.split(/\.(?=[^\.]+$)/);
@@ -315,8 +357,7 @@ const SelfCodingExplorerPanel = ({
           }
         }
       }
-  
-      // 경로 복사
+
       if (label === "경로 복사") {
         if (navigator.clipboard && contextMenu?.targetId) {
           navigator.clipboard
@@ -325,8 +366,7 @@ const SelfCodingExplorerPanel = ({
             .catch(() => alert("클립보드 복사에 실패했습니다."));
         }
       }
-  
-      // 삭제
+
       if (label === "삭제") {
         const confirmDelete = window.confirm(
           contextMenu.targetId.startsWith("folder-")
@@ -334,14 +374,14 @@ const SelfCodingExplorerPanel = ({
             : "정말로 삭제하시겠습니까?"
         );
         if (!confirmDelete) return;
-  
+
         const newTree = JSON.parse(JSON.stringify(folderTree));
-  
+
         if (contextMenu.targetId.startsWith("folder-")) {
           const folderId = parseInt(contextMenu.targetId.replace("folder-", ""));
           try {
             await deleteFolder(folderId);
-  
+
             const deleteNode = (tree, id) => {
               for (let i = 0; i < tree.length; i++) {
                 if (tree[i].folder_id === id) {
@@ -354,7 +394,7 @@ const SelfCodingExplorerPanel = ({
               }
               return false;
             };
-  
+
             deleteNode([newTree], folderId);
             setFolderTree({ ...newTree });
           } catch (err) {
@@ -365,7 +405,7 @@ const SelfCodingExplorerPanel = ({
           const codeId = parseInt(contextMenu.targetId.replace("code-", ""));
           try {
             await deleteCodeFile(codeId);
-  
+
             const deleteCode = (tree) => {
               for (let node of tree) {
                 const idx = node.codes.findIndex((c) => c.code_id === codeId);
@@ -379,7 +419,7 @@ const SelfCodingExplorerPanel = ({
               }
               return false;
             };
-  
+
             deleteCode([newTree]);
             setFolderTree({ ...newTree });
           } catch (err) {
@@ -388,7 +428,7 @@ const SelfCodingExplorerPanel = ({
           }
         }
       }
-  
+
       setMenuVisible(false);
     };
     return (
@@ -409,14 +449,12 @@ const SelfCodingExplorerPanel = ({
       </ul>
     );
   };
-  
 
   const renderFolderNode = (node, depth = 0) => {
     const paddingLeft = depth * 12;
-  
+
     return (
       <div key={`folder-${node.folder_id}`} style={{ paddingLeft }}>
-        {/* 📁 폴더 헤더 */}
         <div
           className="flex items-center cursor-pointer hover:underline"
           onClick={() => handleFolderToggle(node)}
@@ -462,14 +500,11 @@ const SelfCodingExplorerPanel = ({
             <span className="text-sm">{node.folder_name}</span>
           )}
         </div>
-  
-        {/* 🔽 폴더 열려 있을 때 */}
+
         {node.expanded && (
           <div className="ml-2">
-            {/* 📁 하위 폴더 렌더링 */}
             {node.children.map((child) => renderFolderNode(child, depth + 1))}
-  
-            {/* 📄 파일 목록 렌더링 */}
+
             {node.codes.map((file) => {
               const [nameOnly, ext] = file.title.split(/\.(?=[^\.]+$)/);
               const isRenaming = renamingItem?.path === `code-${file.code_id}`;
@@ -524,8 +559,7 @@ const SelfCodingExplorerPanel = ({
                 </div>
               );
             })}
-  
-            {/* ➕ 새 폴더 생성 input 입력창 */}
+
             {creatingItem?.type === "folder" &&
               creatingItem.parentPath === `folder-${node.folder_id}` && (
                 <div className="flex items-center mt-1 pl-6">
@@ -550,7 +584,7 @@ const SelfCodingExplorerPanel = ({
                             parent_folder_id: node.folder_id,
                             folder_name: name,
                           });
-  
+
                           node.children.push({
                             ...newFolder,
                             children: [],
@@ -577,8 +611,7 @@ const SelfCodingExplorerPanel = ({
                   />
                 </div>
             )}
-  
-            {/* ➕ 새 파일 생성 input 입력창 */}
+
             {creatingItem?.type === "file" &&
               creatingItem.parentPath === `folder-${node.folder_id}` && (
                 <div className="flex items-center mt-1 pl-6">
@@ -598,16 +631,16 @@ const SelfCodingExplorerPanel = ({
                           alert("파일 이름과 확장자를 입력하세요 (예: main.js)");
                           return;
                         }
-  
+
                         const ext = name.split(".").pop();
                         const extMap = { html: 1, css: 2, js: 3, py: 4 };
                         const languageId = extMap[ext];
-  
+
                         if (!languageId) {
                           alert("지원하지 않는 확장자입니다.");
                           return;
                         }
-  
+
                         try {
                           const newFile = await saveCodeFile({
                             title: name,
@@ -615,7 +648,7 @@ const SelfCodingExplorerPanel = ({
                             language_id: languageId,
                             folder_id: node.folder_id,
                           });
-  
+
                           node.codes.push(newFile);
                           node.expanded = true;
                           setFolderTree({ ...folderTree });
@@ -641,34 +674,6 @@ const SelfCodingExplorerPanel = ({
       </div>
     );
   };
-  
-  
-  
-  const renderTemplateInfo = () => {
-    if (!templateId) return null;
-    const { emoji, label } = templateDescriptions[templateId] || {};
-    return (
-      <div className="mb-2">
-        <div
-          className="text-[13px] font-medium text-gray-600 flex items-center cursor-pointer mb-1"
-          onClick={() => setShowTemplateInfo((prev) => !prev)}
-        >
-          {showTemplateInfo ? (
-            <FaChevronDown className="mr-1 text-gray-500" />
-          ) : (
-            <FaChevronRight className="mr-1 text-gray-500" />
-          )}
-          Template Info
-        </div>
-        {showTemplateInfo && (
-          <div className="text-xs text-gray-700 leading-relaxed ml-5 border-l pl-3 border-gray-300">
-            <span className="mr-1">{emoji}</span>
-            <span className="font-semibold">{templateId?.toUpperCase()}</span>: {label}
-          </div>
-        )}
-      </div>
-    );
-  };
 
   return (
     <>
@@ -678,7 +683,6 @@ const SelfCodingExplorerPanel = ({
       >
         <FaPlusCircle className="text-green-600" /> 템플릿 새로 만들기
       </div>
-      {renderTemplateInfo()}
       <div
         className="text-[13px] font-medium text-gray-600 flex items-center cursor-pointer mb-1"
         onClick={() => setShowFileTree((prev) => !prev)}

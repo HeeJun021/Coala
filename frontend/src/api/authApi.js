@@ -16,6 +16,17 @@ export async function loginUser(email, password) {
   return response.data;
 }
 
+// GitHub 연동 상태 확인
+export const checkGithubConnection = async () => {
+  try {
+    const response = await apiClient.get("/freecode/github/repos", { withCredentials: true });
+    return { isConnected: true, repos: response.data };
+  } catch (error) {
+    console.error("GitHub connection check failed:", error.response?.data || error.message);
+    return { isConnected: false, repos: [] };
+  }
+};
+
 // ✅ 현재 로그인한 사용자 정보 (/auth/me)
 export const getCurrentUser = () => {
   return apiClient

@@ -229,8 +229,6 @@ const Navbar = () => {
           ))}
         </div>
       </div>
-
-      <div className="h-[70px]" />
     </div>
   );
 };

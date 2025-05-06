@@ -6,6 +6,7 @@ from app.models.code import CodeFolder, Code, CodeFolderMapping
 from app.models.user import User
 from app.schemas.code import CodeCreate, CodeResponse, CodeUpdate
 from datetime import datetime
+from fastapi import HTTPException
 
 # 언어별 확장자 매핑
 EXTENSIONS = {
@@ -116,11 +117,14 @@ def create_code_with_mapping(db: Session, user: dict, code_data: CodeCreate) -> 
         ".css": 2,
         ".js": 3,
         ".py": 4,
+        ".jsx": 3,  # JavaScript와 동일
+        ".vue": 3,  # JavaScript와 동일
+        ".json": 5,  # 기타
+        ".config.js": 5,  # 기타
+        ".txt": 5,  # 기타
     }
-    ext = splitext(code_data.title)[1]
-    language_id = EXTENSION_TO_LANGUAGE_ID.get(ext)
-    if not language_id:
-        raise HTTPException(status_code=400, detail="지원하지 않는 확장자입니다.")
+    ext = splitext(code_data.title)[1] or code_data.title  # 복합 확장자 처리
+    language_id = EXTENSION_TO_LANGUAGE_ID.get(ext, 5)  # 기본값: 5 (기타)
 
     # 3. 코드 저장
     new_code = Code(

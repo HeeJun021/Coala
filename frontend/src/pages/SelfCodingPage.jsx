@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "../Layout/Navbar";
 import SelfCodingSidebar from "../components/SelfCodingSidebar";
@@ -8,6 +8,7 @@ import SelfCodingPreviewPanel from "../components/SelfCodingPreviewPanel";
 import { templateDescriptions, templateFiles, getLanguageExtension } from "../data/templateData";
 import "../index.css";
 import Split from "react-split";
+import { getCurrentUser, checkGithubConnection } from "../api/authApi";
 
 const SelfCodingPage = () => {
   const location = useLocation();
@@ -25,6 +26,33 @@ const SelfCodingPage = () => {
   const [unsaved, setUnsaved] = useState(false);
   const [languageId, setLanguageId] = useState(null);
   const [selectedFolderId] = useState(null);
+  const [isGithubConnected, setIsGithubConnected] = useState(false);
+
+  const fetchUserAndGithubStatus = useCallback(async () => {
+    try {
+      await getCurrentUser(); // 사용자 인증 확인
+      const githubStatus = await checkGithubConnection();
+      console.log("GitHub Status:", githubStatus); // 디버깅 로그
+      setIsGithubConnected(githubStatus.isConnected);
+      if (githubStatus.isConnected) {
+        setActivePanel("git"); // GitHub 연동 후 Git 패널로 전환
+      }
+    } catch (error) {
+      console.error("Failed to fetch user or GitHub status:", error);
+      navigate("/login");
+    }
+  }, [navigate]); // navigate는 useNavigate에서 반환되므로 의존성에 포함
+
+  useEffect(() => {
+    fetchUserAndGithubStatus();
+  }, [fetchUserAndGithubStatus]);
+
+  // GitHub 콜백 후 리다이렉트 처리
+  useEffect(() => {
+    if (location.pathname === "/self-coding" && location.search.includes("code=")) {
+      fetchUserAndGithubStatus(); // 콜백 후 상태 갱신
+    }
+  }, [location, fetchUserAndGithubStatus]);
 
   return (
     <div className="h-screen w-screen overflow-hidden">
@@ -58,7 +86,7 @@ const SelfCodingPage = () => {
           location={location}
           templateFiles={templateFiles}
           templateDescriptions={templateDescriptions}
-          isGithubConnected={false}
+          isGithubConnected={isGithubConnected}
         />
         <Split
           className="flex flex-1"
