@@ -37,7 +37,8 @@ from app.routers import (
     code_terminal,
     board,
     chat_rest,
-    chat_upload
+    chat_upload,
+    chat_download
 )
 from app.schemas.user import UserUpdateSchema
 from datetime import datetime
@@ -92,6 +93,7 @@ app.include_router(chat_rest.router)
 app.include_router(follow.router)
 
 app.include_router(chat_upload.router, prefix="", tags=["파일 업로드"])
+app.include_router(chat_download.router, tags=["파일 다운로드"])
 
 app.mount("/static", StaticFiles(directory="uploaded_files"), name="static")
 

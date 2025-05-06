@@ -1,7 +1,9 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
+from typing import List
 import os
 from uuid import uuid4
+from datetime import datetime
 
 router = APIRouter()
 
@@ -9,31 +11,36 @@ router = APIRouter()
 UPLOAD_DIR = "uploaded_files"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+# 한번에 여러 파일 업로드까지 지원
 @router.post("/upload")
-async def upload_file(file: UploadFile = File(...)):
-    # 파일 확장자 확인
-    filename = file.filename
-    ext = os.path.splitext(filename)[1].lower()
-    if not ext:
-        raise HTTPException(status_code=400, detail="파일 확장자가 필요합니다.")
+async def upload_files(files: List[UploadFile] = File(...)):
+    results = []
 
-    # 고유한 파일 이름 생성
-    unique_name = f"{uuid4().hex}{ext}"
-    file_path = os.path.join(UPLOAD_DIR, unique_name)
+    for file in files:
+        filename = file.filename
+        ext = os.path.splitext(filename)[1].lower()
+        if not ext:
+            raise HTTPException(status_code=400, detail="파일 확장자가 필요합니다.")
 
-    # 파일 저장
-    with open(file_path, "wb") as f:
+        unique_name = f"{uuid4().hex}{ext}"
+        file_path = os.path.join(UPLOAD_DIR, unique_name)
+
         content = await file.read()
-        f.write(content)
+        with open(file_path, "wb") as f:
+            f.write(content)
 
-    # 파일 접근 URL 반환 (예시)
-    file_url = f"/static/{unique_name}"
+        file_url = f"/static/{unique_name}"
+        is_image = ext in [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"]
+        message_type = "image" if is_image else "file"
+        uploaded_at = datetime.utcnow().isoformat()
+        file_size = len(content)
 
-    # 이미지인지 파일인지 판별해서 같이 반환
-    is_image = ext in [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"]
-    message_type = "image" if is_image else "file"
+        results.append({
+            "file_url": file_url,
+            "message_type": message_type,
+            "file_name": filename,
+            "file_size": file_size,
+            "uploaded_at": uploaded_at
+        })
 
-    return JSONResponse({
-        "file_url": file_url,
-        "message_type": message_type
-    })
+    return JSONResponse(results)

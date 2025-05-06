@@ -93,10 +93,19 @@ export const markMessagesAsRead = async (roomId, data) => {
 };
 
 
-// ✅ 파일 업로드 (이미지/파일)
-export const uploadFile = async (formData) => {
+// ✅ 파일 업로드 (여러 개 지원)
+export const uploadFiles = async (files) => {
+  const formData = new FormData();
+  files.forEach((file) => {
+    formData.append("files", file); // ✅ 백엔드가 다중 업로드 받도록 구현돼 있어야 함
+  });
+
   const response = await apiClient.post("/upload", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
-  return response.data;
+
+  const data = response.data;
+
+  // ✅ 단일 파일일 경우도 배열로 변환
+  return Array.isArray(data) ? data : [data];
 };

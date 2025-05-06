@@ -37,6 +37,9 @@ class ChatMessageCreateRequest(BaseModel):
     message: Optional[str] = None
     message_type: str = "text"  # 'text', 'file', 'image'
     file_url: Optional[str] = None
+    file_name: Optional[str] = None          # ⬅️ 추가
+    file_size: Optional[int] = None          # ⬅️ 추가
+    uploaded_at: Optional[datetime] = None   # ⬅️ 추가
 
 
 class ChatMessageCreateResponse(BaseModel):
@@ -46,6 +49,9 @@ class ChatMessageCreateResponse(BaseModel):
     message: Optional[str]
     message_type: str
     file_url: Optional[str]
+    file_name: Optional[str] = None          # ✅ 추가
+    file_size: Optional[int] = None          # ✅ 추가
+    uploaded_at: Optional[datetime] = None   # ✅ 추가
     sent_at: datetime
 
 
@@ -56,6 +62,9 @@ class ChatMessageItem(BaseModel):
     message: Optional[str]
     message_type: str
     file_url: Optional[str]
+    file_name: Optional[str] = None          # ✅ 추가
+    file_size: Optional[int] = None          # ✅ 추가
+    uploaded_at: Optional[datetime] = None   # ✅ 추가
     sent_at: datetime
     read_count: int
 

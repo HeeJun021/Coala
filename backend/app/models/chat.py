@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, Text, ForeignKey, TIMESTAMP
+from sqlalchemy import Column, Integer, String, Boolean, Text, ForeignKey, TIMESTAMP, DateTime
 from sqlalchemy.sql import func
 from app.database import Base
 
@@ -21,8 +21,7 @@ class ChatRoomParticipant(Base):
     user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True)
     joined_at = Column(TIMESTAMP, server_default=func.now())
     is_pinned = Column(Boolean, default=False)
-    
-    # ✅ 추가된 필드들
+    pinned_at = Column(TIMESTAMP, nullable=True)
     last_read_message_id = Column(Integer, nullable=True)
     last_read_at = Column(TIMESTAMP, nullable=True)
     is_archived = Column(Boolean, default=False)
@@ -40,6 +39,9 @@ class ChatMessage(Base):
     message = Column(Text, nullable=True)
     message_type = Column(String(10), default="text")  # 'text', 'file', 'image'
     file_url = Column(Text, nullable=True)
+    file_name = Column(Text, nullable=True)
+    file_size = Column(Integer, nullable=True)
+    uploaded_at = Column(DateTime(timezone=True), nullable=True)
     sent_at = Column(TIMESTAMP, server_default=func.now())
     read_count = Column(Integer, default=0)
     

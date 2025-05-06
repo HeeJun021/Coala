@@ -4,7 +4,7 @@ import { FaSearch, FaCog, FaPen } from "react-icons/fa";
 import ReactDOM from "react-dom";
 import ChatListSettingsPanel from "./ChatListSettingsPanel";
 import NewChatModal from "./NewChatModal";
-import { getChatRooms } from "../../api/chatApi";
+import { getChatRooms, togglePinChatRoom } from "../../api/chatApi";
 import ChatRoomPanel from "./ChatRoomPanel";
 
 const ChatListPanel = ({ onClose, onSelectRoom }) => {
@@ -113,7 +113,7 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
     );
   };
 
-  const handleContextMenuClick = (action) => {
+  const handleContextMenuClick = async (action) => {
     if (!contextMenu) return;
     const { roomId } = contextMenu;
     const room = chatRooms.find((r) => r.id === roomId);
@@ -122,13 +122,50 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
       setRenameTarget(room);
       setRenameInput(room.name);
       setShowRenameModal(true);
+      setContextMenu(null);
+      return;
     }
 
     if (action === "leave") {
       setLeaveTargetId(roomId);
       setShowLeaveModal(true);
+      setContextMenu(null);
+      return;
     }
 
+    if (action === "pin") {
+      try {
+        await togglePinChatRoom(roomId);
+        const updatedRooms = await getChatRooms();
+
+        const transformed = updatedRooms.map((room) => ({
+          id: room.room_id,
+          name: room.room_name ?? "이름 없음",
+          preview: room.last_message || "(아직 메시지가 없습니다)",
+          time: room.last_message_time
+            ? new Date(room.last_message_time).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : "",
+          rawTime: room.last_message_time || null,
+          unread: room.unread_count ?? 0,
+          group: room.is_group ?? false,
+          participants: room.participants ?? [],
+          is_pinned: room.is_pinned ?? false,
+        }));
+
+
+        setChatRooms(transformed);
+      } catch (error) {
+        console.error("상단 고정 실패:", error);
+      }
+
+      setContextMenu(null);
+      return;
+    }
+
+    // 기본적으로는 메뉴 닫기
     setContextMenu(null);
   };
 
@@ -153,7 +190,7 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
       try {
         const data = await getChatRooms();
         console.log("✅ 서버 응답:", data);
-  
+
         const transformed = data.map((room) => ({
           id: room.room_id,
           name: room.room_name ?? "이름 없음",
@@ -164,28 +201,24 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
                 minute: "2-digit",
               })
             : "",
-          rawTime: room.last_message_time || null, // 👉 정렬용 원본 시간 저장
+          rawTime: room.last_message_time || null,
           unread: room.unread_count ?? 0,
           group: room.is_group ?? false,
           participants: room.participants ?? [],
+          is_pinned: room.is_pinned ?? false, // ✅ 반드시 추가
+          pinned_at: room.pinned_at ?? null, // ✅ 추가
         }));
-  
-        // ✅ 최신순 정렬
-        transformed.sort((a, b) => {
-          if (!a.rawTime) return 1;
-          if (!b.rawTime) return -1;
-          return new Date(b.rawTime) - new Date(a.rawTime);
-        });
-  
+
+
+
         setChatRooms(transformed);
       } catch (error) {
         console.error("🚨 채팅방 목록 불러오기 실패:", error);
       }
     };
-  
+
     fetchChatRooms();
   }, []);
-  
 
   if (selectedRoom) {
     return (
@@ -264,7 +297,12 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
 
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium text-gray-900 truncate">
-                  {room.name}
+                  <div className="flex items-center gap-1">
+                    <span>{room.name}</span>
+                    {room.is_pinned && (
+                      <span className="text-yellow-500">📌</span>
+                    )}
+                  </div>
                 </div>
                 <div className="text-xs text-gray-500 truncate">
                   {room.preview}
@@ -301,9 +339,20 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
                 >
                   채팅방 이름 설정
                 </li>
-                <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
-                  채팅방 상단 고정
+                <li
+                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                  onClick={() => handleContextMenuClick("pin")}
+                >
+                  {(() => {
+                    const room = chatRooms.find(
+                      (r) => r.id === contextMenu?.roomId
+                    );
+                    return room?.is_pinned
+                      ? "채팅방 상단 해제"
+                      : "채팅방 상단 고정";
+                  })()}
                 </li>
+
                 <hr />
                 <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
                   알림 끄기

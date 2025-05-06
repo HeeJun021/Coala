@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   FaArrowLeft,
   FaSearch,
@@ -11,6 +12,7 @@ import {
   getMessages,
   sendMessage,
   markMessagesAsRead,
+  uploadFiles,
 } from "../../api/chatApi";
 import { useAuth } from "../../context/AuthContext";
 
@@ -23,8 +25,13 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
 
+  const fileInputRef = useRef(null);
+  const [previewImage, setPreviewImage] = useState(null);
+  const [hoveredImageId, setHoveredImageId] = useState(null);
+
   const containerRef = useRef(null);
   const topRef = useRef(null);
+
   const LIMIT = 20;
 
   const fetchMessages = useCallback(
@@ -221,6 +228,13 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
           const isLastMessage = index === filteredMessages.length - 1;
           const isLastOfBundleOrLastMessage = isLastOfBundle || isLastMessage;
 
+          const isExpired = (uploadedAt) => {
+            const uploadedDate = new Date(uploadedAt);
+            const now = new Date();
+            const diffDays = (now - uploadedDate) / (1000 * 60 * 60 * 24);
+            return diffDays > 7;
+          };
+
           if (isSystem) {
             return (
               <div
@@ -248,9 +262,109 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
                     )}
                     {isLastOfBundleOrLastMessage && <span>{currentTime}</span>}
                   </div>
-                  <div className="px-3 py-2 rounded-xl text-sm whitespace-pre-line shadow leading-snug bg-[#FFF36C] text-black max-w-[70%]">
-                    {msg.message}
-                  </div>
+
+                  {msg.message_type === "image" ? (
+                    <div
+                      className="relative group"
+                      onMouseEnter={() => setHoveredImageId(msg.message_id)}
+                      onMouseLeave={() => setHoveredImageId(null)}
+                    >
+                      {/* 이미지 */}
+                      <img
+                        src={`${process.env.REACT_APP_BACKEND_URL}${msg.file_url}`}
+                        alt={msg.file_name}
+                        className="max-w-[200px] max-h-[200px] rounded-md object-cover cursor-pointer"
+                        onClick={() =>
+                          setPreviewImage(
+                            `${process.env.REACT_APP_BACKEND_URL}${msg.file_url}`
+                          )
+                        }
+                      />
+
+                      {/* 애니메이션: 그라데이션 */}
+                      <AnimatePresence>
+                        {hoveredImageId === msg.message_id && (
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute top-0 left-0 w-full h-1/3 bg-gradient-to-b from-black/40 to-transparent rounded-md z-10"
+                          />
+                        )}
+                      </AnimatePresence>
+
+                      {/* 애니메이션: 다운로드 버튼 */}
+                      <AnimatePresence>
+                        {hoveredImageId === msg.message_id && (
+                          <motion.a
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.15 }}
+                            href={`${
+                              process.env.REACT_APP_BACKEND_URL
+                            }/download/${msg.file_url
+                              .split("/")
+                              .pop()}?original_name=${encodeURIComponent(
+                              msg.file_name
+                            )}`}
+                            className="absolute top-2 right-2 bg-white rounded-full p-1.5 shadow-md z-20 hover:bg-gray-200 transition"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <img
+                              src="/download-icon.png"
+                              alt="다운로드"
+                              className="w-4 h-4"
+                            />
+                          </motion.a>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  ) : msg.message_type === "file" ? (
+                    <div className="bg-white p-2 rounded-md text-sm max-w-[200px] flex flex-col">
+                      <span className="font-medium text-blue-600 truncate">
+                        {msg.file_name}
+                      </span>
+                      <span className="text-[10px] text-gray-500">
+                        {(msg.file_size / 1024).toFixed(1)} KB
+                      </span>
+                      {msg.uploaded_at && (
+                        <span className="text-[10px] text-gray-400 mt-1">
+                          유효기간: ~
+                          {new Date(
+                            new Date(msg.uploaded_at).getTime() +
+                              7 * 24 * 60 * 60 * 1000
+                          )
+                            .toLocaleDateString("ko-KR")
+                            .replace(/\. /g, ".")
+                            .replace(/\.$/, ".")}
+                        </span>
+                      )}
+
+                      {!isExpired(msg.uploaded_at) ? (
+                        <a
+                          href={`${
+                            process.env.REACT_APP_BACKEND_URL
+                          }/download/${msg.file_url
+                            .split("/")
+                            .pop()}?original_name=${encodeURIComponent(
+                            msg.file_name
+                          )}`}
+                          className="text-xs text-blue-500 underline mt-1 text-left"
+                        >
+                          다운로드
+                        </a>
+                      ) : (
+                        <span className="text-xs text-red-500 mt-1">
+                          ⛔ 유효기간 만료
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="px-3 py-2 rounded-xl text-sm whitespace-pre-line shadow leading-snug bg-[#FFF36C] text-black max-w-[70%]">
+                      {msg.message}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <>
@@ -285,9 +399,109 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
                   </div>
 
                   <div className="flex items-end max-w-[80%] gap-1">
-                    <div className="px-3 py-2 rounded-xl text-sm whitespace-pre-line shadow leading-snug bg-white text-left">
-                      {msg.message}
-                    </div>
+                    {msg.message_type === "image" ? (
+                      <div
+                        className="relative group"
+                        onMouseEnter={() => setHoveredImageId(msg.message_id)}
+                        onMouseLeave={() => setHoveredImageId(null)}
+                      >
+                        {/* 이미지 */}
+                        <img
+                          src={`${process.env.REACT_APP_BACKEND_URL}${msg.file_url}`}
+                          alt={msg.file_name}
+                          className="max-w-[200px] max-h-[200px] rounded-md object-cover cursor-pointer"
+                          onClick={() =>
+                            setPreviewImage(
+                              `${process.env.REACT_APP_BACKEND_URL}${msg.file_url}`
+                            )
+                          }
+                        />
+
+                        {/* 애니메이션: 그라데이션 */}
+                        <AnimatePresence>
+                          {hoveredImageId === msg.message_id && (
+                            <motion.div
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              className="absolute top-0 left-0 w-full h-1/3 bg-gradient-to-b from-black/40 to-transparent rounded-md z-10"
+                            />
+                          )}
+                        </AnimatePresence>
+
+                        {/* 애니메이션: 다운로드 버튼 */}
+                        <AnimatePresence>
+                          {hoveredImageId === msg.message_id && (
+                            <motion.a
+                              initial={{ opacity: 0, y: -5 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -5 }}
+                              transition={{ duration: 0.2 }}
+                              href={`${
+                                process.env.REACT_APP_BACKEND_URL
+                              }/download/${msg.file_url
+                                .split("/")
+                                .pop()}?original_name=${encodeURIComponent(
+                                msg.file_name
+                              )}`}
+                              className="absolute top-2 right-2 bg-white rounded-full p-1.5 shadow-md z-20 hover:bg-gray-200 transition"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <img
+                                src="/download-icon.png"
+                                alt="다운로드"
+                                className="w-4 h-4"
+                              />
+                            </motion.a>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    ) : msg.message_type === "file" ? (
+                      <div className="bg-gray-100 p-2 rounded-md text-sm max-w-[200px] flex flex-col">
+                        <span className="font-medium text-blue-600 truncate">
+                          {msg.file_name}
+                        </span>
+                        <span className="text-[10px] text-gray-500">
+                          {(msg.file_size / 1024).toFixed(1)} KB
+                        </span>
+                        {msg.uploaded_at && (
+                          <span className="text-[10px] text-gray-400 mt-1">
+                            유효기간: ~
+                            {new Date(
+                              new Date(msg.uploaded_at).getTime() +
+                                7 * 24 * 60 * 60 * 1000
+                            )
+                              .toLocaleDateString("ko-KR")
+                              .replace(/\. /g, ".")
+                              .replace(/\.$/, ".")}
+                          </span>
+                        )}
+
+                        {!isExpired(msg.uploaded_at) ? (
+                          <a
+                            href={`${
+                              process.env.REACT_APP_BACKEND_URL
+                            }/download/${msg.file_url
+                              .split("/")
+                              .pop()}?original_name=${encodeURIComponent(
+                              msg.file_name
+                            )}`}
+                            className="text-xs text-blue-500 underline mt-1 text-left"
+                          >
+                            다운로드
+                          </a>
+                        ) : (
+                          <span className="text-xs text-red-500 mt-1">
+                            ⛔ 유효기간 만료
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="px-3 py-2 rounded-xl text-sm whitespace-pre-line shadow leading-snug bg-white text-left">
+                        {msg.message}
+                      </div>
+                    )}
+
                     <div className="flex flex-col items-end justify-end text-[10px] leading-tight h-full mb-0.5">
                       {msg.read_count < room.participants.length && (
                         <span className="text-yellow-600 font-semibold">
@@ -305,10 +519,60 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
           );
         })}
       </div>
+      {previewImage && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
+          onClick={() => setPreviewImage(null)}
+        >
+          <img
+            src={previewImage}
+            alt="미리보기"
+            className="max-w-full max-h-full rounded shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
 
       {/* 입력창 */}
       <div className="px-3 py-2 border-t border-gray-300 bg-white flex items-center gap-2">
-        <FaPlus className="text-gray-400" />
+        {/* + 버튼 */}
+        <FaPlus
+          className="text-gray-400 cursor-pointer"
+          onClick={() => fileInputRef.current?.click()}
+        />
+
+        {/* 숨겨진 파일 input */}
+        <input
+          type="file"
+          multiple
+          hidden
+          ref={fileInputRef}
+          onChange={async (e) => {
+            const files = Array.from(e.target.files);
+            if (!files.length) return;
+
+            try {
+              const uploaded = await uploadFiles(files); // API 호출
+              for (const file of uploaded) {
+                await sendMessage(room.id, {
+                  message_type: file.message_type,
+                  message: "파일을 보냈습니다.",
+                  file_url: file.file_url,
+                  file_name: file.file_name, // ✅ 추가
+                  file_size: file.file_size, // ✅ 추가
+                  uploaded_at: file.uploaded_at, // ✅ 추가 (유효기간 쓸 때 필요)
+                });
+              }
+              await fetchMessages(0, false); // 메시지 새로고침
+            } catch (err) {
+              console.error("파일 업로드 실패:", err);
+            } finally {
+              e.target.value = null; // 같은 파일 다시 선택 가능
+            }
+          }}
+        />
+
+        {/* 텍스트 입력창 */}
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
