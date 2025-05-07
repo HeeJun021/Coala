@@ -10,3 +10,8 @@ export const runHtmlPreview = async (codeId) => {
   const res = await apiClient.get(`/preview/preview-html/by-code/${codeId}`);
   return res.data;
 };
+
+export const runPythonPreview = async (codeId) => {
+  const res = await apiClient.get(`/preview/preview-python/by-code/${codeId}`);
+  return res.data; // { stdout, stderr }
+};

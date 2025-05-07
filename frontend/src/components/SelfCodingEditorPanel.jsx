@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { FaTimes } from "react-icons/fa";
 import CodeMirror from "@uiw/react-codemirror";
 import { getCodeById, updateCodeFile } from "../api/codeApi";
-import { runJsPreview, runHtmlPreview } from "../api/previewApi";
+import { runJsPreview, runHtmlPreview, runPythonPreview } from "../api/previewApi";
 
 const SelfCodingEditorPanel = ({
   tabs,
@@ -105,6 +105,26 @@ const SelfCodingEditorPanel = ({
     }
   };
 
+  const handleRunPython = async () => {
+    try {
+      const codeId = parseInt(activeTab?.replace("code-", ""));
+      if (!codeId) throw new Error("올바른 코드 ID가 아닙니다.");
+  
+      const result = await runPythonPreview(codeId);
+      console.log("🐍 runPython 결과:", result);
+  
+      setPreviewSrcDoc(result);  // ✅ HTML 아님, JSON 객체
+      setPreviewTabs((prev) => {
+        if (!prev.includes(selectedFilename)) return [...prev, selectedFilename];
+        return prev;
+      });
+      setActivePreviewTab(selectedFilename);
+    } catch (err) {
+      console.error("Python 실행 실패", err.message);
+      alert("Python 실행 중 오류: " + err.message);
+    }
+  };
+
   useEffect(() => {
     const fetchContent = async () => {
       if (!activeTab) return;
@@ -165,6 +185,17 @@ const SelfCodingEditorPanel = ({
           onClick={() => handleRunHtml(currentFolderId)}  // ⚠️ 여기에 폴더 ID 필요
         >
           🌐 HTML 실행
+        </button>
+      );
+    }
+
+    if (selectedFilename.endsWith(".py")) {
+      return (
+        <button
+          className="text-[12px] text-yellow-600 hover:text-yellow-800 px-2 py-0.5 border border-yellow-300 rounded"
+          onClick={handleRunPython}
+        >
+          🐍 Python 실행
         </button>
       );
     }
