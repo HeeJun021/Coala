@@ -18,7 +18,8 @@ manager = ConnectionManager()
 @router.websocket("/ws/chat")
 async def websocket_endpoint(websocket: WebSocket, db: Session = Depends(get_db)):
     # ✅ room_id 쿼리 추출
-    room_id: Optional[str] = websocket.query_params.get("room_id")
+    room_id = websocket.query_params.get("room_id")
+    room_id = int(room_id) if room_id else None
 
     # ✅ access_token은 쿠키에서 추출
     headers = Headers(scope=websocket.scope)
@@ -35,10 +36,9 @@ async def websocket_endpoint(websocket: WebSocket, db: Session = Depends(get_db)
     print("🔐 extracted token:", token)
 
     # ✅ 둘 중 하나라도 없으면 종료
-    if token is None or room_id is None:
+    if token is None:
         await websocket.close(code=1008)
         return
-    room_id = int(room_id)
 
     user = get_user_from_token(token, db)
     if not user:
@@ -47,6 +47,12 @@ async def websocket_endpoint(websocket: WebSocket, db: Session = Depends(get_db)
 
     user_id = user.user_id
     await manager.connect(user_id, websocket)
+
+    # ✅ 여기 아래에 구분 로그 추가
+    if room_id:
+        print(f"💬 [채팅방 WS] user_id={user_id}, room_id={room_id} 연결됨")
+    else:
+        print(f"💬 [채팅리스트 WS] user_id={user_id} 연결됨")
 
     try:
         while True:
@@ -97,6 +103,9 @@ async def websocket_endpoint(websocket: WebSocket, db: Session = Depends(get_db)
             # ✅ 읽음 처리
             if event_type == "read":
                 message_id = data.get("message_id")
+                print(
+                    f"📥 읽음 메시지 수신: user_id={user_id}, message_id={message_id}"
+                )  # ✅ 로그 찍기
                 if not message_id:
                     await websocket.send_json({"error": "message_id는 필수입니다."})
                     continue
@@ -118,15 +127,32 @@ async def websocket_endpoint(websocket: WebSocket, db: Session = Depends(get_db)
                         {"room_id": room_id},
                     ).fetchall()
                     user_ids = [row[0] for row in participants]
+                    total_participants = len(user_ids)  # ✅ 총 참여자 수 계산
 
-                    await manager.broadcast_to_room(
-                        user_ids,
+                    print(f"📤 읽음 브로드캐스트 대상: {user_ids}")
+
+                    # ✅ 읽은 유저 ID 조회
+                    read_user_ids = db.execute(
+                        text(
+                            "SELECT user_id FROM chatmessagereads WHERE message_id = :message_id"
+                        ),
+                        {"message_id": message_id},
+                    ).fetchall()
+                    read_user_ids_list = list(set(row[0] for row in read_user_ids))
+
+                    # ✅ 읽지 않은 사람 수 계산
+                    unread_count = total_participants - len(read_user_ids_list)
+
+                    # ✅ WebSocket 브로드캐스트
+                    await manager.broadcast_all(
                         {
                             "type": "read",
+                            "room_id": room_id,
                             "message_id": message_id,
-                            "user_id": user_id,
-                        },
+                            "unread_count": unread_count,
+                        }
                     )
+
                 continue
 
             # ✅ 메시지 전송
@@ -150,23 +176,46 @@ async def websocket_endpoint(websocket: WebSocket, db: Session = Depends(get_db)
                 db.commit()
                 db.refresh(chat_message)
 
-                # 참여자 조회
+                db.add(
+                    ChatMessageRead(message_id=chat_message.message_id, user_id=user_id)
+                )
+                db.commit()
+
+                # ✅ 참여자 조회
                 participants = db.execute(
-                    text("SELECT user_id FROM chatroomparticipants WHERE room_id = :room_id"),
+                    text(
+                        "SELECT user_id FROM chatroomparticipants WHERE room_id = :room_id"
+                    ),
                     {"room_id": room_id},
                 ).fetchall()
                 user_ids = [row[0] for row in participants]
+                total_participants = len(user_ids)
 
+                # ✅ 보낸 사람은 자동 읽음 처리됨 → 나머지가 unread 대상
+                unread_count = total_participants - 1
+
+                # ✅ 로그
+                print("[브로드캐스트 대상]", user_ids)
+                print(f"📨 메시지 unread_count = {unread_count}")
+
+                # ✅ 메시지 전송
                 await manager.broadcast_to_room(
                     user_ids,
                     {
+                        "type": "message",
                         "room_id": room_id,
                         "message_id": chat_message.message_id,
                         "sender_id": user_id,
+                        "sender": {
+                            "user_id": user.user_id,
+                            "nickname": user.nickname,
+                            "profile_image_url": user.profile_image_url,
+                        },
                         "message": message,
                         "message_type": message_type,
                         "file_url": file_url,
                         "sent_at": chat_message.sent_at.isoformat(),
+                        "unread_count": unread_count,
                     },
                 )
 

@@ -2,7 +2,12 @@ import React, { useState, useRef, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { FaSearch, FaCog, FaPen } from "react-icons/fa";
 import ReactDOM from "react-dom";
-import { getChatRooms, togglePinChatRoom } from "../../api/chatApi";
+import {
+  getChatRooms,
+  togglePinChatRoom,
+  renameChatRoom,
+  leaveChatRoom,
+} from "../../api/chatApi";
 import NewChatModal from "./NewChatModal";
 import ChatListSettingsPanel from "./ChatListSettingsPanel";
 import ChatRoomPanel from "./ChatRoomPanel";
@@ -27,6 +32,8 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
   const [selectedRoom, setSelectedRoom] = useState(null); // ✅ 현재 선택된 채팅방
 
   const [showArchived, setShowArchived] = useState(false);
+
+  const socketRef = useRef(null);
 
   const { user } = useAuth();
 
@@ -171,6 +178,40 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
     setContextMenu(null);
   };
 
+  const getChatRoomsAndSet = async () => {
+    try {
+      const data = await getChatRooms();
+      console.log("✅ 채팅방 목록 갱신됨:", data);
+
+      const transformed = data.map((room) => ({
+        id: room.room_id,
+        name: room.room_name ?? "이름 없음",
+        preview: room.last_message || "(아직 메시지가 없습니다)",
+        time: room.last_message_time
+          ? new Date(room.last_message_time).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "",
+        rawTime: room.last_message_time || null,
+        unread: room.unread_count ?? 0,
+        group: room.is_group ?? false,
+        participants: room.participants ?? [],
+        is_pinned: room.is_pinned ?? false,
+        pinned_at: room.pinned_at ?? null,
+      }));
+
+      setChatRooms(transformed);
+    } catch (error) {
+      console.error("🚨 채팅방 목록 갱신 실패:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (!user) return;
+    getChatRoomsAndSet();
+  }, [user]);
+
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -181,55 +222,70 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const filteredRooms = chatRooms.filter(
-    (room) =>
-      typeof room.name === "string" &&
-      room.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   useEffect(() => {
-    const fetchChatRooms = async () => {
-      try {
-        const data = await getChatRooms();
-        console.log("✅ 서버 응답:", data);
+    if (!user) return;
 
-        const transformed = data.map((room) => ({
-          id: room.room_id,
-          name: room.room_name ?? "이름 없음",
-          preview: room.last_message || "(아직 메시지가 없습니다)",
-          time: room.last_message_time
-            ? new Date(room.last_message_time).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })
-            : "",
-          rawTime: room.last_message_time || null,
-          unread: room.unread_count ?? 0,
-          group: room.is_group ?? false,
-          participants: room.participants ?? [],
-          is_pinned: room.is_pinned ?? false, // ✅ 반드시 추가
-          pinned_at: room.pinned_at ?? null, // ✅ 추가
-        }));
+    const socket = new WebSocket(`ws://localhost:8000/ws/chat`);
+    socketRef.current = socket;
 
-        setChatRooms(transformed);
-      } catch (error) {
-        console.error("🚨 채팅방 목록 불러오기 실패:", error);
+    socket.onopen = () => {
+      console.log("✅ WebSocket connected");
+    };
+
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      // 조건 없이 모든 메시지 로그 출력
+      console.log("📩 [전체 수신] WS 데이터:", data);
+
+      if (data.sender_id === user.user_id) {
+        console.log("🟨 내가 보낸 메시지 수신");
+      } else {
+        console.log("🟦 다른 사람이 보낸 메시지 수신");
+      }
+
+      if (data.type === "read") {
+        const { room_id, unread_count } = data;
+        console.log("✅ 읽음 수신123123", { room_id, unread_count });
+
+        setChatRooms((prevRooms) =>
+          prevRooms.map((room) =>
+            room.id === room_id ? { ...room, unread: unread_count } : room
+          )
+        );
+        return;
+      }
+
+      // ✅ 메시지 수신 조건 수정
+      if (data.type === "message") {
+        if (data.room_id && selectedRoom?.id === data.room_id) return; // 방 안에 있으면 무시
+        console.log("📌 새 메시지로 채팅방 목록 새로고침");
+        getChatRoomsAndSet();
       }
     };
 
-    fetchChatRooms();
-  }, []);
+    socket.onclose = () => {
+      console.log("❌ WebSocket disconnected");
+    };
+
+    return () => {
+      socket.close();
+    };
+  }, [user, selectedRoom]);
 
   if (selectedRoom) {
     return (
       <ChatRoomPanel
         room={selectedRoom}
-        onBack={() => setSelectedRoom(null)}
+        onBack={() => {
+          setSelectedRoom(null);
+          getChatRoomsAndSet(); // ✅ 추가!
+        }}
         refreshRoom={() => {
           // 필요시 목록 새로고침
         }}
         handleLeaveRoom={() => {
           setSelectedRoom(null);
+          getChatRoomsAndSet(); // ✅ 이것도 추가!
         }}
       />
     );
@@ -296,11 +352,58 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {(searchQuery ? filteredRooms : chatRooms).map((room) => (
+          {(searchQuery
+            ? [...chatRooms]
+                .filter(
+                  (room) =>
+                    typeof room.name === "string" &&
+                    room.name.toLowerCase().includes(searchQuery.toLowerCase())
+                )
+                .sort(
+                  (a, b) => new Date(b.rawTime || 0) - new Date(a.rawTime || 0)
+                )
+            : [
+                ...chatRooms
+                  .filter((room) => room.is_pinned)
+                  .sort(
+                    (a, b) =>
+                      new Date(b.rawTime || 0) - new Date(a.rawTime || 0)
+                  ),
+                ...chatRooms
+                  .filter((room) => !room.is_pinned)
+                  .sort(
+                    (a, b) =>
+                      new Date(b.rawTime || 0) - new Date(a.rawTime || 0)
+                  ),
+              ]
+          ).map((room) => (
             <div
               key={room.id}
               onContextMenu={(e) => handleContextMenu(e, room.id)}
-              onClick={() => onSelectRoom && onSelectRoom(room)}
+              onClick={() => {
+                // ✅ last_message_id를 room 객체에 포함시켜야 함 (백엔드에서 추가 필요)
+                const lastMessageId = room.last_message_id;
+
+                if (
+                  socketRef.current?.readyState === WebSocket.OPEN &&
+                  lastMessageId
+                ) {
+                  socketRef.current.send(
+                    JSON.stringify({
+                      type: "read",
+                      message_id: lastMessageId,
+                      room_id: room.id,
+                    })
+                  );
+                  console.log("📤 [리스트 클릭 시 읽음 전송]", {
+                    lastMessageId,
+                    roomId: room.id,
+                  });
+                }
+
+                // ✅ 기존 로직
+                if (onSelectRoom) onSelectRoom(room);
+              }}
               className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer border-b"
             >
               <div className="w-10 h-10 rounded-full bg-purple-200 relative">
@@ -421,15 +524,36 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
                 취소
               </button>
               <button
-                onClick={() => {
-                  setChatRooms((prev) =>
-                    prev.map((room) =>
-                      room.id === renameTarget.id
-                        ? { ...room, name: renameInput }
-                        : room
-                    )
-                  );
-                  setShowRenameModal(false);
+                onClick={async () => {
+                  try {
+                    await renameChatRoom(renameTarget.id, renameInput); // ✅ 서버에 이름 변경 요청
+                    setChatRooms((prev) => {
+                      const updated = prev.map((room) =>
+                        room.id === renameTarget.id
+                          ? { ...room, name: renameInput }
+                          : room
+                      );
+                      return [
+                        ...updated
+                          .filter((r) => r.is_pinned)
+                          .sort(
+                            (a, b) =>
+                              new Date(b.rawTime || 0) -
+                              new Date(a.rawTime || 0)
+                          ),
+                        ...updated
+                          .filter((r) => !r.is_pinned)
+                          .sort(
+                            (a, b) =>
+                              new Date(b.rawTime || 0) -
+                              new Date(a.rawTime || 0)
+                          ),
+                      ];
+                    });
+                    setShowRenameModal(false);
+                  } catch (err) {
+                    console.error("❌ 채팅방 이름 변경 실패:", err);
+                  }
                 }}
                 className="px-4 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
               >
@@ -455,11 +579,34 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
                 취소
               </button>
               <button
-                onClick={() => {
-                  setChatRooms((prev) =>
-                    prev.filter((room) => room.id !== leaveTargetId)
-                  );
-                  setShowLeaveModal(false);
+                onClick={async () => {
+                  try {
+                    await leaveChatRoom(leaveTargetId); // ✅ 서버에 나가기 요청
+                    setChatRooms((prev) => {
+                      const updated = prev.filter(
+                        (room) => room.id !== leaveTargetId
+                      );
+                      return [
+                        ...updated
+                          .filter((r) => r.is_pinned)
+                          .sort(
+                            (a, b) =>
+                              new Date(b.rawTime || 0) -
+                              new Date(a.rawTime || 0)
+                          ),
+                        ...updated
+                          .filter((r) => !r.is_pinned)
+                          .sort(
+                            (a, b) =>
+                              new Date(b.rawTime || 0) -
+                              new Date(a.rawTime || 0)
+                          ),
+                      ];
+                    });
+                    setShowLeaveModal(false);
+                  } catch (err) {
+                    console.error("❌ 채팅방 나가기 실패:", err);
+                  }
                 }}
                 className="px-4 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
               >

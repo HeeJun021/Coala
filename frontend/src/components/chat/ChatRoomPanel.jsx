@@ -29,6 +29,8 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
   const [previewImage, setPreviewImage] = useState(null);
   const [hoveredImageId, setHoveredImageId] = useState(null);
 
+  const [socketReady, setSocketReady] = useState(false); // ✅ 상태 추가
+
   const containerRef = useRef(null);
   const topRef = useRef(null);
 
@@ -88,18 +90,98 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
     }
   }, [messages, isSearching]);
 
-  const handleSend = async () => {
-    if (!input.trim()) return;
-    try {
-      await sendMessage(room.id, {
+  useEffect(() => {
+    if (!socketReady || !messages.length) return;
+  
+    const socket = socketRef.current;
+    const lastMessage = messages[messages.length - 1];
+  
+    const isFromOtherUser =
+      lastMessage && lastMessage.sender_id !== user.user_id;
+  
+    if (socket && socket.readyState === WebSocket.OPEN && isFromOtherUser) {
+      console.log("📤 [읽음 전송] message_id:", lastMessage.message_id);
+      socket.send(
+        JSON.stringify({
+          type: "read",
+          message_id: lastMessage.message_id,
+        })
+      );
+    }
+  }, [socketReady, messages, user.user_id]);
+  
+  
+
+  const socketRef = useRef(null);
+
+  useEffect(() => {
+    socketRef.current = new WebSocket(
+      `ws://localhost:8000/ws/chat?room_id=${room.id}`
+    );
+  
+    socketRef.current.onopen = () => {
+      console.log("✅ ChatRoom WS connected");
+      setSocketReady(true); // ✅ 연결 완료 표시
+    };
+
+    socketRef.current.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log("📩 WS 수신 메시지:", data);
+
+      if (data.type === "message" && data.room_id === room.id) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            ...data,
+            read_count: room.participants.length - data.unread_count,
+          },
+        ]);
+
+        // ✅ 내가 보낸 메시지가 아니면 읽음 처리
+        if (data.sender_id !== user.user_id) {
+          socketRef.current.send(
+            JSON.stringify({
+              type: "read",
+              message_id: data.message_id,
+            })
+          );
+        }
+
+        return;
+      }
+
+      if (data.type === "read") {
+        const { message_id, unread_count } = data;
+
+        setMessages((prev) =>
+          prev.map((msg) =>
+            parseInt(msg.message_id) === parseInt(message_id)
+              ? {
+                  ...msg,
+                  read_count: room.participants.length - unread_count,
+                }
+              : msg
+          )
+        );
+      }
+    };
+
+    return () => {
+      socketRef.current?.close();
+    };
+  }, [room.id, room.participants.length, user.user_id]); // ✅ 여기 추가됨
+
+  const handleSend = () => {
+    if (!input.trim() || !socketRef.current) return;
+
+    socketRef.current.send(
+      JSON.stringify({
+        type: "message",
         message: input,
         message_type: "text",
-      });
-      setInput("");
-      await fetchMessages(0, false);
-    } catch (err) {
-      console.error("메시지 전송 실패:", err);
-    }
+      })
+    );
+    setInput("");
   };
 
   const handleKeyDown = (e) => {
@@ -189,7 +271,10 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
       >
         {[...filteredMessages].map((msg, index) => {
           const isFirstMessage = index === 0;
-          const isMine = msg.sender?.user_id === user?.user_id;
+          const isMine =
+            msg.sender?.user_id === user?.user_id ||
+            msg.sender_id === user?.user_id;
+
           const isSystem = msg.message_type === "system";
 
           const findNextTextMessage = (startIndex, condition = () => true) => {
