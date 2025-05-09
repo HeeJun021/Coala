@@ -12,6 +12,18 @@ export const getArchivedChatRooms = async () => {
   return response.data;
 };
 
+// ✅ 요청 수락
+export const acceptChatRequest = async (roomId) => {
+  const response = await apiClient.patch(`/api/chat/${roomId}/accept`);
+  return response.data;
+};
+
+// ✅ 요청 거절
+export const rejectChatRequest = async (roomId) => {
+  const response = await apiClient.patch(`/api/chat/${roomId}/reject`);
+  return response.data;
+};
+
 // ✅ 채팅방 생성
 export const createChatRoom = async (userIds) => {
     const isGroup = userIds.length > 1;
@@ -48,11 +60,6 @@ export const togglePinChatRoom = async (roomId) => {
   return response.data;
 };
 
-// ✅ 채팅방 보관 처리
-export const archiveChatRoom = async (roomId) => {
-  const response = await apiClient.patch(`/api/chat/${roomId}/archive`);
-  return response.data;
-};
 
 // ✅ 채팅방 참여자 목록 조회
 export const getChatParticipants = async (roomId) => {

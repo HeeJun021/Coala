@@ -86,15 +86,42 @@ def create_chat_room(
     invited_user_nicknames = []
 
     for user_id in all_participants:
-        db.add(ChatRoomParticipant(room_id=new_room.room_id, user_id=user_id))
+        is_archived = False
+
         if user_id != current_user.user_id:
+            # ✅ 팔로우 여부 확인: user_id가 current_user를 팔로우했는가?
+            is_following = (
+                db.query(UserFollow)
+                .filter_by(follower_id=user_id, following_id=current_user.user_id)
+                .first()
+                is not None
+            )
+            if not is_following:
+                is_archived = True  # → 요청함으로 이동
+
             nickname = db.query(User.nickname).filter(User.user_id == user_id).scalar()
             invited_user_nicknames.append(nickname)
+
+        db.add(
+            ChatRoomParticipant(
+                room_id=new_room.room_id,
+                user_id=user_id,
+                is_archived=is_archived,
+                is_deleted=False,
+            )
+        )
 
     # 4. 시스템 메시지 생성
     if invited_user_nicknames:
         inviter_nickname = current_user.nickname
-        system_text = f"{inviter_nickname}님이 {', '.join(invited_user_nicknames)}님을 초대했습니다."
+
+        if not is_group and len(invited_user_nicknames) == 1:
+            # ✅ 1:1 대화 메시지
+            system_text = f"{invited_user_nicknames[0]}님과의 채팅이 시작되었습니다."
+        else:
+            # ✅ 그룹 대화 메시지
+            system_text = f"{inviter_nickname}님이 {', '.join(invited_user_nicknames)}님을 초대했습니다."
+
         system_msg = ChatMessage(
             room_id=new_room.room_id,
             sender_id=current_user.user_id,
@@ -129,6 +156,7 @@ def get_chat_rooms(
         .filter(
             ChatRoomParticipant.user_id == current_user.user_id,
             ChatRoomParticipant.is_archived == False,
+            ChatRoomParticipant.is_deleted == False,
         )
         .order_by(
             ChatRoomParticipant.is_pinned.desc(),
@@ -201,7 +229,6 @@ def get_chat_rooms(
     )
 
     return pinned + unpinned
-
 
 
 # 메시지 보내기
@@ -510,6 +537,7 @@ def mark_message_as_read(
     db.commit()
     return
 
+
 # 채팅창 고정
 @router.patch("/{room_id}/pin", response_model=ChatRoomPinToggleResponse)
 def toggle_chat_room_pin(
@@ -536,15 +564,14 @@ def toggle_chat_room_pin(
 
     db.commit()
 
-    return ChatRoomPinToggleResponse(
-        room_id=room_id,
-        is_pinned=participant.is_pinned
-    )
+    return ChatRoomPinToggleResponse(room_id=room_id, is_pinned=participant.is_pinned)
+
 
 # 보관함 채팅방 조회
 @router.get("/archived", response_model=List[ChatRoomListItem])
 def get_archived_chat_rooms(
-    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     results = (
         db.query(
@@ -553,18 +580,16 @@ def get_archived_chat_rooms(
             ChatRoom.is_group,
             ChatRoom.room_name,
             ChatRoomParticipant.custom_room_name,
-            ChatRoomParticipant.is_pinned,
             ChatRoomParticipant.joined_at,
             ChatRoomParticipant.last_read_message_id,
         )
         .join(ChatRoom, ChatRoomParticipant.room_id == ChatRoom.room_id)
         .filter(
             ChatRoomParticipant.user_id == current_user.user_id,
-            ChatRoomParticipant.is_archived == True,  # ✅ 보관된 방만 조회
+            ChatRoomParticipant.is_archived == True,  # ✅ 보관된 방만
+            ChatRoomParticipant.is_deleted == False,  # ✅ 추가
         )
-        .order_by(
-            ChatRoomParticipant.is_pinned.desc(), ChatRoomParticipant.joined_at.desc()
-        )
+        .order_by(ChatRoomParticipant.joined_at.desc())  # ✅ pinned 정렬 제거
         .all()
     )
 
@@ -578,23 +603,35 @@ def get_archived_chat_rooms(
             .first()
         )
 
-        unread_count = 0
-        if row.last_read_message_id is not None:
-            unread_count = (
-                db.query(ChatMessage)
-                .filter(
-                    ChatMessage.room_id == row.room_id,
-                    ChatMessage.message_id > row.last_read_message_id,
-                )
-                .count()
+        unread_count = (
+            db.query(ChatMessage)
+            .filter(
+                ChatMessage.room_id == row.room_id,
+                ChatMessage.message_id > func.coalesce(row.last_read_message_id, -1),
+                ChatMessage.sender_id != current_user.user_id,
+                ChatMessage.message_type != "system",
             )
-        else:
-            # 아예 읽은 메시지가 없는 경우 → 전체 메시지 개수가 unread
-            unread_count = (
-                db.query(ChatMessage).filter(ChatMessage.room_id == row.room_id).count()
-            )
+            .count()
+        )
 
         display_name = row.custom_room_name if row.custom_room_name else row.room_name
+
+        participant_rows = (
+            db.query(User.user_id, User.nickname, User.profile_image_url)
+            .join(ChatRoomParticipant, ChatRoomParticipant.user_id == User.user_id)
+            .filter(ChatRoomParticipant.room_id == row.room_id)
+            .limit(4)
+            .all()
+        )
+
+        participants = [
+            ChatParticipant(
+                user_id=p.user_id,
+                nickname=p.nickname,
+                profile_url=p.profile_image_url,
+            )
+            for p in participant_rows
+        ]
 
         chat_room_list.append(
             ChatRoomListItem(
@@ -602,22 +639,53 @@ def get_archived_chat_rooms(
                 room_type=row.room_type,
                 is_group=row.is_group,
                 room_name=display_name,
-                is_pinned=row.is_pinned,
+                is_pinned=False,  # ✅ 보관함엔 핀 X
                 joined_at=row.joined_at,
                 last_message=last_msg.message if last_msg else None,
                 last_message_time=last_msg.sent_at if last_msg else None,
                 unread_count=unread_count,
+                participants=participants,
             )
         )
 
     return chat_room_list
 
 
-# 채팅방 보관함 이동
-@router.patch("/{room_id}/archive", response_model=ChatRoomArchiveToggleResponse)
-def toggle_chat_room_archive(
+# 채팅방 보관함 이동(수락)
+@router.patch("/{room_id}/accept", response_model=ChatRoomArchiveToggleResponse)
+def accept_chat_request(
     room_id: int,
-    data: ChatRoomArchiveToggleRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    채팅 요청 수락 → is_archived=False 로 변경 (복원)
+    """
+    participant = (
+        db.query(ChatRoomParticipant)
+        .filter_by(room_id=room_id, user_id=current_user.user_id)
+        .first()
+    )
+
+    if not participant:
+        raise HTTPException(status_code=404, detail="채팅방에 참여 중이지 않습니다.")
+
+    if participant.is_deleted:
+        raise HTTPException(status_code=400, detail="이미 거절된 채팅방입니다.")
+
+    if participant.is_archived is False:
+        raise HTTPException(status_code=400, detail="이미 수락된 채팅방입니다.")
+
+    participant.is_archived = False
+    db.commit()
+
+    return ChatRoomArchiveToggleResponse(room_id=room_id, is_archived=False)
+
+
+# 채팅방 보관함 이동(거절)
+@router.patch("/{room_id}/reject", response_model=ChatRoomArchiveToggleResponse)
+def reject_chat_request(
+    room_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -630,11 +698,14 @@ def toggle_chat_room_archive(
     if not participant:
         raise HTTPException(status_code=404, detail="채팅방에 참여 중이지 않습니다.")
 
-    participant.is_archived = data.archived
+    if participant.is_deleted:
+        raise HTTPException(status_code=400, detail="이미 거절된 요청입니다.")
+
+    participant.is_deleted = True  # ✅ 요청함에서 숨김 처리
     db.commit()
 
     return ChatRoomArchiveToggleResponse(
-        room_id=room_id, is_archived=participant.is_archived
+        room_id=room_id, is_archived=True  # 여전히 보관된 상태
     )
 
 

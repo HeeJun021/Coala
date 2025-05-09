@@ -2,10 +2,11 @@ import React, { useState, useRef, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { FaSearch, FaCog, FaPen } from "react-icons/fa";
 import ReactDOM from "react-dom";
-import ChatListSettingsPanel from "./ChatListSettingsPanel";
-import NewChatModal from "./NewChatModal";
 import { getChatRooms, togglePinChatRoom } from "../../api/chatApi";
+import NewChatModal from "./NewChatModal";
+import ChatListSettingsPanel from "./ChatListSettingsPanel";
 import ChatRoomPanel from "./ChatRoomPanel";
+import ArchivedChatPanel from "./ArchivedChatPanel";
 
 const ChatListPanel = ({ onClose, onSelectRoom }) => {
   const [contextMenu, setContextMenu] = useState(null);
@@ -24,6 +25,8 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
 
   const [showNewChat, setShowNewChat] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null); // ✅ 현재 선택된 채팅방
+
+  const [showArchived, setShowArchived] = useState(false);
 
   const { user } = useAuth();
 
@@ -155,7 +158,6 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
           is_pinned: room.is_pinned ?? false,
         }));
 
-
         setChatRooms(transformed);
       } catch (error) {
         console.error("상단 고정 실패:", error);
@@ -209,8 +211,6 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
           pinned_at: room.pinned_at ?? null, // ✅ 추가
         }));
 
-
-
         setChatRooms(transformed);
       } catch (error) {
         console.error("🚨 채팅방 목록 불러오기 실패:", error);
@@ -231,6 +231,15 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
         handleLeaveRoom={() => {
           setSelectedRoom(null);
         }}
+      />
+    );
+  }
+
+  if (showArchived) {
+    return (
+      <ArchivedChatPanel
+        onBack={() => setShowArchived(false)}
+        onSelectRoom={(room) => setSelectedRoom(room)}
       />
     );
   }
@@ -278,7 +287,10 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
 
         <div className="flex justify-between items-center px-4 pt-2 pb-1 text-sm font-semibold text-gray-500">
           <span>메시지</span>
-          <button className="text-blue-500 hover:underline text-xs">
+          <button
+            className="text-blue-500 hover:underline text-xs"
+            onClick={() => setShowArchived(true)}
+          >
             요청
           </button>
         </div>

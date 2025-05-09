@@ -27,6 +27,7 @@ class ChatRoomParticipant(Base):
     is_archived = Column(Boolean, default=False)
     is_muted = Column(Boolean, default=False)
     custom_room_name = Column(String(100), nullable=True)
+    is_deleted = Column(Boolean, default=False)
 
 
 # 3. 채팅 메시지 테이블
