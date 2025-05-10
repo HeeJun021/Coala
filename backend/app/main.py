@@ -38,7 +38,8 @@ from app.routers import (
     board,
     chat_rest,
     chat_upload,
-    chat_download
+    chat_download,
+    gpt
 )
 from app.schemas.user import UserUpdateSchema
 from datetime import datetime
@@ -96,6 +97,9 @@ app.include_router(chat_upload.router, prefix="", tags=["파일 업로드"])
 app.include_router(chat_download.router, tags=["파일 다운로드"])
 
 app.mount("/static", StaticFiles(directory="uploaded_files"), name="static")
+
+# gpt
+app.include_router(gpt.router, prefix="/gpt", tags=["gpt"])
 
 # 기본 라우트
 @app.get("/", tags=["Root"])

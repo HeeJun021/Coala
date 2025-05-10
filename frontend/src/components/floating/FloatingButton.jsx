@@ -4,10 +4,14 @@ import chatIcon from "../../assets/floating/chat-icon.png";
 import alertIcon from "../../assets/floating/alert-icon.png";
 import aiIcon from "../../assets/floating/ai-icon.png";
 import ChatPanelWrapper from "../chat/ChatPanelWrapper";
+import AIChatPanel from "../ai/AIChatPanel"
 
 const FloatingButton = () => {
   const [expanded, setExpanded] = useState(false);
   const [showChat, setShowChat] = useState(false);
+
+  const [showAIChat, setShowAIChat] = useState(false);
+
   const wrapperRef = useRef();
 
   useEffect(() => {
@@ -30,6 +34,7 @@ const FloatingButton = () => {
         <div className="flex flex-col items-center gap-3 mb-2">
           {/* AI 버튼 */}
           <button
+            onClick={() => setShowAIChat(true)} // ✅ 여기 추가
             className={`w-12 h-12 rounded-full bg-purple-300 shadow flex items-center justify-center transition-all duration-300 ease-out ${
               expanded
                 ? "opacity-100 translate-y-0 delay-[150ms]"
@@ -68,13 +73,18 @@ const FloatingButton = () => {
           onClick={() => setExpanded((prev) => !prev)}
           className="w-16 h-16 rounded-full bg-white shadow-lg border border-gray-300 flex items-center justify-center hover:scale-105 transition"
         >
-          <img src={koalaIcon} alt="코알라" className="w-10 h-10 object-contain" />
+          <img
+            src={koalaIcon}
+            alt="코알라"
+            className="w-10 h-10 object-contain"
+          />
         </button>
       </div>
 
       {/* ✅ 채팅창 패널 */}
       {showChat && <ChatPanelWrapper onClose={() => setShowChat(false)} />}
-
+      {/* ✅ 새로운 GPT 채팅창 */}
+      {showAIChat && <AIChatPanel onClose={() => setShowAIChat(false)} />}
     </>
   );
 };

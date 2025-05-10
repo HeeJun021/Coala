@@ -268,6 +268,52 @@ html, body, #root {
   animation: fadeIn 0.4s ease-in-out;
 }
 
+/* highlight.js 기반 하이라이팅 색상 적용 */
+.prism-style-on-white .hljs-comment,
+.prism-style-on-white .hljs-quote {
+  color: #6a9955;
+}
+
+.prism-style-on-white .hljs-keyword,
+.prism-style-on-white .hljs-selector-tag,
+.prism-style-on-white .hljs-subst {
+  color: #c586c0;
+}
+
+.prism-style-on-white .hljs-number,
+.prism-style-on-white .hljs-literal,
+.prism-style-on-white .hljs-variable,
+.prism-style-on-white .hljs-template-variable,
+.prism-style-on-white .hljs-tag .hljs-attr {
+  color: #b5cea8;
+}
+
+.prism-style-on-white .hljs-string,
+.prism-style-on-white .hljs-doctag {
+  color: #ce9178;
+}
+
+.prism-style-on-white .hljs-title,
+.prism-style-on-white .hljs-section {
+  color: #569cd6;
+}
+
+.prism-style-on-white .hljs-attribute {
+  color: #9cdcfe;
+}
+
+.prism-style-on-white .hljs-name,
+.prism-style-on-white .hljs-tag {
+  color: #dcdcaa;
+}
+
+.prism-style-on-white .hljs-built_in {
+  color: #d16969;
+}
+
+
+
+
 @keyframes fadeIn {
   0% {
     opacity: 0;
