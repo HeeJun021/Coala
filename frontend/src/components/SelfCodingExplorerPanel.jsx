@@ -678,6 +678,7 @@ const EXT_MAP = {
   };
 
   return (
+    <div className="p-4">
     <>
       <div
         className="text-sm text-green-700 font-medium flex items-center gap-2 cursor-pointer mb-4 hover:underline"
@@ -706,6 +707,7 @@ const EXT_MAP = {
       )}
       {menuVisible && <ContextMenu position={menuPosition} />}
     </>
+      </div>
   );
 };
 
