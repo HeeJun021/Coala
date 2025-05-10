@@ -30,7 +30,7 @@ const SelfCodingPanel = ({
   isGithubConnected,
 }) => {
   return (
-    <div className="w-64 bg-[#f3f3f3] border-r border-gray-300 p-4 overflow-auto">
+    <div className="w-64 bg-[#f3f3f3] border-r border-gray-300 h-full overflow-auto">
       {activePanel === "explorer" && (
         <SelfCodingExplorerPanel
           navigate={navigate}

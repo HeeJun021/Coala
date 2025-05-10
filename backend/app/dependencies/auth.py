@@ -3,6 +3,7 @@ from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User
+from app.models.social_login import SocialLogin
 from app.config import settings
 from typing import Optional
 
@@ -22,4 +23,13 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
     user = db.query(User).filter(User.user_id == user_id).first()
     if user is None:
         raise HTTPException(status_code=401, detail="User not found")
-    return user  # ✅ 반드시 User 객체 반환
+
+    # GitHub 액세스 토큰 설정 (SocialLogin에서 가져옴)
+    social_login = db.query(SocialLogin).filter(
+        SocialLogin.user_id == user_id,
+        SocialLogin.provider == "github"
+    ).first()
+    if social_login and social_login.access_token:
+        user.github_access_token = social_login.access_token
+
+    return user  # ✅ github_access_token이 포함된 User 객체 반환

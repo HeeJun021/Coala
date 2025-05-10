@@ -150,8 +150,9 @@ def social_login(provider: str):
     if provider == "google":
         auth_url += "&scope=openid%20email%20profile"
     elif provider == "github":
-        auth_url += "&scope=user:email"
+        auth_url += "&scope=user:email%20repo"  # repo 스코프 추가
 
+    print(f"🔍 GitHub 로그인 URL: {auth_url}")
     return RedirectResponse(auth_url)
 
 # ✅ 콜백 처리 (access_token 저장 추가)
@@ -215,7 +216,7 @@ def social_callback(provider: str, code: str, db: Session = Depends(get_db)):
         if not picture:
             picture = user_info.get("kakao_account", {}).get("profile", {}).get("profile_image_url", "")
 
-    # 깃허브는 기본적으로 생년월일을 제공하지 않음 (디버그 로그 추가)
+    # 깃허브는 기본적으로 생년월일을 제공하지 않음 (디버깅 로그 추가)
     elif provider == "github":
         provider_user_id = str(user_info.get("id"))
         name = user_info.get("name", "GitHub User")
@@ -251,7 +252,12 @@ def social_callback(provider: str, code: str, db: Session = Depends(get_db)):
         print(f"🔍 깃허브에서 받은 이메일: {email}")
         print(f"🔍 깃허브에서 받은 닉네임: {name} ({type(name)})")
         print(f"🔍 깃허브에서 받은 프로필 이미지: {picture}")
-            
+        print(f"🔍 깃허브 액세스 토큰: {access_token}")
+
+        # ✅ 토큰 유효성 테스트
+        headers = {"Authorization": f"Bearer {access_token}"}
+        scope_response = requests.get("https://api.github.com/user", headers=headers)
+        print(f"🔍 GitHub 토큰 유효성 테스트 (/user): {scope_response.status_code}, {scope_response.text}")
 
     elif provider == "naver":
         provider_user_id = str(user_info.get("response", {}).get("id"))
@@ -292,4 +298,7 @@ def unlink_github(current_user: User = Depends(get_current_user), db: Session = 
     if social_login:
         db.delete(social_login)
         db.commit()
+        print(f"🔍 GitHub 연동 해제: user_id={current_user.user_id}")
+    else:
+        print(f"🔍 GitHub 연동 해제 실패: 연동된 계정 없음, user_id={current_user.user_id}")
     return {"message": "GitHub 연동 해제 완료"}
