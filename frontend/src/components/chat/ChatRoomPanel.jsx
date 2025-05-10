@@ -24,6 +24,7 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
   const [showInfo, setShowInfo] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
 
   const fileInputRef = useRef(null);
   const [previewImage, setPreviewImage] = useState(null);
@@ -43,7 +44,20 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
         const hasMoreData = res.length === LIMIT;
         const reversed = res.reverse();
 
-        setMessages((prev) => (append ? [...reversed, ...prev] : reversed));
+        setMessages((prev) => {
+          const combined = append ? [...reversed, ...prev] : reversed;
+
+          // ✅ 중복 message_id 제거
+          const uniqueMap = new Map();
+          combined.forEach((msg) => {
+            uniqueMap.set(msg.message_id, msg);
+          });
+
+          return Array.from(uniqueMap.values()).sort(
+            (a, b) => a.message_id - b.message_id
+          );
+        });
+
         setHasMore(hasMoreData);
 
         if (res.length > 0) {
@@ -65,16 +79,41 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
 
   useEffect(() => {
     const container = containerRef.current;
-    if (!container || isSearching) return;
+    if (!container || isSearching || isFetching) return;
 
     const handleScroll = () => {
-      if (container.scrollTop === 0 && hasMore && messages.length > 0) {
+      if (
+        container.scrollTop <= 20 &&
+        hasMore &&
+        messages.length > 0 &&
+        !isFetching
+      ) {
         const oldestMessageId = messages[0]?.message_id;
-        const currentHeight = container.scrollHeight;
+        const prevTopMsg = container.querySelector(
+          `[data-id='${oldestMessageId}']`
+        );
+        const prevOffset = prevTopMsg?.getBoundingClientRect().top ?? 0;
+
+        setIsFetching(true);
 
         fetchMessages(oldestMessageId, true).then(() => {
           requestAnimationFrame(() => {
-            container.scrollTop = container.scrollHeight - currentHeight;
+            const newTopMsg = container.querySelector(
+              `[data-id='${oldestMessageId}']`
+            );
+            const newOffset = newTopMsg?.getBoundingClientRect().top ?? 0;
+            const delta = newOffset - prevOffset;
+
+            // 🔒 깜빡임 방지: scrollBehavior 임시 비활성화
+            container.style.scrollBehavior = "auto";
+            container.scrollTop += delta;
+
+            // 🔓 다시 부드럽게 설정
+            setTimeout(() => {
+              container.style.scrollBehavior = "smooth";
+            }, 0);
+
+            setIsFetching(false);
           });
         });
       }
@@ -82,7 +121,7 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
 
     container.addEventListener("scroll", handleScroll);
     return () => container.removeEventListener("scroll", handleScroll);
-  }, [messages, hasMore, isSearching, fetchMessages]);
+  }, [messages, hasMore, isSearching, fetchMessages, isFetching]);
 
   useEffect(() => {
     if (!isSearching && containerRef.current) {
@@ -92,17 +131,20 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
 
   useEffect(() => {
     if (!socketReady || !messages.length) return;
-  
+
     const socket = socketRef.current;
     const lastMessage = messages[messages.length - 1];
-  
+
     const isFromOtherUser =
       lastMessage && lastMessage.sender_id !== user.user_id;
-  
+
     // ✅ 메시지 도착 후 DOM 그려지고 나서 읽음 전송
     const timeout = setTimeout(() => {
       if (socket && socket.readyState === WebSocket.OPEN && isFromOtherUser) {
-        console.log("📤 [읽음 전송] ChatRoomPanel → message_id:", lastMessage.message_id);
+        console.log(
+          "📤 [읽음 전송] ChatRoomPanel → message_id:",
+          lastMessage.message_id
+        );
         socket.send(
           JSON.stringify({
             type: "read",
@@ -111,11 +153,9 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
         );
       }
     }, 100); // 약간의 지연
-  
+
     return () => clearTimeout(timeout);
   }, [socketReady, messages, user.user_id]);
-  
-  
 
   const socketRef = useRef(null);
 
@@ -123,7 +163,7 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
     socketRef.current = new WebSocket(
       `ws://localhost:8000/ws/chat?room_id=${room.id}`
     );
-  
+
     socketRef.current.onopen = () => {
       console.log("✅ [ChatRoom WS 연결됨] room_id:", room.id);
 
@@ -134,10 +174,14 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
       const data = JSON.parse(event.data);
       console.log("📩 [WS 수신] ChatRoomPanel →", data);
 
-
       if (data.type === "message" && data.room_id === room.id) {
-        console.log("💬 [메시지 수신] room_id:", data.room_id, "message_id:", data.message_id);
-      
+        console.log(
+          "💬 [메시지 수신] room_id:",
+          data.room_id,
+          "message_id:",
+          data.message_id
+        );
+
         setMessages((prev) => [
           ...prev,
           {
@@ -145,9 +189,12 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
             read_count: room.participants.length - data.unread_count,
           },
         ]);
-      
+
         if (data.sender_id !== user.user_id) {
-          console.log("📤 [즉시 읽음 전송] 상대 메시지 감지됨 → message_id:", data.message_id);
+          console.log(
+            "📤 [즉시 읽음 전송] 상대 메시지 감지됨 → message_id:",
+            data.message_id
+          );
           socketRef.current.send(
             JSON.stringify({
               type: "read",
@@ -157,12 +204,16 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
         }
         return;
       }
-      
 
       if (data.type === "read") {
         const { message_id, unread_count } = data;
-        console.log("✅ [읽음 수신] ChatRoomPanel → message_id:", message_id, "unread_count:", unread_count);
-      
+        console.log(
+          "✅ [읽음 수신] ChatRoomPanel → message_id:",
+          message_id,
+          "unread_count:",
+          unread_count
+        );
+
         setMessages((prev) =>
           prev.map((msg) =>
             parseInt(msg.message_id) === parseInt(message_id)
@@ -174,7 +225,6 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
           )
         );
       }
-      
     };
 
     return () => {
@@ -335,6 +385,7 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
             return (
               <div
                 key={msg.message_id}
+                data-id={msg.message_id} // ✅ 이 줄만 추가!
                 ref={isFirstMessage ? topRef : null}
                 className="text-center text-xs text-gray-500 my-2"
               >
@@ -346,6 +397,7 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
           return (
             <div
               key={msg.message_id}
+              data-id={msg.message_id} // ✅ 이 줄만 추가!
               className={`flex w-full ${
                 isMine ? "justify-end" : "justify-start"
               }`}
