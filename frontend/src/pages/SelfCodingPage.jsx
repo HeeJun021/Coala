@@ -9,6 +9,7 @@ import { templateDescriptions, templateFiles, getLanguageExtension } from "../da
 import "../index.css";
 import Split from "react-split";
 import { getCurrentUser, checkGithubConnection } from "../api/authApi";
+import { updateCodeFile } from "../api/codeApi"; // ✅ 추가
 
 const SelfCodingPage = () => {
   const location = useLocation();
@@ -16,41 +17,61 @@ const SelfCodingPage = () => {
   const [activePanel, setActivePanel] = useState("explorer");
   const [templateId, setTemplateId] = useState(null);
   const [folders, setFolders] = useState({ "내 파일": {} });
-  const [tabs, setTabs] = useState([]);
-  const [activeTab, setActiveTab] = useState(null);
-  const [previewTabs, setPreviewTabs] = useState([]);
-  const [activePreviewTab, setActivePreviewTab] = useState(null);
-  const [previewSrcDoc, setPreviewSrcDoc] = useState("");
+
+  // 탭 정보
+  const [tabs, setTabs] = useState([]); // [{ tabId, filename, content }]
+  const [activeTabId, setActiveTabId] = useState(null);
+
+  // 파일 상태
   const [selectedFilename, setSelectedFilename] = useState("");
   const [selectedFileContent, setSelectedFileContent] = useState("");
-  const [unsaved, setUnsaved] = useState(false);
   const [languageId, setLanguageId] = useState(null);
+  const [unsaved, setUnsaved] = useState(false);
   const [selectedFolderId] = useState(null);
+
+  // 미리보기 결과
+  const [previewSrcDoc, setPreviewSrcDoc] = useState("");
+  const [previewFilename, setPreviewFilename] = useState("");
+
+  // GitHub 연결 여부
   const [isGithubConnected, setIsGithubConnected] = useState(false);
+
+  // ✅ 현재 탭 내용 서버에 저장하는 함수
+  const handleSave = async () => {
+    const currentTab = tabs.find((tab) => tab.tabId === activeTabId);
+    if (!currentTab) return;
+
+    const codeId = parseInt(currentTab.tabId.replace("code-", ""));
+    await updateCodeFile(codeId, {
+      content: selectedFileContent,
+      language_id: languageId,
+    });
+
+    setUnsaved(false); // 저장 완료 후 상태 업데이트
+  };
 
   const fetchUserAndGithubStatus = useCallback(async () => {
     try {
-      await getCurrentUser(); // 사용자 인증 확인
+      await getCurrentUser();
       const githubStatus = await checkGithubConnection();
-      console.log("GitHub Status:", githubStatus); // 디버깅 로그
+      console.log("GitHub Status:", githubStatus);
       setIsGithubConnected(githubStatus.isConnected);
       if (githubStatus.isConnected) {
-        setActivePanel("git"); // GitHub 연동 후 Git 패널로 전환
+        setActivePanel("git");
       }
     } catch (error) {
       console.error("Failed to fetch user or GitHub status:", error);
       navigate("/login");
     }
-  }, [navigate]); // navigate는 useNavigate에서 반환되므로 의존성에 포함
+  }, [navigate]);
 
   useEffect(() => {
     fetchUserAndGithubStatus();
   }, [fetchUserAndGithubStatus]);
 
-  // GitHub 콜백 후 리다이렉트 처리
   useEffect(() => {
     if (location.pathname === "/self-coding" && location.search.includes("code=")) {
-      fetchUserAndGithubStatus(); // 콜백 후 상태 갱신
+      fetchUserAndGithubStatus();
     }
   }, [location, fetchUserAndGithubStatus]);
 
@@ -61,6 +82,10 @@ const SelfCodingPage = () => {
         <SelfCodingSidebar
           activePanel={activePanel}
           setActivePanel={setActivePanel}
+          tabs={tabs}
+          activeTabId={activeTabId}
+          unsaved={unsaved}
+          handleSave={handleSave} // ✅ 저장 함수 전달
         />
         <SelfCodingPanel
           activePanel={activePanel}
@@ -71,12 +96,8 @@ const SelfCodingPage = () => {
           setFolders={setFolders}
           tabs={tabs}
           setTabs={setTabs}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          previewTabs={previewTabs}
-          setPreviewTabs={setPreviewTabs}
-          activePreviewTab={activePreviewTab}
-          setActivePreviewTab={setActivePreviewTab}
+          activeTabId={activeTabId}
+          setActiveTabId={setActiveTabId}
           previewSrcDoc={previewSrcDoc}
           setPreviewSrcDoc={setPreviewSrcDoc}
           selectedFilename={selectedFilename}
@@ -99,8 +120,8 @@ const SelfCodingPage = () => {
           <SelfCodingEditorPanel
             tabs={tabs}
             setTabs={setTabs}
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
+            activeTabId={activeTabId}
+            setActiveTabId={setActiveTabId}
             selectedFilename={selectedFilename}
             setSelectedFilename={setSelectedFilename}
             selectedFileContent={selectedFileContent}
@@ -113,15 +134,11 @@ const SelfCodingPage = () => {
             languageId={languageId}
             setLanguageId={setLanguageId}
             setPreviewSrcDoc={setPreviewSrcDoc}
-            setPreviewTabs={setPreviewTabs}
-            setActivePreviewTab={setActivePreviewTab}
+            setPreviewFilename={setPreviewFilename}
             currentFolderId={selectedFolderId}
           />
           <SelfCodingPreviewPanel
-            previewTabs={previewTabs}
-            setPreviewTabs={setPreviewTabs}
-            activePreviewTab={activePreviewTab}
-            setActivePreviewTab={setActivePreviewTab}
+            previewFilename={previewFilename}
             previewSrcDoc={previewSrcDoc}
             templateId={templateId}
             templateDescriptions={templateDescriptions}

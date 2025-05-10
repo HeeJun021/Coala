@@ -21,8 +21,8 @@ const SelfCodingExplorerPanel = ({
   setFolders,
   tabs,
   setTabs,
-  activeTab,
-  setActiveTab,
+  activeTabId,
+  setActiveTabId,
   previewTabs,
   setPreviewTabs,
   activePreviewTab,
@@ -194,14 +194,16 @@ const EXT_MAP = {
     try {
       const full = await getCodeById(file.code_id);
       const tabId = `code-${full.code_id}`;
-      
-      if (!tabs.includes(tabId)) {
-        setTabs((prev) => [...prev, tabId]);
+  
+      if (!tabs.find((tab) => tab.tabId === tabId)) {
+        setTabs((prev) => [...prev, {
+          tabId,
+          filename: full.title,
+          content: full.content,
+        }]);
       }
-      
-      setActiveTab(tabId);
-      setSelectedFilename(full.title);
-      setSelectedFileContent(full.content);
+  
+      setActiveTabId(tabId);
     } catch (err) {
       console.error("파일 내용 조회 실패", err);
       alert("파일을 불러올 수 없습니다.");

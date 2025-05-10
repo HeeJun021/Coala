@@ -14,6 +14,7 @@ const SelfCodingPanel = ({
   setTabs,
   activeTab,
   setActiveTab,
+  setActiveTabId,
   previewTabs,
   setPreviewTabs,
   activePreviewTab,
@@ -42,6 +43,7 @@ const SelfCodingPanel = ({
           setTabs={setTabs}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
+          setActiveTabId={setActiveTabId}
           previewTabs={previewTabs}
           setPreviewTabs={setPreviewTabs}
           activePreviewTab={activePreviewTab}

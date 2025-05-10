@@ -7,9 +7,8 @@ import { runJsPreview, runHtmlPreview, runPythonPreview } from "../api/previewAp
 const SelfCodingEditorPanel = ({
   tabs,
   setTabs,
-  activeTab,
-  currentFolderId,
-  setActiveTab,
+  activeTabId,
+  setActiveTabId,
   selectedFilename,
   setSelectedFilename,
   selectedFileContent,
@@ -22,18 +21,21 @@ const SelfCodingEditorPanel = ({
   languageId,
   setLanguageId,
   setPreviewSrcDoc,
-  setPreviewTabs,
-  setActivePreviewTab,
+  setPreviewFilename, // ✅ 추가
+  currentFolderId,
 }) => {
   const editorRef = useRef(null);
   const [originalContent, setOriginalContent] = useState("");
   const extension = selectedFilename?.split(".").pop();
 
   const handleSave = async () => {
-    if (!activeTab) return;
-    const codeId = parseInt(activeTab.replace("code-", ""));
+    if (!activeTabId) return;
+    const codeId = parseInt(activeTabId.replace("code-", ""));
     try {
-      await updateCodeFile(codeId, { content: selectedFileContent, language_id: languageId });
+      await updateCodeFile(codeId, {
+        content: selectedFileContent,
+        language_id: languageId,
+      });
       setOriginalContent(selectedFileContent);
       setUnsaved(false);
     } catch (err) {
@@ -46,9 +48,9 @@ const SelfCodingEditorPanel = ({
     try {
       const result = await runJsPreview(selectedFileContent);
       console.log("🔥 runJs 결과:", result);
-  
+
       const escapedCode = selectedFileContent.replace(/<\/script>/g, "<\\/script>");
-  
+
       const jsOutput = `
         <html>
           <body style="font-family:monospace; padding:20px;">
@@ -73,32 +75,24 @@ const SelfCodingEditorPanel = ({
           </body>
         </html>
       `;
-  
+
       setPreviewSrcDoc(jsOutput);
-      setPreviewTabs((prev) => {
-        if (!prev.includes(selectedFilename)) return [...prev, selectedFilename];
-        return prev;
-      });
-      setActivePreviewTab(selectedFilename);
+      setPreviewFilename(selectedFilename); // ✅ 실행한 파일 이름 설정
     } catch (err) {
       console.error("JS 실행 실패", err);
       alert("실행 중 오류가 발생했습니다.");
     }
   };
-  
+
   const handleRunHtml = async () => {
     try {
-      const codeId = parseInt(activeTab?.replace("code-", ""));
+      const codeId = parseInt(activeTabId?.replace("code-", ""));
       if (!codeId) throw new Error("올바른 코드 ID가 아닙니다.");
-  
-      const result = await runHtmlPreview(codeId); // 🔄 이제 codeId만 넘긴다
-  
+
+      const result = await runHtmlPreview(codeId);
+
       setPreviewSrcDoc(result.srcdoc);
-      setPreviewTabs((prev) => {
-        if (!prev.includes(result.html_filename)) return [...prev, result.html_filename];
-        return prev;
-      });
-      setActivePreviewTab(result.html_filename);
+      setPreviewFilename(result.html_filename); // ✅ 실행한 파일 이름 설정
     } catch (err) {
       console.error("HTML 실행 실패 Error:", err.message);
       alert("HTML 실행 중 오류: " + err.message);
@@ -107,18 +101,14 @@ const SelfCodingEditorPanel = ({
 
   const handleRunPython = async () => {
     try {
-      const codeId = parseInt(activeTab?.replace("code-", ""));
+      const codeId = parseInt(activeTabId?.replace("code-", ""));
       if (!codeId) throw new Error("올바른 코드 ID가 아닙니다.");
-  
+
       const result = await runPythonPreview(codeId);
       console.log("🐍 runPython 결과:", result);
-  
-      setPreviewSrcDoc(result);  // ✅ HTML 아님, JSON 객체
-      setPreviewTabs((prev) => {
-        if (!prev.includes(selectedFilename)) return [...prev, selectedFilename];
-        return prev;
-      });
-      setActivePreviewTab(selectedFilename);
+
+      setPreviewSrcDoc(result);
+      setPreviewFilename(selectedFilename); // ✅ 실행한 파일 이름 설정
     } catch (err) {
       console.error("Python 실행 실패", err.message);
       alert("Python 실행 중 오류: " + err.message);
@@ -127,9 +117,9 @@ const SelfCodingEditorPanel = ({
 
   useEffect(() => {
     const fetchContent = async () => {
-      if (!activeTab) return;
+      if (!activeTabId) return;
       try {
-        const id = parseInt(activeTab.replace("code-", ""));
+        const id = parseInt(activeTabId.replace("code-", ""));
         const code = await getCodeById(id);
         setSelectedFilename(code.title);
         setSelectedFileContent(code.content);
@@ -142,7 +132,7 @@ const SelfCodingEditorPanel = ({
       }
     };
     fetchContent();
-  }, [activeTab]);
+  }, [activeTabId]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -166,7 +156,7 @@ const SelfCodingEditorPanel = ({
         </button>
       );
     }
-  
+
     if (selectedFilename.endsWith(".js")) {
       return (
         <button
@@ -177,12 +167,12 @@ const SelfCodingEditorPanel = ({
         </button>
       );
     }
-  
+
     if (selectedFilename.endsWith(".html")) {
       return (
         <button
           className="text-[12px] text-purple-600 hover:text-purple-800 px-2 py-0.5 border border-purple-300 rounded"
-          onClick={() => handleRunHtml(currentFolderId)}  // ⚠️ 여기에 폴더 ID 필요
+          onClick={handleRunHtml}
         >
           🌐 HTML 실행
         </button>
@@ -199,39 +189,40 @@ const SelfCodingEditorPanel = ({
         </button>
       );
     }
-  
+
     return null;
   };
 
   return (
     <div className="flex flex-col w-full h-full bg-white border-r border-gray-200">
+      {/* 탭 영역 */}
       <div className="flex items-center overflow-x-auto bg-[#f3f3f3] border-b border-gray-300 px-2 py-1">
         {tabs.map((tab) => {
-          const fileName = tab.split("/").pop();
+          const fileName = tab.filename;
           const emoji = templateDescriptions[templateId]?.emoji || "📄";
-          const isActive = tab === activeTab;
+          const isActive = tab.tabId === activeTabId;
           const isUnsaved = isActive && unsaved;
           return (
             <div
-              key={tab}
+              key={tab.tabId}
               className={`flex items-center px-3 py-1 mr-1 rounded-t-md text-sm font-medium border cursor-pointer ${
                 isActive
                   ? "bg-white text-black border-t border-l border-r border-gray-300"
                   : "bg-[#e0e0e0] text-gray-600 hover:bg-[#d5d5d5] border border-transparent"
               }`}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => setActiveTabId(tab.tabId)}
             >
               <span className="mr-2">{emoji}</span>
-              <span>{selectedFilename}{isUnsaved && " ●"}</span>
+              <span>{fileName}{isUnsaved && " ●"}</span>
               <FaTimes
                 className="ml-2 text-xs hover:text-red-500"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setTabs((prev) => prev.filter((t) => t !== tab));
-                  if (activeTab === tab) {
-                    const nextTab = tabs.find((t) => t !== tab);
-                    setActiveTab(nextTab || "");
-                    setSelectedFilename(nextTab || "");
+                  setTabs((prev) => prev.filter((t) => t.tabId !== tab.tabId));
+                  if (activeTabId === tab.tabId) {
+                    const nextTab = tabs.find((t) => t.tabId !== tab.tabId);
+                    setActiveTabId(nextTab?.tabId || "");
+                    setSelectedFilename(nextTab?.filename || "");
                     setSelectedFileContent("");
                   }
                 }}
@@ -240,10 +231,14 @@ const SelfCodingEditorPanel = ({
           );
         })}
       </div>
+
+      {/* 파일명 및 액션 버튼 */}
       <div className="flex justify-between items-center px-4 py-1 text-xs text-gray-500 border-b border-gray-200 bg-white font-mono">
         <div>{selectedFilename || "파일을 선택하세요"}</div>
         {renderActionButton()}
       </div>
+
+      {/* 코드 에디터 */}
       <div className="flex-1 p-4 overflow-auto">
         <CodeMirror
           ref={editorRef}

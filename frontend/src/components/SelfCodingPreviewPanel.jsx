@@ -1,11 +1,8 @@
 import React from "react";
-import { FaTimes } from "react-icons/fa";
+import { FaFileAlt } from "react-icons/fa";
 
 const SelfCodingPreviewPanel = ({
-  previewTabs,
-  activePreviewTab,
-  setActivePreviewTab,
-  setPreviewTabs,
+  previewFilename,
   previewSrcDoc,
   templateId,
   templateDescriptions,
@@ -21,43 +18,19 @@ const SelfCodingPreviewPanel = ({
 
   return (
     <div className="flex flex-col w-full h-full bg-white">
-      {/* 탭 영역 */}
-      <div className="flex items-center overflow-x-auto bg-[#f3f3f3] border-b border-gray-300 px-2 py-1">
-        {previewTabs.map((tab) => {
-          const label = tab.split("/").slice(-1)[0];
-          const emoji = templateDescriptions[templateId]?.emoji || "📄";
-          const isActive = tab === activePreviewTab;
-          return (
-            <div
-              key={tab}
-              className={`flex items-center px-3 py-1 mr-1 rounded-t-md text-sm font-medium border cursor-pointer ${
-                isActive
-                  ? "bg-white text-black border-t border-l border-r border-gray-300"
-                  : "bg-[#e0e0e0] text-gray-600 hover:bg-[#d5d5d5] border border-transparent"
-              }`}
-              onClick={() => setActivePreviewTab(tab)}
-            >
-              <span className="mr-2">{emoji}</span>
-              <span>{label}</span>
-              <FaTimes
-                className="ml-2 text-xs hover:text-red-500"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setPreviewTabs((prev) => prev.filter((t) => t !== tab));
-                  if (activePreviewTab === tab) {
-                    const nextTab = previewTabs.find((t) => t !== tab);
-                    setActivePreviewTab(nextTab || null);
-                  }
-                }}
-              />
-            </div>
-          );
-        })}
+      {/* 상단 실행 파일 이름 표시 */}
+      <div className="flex items-center bg-[#f3f3f3] border-b border-gray-300 px-3 py-1 text-sm font-medium text-gray-700">
+        <FaFileAlt className="mr-2 text-gray-600" />
+        {previewFilename ? (
+          <span>{previewFilename}</span>
+        ) : (
+          <span className="italic text-gray-400">최근 실행 결과 없음</span>
+        )}
       </div>
 
-      {/* 실행 결과 */}
+      {/* 실행 결과 영역 */}
       <div className="flex-1 overflow-auto p-4 text-sm font-mono whitespace-pre-wrap">
-        {activePreviewTab && previewSrcDoc ? (
+        {previewSrcDoc ? (
           isPythonResult ? (
             <div className="space-y-4">
               {/* stdout */}
@@ -74,7 +47,7 @@ const SelfCodingPreviewPanel = ({
                 </div>
               </div>
 
-              {/* stderr: 실패한 경우에만 표시 */}
+              {/* stderr: 실패한 경우만 표시 */}
               {!success && stderr?.trim() !== "" && (
                 <div>
                   <span className="text-pink-700 font-bold">🎯 오류</span>
@@ -96,7 +69,7 @@ const SelfCodingPreviewPanel = ({
           )
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm italic">
-            프리뷰 탭이 열려있지 않습니다.
+            실행 결과가 없습니다.
           </div>
         )}
       </div>
