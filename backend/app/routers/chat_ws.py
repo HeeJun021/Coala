@@ -32,9 +32,6 @@ async def websocket_endpoint(websocket: WebSocket, db: Session = Depends(get_db)
         if "access_token" in cookies:
             token = cookies["access_token"].value
 
-    print("🍪 cookie_header:", cookie_header)
-    print("🔐 extracted token:", token)
-
     # ✅ 둘 중 하나라도 없으면 종료
     if token is None:
         await websocket.close(code=1008)

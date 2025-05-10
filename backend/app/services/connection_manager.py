@@ -32,8 +32,10 @@ class ConnectionManager:
 
     async def broadcast_all(self, message: dict):
         print("📢 [broadcast_all 호출됨]:", message)
-        for socket in self.global_connections:
-            try:
-                await socket.send_json(message)
-            except Exception as e:
-                print(f"🚨 Error sending broadcast_all: {e}")
+        for user_id, socket_list in self.active_connections.items():
+            print(f"  └ 대상: user_id={user_id}, 연결 수={len(socket_list)}")
+            for socket in socket_list:
+                try:
+                    await socket.send_json(message)
+                except Exception as e:
+                    print(f"🚨 전송 실패 user_id={user_id}: {e}")

@@ -13,6 +13,9 @@ import ChatListSettingsPanel from "./ChatListSettingsPanel";
 import ChatRoomPanel from "./ChatRoomPanel";
 import ArchivedChatPanel from "./ArchivedChatPanel";
 
+// 구조변경
+import { useChatSocket } from "../../context/ChatSocketContext";
+
 const ChatListPanel = ({ onClose, onSelectRoom }) => {
   const [contextMenu, setContextMenu] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -32,8 +35,7 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
   const [selectedRoom, setSelectedRoom] = useState(null); // ✅ 현재 선택된 채팅방
 
   const [showArchived, setShowArchived] = useState(false);
-
-  const socketRef = useRef(null);
+  const { socket } = useChatSocket(); // ✅ 전역 소켓 받기
 
   const { user } = useAuth();
 
@@ -223,54 +225,50 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
   }, []);
 
   useEffect(() => {
-    if (!user) return;
-
-    const socket = new WebSocket(`ws://localhost:8000/ws/chat`);
-    socketRef.current = socket;
-
-    socket.onopen = () => {
-      console.log("✅ WebSocket connected");
-    };
-
-    socket.onmessage = (event) => {
+    if (!socket) return;
+  
+    const handleMessage = (event) => {
       const data = JSON.parse(event.data);
-      // 조건 없이 모든 메시지 로그 출력
-      console.log("📩 [전체 수신] WS 데이터:", data);
-
-      if (data.sender_id === user.user_id) {
-        console.log("🟨 내가 보낸 메시지 수신");
-      } else {
-        console.log("🟦 다른 사람이 보낸 메시지 수신");
-      }
-
+      console.log("📩 [📨전체 WS 수신] →", data);
+  
       if (data.type === "read") {
-        const { room_id, unread_count } = data;
-        console.log("✅ 읽음 수신123123", { room_id, unread_count });
-
+        const { room_id, unread_count, message_id } = data;
+        console.log("✅ [📖읽음 수신] room_id:", room_id, "message_id:", message_id, "unread_count:", unread_count);
+  
         setChatRooms((prevRooms) =>
           prevRooms.map((room) =>
             room.id === room_id ? { ...room, unread: unread_count } : room
           )
         );
-        return;
       }
-
-      // ✅ 메시지 수신 조건 수정
+  
       if (data.type === "message") {
-        if (data.room_id && selectedRoom?.id === data.room_id) return; // 방 안에 있으면 무시
-        console.log("📌 새 메시지로 채팅방 목록 새로고침");
+        if (data.room_id && selectedRoom?.id === data.room_id) {
+          console.log("⏩ [현재 채팅방이므로 무시]");
+          return;
+        }
+        console.log("📌 [💬새 메시지] 채팅방 목록 갱신");
         getChatRoomsAndSet();
       }
+  
+      if (data.sender_id === user.user_id) {
+        console.log("🟨 [나의 메시지 수신]");
+      } else {
+        console.log("🟦 [상대 메시지 수신]");
+      }
     };
-
-    socket.onclose = () => {
-      console.log("❌ WebSocket disconnected");
-    };
-
+  
+    socket.addEventListener("message", handleMessage);
+  
+    // ✅ cleanup 포함해서 중복 방지
     return () => {
-      socket.close();
+      socket.removeEventListener("message", handleMessage);
     };
-  }, [user, selectedRoom]);
+  }, [socket, selectedRoom?.id, user?.user_id]);
+  
+  
+  
+  
 
   if (selectedRoom) {
     return (
@@ -385,10 +383,10 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
                 const lastMessageId = room.last_message_id;
 
                 if (
-                  socketRef.current?.readyState === WebSocket.OPEN &&
+                  socket?.readyState === WebSocket.OPEN &&
                   lastMessageId
                 ) {
-                  socketRef.current.send(
+                  socket.send(
                     JSON.stringify({
                       type: "read",
                       message_id: lastMessageId,

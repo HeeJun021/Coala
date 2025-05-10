@@ -99,15 +99,20 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
     const isFromOtherUser =
       lastMessage && lastMessage.sender_id !== user.user_id;
   
-    if (socket && socket.readyState === WebSocket.OPEN && isFromOtherUser) {
-      console.log("📤 [읽음 전송] message_id:", lastMessage.message_id);
-      socket.send(
-        JSON.stringify({
-          type: "read",
-          message_id: lastMessage.message_id,
-        })
-      );
-    }
+    // ✅ 메시지 도착 후 DOM 그려지고 나서 읽음 전송
+    const timeout = setTimeout(() => {
+      if (socket && socket.readyState === WebSocket.OPEN && isFromOtherUser) {
+        console.log("📤 [읽음 전송] ChatRoomPanel → message_id:", lastMessage.message_id);
+        socket.send(
+          JSON.stringify({
+            type: "read",
+            message_id: lastMessage.message_id,
+          })
+        );
+      }
+    }, 100); // 약간의 지연
+  
+    return () => clearTimeout(timeout);
   }, [socketReady, messages, user.user_id]);
   
   
@@ -120,15 +125,19 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
     );
   
     socketRef.current.onopen = () => {
-      console.log("✅ ChatRoom WS connected");
+      console.log("✅ [ChatRoom WS 연결됨] room_id:", room.id);
+
       setSocketReady(true); // ✅ 연결 완료 표시
     };
 
     socketRef.current.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      console.log("📩 WS 수신 메시지:", data);
+      console.log("📩 [WS 수신] ChatRoomPanel →", data);
+
 
       if (data.type === "message" && data.room_id === room.id) {
+        console.log("💬 [메시지 수신] room_id:", data.room_id, "message_id:", data.message_id);
+      
         setMessages((prev) => [
           ...prev,
           {
@@ -136,9 +145,9 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
             read_count: room.participants.length - data.unread_count,
           },
         ]);
-
-        // ✅ 내가 보낸 메시지가 아니면 읽음 처리
+      
         if (data.sender_id !== user.user_id) {
+          console.log("📤 [즉시 읽음 전송] 상대 메시지 감지됨 → message_id:", data.message_id);
           socketRef.current.send(
             JSON.stringify({
               type: "read",
@@ -146,13 +155,14 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
             })
           );
         }
-
         return;
       }
+      
 
       if (data.type === "read") {
         const { message_id, unread_count } = data;
-
+        console.log("✅ [읽음 수신] ChatRoomPanel → message_id:", message_id, "unread_count:", unread_count);
+      
         setMessages((prev) =>
           prev.map((msg) =>
             parseInt(msg.message_id) === parseInt(message_id)
@@ -164,6 +174,7 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
           )
         );
       }
+      
     };
 
     return () => {
