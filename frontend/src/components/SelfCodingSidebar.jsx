@@ -6,8 +6,8 @@ import {
   FaSave,
   FaCog,
 } from "react-icons/fa";
-import SelfCodingMenuPanel from "./SelfCodingMenuPanel";
 import SelfCodingSettingsPanel from "./SelfCodingSettingsPanel";
+import { saveCodeFile } from "../api/codeApi"; // ✅ DB 저장 함수 추가
 
 const icons = [
   { name: "menu", icon: <FaBars />, tooltip: "메뉴" },
@@ -23,6 +23,13 @@ const MIME_TYPES = {
   py: "text/x-python",
 };
 
+const EXTENSION_MAP = {
+  html: 1,
+  css: 2,
+  js: 3,
+  py: 4,
+};
+
 const SelfCodingSidebar = ({
   activePanel,
   setActivePanel,
@@ -30,9 +37,14 @@ const SelfCodingSidebar = ({
   activeTabId,
   unsaved,
   handleSave,
+  setTabs,
+  setActiveTabId,
+  rootFolderId,
+  reloadFolderTree, // ✅ 전달받음
 }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [fileMenuVisible, setFileMenuVisible] = useState(false);
 
   const handleSaveAs = async (filename, content) => {
     try {
@@ -107,30 +119,145 @@ const SelfCodingSidebar = ({
     }
   };
 
+  const handleFileImport = async () => {
+    try {
+      const [fileHandle] = await window.showOpenFilePicker({
+        types: [
+          {
+            description: "Code Files",
+            accept: {
+              "text/html": [".html"],
+              "text/css": [".css"],
+              "application/javascript": [".js"],
+              "text/x-python": [".py"],
+            },
+          },
+        ],
+      });
+
+      const file = await fileHandle.getFile();
+      const content = await file.text();
+      const filename = file.name;
+      const ext = filename.split(".").pop().toLowerCase();
+      const language_id = EXTENSION_MAP[ext];
+
+      if (!language_id) {
+        alert("지원하지 않는 파일 형식입니다.");
+        return;
+      }
+
+      const newCode = await saveCodeFile({
+        title: filename,
+        content,
+        language_id,
+        folder_id: rootFolderId,
+      });
+
+      const tabId = `code-${newCode.code_id}`;
+      setTabs((prev) => [...prev, { tabId, filename, content }]);
+      setActiveTabId(tabId);
+
+      await reloadFolderTree(); // ✅ 가져온 후 트리 갱신
+
+      alert("파일이 성공적으로 업로드되었습니다.");
+    } catch (err) {
+      if (err.name !== "AbortError") {
+        console.error("파일 가져오기 실패:", err);
+        alert("파일을 가져오는 데 실패했습니다.");
+      }
+    }
+  };
+
+  const handleFileMenuClick = async (action) => {
+    const currentTab = tabs.find((tab) => tab.tabId === activeTabId);
+    if (!currentTab && action !== "import") return;
+    const { filename, content } = currentTab || {};
+
+    switch (action) {
+      case "save":
+        await handleSave();
+        break;
+      case "saveAs":
+        if (filename && content) {
+          if ("showSaveFilePicker" in window) {
+            await handleSaveAs(filename, content);
+          } else {
+            fallbackDownload(filename, content);
+          }
+        }
+        break;
+      case "import":
+        await handleFileImport();
+        break;
+      default:
+        break;
+    }
+    setFileMenuVisible(false);
+  };
+
   return (
-    <div className="w-12 bg-[#f3f3f3] text-black flex flex-col items-center py-2 border-r border-gray-300">
+    <div className="w-12 bg-[#f3f3f3] text-black flex flex-col items-center py-2 border-r border-gray-300 relative">
       {icons.map((item) => (
-        <button
-          key={item.name}
-          title={item.tooltip}
-          onClick={() => {
-            if (item.name === "menu") {
-              setShowMenu((prev) => !prev);
-              setShowSettings(false);
-            } else if (item.name === "save") {
-              handleLocalDownload();
-            } else {
-              setActivePanel(item.name);
-              setShowMenu(false);
-              setShowSettings(false);
-            }
-          }}
-          className={`w-full h-12 flex items-center justify-center text-[20px] transition-colors duration-150 ${
-            activePanel === item.name ? "text-black font-bold" : "text-gray-500 hover:text-black"
-          }`}
-        >
-          {item.icon}
-        </button>
+        <div key={item.name} className="w-full relative">
+          <button
+            title={item.tooltip}
+            onClick={() => {
+              if (item.name === "menu") {
+                setShowMenu((prev) => !prev);
+                setShowSettings(false);
+              } else if (item.name === "save") {
+                handleLocalDownload();
+              } else {
+                setActivePanel(item.name);
+                setShowMenu(false);
+                setShowSettings(false);
+              }
+            }}
+            className={`w-full h-12 flex items-center justify-center text-[20px] transition-colors duration-150 ${
+              activePanel === item.name ? "text-black font-bold" : "text-gray-500 hover:text-black"
+            }`}
+          >
+            {item.icon}
+          </button>
+
+          {item.name === "menu" && showMenu && (
+            <div className="absolute left-12 top-0 bg-white border border-gray-300 rounded shadow z-50 w-32 text-sm">
+              <div
+                className="px-4 py-2 hover:bg-gray-100 cursor-pointer relative"
+                onMouseEnter={() => setFileMenuVisible(true)}
+                onMouseLeave={() => setFileMenuVisible(false)}
+              >
+                File
+                {fileMenuVisible && (
+                  <div className="absolute left-full top-0 ml-1 w-48 bg-white border border-gray-300 rounded shadow z-50">
+                    <div
+                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                      onClick={() => handleFileMenuClick("save")}
+                    >
+                      저장하기 (Ctrl+S)
+                    </div>
+                    <div
+                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                      onClick={() => handleFileMenuClick("saveAs")}
+                    >
+                      다른 이름으로 저장하기
+                    </div>
+                    <div
+                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                      onClick={() => handleFileMenuClick("import")}
+                    >
+                      파일 가져오기
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="px-4 py-2 hover:bg-gray-100 cursor-pointer">Edit</div>
+              <div className="px-4 py-2 hover:bg-gray-100 cursor-pointer">View</div>
+              <div className="px-4 py-2 hover:bg-gray-100 cursor-pointer">Run</div>
+              <div className="px-4 py-2 hover:bg-gray-100 cursor-pointer">Help</div>
+            </div>
+          )}
+        </div>
       ))}
 
       <div
@@ -144,7 +271,6 @@ const SelfCodingSidebar = ({
         <FaCog />
       </div>
 
-      {showMenu && <SelfCodingMenuPanel onClose={() => setShowMenu(false)} />}
       {showSettings && <SelfCodingSettingsPanel onClose={() => setShowSettings(false)} />}
     </div>
   );

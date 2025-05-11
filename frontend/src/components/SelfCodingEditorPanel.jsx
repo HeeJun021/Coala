@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { FaTimes } from "react-icons/fa";
 import CodeMirror from "@uiw/react-codemirror";
 import { getCodeById, updateCodeFile } from "../api/codeApi";
@@ -21,28 +21,26 @@ const SelfCodingEditorPanel = ({
   languageId,
   setLanguageId,
   setPreviewSrcDoc,
-  setPreviewFilename, // ✅ 추가
-  currentFolderId,
+  setPreviewFilename, 
 }) => {
   const editorRef = useRef(null);
   const [originalContent, setOriginalContent] = useState("");
   const extension = selectedFilename?.split(".").pop();
 
-  const handleSave = async () => {
-    if (!activeTabId) return;
-    const codeId = parseInt(activeTabId.replace("code-", ""));
-    try {
-      await updateCodeFile(codeId, {
-        content: selectedFileContent,
-        language_id: languageId,
-      });
-      setOriginalContent(selectedFileContent);
-      setUnsaved(false);
-    } catch (err) {
-      console.error("파일 저장 실패", err);
-      alert("저장 실패");
-    }
-  };
+  const handleSave = useCallback(async () => {
+  const codeId = parseInt(activeTabId.replace("code-", ""));
+  try {
+    await updateCodeFile(codeId, {
+      content: selectedFileContent,
+      language_id: languageId,
+    });
+    setOriginalContent(selectedFileContent);
+    setUnsaved(false);
+  } catch (err) {
+    console.error("코드 저장 실패:", err);
+    alert("저장에 실패했습니다.");
+  }
+}, [activeTabId, selectedFileContent, languageId, setOriginalContent, setUnsaved]);
 
   const handleRunJs = async () => {
     try {
@@ -132,7 +130,7 @@ const SelfCodingEditorPanel = ({
       }
     };
     fetchContent();
-  }, [activeTabId]);
+  }, [activeTabId, setSelectedFilename, setSelectedFileContent, setUnsaved, setLanguageId]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -143,7 +141,7 @@ const SelfCodingEditorPanel = ({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedFileContent]);
+  }, [handleSave]);
 
   const renderActionButton = () => {
     if (unsaved || extension === "css") {

@@ -9,7 +9,7 @@ import { templateDescriptions, templateFiles, getLanguageExtension } from "../da
 import "../index.css";
 import Split from "react-split";
 import { getCurrentUser, checkGithubConnection } from "../api/authApi";
-import { updateCodeFile } from "../api/codeApi"; // ✅ 추가
+import { getRootCodeFolder, updateCodeFile, getChildFolders, getCodesInFolder } from "../api/codeApi";
 
 const SelfCodingPage = () => {
   const location = useLocation();
@@ -17,26 +17,20 @@ const SelfCodingPage = () => {
   const [activePanel, setActivePanel] = useState("explorer");
   const [templateId, setTemplateId] = useState(null);
   const [folders, setFolders] = useState({ "내 파일": {} });
+  const [rootFolderId, setRootFolderId] = useState(null);
 
-  // 탭 정보
-  const [tabs, setTabs] = useState([]); // [{ tabId, filename, content }]
+  const [tabs, setTabs] = useState([]);
   const [activeTabId, setActiveTabId] = useState(null);
-
-  // 파일 상태
   const [selectedFilename, setSelectedFilename] = useState("");
   const [selectedFileContent, setSelectedFileContent] = useState("");
   const [languageId, setLanguageId] = useState(null);
   const [unsaved, setUnsaved] = useState(false);
   const [selectedFolderId] = useState(null);
 
-  // 미리보기 결과
   const [previewSrcDoc, setPreviewSrcDoc] = useState("");
   const [previewFilename, setPreviewFilename] = useState("");
-
-  // GitHub 연결 여부
   const [isGithubConnected, setIsGithubConnected] = useState(false);
 
-  // ✅ 현재 탭 내용 서버에 저장하는 함수
   const handleSave = async () => {
     const currentTab = tabs.find((tab) => tab.tabId === activeTabId);
     if (!currentTab) return;
@@ -47,14 +41,39 @@ const SelfCodingPage = () => {
       language_id: languageId,
     });
 
-    setUnsaved(false); // 저장 완료 후 상태 업데이트
+    setUnsaved(false);
+  };
+
+  const reloadFolderTree = async () => {
+    try {
+      const root = await getRootCodeFolder();
+      const [children, codes] = await Promise.all([
+        getChildFolders(root.folder_id),
+        getCodesInFolder(root.folder_id),
+      ]);
+
+      setFolders({
+        ...root,
+        children: children.map(child => ({
+          ...child,
+          children: [],
+          codes: [],
+          expanded: false,
+          loaded: false,
+        })),
+        codes,
+        expanded: true,
+        loaded: true,
+      });
+    } catch (err) {
+      console.error("탐색기 갱신 실패", err);
+    }
   };
 
   const fetchUserAndGithubStatus = useCallback(async () => {
     try {
       await getCurrentUser();
       const githubStatus = await checkGithubConnection();
-      console.log("GitHub Status:", githubStatus);
       setIsGithubConnected(githubStatus.isConnected);
       if (githubStatus.isConnected) {
         setActivePanel("git");
@@ -67,6 +86,16 @@ const SelfCodingPage = () => {
 
   useEffect(() => {
     fetchUserAndGithubStatus();
+
+    const loadRoot = async () => {
+      try {
+        const root = await getRootCodeFolder();
+        setRootFolderId(root.folder_id);
+      } catch (err) {
+        console.error("루트 폴더 불러오기 실패", err);
+      }
+    };
+    loadRoot();
   }, [fetchUserAndGithubStatus]);
 
   useEffect(() => {
@@ -85,7 +114,13 @@ const SelfCodingPage = () => {
           tabs={tabs}
           activeTabId={activeTabId}
           unsaved={unsaved}
-          handleSave={handleSave} // ✅ 저장 함수 전달
+          selectedFilename={selectedFilename}
+          selectedFileContent={selectedFileContent}
+          handleSave={handleSave}
+          setTabs={setTabs}
+          setActiveTabId={setActiveTabId}
+          rootFolderId={rootFolderId}
+          reloadFolderTree={reloadFolderTree} // ✅ 전달
         />
         <SelfCodingPanel
           activePanel={activePanel}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { FaChevronRight, FaChevronDown, FaPlusCircle, FaFolder, FaFile } from "react-icons/fa";
 import {
   getRootCodeFolder,
@@ -15,25 +15,19 @@ import {
 import { useLocation } from "react-router-dom";
 import { templateFiles, templateDescriptions } from "../data/templateData";
 
-const SelfCodingExplorerPanel = ({
-  navigate,
-  folders,
-  setFolders,
-  tabs,
-  setTabs,
-  activeTabId,
-  setActiveTabId,
-  previewTabs,
-  setPreviewTabs,
-  activePreviewTab,
-  setActivePreviewTab,
-  previewSrcDoc,
-  setPreviewSrcDoc,
-  selectedFilename,
-  setSelectedFilename,
-  selectedFileContent,
-  setSelectedFileContent,
-}) => {
+const EXT_MAP = {
+  html: 1,
+  css: 2,
+  js: 3,
+  py: 4,
+  jsx: 3, // JavaScript와 동일
+  vue: 3, // JavaScript와 동일
+  json: 5, // 기타
+  "config.js": 5, // 기타
+  txt: 5, // 기타
+};
+
+const SelfCodingExplorerPanel = ({ navigate, tabs, setTabs, setActiveTabId }) => {
   const [showFileTree, setShowFileTree] = useState(true);
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
@@ -46,17 +40,48 @@ const SelfCodingExplorerPanel = ({
   const location = useLocation();
   const templateIdFromNav = location.state?.templateId;
   const hasInsertedTemplateRef = useRef(false);
-const EXT_MAP = {
-  html: 1,
-  css: 2,
-  js: 3,
-  py: 4,
-  jsx: 3, // JavaScript와 동일
-  vue: 3, // JavaScript와 동일
-  json: 5, // 기타
-  "config.js": 5, // 기타
-  txt: 5, // 기타
-};
+
+  const insertTemplateToDB = useCallback(async (templateId, rootFolderId) => {
+    const structure = templateFiles[templateId];
+    const baseFolderName = templateDescriptions[templateId]?.name || templateId;
+    const existingFolders = await getChildFolders(rootFolderId);
+    const existingNames = new Set(existingFolders.map((f) => f.folder_name));
+
+    let suffix = 1;
+    let folderName = baseFolderName;
+    while (existingNames.has(folderName)) {
+      folderName = `${baseFolderName}(${suffix++})`;
+    }
+
+    const templateFolder = await createChildFolder({
+      parent_folder_id: rootFolderId,
+      folder_name: folderName,
+    });
+
+    const createRecursively = async (node, parentId) => {
+      for (const name in node) {
+        const value = node[name];
+        if (typeof value === "string") {
+          const ext = name.includes(".") ? name.split(".").pop() : "";
+          const langId = EXT_MAP[ext] || EXT_MAP[name] || 5;
+          await saveCodeFile({
+            title: name,
+            content: value,
+            language_id: langId,
+            folder_id: parentId,
+          });
+        } else if (typeof value === "object") {
+          const newFolder = await createChildFolder({
+            parent_folder_id: parentId,
+            folder_name: name,
+          });
+          await createRecursively(value, newFolder.folder_id);
+        }
+      }
+    };
+
+    await createRecursively(structure, templateFolder.folder_id);
+  }, []);
 
   useEffect(() => {
     const loadRoot = async () => {
@@ -80,9 +105,8 @@ const EXT_MAP = {
     const applyTemplate = async () => {
       if (!templateIdFromNav || !templateFiles[templateIdFromNav] || hasInsertedTemplateRef.current) return;
       hasInsertedTemplateRef.current = true;
-  
+
       try {
-        // 루트 폴더가 없으면 생성
         if (!folderTree) {
           const root = await getRootCodeFolder();
           setFolderTree({
@@ -93,16 +117,17 @@ const EXT_MAP = {
             loaded: false,
           });
         }
-  
+
         await insertTemplateToDB(templateIdFromNav, folderTree.folder_id);
-  
+
         const [children, codes] = await Promise.all([
           getChildFolders(folderTree.folder_id),
           getCodesInFolder(folderTree.folder_id),
         ]);
+
         setFolderTree({
           ...folderTree,
-          children: children.map(child => ({
+          children: children.map((child) => ({
             ...child,
             children: [],
             codes: [],
@@ -120,51 +145,9 @@ const EXT_MAP = {
       }
     };
     applyTemplate();
-  }, [folderTree, templateIdFromNav]);
+  }, [folderTree, templateIdFromNav, insertTemplateToDB]);
 
-  const insertTemplateToDB = async (templateId, rootFolderId) => {
-    const structure = templateFiles[templateId];
-    let baseFolderName = templateDescriptions[templateId]?.name || templateId;
-    let folderName = baseFolderName;
-    let suffix = 1;
-  
-    const existingFolders = await getChildFolders(rootFolderId);
-    while (existingFolders.some(f => f.folder_name === folderName)) {
-      suffix++;
-      folderName = `${baseFolderName}(${suffix})`;
-    }
-
-    const templateFolder = await createChildFolder({
-      parent_folder_id: rootFolderId,
-      folder_name: folderName,
-    });
-
-    const createRecursively = async (node, parentId) => {
-      for (const name in node) {
-        const value = node[name];
-        if (typeof value === "string") {
-          const ext = name.includes(".") ? name.split(".").pop() : "";
-          const langId = EXT_MAP[ext] || EXT_MAP[name] || 5; // 기본값: 기타
-          await saveCodeFile({
-            title: name,
-            content: value,
-            language_id: langId,
-            folder_id: parentId,
-          });
-        } else if (typeof value === "object") {
-          const newFolder = await createChildFolder({
-            parent_folder_id: parentId,
-            folder_name: name,
-          });
-          await createRecursively(value, newFolder.folder_id);
-        }
-      }
-    };
-  
-    await createRecursively(structure, templateFolder.folder_id);
-  };
-
-  const handleFolderToggle = async (node, path = []) => {
+  const handleFolderToggle = async (node) => {
     if (!node.loaded) {
       try {
         const [children, codes] = await Promise.all([
@@ -194,7 +177,7 @@ const EXT_MAP = {
     try {
       const full = await getCodeById(file.code_id);
       const tabId = `code-${full.code_id}`;
-  
+
       if (!tabs.find((tab) => tab.tabId === tabId)) {
         setTabs((prev) => [...prev, {
           tabId,
@@ -202,7 +185,7 @@ const EXT_MAP = {
           content: full.content,
         }]);
       }
-  
+
       setActiveTabId(tabId);
     } catch (err) {
       console.error("파일 내용 조회 실패", err);
@@ -266,6 +249,7 @@ const EXT_MAP = {
     }
     return null;
   };
+
 
   const ContextMenu = ({ position }) => {
     const handleClick = async (label) => {
@@ -354,7 +338,7 @@ const EXT_MAP = {
 
           const foundFile = searchFile(folderTree);
           if (foundFile) {
-            const [nameOnly] = foundFile.title.split(/\.(?=[^\.]+$)/);
+            const [nameOnly] = foundFile.title.split(/\.(?=[^.]+$)/);
             setRenamingItem({ path: `code-${codeId}`, name: nameOnly });
           }
         }
@@ -453,229 +437,229 @@ const EXT_MAP = {
   };
 
   const renderFolderNode = (node, depth = 0) => {
-    const paddingLeft = depth * 12;
+  const paddingLeft = depth * 12;
 
-    return (
-      <div key={`folder-${node.folder_id}`} style={{ paddingLeft }}>
-        <div
-          className="flex items-center cursor-pointer hover:underline"
-          onClick={() => handleFolderToggle(node)}
-          onContextMenu={(e) => {
-            e.preventDefault();
-            setMenuPosition({ x: e.pageX + 4, y: e.pageY + 6 });
-            setContextMenu({ targetId: `folder-${node.folder_id}` });
-            setMenuVisible(true);
-          }}
-        >
-          {node.expanded ? <FaChevronDown className="mr-1" /> : <FaChevronRight className="mr-1" />}
-          <FaFolder className="text-yellow-600 mr-1" />
-          {renamingItem?.path === `folder-${node.folder_id}` ? (
-            <input
-              className="text-sm border px-1 py-0.5 w-32"
-              autoFocus
-              value={renamingItem.name}
-              onChange={(e) => setRenamingItem({ ...renamingItem, name: e.target.value })}
-              onBlur={() => setRenamingItem(null)}
-              onKeyDown={async (e) => {
-                if (e.key === "Enter") {
-                  const newName = renamingItem.name.trim();
-                  if (!newName) {
-                    alert("이름을 입력하세요.");
-                    return;
-                  }
-                  try {
-                    const renamed = await renameFolder(node.folder_id, newName);
-                    node.folder_name = renamed.folder_name;
-                    setFolderTree({ ...folderTree });
-                  } catch (err) {
-                    console.error("폴더 이름 변경 실패", err);
-                    alert("변경 실패");
-                  } finally {
-                    setRenamingItem(null);
-                  }
-                } else if (e.key === "Escape") {
+  return (
+    <div key={`folder-${node.folder_id}`} style={{ paddingLeft }}>
+      <div
+        className="flex items-center cursor-pointer hover:underline"
+        onClick={() => handleFolderToggle(node)}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          setMenuPosition({ x: e.pageX + 4, y: e.pageY + 6 });
+          setContextMenu({ targetId: `folder-${node.folder_id}` });
+          setMenuVisible(true);
+        }}
+      >
+        {node.expanded ? <FaChevronDown className="mr-1" /> : <FaChevronRight className="mr-1" />}
+        <FaFolder className="text-yellow-600 mr-1" />
+        {renamingItem?.path === `folder-${node.folder_id}` ? (
+          <input
+            className="text-sm border px-1 py-0.5 w-32"
+            autoFocus
+            value={renamingItem.name}
+            onChange={(e) => setRenamingItem({ ...renamingItem, name: e.target.value })}
+            onBlur={() => setRenamingItem(null)}
+            onKeyDown={async (e) => {
+              if (e.key === "Enter") {
+                const newName = renamingItem.name.trim();
+                if (!newName) {
+                  alert("이름을 입력하세요.");
+                  return;
+                }
+                try {
+                  const renamed = await renameFolder(node.folder_id, newName);
+                  node.folder_name = renamed.folder_name;
+                  setFolderTree({ ...folderTree });
+                } catch (err) {
+                  console.error("폴더 이름 변경 실패", err);
+                  alert("변경 실패");
+                } finally {
                   setRenamingItem(null);
                 }
-              }}
-            />
-          ) : (
-            <span className="text-sm">{node.folder_name}</span>
-          )}
-        </div>
-
-        {node.expanded && (
-          <div className="ml-2">
-            {node.children.map((child) => renderFolderNode(child, depth + 1))}
-
-            {node.codes.map((file) => {
-              const [nameOnly, ext] = file.title.split(/\.(?=[^\.]+$)/);
-              const isRenaming = renamingItem?.path === `code-${file.code_id}`;
-              return (
-                <div
-                  key={`code-${file.code_id}`}
-                  className="flex items-center cursor-pointer hover:underline pl-4"
-                  onClick={() => handleFileClick(file)}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    setMenuPosition({ x: e.pageX + 4, y: e.pageY + 6 });
-                    setContextMenu({ targetId: `code-${file.code_id}` });
-                    setMenuVisible(true);
-                  }}
-                >
-                  <FaFile className="mr-1 text-gray-500" />
-                  {isRenaming ? (
-                    <>
-                      <input
-                        className="text-sm border px-1 py-0.5 w-32"
-                        autoFocus
-                        value={renamingItem.name}
-                        onChange={(e) => setRenamingItem({ ...renamingItem, name: e.target.value })}
-                        onBlur={() => setRenamingItem(null)}
-                        onKeyDown={async (e) => {
-                          if (e.key === "Enter") {
-                            const newName = renamingItem.name.trim();
-                            if (!newName) {
-                              alert("이름을 입력하세요.");
-                              return;
-                            }
-                            try {
-                              const renamed = await renameCodeFile(file.code_id, `${newName}.${ext}`);
-                              file.title = renamed.title;
-                              setFolderTree({ ...folderTree });
-                            } catch (err) {
-                              console.error("파일 이름 변경 실패", err);
-                              alert("변경 실패");
-                            } finally {
-                              setRenamingItem(null);
-                            }
-                          } else if (e.key === "Escape") {
-                            setRenamingItem(null);
-                          }
-                        }}
-                      />
-                      <span className="ml-1 text-xs text-gray-400">.{ext}</span>
-                    </>
-                  ) : (
-                    <span className="text-sm">{file.title}</span>
-                  )}
-                </div>
-              );
-            })}
-
-            {creatingItem?.type === "folder" &&
-              creatingItem.parentPath === `folder-${node.folder_id}` && (
-                <div className="flex items-center mt-1 pl-6">
-                  <input
-                    id="new-item-input"
-                    autoFocus
-                    value={newItemName}
-                    onChange={(e) => setNewItemName(e.target.value)}
-                    onBlur={() => {
-                      setCreatingItem(null);
-                      setNewItemName("");
-                    }}
-                    onKeyDown={async (e) => {
-                      if (e.key === "Enter") {
-                        const name = newItemName.trim();
-                        if (!name) {
-                          alert("이름을 입력하세요.");
-                          return;
-                        }
-                        try {
-                          const newFolder = await createChildFolder({
-                            parent_folder_id: node.folder_id,
-                            folder_name: name,
-                          });
-
-                          node.children.push({
-                            ...newFolder,
-                            children: [],
-                            codes: [],
-                            expanded: false,
-                            loaded: false,
-                          });
-                          node.expanded = true;
-                          setFolderTree({ ...folderTree });
-                        } catch (err) {
-                          console.error("폴더 생성 실패", err);
-                          alert("폴더 생성에 실패했습니다.");
-                        } finally {
-                          setCreatingItem(null);
-                          setNewItemName("");
-                        }
-                      } else if (e.key === "Escape") {
-                        setCreatingItem(null);
-                        setNewItemName("");
-                      }
-                    }}
-                    className="text-sm border px-2 py-1 w-40"
-                    placeholder="새 폴더 이름"
-                  />
-                </div>
-            )}
-
-            {creatingItem?.type === "file" &&
-              creatingItem.parentPath === `folder-${node.folder_id}` && (
-                <div className="flex items-center mt-1 pl-6">
-                  <input
-                    id="new-item-input"
-                    autoFocus
-                    value={newItemName}
-                    onChange={(e) => setNewItemName(e.target.value)}
-                    onBlur={() => {
-                      setCreatingItem(null);
-                      setNewItemName("");
-                    }}
-                    onKeyDown={async (e) => {
-                      if (e.key === "Enter") {
-                        const name = newItemName.trim();
-                        if (!name || !name.includes(".")) {
-                          alert("파일 이름과 확장자를 입력하세요 (예: main.js)");
-                          return;
-                        }
-
-                        const ext = name.split(".").pop();
-                        const extMap = { html: 1, css: 2, js: 3, py: 4 };
-                        const languageId = extMap[ext];
-
-                        if (!languageId) {
-                          alert("지원하지 않는 확장자입니다.");
-                          return;
-                        }
-
-                        try {
-                          const newFile = await saveCodeFile({
-                            title: name,
-                            content: "",
-                            language_id: languageId,
-                            folder_id: node.folder_id,
-                          });
-
-                          node.codes.push(newFile);
-                          node.expanded = true;
-                          setFolderTree({ ...folderTree });
-                        } catch (err) {
-                          console.error("파일 생성 실패", err);
-                          alert("파일 생성에 실패했습니다.");
-                        } finally {
-                          setCreatingItem(null);
-                          setNewItemName("");
-                        }
-                      } else if (e.key === "Escape") {
-                        setCreatingItem(null);
-                        setNewItemName("");
-                      }
-                    }}
-                    className="text-sm border px-2 py-1 w-40"
-                    placeholder="새 파일 이름 (예: app.js)"
-                  />
-                </div>
-            )}
-          </div>
+              } else if (e.key === "Escape") {
+                setRenamingItem(null);
+              }
+            }}
+          />
+        ) : (
+          <span className="text-sm">{node.folder_name}</span>
         )}
       </div>
-    );
-  };
+
+      {node.expanded && (
+        <div className="ml-2">
+          {node.children.map((child) => renderFolderNode(child, depth + 1))}
+
+          {node.codes.map((file) => {
+            const [nameOnly, ext] = file.title.split(/\.(?=[^.]+$)/);
+            const isRenaming = renamingItem?.path === `code-${file.code_id}`;
+            return (
+              <div
+                key={`code-${file.code_id}`}
+                className="flex items-center cursor-pointer hover:underline pl-4"
+                onClick={() => handleFileClick(file)}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setMenuPosition({ x: e.pageX + 4, y: e.pageY + 6 });
+                  setContextMenu({ targetId: `code-${file.code_id}` });
+                  setMenuVisible(true);
+                }}
+              >
+                <FaFile className="mr-1 text-gray-500" />
+                {isRenaming ? (
+                  <>
+                    <input
+                      className="text-sm border px-1 py-0.5 w-32"
+                      autoFocus
+                      value={renamingItem.name}
+                      onChange={(e) => setRenamingItem({ ...renamingItem, name: e.target.value })}
+                      onBlur={() => setRenamingItem(null)}
+                      onKeyDown={async (e) => {
+                        if (e.key === "Enter") {
+                          const newName = renamingItem.name.trim();
+                          if (!newName) {
+                            alert("이름을 입력하세요.");
+                            return;
+                          }
+                          try {
+                            const renamed = await renameCodeFile(file.code_id, `${newName}.${ext}`);
+                            file.title = renamed.title;
+                            setFolderTree({ ...folderTree });
+                          } catch (err) {
+                            console.error("파일 이름 변경 실패", err);
+                            alert("변경 실패");
+                          } finally {
+                            setRenamingItem(null);
+                          }
+                        } else if (e.key === "Escape") {
+                          setRenamingItem(null);
+                        }
+                      }}
+                    />
+                    <span className="ml-1 text-xs text-gray-400">.{ext}</span>
+                  </>
+                ) : (
+                  <span className="text-sm">{file.title}</span>
+                )}
+              </div>
+            );
+          })}
+
+          {creatingItem?.type === "folder" &&
+            creatingItem.parentPath === `folder-${node.folder_id}` && (
+              <div className="flex items-center mt-1 pl-6">
+                <input
+                  id="new-item-input"
+                  autoFocus
+                  value={newItemName}
+                  onChange={(e) => setNewItemName(e.target.value)}
+                  onBlur={() => {
+                    setCreatingItem(null);
+                    setNewItemName("");
+                  }}
+                  onKeyDown={async (e) => {
+                    if (e.key === "Enter") {
+                      const name = newItemName.trim();
+                      if (!name) {
+                        alert("이름을 입력하세요.");
+                        return;
+                      }
+                      try {
+                        const newFolder = await createChildFolder({
+                          parent_folder_id: node.folder_id,
+                          folder_name: name,
+                        });
+
+                        node.children.push({
+                          ...newFolder,
+                          children: [],
+                          codes: [],
+                          expanded: false,
+                          loaded: false,
+                        });
+                        node.expanded = true;
+                        setFolderTree({ ...folderTree });
+                      } catch (err) {
+                        console.error("폴더 생성 실패", err);
+                        alert("폴더 생성에 실패했습니다.");
+                      } finally {
+                        setCreatingItem(null);
+                        setNewItemName("");
+                      }
+                    } else if (e.key === "Escape") {
+                      setCreatingItem(null);
+                      setNewItemName("");
+                    }
+                  }}
+                  className="text-sm border px-2 py-1 w-40"
+                  placeholder="새 폴더 이름"
+                />
+              </div>
+          )}
+
+          {creatingItem?.type === "file" &&
+            creatingItem.parentPath === `folder-${node.folder_id}` && (
+              <div className="flex items-center mt-1 pl-6">
+                <input
+                  id="new-item-input"
+                  autoFocus
+                  value={newItemName}
+                  onChange={(e) => setNewItemName(e.target.value)}
+                  onBlur={() => {
+                    setCreatingItem(null);
+                    setNewItemName("");
+                  }}
+                  onKeyDown={async (e) => {
+                    if (e.key === "Enter") {
+                      const name = newItemName.trim();
+                      if (!name || !name.includes(".")) {
+                        alert("파일 이름과 확장자를 입력하세요 (예: main.js)");
+                        return;
+                      }
+
+                      const ext = name.split(".").pop();
+                      const extMap = { html: 1, css: 2, js: 3, py: 4 };
+                      const languageId = extMap[ext];
+
+                      if (!languageId) {
+                        alert("지원하지 않는 확장자입니다.");
+                        return;
+                      }
+
+                      try {
+                        const newFile = await saveCodeFile({
+                          title: name,
+                          content: "",
+                          language_id: languageId,
+                          folder_id: node.folder_id,
+                        });
+
+                        node.codes.push(newFile);
+                        node.expanded = true;
+                        setFolderTree({ ...folderTree });
+                      } catch (err) {
+                        console.error("파일 생성 실패", err);
+                        alert("파일 생성에 실패했습니다.");
+                      } finally {
+                        setCreatingItem(null);
+                        setNewItemName("");
+                      }
+                    } else if (e.key === "Escape") {
+                      setCreatingItem(null);
+                      setNewItemName("");
+                    }
+                  }}
+                  className="text-sm border px-2 py-1 w-40"
+                  placeholder="새 파일 이름 (예: app.js)"
+                />
+              </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
   return (
     <div className="p-4">

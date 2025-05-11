@@ -1,7 +1,6 @@
 import React from "react";
 import SelfCodingExplorerPanel from "./SelfCodingExplorerPanel";
 import SelfCodingGitPanel from "./SelfCodingGitPanel";
-import SelfCodingSavePanel from "./SelfCodingSavePanel";
 
 const SelfCodingPanel = ({
   activePanel,
@@ -61,9 +60,6 @@ const SelfCodingPanel = ({
       )}
       {activePanel === "git" && (
         <SelfCodingGitPanel isGithubConnected={isGithubConnected} />
-      )}
-      {activePanel === "save" && (
-        <SelfCodingSavePanel />
       )}
     </div>
   );
