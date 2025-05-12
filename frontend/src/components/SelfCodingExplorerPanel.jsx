@@ -138,51 +138,53 @@ const SelfCodingExplorerPanel = ({ navigate, tabs, setTabs, setActiveTabId, fold
     loadRoot();
   }, []);
 
-  useEffect(() => {
-    const applyTemplate = async () => {
-      if (!templateIdFromNav || !templateFiles[templateIdFromNav] || hasInsertedTemplateRef.current) return;
-      hasInsertedTemplateRef.current = true;
+useEffect(() => {
+  const applyTemplate = async () => {
+    if (!templateIdFromNav || !templateFiles[templateIdFromNav] || hasInsertedTemplateRef.current) return;
+    hasInsertedTemplateRef.current = true;
 
-      try {
-        if (!folderTree) {
-          const root = await getRootCodeFolder();
-          setFolderTree({
-            ...root,
-            children: [],
-            codes: [],
-            expanded: false,
-            loaded: false,
-          });
-        }
-
-        await insertTemplateToDB(templateIdFromNav, folderTree.folder_id);
-
-        const [children, codes] = await Promise.all([
-          getChildFolders(folderTree.folder_id),
-          getCodesInFolder(folderTree.folder_id),
-        ]);
-
-        setFolderTree({
-          ...folderTree,
-          children: children.map((child) => ({
-            ...child,
-            children: [],
-            codes: [],
-            expanded: false,
-            loaded: false,
-          })),
-          codes,
-          expanded: true,
-          loaded: true,
-        });
-      } catch (err) {
-        console.error("템플릿 생성 실패:", err);
-        alert("템플릿 생성에 실패했습니다. 네트워크를 확인하세요.");
-        hasInsertedTemplateRef.current = false;
+    try {
+      let root = folderTree;
+      if (!root) {
+        const fetchedRoot = await getRootCodeFolder();
+        root = {
+          ...fetchedRoot,
+          children: [],
+          codes: [],
+          expanded: false,
+          loaded: false,
+        };
+        setFolderTree(root);
       }
-    };
-    applyTemplate();
-  }, [folderTree, templateIdFromNav, insertTemplateToDB]);
+
+      await insertTemplateToDB(templateIdFromNav, root.folder_id);
+
+      const [children, codes] = await Promise.all([
+        getChildFolders(root.folder_id),
+        getCodesInFolder(root.folder_id),
+      ]);
+
+      setFolderTree({
+        ...root,
+        children: children.map((child) => ({
+          ...child,
+          children: [],
+          codes: [],
+          expanded: false,
+          loaded: false,
+        })),
+        codes,
+        expanded: true,
+        loaded: true,
+      });
+    } catch (err) {
+      console.error("템플릿 생성 실패:", err);
+      alert("템플릿 생성에 실패했습니다. 네트워크를 확인하세요.");
+      hasInsertedTemplateRef.current = false;
+    }
+  };
+  applyTemplate();
+}, [folderTree, templateIdFromNav, insertTemplateToDB]);
 
   const handleFolderToggle = async (node) => {
     if (!node.loaded) {
