@@ -28,6 +28,7 @@ const SelfCodingPanel = ({
   templateFiles,
   templateDescriptions,
   isGithubConnected,
+  reloadFolderTree,
 }) => {
   return (
     <div className="w-64 bg-[#f3f3f3] border-r border-gray-300 h-full overflow-auto">
@@ -56,6 +57,7 @@ const SelfCodingPanel = ({
           location={location}
           templateFiles={templateFiles}
           templateDescriptions={templateDescriptions}
+          reloadFolderTree={reloadFolderTree}
         />
       )}
       {activePanel === "git" && (

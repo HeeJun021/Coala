@@ -27,7 +27,7 @@ const EXT_MAP = {
   txt: 5, // 기타
 };
 
-const SelfCodingExplorerPanel = ({ navigate, tabs, setTabs, setActiveTabId }) => {
+const SelfCodingExplorerPanel = ({ navigate, tabs, setTabs, setActiveTabId, folders, reloadFolderTree }) => {
   const [showFileTree, setShowFileTree] = useState(true);
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
@@ -81,7 +81,44 @@ const SelfCodingExplorerPanel = ({ navigate, tabs, setTabs, setActiveTabId }) =>
     };
 
     await createRecursively(structure, templateFolder.folder_id);
+    await reloadFolderTree();
   }, []);
+
+  useEffect(() => {
+  const refreshOpenedNodes = async (node) => {
+    if (!node.expanded) return;
+
+    const [children, codes] = await Promise.all([
+      getChildFolders(node.folder_id),
+      getCodesInFolder(node.folder_id),
+    ]);
+
+    node.children = children.map((child) => ({
+      ...child,
+      children: [],
+      codes: [],
+      expanded: false,
+      loaded: false,
+    }));
+    node.codes = codes;
+    node.loaded = true;
+
+    for (const child of node.children) {
+      await refreshOpenedNodes(child);
+    }
+  };
+
+  const updateTreeIfOpen = async () => {
+    if (folders) {
+      const treeCopy = structuredClone(folders);
+      await refreshOpenedNodes(treeCopy);
+      setFolderTree(treeCopy);
+    }
+  };
+
+  updateTreeIfOpen();
+}, [folders]);
+
 
   useEffect(() => {
     const loadRoot = async () => {
@@ -164,6 +201,11 @@ const SelfCodingExplorerPanel = ({ navigate, tabs, setTabs, setActiveTabId }) =>
         }));
         node.codes = codes;
         node.loaded = true;
+
+        if (node.children.length === 0 && node.codes.length === 0) {
+          return; // 아무것도 없으면 열리지 않게 리턴
+        }
+
       } catch (err) {
         console.error("하위 항목 불러오기 실패", err);
       }
@@ -231,6 +273,41 @@ const SelfCodingExplorerPanel = ({ navigate, tabs, setTabs, setActiveTabId }) =>
     document.addEventListener("mousedown", handleClickOutsideRename);
     return () => document.removeEventListener("mousedown", handleClickOutsideRename);
   }, [renamingItem]);
+
+  useEffect(() => {
+  const refreshOpenedNodes = async (node) => {
+    if (node.expanded) {
+      const [children, codes] = await Promise.all([
+        getChildFolders(node.folder_id),
+        getCodesInFolder(node.folder_id),
+      ]);
+      node.children = children.map((child) => ({
+        ...child,
+        children: [],
+        codes: [],
+        expanded: false,
+        loaded: false,
+      }));
+      node.codes = codes;
+      node.loaded = true;
+
+      for (const child of node.children) {
+        await refreshOpenedNodes(child);
+      }
+    }
+  };
+
+  const updateTreeIfOpen = async () => {
+    if (folders) {
+      const treeCopy = structuredClone(folders);
+      await refreshOpenedNodes(treeCopy);
+      setFolderTree(treeCopy);
+    }
+  };
+
+  updateTreeIfOpen();
+}, [folders]);
+
 
   const handleContextMenu = (e) => {
     e.preventDefault();
@@ -307,6 +384,7 @@ const SelfCodingExplorerPanel = ({ navigate, tabs, setTabs, setActiveTabId }) =>
         }
 
         setMenuVisible(false);
+        await reloadFolderTree();
         return;
       }
 

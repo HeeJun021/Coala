@@ -53,18 +53,18 @@ const SelfCodingPage = () => {
       ]);
 
       setFolders({
-        ...root,
-        children: children.map(child => ({
-          ...child,
-          children: [],
-          codes: [],
-          expanded: false,
-          loaded: false,
-        })),
-        codes,
-        expanded: true,
-        loaded: true,
-      });
+      ...root,
+      children: children.map(child => ({
+        ...child,
+        children: [],
+        codes: [],
+        expanded: false,
+        loaded: false,
+      })),
+      codes,
+      expanded: true,
+      loaded: true,
+      }); // ✅ 여기 이 setFolders가 핵심!
     } catch (err) {
       console.error("탐색기 갱신 실패", err);
     }
@@ -143,6 +143,7 @@ const SelfCodingPage = () => {
           templateFiles={templateFiles}
           templateDescriptions={templateDescriptions}
           isGithubConnected={isGithubConnected}
+          reloadFolderTree={reloadFolderTree}
         />
         <Split
           className="flex flex-1"

@@ -40,7 +40,7 @@ const SelfCodingSidebar = ({
   setTabs,
   setActiveTabId,
   rootFolderId,
-  reloadFolderTree, // ✅ 전달받음
+  reloadFolderTree, 
 }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
