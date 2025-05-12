@@ -30,6 +30,8 @@ const AIChatPanel = ({ onClose }) => {
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [hoveringEdge, setHoveringEdge] = useState(false);
 
+  const [streamingMessage, setStreamingMessage] = useState("");
+
   const [copiedStates, setCopiedStates] = useState({});
   const handleCopy = (index, code) => {
     navigator.clipboard.writeText(code);
@@ -41,9 +43,9 @@ const AIChatPanel = ({ onClose }) => {
 
   useEffect(() => {
     if (bottomRef.current) {
-      bottomRef.current.scrollIntoView({ behavior: "auto" });
+      bottomRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages]);
+  }, [messages, streamingMessage]); // ✅ 여기에 streamingMessage 추가!
 
   const loadSessions = async () => {
     const data = await fetchGptSessions();
@@ -63,32 +65,45 @@ const AIChatPanel = ({ onClose }) => {
   const handleSend = async () => {
     if (!input.trim()) return;
 
+    const userMessage = { sender_type: "user", content: input };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
     setLoading(true);
+    setStreamingMessage("");
+
     try {
+      const response = activeSessionId
+        ? await sendGptMessage(activeSessionId, input)
+        : await createGptSession({
+            context: window.location.pathname,
+            message: input,
+          });
+
       if (!activeSessionId) {
-        const newSession = await createGptSession({
-          context: window.location.pathname,
-          message: input,
-        });
         await loadSessions();
-        await loadSessionMessages(newSession.session_id);
-        setMessages((prev) => [
-          ...prev,
-          { sender_type: "user", content: input },
-          { sender_type: "assistant", content: newSession.response },
-        ]);
-      } else {
-        const res = await sendGptMessage(activeSessionId, input);
-        setMessages((prev) => [
-          ...prev,
-          { sender_type: "user", content: input },
-          { sender_type: "assistant", content: res.response },
-        ]);
+        await loadSessionMessages(response.session_id);
       }
-      setInput("");
+
+      const content = response.response;
+      let i = 0;
+      const interval = setInterval(() => {
+        setStreamingMessage((prev) => {
+          const next = prev + content[i];
+          i++;
+          if (i >= content.length) {
+            clearInterval(interval);
+            setMessages((prev) => [
+              ...prev,
+              { sender_type: "assistant", content },
+            ]);
+            setStreamingMessage("");
+            setLoading(false);
+          }
+          return next;
+        });
+      }, 20);
     } catch (err) {
       alert("GPT 응답 실패");
-    } finally {
       setLoading(false);
     }
   };
@@ -333,6 +348,17 @@ const AIChatPanel = ({ onClose }) => {
                     </div>
                   </div>
                 ))}
+                {streamingMessage && (
+                  <div className="mb-2 text-left">
+                    <div
+                      className="inline-block px-3 py-2 rounded-lg text-sm leading-relaxed bg-gray-200 text-black max-w-[100%]"
+                      style={{ animation: "fadeIn 0.15s ease-in-out" }}
+                    >
+                      {renderMessageContent(streamingMessage)}
+                    </div>
+                  </div>
+                )}
+
                 <div ref={bottomRef} />
               </>
             )}
@@ -349,9 +375,15 @@ const AIChatPanel = ({ onClose }) => {
             <button
               onClick={handleSend}
               disabled={loading}
-              className="bg-blue-500 text-white px-4 py-2 rounded disabled:opacity-50"
+              className="bg-blue-500 text-white px-4 py-2 rounded disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {loading ? "전송 중..." : "전송"}
+              {loading ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                </>
+              ) : (
+                "전송"
+              )}
             </button>
           </div>
         </div>
