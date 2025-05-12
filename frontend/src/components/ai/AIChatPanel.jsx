@@ -27,6 +27,9 @@ const AIChatPanel = ({ onClose }) => {
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef(null);
 
+  const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [hoveringEdge, setHoveringEdge] = useState(false);
+
   const [copiedStates, setCopiedStates] = useState({});
   const handleCopy = (index, code) => {
     navigator.clipboard.writeText(code);
@@ -105,6 +108,41 @@ const AIChatPanel = ({ onClose }) => {
 
   const grouped = groupSessionsByDate(sessions);
 
+  const renderInlineCode = (text) => {
+    const inlineCodeRegex = /`([^`]+)`/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = inlineCodeRegex.exec(text)) !== null) {
+      const index = match.index;
+
+      // 일반 텍스트 추가
+      if (index > lastIndex) {
+        parts.push(text.slice(lastIndex, index));
+      }
+
+      // 인라인 코드 span으로 감싸기
+      parts.push(
+        <span
+          key={index}
+          className="bg-gray-100 text-pink-700 font-mono px-1 rounded text-[0.9rem]"
+        >
+          {match[1]}
+        </span>
+      );
+
+      lastIndex = index + match[0].length;
+    }
+
+    // 마지막 텍스트
+    if (lastIndex < text.length) {
+      parts.push(text.slice(lastIndex));
+    }
+
+    return parts;
+  };
+
   // ✅ 코드 블록 렌더링 함수 (스타일 적용 포함)
   const renderMessageContent = (content) => {
     const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
@@ -118,8 +156,8 @@ const AIChatPanel = ({ onClose }) => {
 
       if (index > lastIndex) {
         parts.push(
-          <p key={index} className="mb-1 whitespace-pre-wrap">
-            {content.slice(lastIndex, index)}
+          <p key={index} className="mb-1 whitespace-pre-wrap leading-relaxed">
+            {renderInlineCode(content.slice(lastIndex, index))}
           </p>
         );
       }
@@ -169,8 +207,8 @@ const AIChatPanel = ({ onClose }) => {
 
     if (lastIndex < content.length) {
       parts.push(
-        <p key="last" className="whitespace-pre-wrap">
-          {content.slice(lastIndex)}
+        <p key="last" className="whitespace-pre-wrap leading-relaxed">
+          {renderInlineCode(content.slice(lastIndex))}
         </p>
       );
     }
@@ -179,23 +217,43 @@ const AIChatPanel = ({ onClose }) => {
   };
 
   return (
-    <ResizableBox
-      width={700}
-      height={500}
-      minConstraints={[500, 300]}
-      maxConstraints={[1000, 800]}
-      resizeHandles={["nw"]}
+    // 🔁 전체를 감싸는 고정된 wrapper
+    <div
       style={{
         position: "fixed",
-        right: "1.5rem", // = right-6
-        bottom: "6rem", // = bottom-24
+        right: "1.5rem",
+        bottom: "6rem",
         zIndex: 50,
       }}
-      className="bg-white shadow-2xl rounded-xl overflow-hidden"
+      className="bg-white shadow-2xl rounded-xl overflow-hidden flex"
     >
-      <div className="w-full h-full flex">
-        {/* 좌측: 세션 목록 */}
-        <div className="w-[30%] border-r overflow-y-auto px-2 pt-4">
+      {/* 👇 3단계: 펼치기 버튼은 이곳에 위치 */}
+      {!sidebarVisible && (
+        <div className="absolute left-0 top-1/2 transform -translate-y-1/2 z-40">
+          <button
+            onMouseEnter={() => setHoveringEdge(true)}
+            onMouseLeave={() => setHoveringEdge(false)}
+            onClick={() => setSidebarVisible(true)}
+            className={`transition-opacity duration-200 bg-white border px-2 py-1 rounded-r shadow ${
+              hoveringEdge ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            ◀
+          </button>
+        </div>
+      )}
+
+      {/* 좌측: 세션 목록 (고정 크기) */}
+      {sidebarVisible && (
+        <div className="w-[200px] border-r overflow-y-auto px-2 pt-4 relative">
+          {/* 숨기기 버튼 */}
+          <button
+            onClick={() => setSidebarVisible(false)}
+            className="absolute top-2 right-2 text-xs text-gray-500 hover:text-black z-10"
+          >
+            ▶
+          </button>
+
           <div className="font-semibold text-lg mb-3 px-2">📜 대화 목록</div>
           {Object.entries(grouped).map(([label, sessionList]) => (
             <div key={label} className="mb-3">
@@ -227,30 +285,57 @@ const AIChatPanel = ({ onClose }) => {
             </div>
           ))}
         </div>
+      )}
 
-        {/* 우측: 채팅 영역 */}
-        <div className="w-[70%] flex flex-col p-4">
+      {/* 우측: 코딩 챗봇 영역만 리사이즈 */}
+      <ResizableBox
+        width={450}
+        height={500}
+        minConstraints={[350, 300]}
+        maxConstraints={[900, 800]}
+        resizeHandles={["nw"]}
+        className="bg-white"
+      >
+        <div className="w-full h-full flex flex-col p-4 relative">
+          {/* 닫기 버튼 */}
+          <button
+            onClick={onClose}
+            className="absolute top-2 right-2 text-gray-500 hover:text-black z-10"
+          >
+            ✖
+          </button>
+
           <div className="font-semibold text-lg mb-2">🤖 코딩 챗봇</div>
           <div className="flex-1 overflow-y-auto border rounded p-2 mb-2 bg-gray-50">
-            {messages.map((msg, idx) => (
-              <div
-                key={idx}
-                className={`mb-2 ${
-                  msg.sender_type === "user" ? "text-right" : "text-left"
-                }`}
-              >
-                <div
-                  className={`inline-block px-3 py-2 rounded-lg text-sm leading-relaxed ${
-                    msg.sender_type === "user"
-                      ? "bg-blue-100 ml-auto max-w-[100%]"
-                      : "bg-gray-200 text-black max-w-[100%]"
-                  }`}
-                >
-                  {renderMessageContent(msg.content)}
-                </div>
+            {messages.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-black text-sm text-center px-4">
+                안녕하세요! 👋
+                <br />
+                챗봇에게 무엇이든 물어봐주세요!
               </div>
-            ))}
-            <div ref={bottomRef} />
+            ) : (
+              <>
+                {messages.map((msg, idx) => (
+                  <div
+                    key={idx}
+                    className={`mb-2 ${
+                      msg.sender_type === "user" ? "text-right" : "text-left"
+                    }`}
+                  >
+                    <div
+                      className={`inline-block px-3 py-2 rounded-lg text-sm leading-relaxed ${
+                        msg.sender_type === "user"
+                          ? "bg-blue-100 ml-auto max-w-[100%]"
+                          : "bg-gray-200 text-black max-w-[100%]"
+                      }`}
+                    >
+                      {renderMessageContent(msg.content)}
+                    </div>
+                  </div>
+                ))}
+                <div ref={bottomRef} />
+              </>
+            )}
           </div>
           <div className="flex gap-2">
             <input
@@ -270,16 +355,8 @@ const AIChatPanel = ({ onClose }) => {
             </button>
           </div>
         </div>
-
-        {/* 닫기 버튼 */}
-        <button
-          onClick={onClose}
-          className="absolute top-2 right-2 text-gray-500 hover:text-black"
-        >
-          ✖
-        </button>
-      </div>
-    </ResizableBox>
+      </ResizableBox>
+    </div>
   );
 };
 
