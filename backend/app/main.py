@@ -112,3 +112,4 @@ app.include_router(gpt.router, prefix="/gpt", tags=["gpt"])
 @app.get("/", tags=["Root"])
 def read_root():
     return {"message": "FastAPI is running!"}
+

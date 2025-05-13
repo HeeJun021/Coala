@@ -1,16 +1,19 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { deleteBoard } from "../api/boardApi";
 import { likeBoard, unlikeBoard } from "../api/likeApi";
 import { reportBoard } from "../api/reportApi";
+import ApplyModal from "../components/ApplyModal"; // ✅ 모달 컴포넌트 import
 
 const ProjectBoardDetail = ({ post, user }) => {
   const navigate = useNavigate();
   const { boardType, postId } = useParams();
-  const [liked, setLiked] = React.useState(false);
-  const [likeCount, setLikeCount] = React.useState(post.like_count || 0);
 
-  const isAuthor = user?.user_id === post.author_id;
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(post.like_count || 0);
+  const [showApplyModal, setShowApplyModal] = useState(false); // ✅ 모달 상태 추가
+
+  const isAuthor = user?.user_id === post.user_id;
 
   const handleLike = async () => {
     if (!user) return alert("로그인이 필요합니다.");
@@ -88,7 +91,7 @@ const ProjectBoardDetail = ({ post, user }) => {
       {/* 액션 버튼 */}
       <div className="flex items-center gap-4 border-t pt-4 mb-8">
         <button onClick={handleLike} className="flex items-center gap-1 text-red-500">
-        {liked ? "❤️" : "🤍"} <span className="text-sm">{likeCount}</span>
+          {liked ? "❤️" : "🤍"} <span className="text-sm">{likeCount}</span>
         </button>
         <button onClick={handleReport} className="text-sm text-gray-500 underline">
           신고
@@ -105,12 +108,33 @@ const ProjectBoardDetail = ({ post, user }) => {
         )}
       </div>
 
-      {/* 참여 신청 버튼 */}
+      {/* 작성자일 경우 지원자 보기 버튼 / 아니면 참여 신청 */}
       <div className="flex justify-end">
-        <button className="px-4 py-2 bg-green-500 text-white rounded-md">
-          참여 신청하기
-        </button>
+        {isAuthor ? (
+          <button
+            onClick={() => navigate(`/board/${boardType}/applicants/${postId}`)}
+            className="px-4 py-2 bg-blue-500 text-white rounded-md"
+          >
+            지원자 보기
+          </button>
+        ) : (
+          <button
+            onClick={() => setShowApplyModal(true)}
+            className="px-4 py-2 bg-green-500 text-white rounded-md"
+          >
+            참여 신청하기
+          </button>
+        )}
       </div>
+
+      {/* ✅ ApplyModal 표시 */}
+      {showApplyModal && (
+        <ApplyModal
+          onClose={() => setShowApplyModal(false)}
+          projectId={post.post_id || postId}
+          user={user}
+        />
+      )}
     </div>
   );
 };
