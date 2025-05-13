@@ -1,6 +1,8 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from app.database import engine, get_db, Base
+
 
 # ✅ 모델 불러오기
 from app.models import (
@@ -14,6 +16,8 @@ from app.models import (
 
 # ✅ 라우터 불러오기
 from app.routers import (
+    chat_ws,
+    follow,
     user,
     auth,
     social_auth,
@@ -35,6 +39,10 @@ from app.routers import (
     board,
     preview,
     github
+    chat_rest,
+    chat_upload,
+    chat_download,
+    gpt
 )
 
 from app.schemas.user import UserUpdateSchema
@@ -86,6 +94,20 @@ app.include_router(code_execution.router, prefix="/code")  # WebSocket용이면 
 app.include_router(code.router)
 app.include_router(preview.router)
 app.include_router(github.router)
+
+# 채팅
+app.include_router(chat_ws.router)
+app.include_router(chat_rest.router)
+app.include_router(follow.router)
+
+app.include_router(chat_upload.router, prefix="", tags=["파일 업로드"])
+app.include_router(chat_download.router, tags=["파일 다운로드"])
+
+app.mount("/static", StaticFiles(directory="uploaded_files"), name="static")
+
+# gpt
+app.include_router(gpt.router, prefix="/gpt", tags=["gpt"])
+
 # 기본 라우트
 @app.get("/", tags=["Root"])
 def read_root():

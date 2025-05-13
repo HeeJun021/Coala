@@ -28,6 +28,21 @@ class User(Base):
     social_logins = relationship("SocialLogin", back_populates="user", cascade="all, delete")
     posts = relationship("Post", back_populates="user", cascade="all, delete")
     comments = relationship("Comment", back_populates="user", cascade="all, delete")
+    
+class UserFollow(Base):
+    __tablename__ = "userfollows"
+
+    follower_id = Column(
+        Integer,
+        ForeignKey("users.user_id", ondelete="CASCADE"),
+        primary_key=True
+    )
+    following_id = Column(
+        Integer,
+        ForeignKey("users.user_id", ondelete="CASCADE"),
+        primary_key=True
+    )
+    followed_at = Column(TIMESTAMP, server_default=func.now())
 
 # ✅ 자동으로 `tier_id` 업데이트
 @event.listens_for(User, "before_update")
@@ -37,3 +52,4 @@ def update_tier_id(mapper, connection, target):
         new_tier = session.query(UserTier).filter(UserTier.min_rating <= target.rating).order_by(UserTier.min_rating.desc()).first()
         if new_tier:
             target.tier_id = new_tier.tier_id
+

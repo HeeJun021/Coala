@@ -15,6 +15,9 @@ import koala from "./assets/koala.jpg";
 import MainLayout from "./Layout/MainLayout";
 import Home from "./pages/Home";
 
+// 채팅 구조변경
+import { ChatSocketProvider } from "./context/ChatSocketContext";
+
 // 학습자료
 import StudyMaterialsPage from "./pages/StudyMaterialsPage";
 import StudyMaterialsPageDetails from "./pages/StudyMaterialsPageDetails";
@@ -121,6 +124,7 @@ const App = () => {
   return (
     <Router>
       <AuthProvider>
+      <ChatSocketProvider>
         <BodyClassManager />
         <Routes>
           
@@ -251,6 +255,7 @@ const App = () => {
             }
           />
         </Routes>
+        </ChatSocketProvider>
       </AuthProvider>
     </Router>
   );

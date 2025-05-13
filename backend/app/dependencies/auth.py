@@ -33,3 +33,22 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
         user.github_access_token = social_login.access_token
 
     return user  # ✅ github_access_token이 포함된 User 객체 반환
+    return user
+
+# WebSocket용 인증
+def get_user_from_token(token: str, db: Session) -> Optional[User]:
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        user_id: int = payload.get("user_id")
+        if user_id is None:
+            print("❌ 토큰에 user_id 없음")
+            return None
+    except JWTError as e:
+        print(f"❌ JWT 에러 발생: {e}")
+        return None
+
+    user = db.query(User).filter(User.user_id == user_id).first()
+    if user is None:
+        print("❌ 해당 user_id의 유저 없음")
+    return user
+
