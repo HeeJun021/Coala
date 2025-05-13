@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "../Layout/Navbar";
-import SelfCodingSidebar from "../components/SelfCodingSidebar";
-import SelfCodingPanel from "../components/SelfCodingPanel";
-import SelfCodingEditorPanel from "../components/SelfCodingEditorPanel";
-import SelfCodingPreviewPanel from "../components/SelfCodingPreviewPanel";
+import SelfCodingSidebar from "../components/selfcoding/SelfCodingSidebar";
+import SelfCodingPanel from "../components/selfcoding/SelfCodingPanel";
+import SelfCodingEditorPanel from "../components/selfcoding/SelfCodingEditorPanel";
+import SelfCodingPreviewPanel from "../components/selfcoding/SelfCodingPreviewPanel";
 import { templateDescriptions, templateFiles, getLanguageExtension } from "../data/templateData";
 import "../index.css";
 import Split from "react-split";

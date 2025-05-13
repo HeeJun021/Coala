@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FaBookOpen, FaChevronRight, FaChevronDown, FaFile } from "react-icons/fa";
-import { getRootCodeFolder, getChildFolders, getCodesInFolder } from "../api/codeApi";
-import githubApi from "../api/githubApi";
+import { getRootCodeFolder, getChildFolders, getCodesInFolder } from "../../api/codeApi";
+import githubApi from "../../api/githubApi";
 
 const SelfCodingGitPanel = ({ isGithubConnected }) => {
   const [repos, setRepos] = useState([]);

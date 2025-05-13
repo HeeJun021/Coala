@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { FaTimes } from "react-icons/fa";
 import CodeMirror from "@uiw/react-codemirror";
-import { getCodeById, updateCodeFile } from "../api/codeApi";
-import { runJsPreview, runHtmlPreview, runPythonPreview } from "../api/previewApi";
+import { getCodeById, updateCodeFile } from "../../api/codeApi";
+import { runJsPreview, runHtmlPreview, runPythonPreview } from "../../api/previewApi";
 
 const SelfCodingEditorPanel = ({
   tabs,

@@ -7,7 +7,7 @@ import {
   FaCog,
 } from "react-icons/fa";
 import SelfCodingSettingsPanel from "./SelfCodingSettingsPanel";
-import { saveCodeFile } from "../api/codeApi"; // ✅ DB 저장 함수 추가
+import { saveCodeFile } from "../../api/codeApi"; // ✅ DB 저장 함수 추가
 
 const icons = [
   { name: "menu", icon: <FaBars />, tooltip: "메뉴" },

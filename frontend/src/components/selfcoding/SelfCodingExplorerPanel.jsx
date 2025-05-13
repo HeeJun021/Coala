@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { FaChevronRight, FaChevronDown, FaPlusCircle, FaFolder, FaFile } from "react-icons/fa";
-import {
-  getRootCodeFolder,
+import { getRootCodeFolder,
   getChildFolders,
   getCodesInFolder,
   getCodeById,
@@ -11,10 +10,9 @@ import {
   renameFolder,
   deleteCodeFile,
   deleteFolder
-} from "../api/codeApi";
+ } from "../../api/codeApi";
 import { useLocation } from "react-router-dom";
-import { templateFiles, templateDescriptions } from "../data/templateData";
-
+import { templateFiles, templateDescriptions } from "../../data/templateData";
 const EXT_MAP = {
   html: 1,
   css: 2,

@@ -38,11 +38,11 @@ from app.routers import (
     code_terminal,
     board,
     preview,
-    github
+    github,
     chat_rest,
     chat_upload,
     chat_download,
-    gpt
+    gpt,
 )
 
 from app.schemas.user import UserUpdateSchema
