@@ -7,10 +7,10 @@ class PostBase(BaseModel):
     board_type: str
     title: str
     content: str
-    code: Optional[str] = None
-    image_url: Optional[str] = None
+    code: Optional[str] = ""         # ✅ 빈 문자열 기본값
+    image_url: Optional[str] = ""    # ✅ 빈 문자열 기본값
     user_id: int
-    recruit_limit: Optional[int] = 1  # ✅ 이름 통일 완료
+    recruit_limit: Optional[int] = 1 # ✅ 기본 모집 인원 수
 
 class PostCreate(PostBase):
     pass
@@ -22,8 +22,8 @@ class PostResponse(PostBase):
     comment_count: int
     created_at: datetime
     updated_at: datetime
-    author_nickname: Optional[str] = None  # ✅ 작성자 닉네임
-    accepted_count: Optional[int] = None   # ✅ 현재 수락된 인원 수
+    author_nickname: Optional[str] = None
+    accepted_count: Optional[int] = 1  # ✅ 수락된 인원 기본값
 
     model_config = {
         "from_attributes": True
@@ -68,7 +68,7 @@ class CommentReportCreate(BaseModel):
     user_id: int
     reason: str
 
-# ======= 프로젝트 보드 관련 ========    
+# ======= 프로젝트 보드 관련 ========
 class ProjectApplicantCreate(BaseModel):
     user_id: int
     introduction: str

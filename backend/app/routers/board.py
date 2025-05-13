@@ -17,6 +17,8 @@ router = APIRouter(prefix="/board", tags=["Board"])
 # ✅ 게시글 생성
 @router.post("/posts", response_model=PostResponse)
 def create_post(post: PostCreate, db: Session = Depends(get_db)):
+    print("📥 실제 수신된 post 데이터:", post)
+    print("📥 post.dict():", post.dict())
     return board_service.create_post(post, db)
 
 # ✅ 게시글 목록 조회 (페이지네이션 적용)
@@ -129,3 +131,7 @@ def get_project_applicants(post_id: int, db: Session = Depends(get_db)):
 @router.put("/post/applicant/{applicant_id}/status")
 def update_applicant_status(applicant_id: int, status: str, db: Session = Depends(get_db)):
     return board_service.update_applicant_status(applicant_id, status, db)
+
+@router.get("/board/{board_type}")
+def get_board_list(board_type: str, page: int = 1, sort_order: str = "최신 순", db: Session = Depends(get_db)):
+    return board_service.get_posts(board_type, page, 10, sort_order, db)

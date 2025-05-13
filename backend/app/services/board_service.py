@@ -18,11 +18,13 @@ from app.schemas.board import (
 
 # 포스트 생성
 def create_post(post: PostCreate, db: Session):
+    print("받은 데이터:", post.dict())  # ← 여기 추가
     new_post = Post(**post.dict())
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
     return new_post
+
 
 # 포스트 목록 조회 (페이지네이션 적용 + 좋아요/댓글수 계산)
 def get_posts(board_type: str, page: int, page_size: int, sort_order: str, db: Session):
@@ -45,7 +47,7 @@ def get_posts(board_type: str, page: int, page_size: int, sort_order: str, db: S
         Post,
         func.coalesce(like_subq.c.like_count, 0).label("like_count"),
         func.coalesce(comment_subq.c.comment_count, 0).label("comment_count"),
-        func.coalesce(accepted_subq.c.accepted_count, 1).label("accepted_count")  # ✅ 모집 인원 필드 추가
+        func.coalesce(accepted_subq.c.accepted_count, 0).label("accepted_count")  # ✅ 모집 인원 필드 추가
     ).outerjoin(like_subq, Post.post_id == like_subq.c.post_id) \
     .outerjoin(comment_subq, Post.post_id == comment_subq.c.post_id) \
     .outerjoin(accepted_subq, Post.post_id == accepted_subq.c.post_id) \
@@ -65,7 +67,7 @@ def get_posts(board_type: str, page: int, page_size: int, sort_order: str, db: S
         post_data = PostResponse.model_validate(post).model_dump()
         post_data["like_count"] = like_count
         post_data["comment_count"] = comment_count
-        post_data["accepted_count"] = accepted_count
+        post_data["accepted_count"] = accepted_count + 1
         post_data["recruit_limit"] = post.recruit_limit  # ✅ Post 모델에서 바로 가져옴
         result.append(post_data)
 
@@ -74,14 +76,42 @@ def get_posts(board_type: str, page: int, page_size: int, sort_order: str, db: S
 
 # 포스트 단건 조회 (작성자 닉네임 포함)
 def get_post(post_id: int, db: Session):
-    post_query = db.query(Post, User.nickname).join(User, Post.user_id == User.user_id).filter(Post.post_id == post_id).first()
+    like_subq = db.query(
+        PostLike.post_id, func.count(PostLike.user_id).label("like_count")
+    ).group_by(PostLike.post_id).subquery()
+
+    comment_subq = db.query(
+        Comment.post_id, func.count(Comment.comment_id).label("comment_count")
+    ).group_by(Comment.post_id).subquery()
+
+    accepted_subq = db.query(
+        ProjectApplicant.post_id, func.count().label("accepted_count")
+    ).filter(ProjectApplicant.status == "수락").group_by(ProjectApplicant.post_id).subquery()
+
+    post_query = db.query(
+        Post,
+        User.nickname,
+        func.coalesce(like_subq.c.like_count, 0),
+        func.coalesce(comment_subq.c.comment_count, 0),
+        func.coalesce(accepted_subq.c.accepted_count, 1),
+    ).join(User, Post.user_id == User.user_id) \
+     .outerjoin(like_subq, Post.post_id == like_subq.c.post_id) \
+     .outerjoin(comment_subq, Post.post_id == comment_subq.c.post_id) \
+     .outerjoin(accepted_subq, Post.post_id == accepted_subq.c.post_id) \
+     .filter(Post.post_id == post_id).first()
+
     if not post_query:
         raise HTTPException(status_code=404, detail="게시글을 찾을 수 없습니다.")
 
-    post, nickname = post_query
+    post, nickname, like_count, comment_count, accepted_count = post_query
     result = PostResponse.model_validate(post).model_dump()
-    result["author_nickname"] = nickname  # ✅ 닉네임 추가
+    result["author_nickname"] = nickname
+    result["like_count"] = like_count
+    result["comment_count"] = comment_count
+    result["accepted_count"] = accepted_count + 1
+    result["recruit_limit"] = post.recruit_limit
     return result
+
 
 # 포스트 수정
 def update_post(post_id: int, post: PostCreate, db: Session):

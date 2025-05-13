@@ -84,3 +84,4 @@ app.include_router(code_execution.router, prefix="/code")  # WebSocket용이면 
 @app.get("/", tags=["Root"])
 def read_root():
     return {"message": "FastAPI is running!"}
+

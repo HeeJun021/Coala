@@ -14,14 +14,33 @@ export const getBoardDetail = async (postId) => {
   return response.data;
 };
 
-// ✅ 게시글 생성
-export const createBoard = async ({ boardType, title, content, user_id }) => {
-  const response = await apiClient.post(`/board/posts`, {
-    board_type: boardType,
-    title,
-    content,
-    user_id: Number(user_id),
-  });
+// ✅ 게시글 생성 (필수 필드 포함)
+export const createBoard = async ({
+  boardType,
+  title,
+  content,
+  user_id,
+  code = "",            // ✅ 누락 방지
+  image_url = "",       // ✅ 누락 방지
+  recruit_limit = 1     // ✅ 기본값 설정
+}) => {
+  const response = await apiClient.post(
+    `/board/posts`,
+    {
+      board_type: boardType,
+      title,
+      content,
+      user_id: Number(user_id),
+      code,
+      image_url,
+      recruit_limit,
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
   return response.data;
 };
 
@@ -45,12 +64,13 @@ export const applyToProject = async (postId, data) => {
   });
 };
 
-// 지원자 목록 조회
+// ✅ 지원자 목록 조회
 export const getProjectApplicants = async (postId) => {
   const response = await apiClient.get(`/board/post/${postId}/applicants`);
   return response.data;
 };
 
+// ✅ 지원자 상태 업데이트
 export const updateApplicantStatus = async (applicantId, status) => {
   return await apiClient.put(`/board/post/applicant/${applicantId}/status`, null, {
     params: { status },

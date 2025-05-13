@@ -11,7 +11,7 @@ const BoardWritePage = () => {
   const navigate = useNavigate();
 
   const [title, setTitle] = useState("");
-  const [recruitLimit, setRecruitLimit] = useState(""); // ✅ 모집 인원 상태
+  const [recruitLimit, setRecruitLimit] = useState(""); // 사용자 입력 (문자열)
   const editorRef = useRef();
 
   useEffect(() => {
@@ -23,26 +23,35 @@ const BoardWritePage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     const content =
       boardType === "code"
         ? editorRef.current.getInstance().getMarkdown()
         : editorRef.current.value;
 
+    // 숫자 변환 및 유효성 처리
+    const recruitLimitNumber =
+      boardType === "project" && recruitLimit !== ""
+        ? parseInt(recruitLimit, 10)
+        : 1;
+
     const payload = {
-      boardType,
+      boardType: boardType, // ✅ 여기서 수정됨
       title,
       content,
       user_id: user.user_id,
-      ...(boardType === "project" && {
-        recruit_limit: parseInt(recruitLimit, 10),
-      }), // ✅ 프로젝트일 경우만 포함
+      code: "",
+      image_url: "",
+      recruit_limit: boardType === "project" ? recruitLimitNumber : 1,
     };
+
+    console.log("✅ 보내는 payload:", payload);
 
     try {
       await createBoard(payload);
       navigate(`/board/${boardType}`);
     } catch (error) {
-      console.error("게시글 작성 실패:", error);
+      console.error("❌ 게시글 작성 실패:", error);
       alert("게시글 작성 중 오류가 발생했습니다.");
     }
   };
@@ -74,7 +83,6 @@ const BoardWritePage = () => {
           required
         />
 
-        {/* ✅ 프로젝트일 경우에만 모집 인원 입력란 표시 */}
         {boardType === "project" && (
           <div>
             <label className="block mb-1 text-sm font-medium">모집 인원 수</label>

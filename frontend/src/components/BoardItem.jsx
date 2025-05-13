@@ -11,6 +11,9 @@ const BoardItem = ({ post, boardType }) => {
     navigate(`/board/${boardType}/${post.post_id}`);
   };
 
+  
+  console.log("📦 post data:", post); // ← 이 줄 추가
+
   return (
     <tr
       className="hover:bg-gray-50 cursor-pointer"
@@ -36,7 +39,7 @@ const BoardItem = ({ post, boardType }) => {
       {/* 댓글 수 or 모집인원 */}
       {boardType === BOARD_TYPES.PROJECT ? (
         <td className="border p-2 text-center">
-          {post.accepted_count ?? 1} / {post.recruit_limit ?? "-"}
+          {post.accepted_count ?? 1} / {post.recruit_limit !== undefined ? post.recruit_limit : "-"}
         </td>
       ) : (
         <td className="border p-2">
