@@ -1,5 +1,9 @@
 import React from "react";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { dracula } from "react-syntax-highlighter/dist/esm/styles/prism";
 import CommentEditor from "../components/CommentEditor";
+import apiClient from "../api/apiClient";
+import { useAuth } from "../context/AuthContext";
 
 const BoardDetailTemplate = ({
   boardName,
@@ -33,6 +37,8 @@ const BoardDetailTemplate = ({
   handleReplyReport,
   commentType = "basic", // "basic", "code", "none"
 }) => {
+  const { user: currentUser } = useAuth();
+
   if (!post) return <div className="p-8">로딩 중...</div>;
 
   const safeHandleCommentSubmit = (content) => {
@@ -43,12 +49,32 @@ const BoardDetailTemplate = ({
     }
   };
 
+  const handleImportCode = async () => {
+    if (!currentUser) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+
+    try {
+      await apiClient.post(`/board/post/${post.post_id}/import_code`, {}, {
+        params: { user_id: currentUser.user_id },
+        withCredentials: true,
+      });
+      alert("코드가 성공적으로 가져왔습니다!");
+      // 디렉토리 갱신을 위해 이벤트 디스패치
+      window.dispatchEvent(new Event("refreshDirectory"));
+    } catch (err) {
+      console.error("코드 가져오기 실패:", err);
+      alert("코드 가져오기에 실패했습니다.");
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-8 bg-white min-h-screen">
-      {/* 작성자 정보 */}  
-      <div className="flex items-center gap-2 mb-4 text-gray-600 text-sm">  
-        <span>작성자:</span>  
-        <span className="font-semibold">{post.author_nickname}</span>  
+      {/* 작성자 정보 */}
+      <div className="flex items-center gap-2 mb-4 text-gray-600 text-sm">
+        <span>작성자:</span>
+        <span className="font-semibold">{post.author_nickname}</span>
       </div>
 
       {/* 제목 */}
@@ -56,6 +82,32 @@ const BoardDetailTemplate = ({
 
       {/* 본문 */}
       <p className="mb-6 whitespace-pre-line">{post.content}</p>
+
+      {/* 코드 미리보기 */}
+      {post.code && (
+        <div className="mb-6 relative">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm text-gray-600">
+              코드 파일: {post.code_filename || "code.js"}
+            </span>
+            <button
+              onClick={handleImportCode}
+              className="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+            >
+              코드 가져오기
+            </button>
+          </div>
+          <SyntaxHighlighter
+            language={post.code_language || "javascript"}
+            style={dracula}
+            className="rounded-md"
+            wrapLines={true}
+            customStyle={{ whiteSpace: "pre-wrap", fontSize: "15px" }}
+          >
+            {post.code}
+          </SyntaxHighlighter>
+        </div>
+      )}
 
       {/* 좋아요, 신고 */}
       <div className="flex items-center gap-3 mb-4">
@@ -70,7 +122,6 @@ const BoardDetailTemplate = ({
           신고
         </button>
       </div>
-
 
       {/* 수정/삭제 버튼 */}
       {isAuthor && (
@@ -130,7 +181,6 @@ const BoardDetailTemplate = ({
           <ul className="space-y-4 mt-4">
             {parentComments.map((c) => (
               <li key={c.comment_id} className="border p-2 rounded-md">
-                {/* 댓글 본문 */}
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     {editingId === c.comment_id ? (
@@ -206,7 +256,6 @@ const BoardDetailTemplate = ({
                   </div>
                 </div>
 
-                {/* 대댓글 입력 */}
                 {replyTargetId === c.comment_id && (
                   <div className="mt-2 ml-4">
                     <input
@@ -233,7 +282,6 @@ const BoardDetailTemplate = ({
                   </div>
                 )}
 
-                {/* 대댓글 목록 */}
                 {childComments
                   .filter((r) => r.parent_comment_id === c.comment_id)
                   .map((r) => (

@@ -1,13 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getBoardDetail, updateBoard } from "../api/boardApi";
+import { Editor } from "@toast-ui/react-editor";
+import "@toast-ui/editor/dist/toastui-editor.css";
 
 const BoardEditPage = () => {
   const { boardType, postId } = useParams();
   const navigate = useNavigate();
-
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [codeFilename, setCodeFilename] = useState("");
+  const editorRef = useRef();
 
   // 기존 게시글 불러오기
   useEffect(() => {
@@ -16,21 +19,44 @@ const BoardEditPage = () => {
         const data = await getBoardDetail(postId);
         setTitle(data.title);
         setContent(data.content);
+        setCodeFilename(data.code_filename || "");
+        if (boardType === "code" && data.code && editorRef.current) {
+          editorRef.current.getInstance().setMarkdown(data.code);
+        }
       } catch (err) {
         alert("게시글 정보를 불러오지 못했습니다.");
       }
     };
     fetchPost();
-  }, [postId]);
+  }, [postId, boardType]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title.trim() || !content.trim()) {
-      return alert("제목과 내용을 입력하세요.");
+    if (!title.trim()) {
+      return alert("제목을 입력하세요.");
     }
 
+    const codeContent = boardType === "code" ? editorRef.current.getInstance().getMarkdown().trim() : "";
+    const filename = codeFilename.trim() || "code.js";
+    const extMap = {
+      ".js": "javascript",
+      ".py": "python",
+      ".html": "html",
+      ".css": "css",
+    };
+    const ext = filename.includes(".") ? filename.split(".").pop() : "js";
+    const codeLanguage = extMap[`.${ext}`] || "javascript";
+
+    const payload = {
+      title,
+      content: content.trim(),
+      code: codeContent,
+      code_filename: filename,
+      code_language: codeLanguage,
+    };
+
     try {
-      await updateBoard(postId, { title, content });
+      await updateBoard(postId, payload);
       alert("게시글이 수정되었습니다.");
       navigate(`/board/${boardType}/${postId}`);
     } catch (err) {
@@ -53,9 +79,29 @@ const BoardEditPage = () => {
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="내용을 입력하세요"
+          placeholder="본문을 입력하세요"
           className="w-full border p-2 h-60"
         />
+        {boardType === "code" && (
+          <>
+            <input
+              type="text"
+              value={codeFilename}
+              onChange={(e) => setCodeFilename(e.target.value)}
+              placeholder="코드 파일 이름 (예: main.js)"
+              className="w-full border p-2"
+            />
+            <Editor
+              ref={editorRef}
+              initialValue=""
+              previewStyle="vertical"
+              height="400px"
+              initialEditType="markdown"
+              useCommandShortcut={true}
+              placeholder="코드를 입력하세요"
+            />
+          </>
+        )}
         <div className="flex gap-2">
           <button
             type="submit"

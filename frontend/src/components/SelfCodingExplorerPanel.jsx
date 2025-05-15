@@ -12,11 +12,10 @@ import {
   deleteCodeFile,
   deleteFolder
 } from "../api/codeApi";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { templateFiles, templateDescriptions } from "../data/templateData";
 
 const SelfCodingExplorerPanel = ({
-  navigate,
   folders,
   setFolders,
   tabs,
@@ -44,37 +43,45 @@ const SelfCodingExplorerPanel = ({
   const renamingInputRef = useRef(null);
   const [folderTree, setFolderTree] = useState(null);
   const location = useLocation();
+  const navigate = useNavigate();
   const templateIdFromNav = location.state?.templateId;
   const hasInsertedTemplateRef = useRef(false);
-const EXT_MAP = {
-  html: 1,
-  css: 2,
-  js: 3,
-  py: 4,
-  jsx: 3, // JavaScript와 동일
-  vue: 3, // JavaScript와 동일
-  json: 5, // 기타
-  "config.js": 5, // 기타
-  txt: 5, // 기타
-};
+  const EXT_MAP = {
+    html: 1,
+    css: 2,
+    js: 3,
+    py: 4,
+    jsx: 3,
+    vue: 3,
+    json: 5,
+    "config.js": 5,
+    txt: 5,
+  };
+
+  const loadRoot = async () => {
+    try {
+      const root = await getRootCodeFolder();
+      setFolderTree({
+        ...root,
+        children: [],
+        codes: [],
+        expanded: false,
+        loaded: false,
+      });
+    } catch (err) {
+      console.error("루트 폴더 불러오기 실패", err);
+    }
+  };
 
   useEffect(() => {
-    const loadRoot = async () => {
-      try {
-        const root = await getRootCodeFolder();
-        setFolderTree({
-          ...root,
-          children: [],
-          codes: [],
-          expanded: false,
-          loaded: false,
-        });
-      } catch (err) {
-        console.error("루트 폴더 불러오기 실패", err);
-      }
-    };
     loadRoot();
   }, []);
+
+useEffect(() => {
+  // 코드 가져오기 후 디렉토리 갱신 이벤트 리스너
+  window.addEventListener("refreshDirectory", loadRoot);
+  return () => window.removeEventListener("refreshDirectory", loadRoot);
+}, []);
 
   useEffect(() => {
     const applyTemplate = async () => {
@@ -82,7 +89,6 @@ const EXT_MAP = {
       hasInsertedTemplateRef.current = true;
   
       try {
-        // 루트 폴더가 없으면 생성
         if (!folderTree) {
           const root = await getRootCodeFolder();
           setFolderTree({
@@ -144,7 +150,7 @@ const EXT_MAP = {
         const value = node[name];
         if (typeof value === "string") {
           const ext = name.includes(".") ? name.split(".").pop() : "";
-          const langId = EXT_MAP[ext] || EXT_MAP[name] || 5; // 기본값: 기타
+          const langId = EXT_MAP[ext] || EXT_MAP[name] || 5;
           await saveCodeFile({
             title: name,
             content: value,
@@ -251,9 +257,13 @@ const EXT_MAP = {
 
   const handleContextMenu = (e) => {
     e.preventDefault();
+    const targetId = e.currentTarget?.dataset?.id;
+    if (!targetId) return; // data-id 없는 요소에서는 컨텍스트 메뉴 표시 안 함
+
     setMenuVisible(false);
     setTimeout(() => {
       setMenuPosition({ x: e.pageX + 4, y: e.pageY + 6 });
+      setContextMenu({ targetId });
       setMenuVisible(true);
     }, 0);
   };
@@ -268,7 +278,7 @@ const EXT_MAP = {
   };
 
   const ContextMenu = ({ position }) => {
-    const handleClick = async (label) => {
+    const handleClick = async (label, submenuItem) => {
       if (!contextMenu?.targetId) {
         alert("폴더 안에서만 작업할 수 있습니다.");
         return;
@@ -295,7 +305,6 @@ const EXT_MAP = {
         } else {
           showInput();
         }
-
         setMenuVisible(false);
         return;
       }
@@ -321,7 +330,28 @@ const EXT_MAP = {
         } else {
           showInput();
         }
+        setMenuVisible(false);
+        return;
+      }
 
+      if (label === "공유" && submenuItem === "코드공유게시글 작성") {
+        if (contextMenu.targetId?.startsWith("code-")) {
+          const codeIdStr = contextMenu.targetId.replace("code-", "");
+          const codeId = parseInt(codeIdStr);
+
+          try {
+            const file = await getCodeById(codeId);
+            navigate("/board/code/write", {
+              state: {
+                codeContent: file.content,
+                codeTitle: file.title,
+              },
+            });
+          } catch (err) {
+            console.error("파일 내용 조회 실패", err);
+            alert("파일을 불러올 수 없습니다.");
+          }
+        }
         setMenuVisible(false);
         return;
       }
@@ -358,6 +388,8 @@ const EXT_MAP = {
             setRenamingItem({ path: `code-${codeId}`, name: nameOnly });
           }
         }
+        setMenuVisible(false);
+        return;
       }
 
       if (label === "경로 복사") {
@@ -367,6 +399,8 @@ const EXT_MAP = {
             .then(() => alert("경로가 클립보드에 복사되었습니다."))
             .catch(() => alert("클립보드 복사에 실패했습니다."));
         }
+        setMenuVisible(false);
+        return;
       }
 
       if (label === "삭제") {
@@ -429,25 +463,59 @@ const EXT_MAP = {
             alert("파일 삭제에 실패했습니다.");
           }
         }
+        setMenuVisible(false);
+        return;
       }
-
-      setMenuVisible(false);
     };
+
+    const isFile = contextMenu.targetId?.startsWith("code-");
+    const menuItems = [
+      { label: "새 파일", show: true },
+      { label: "새 폴더", show: true },
+      { label: "공유", show: isFile, submenu: [{ label: "코드공유게시글 작성" }] },
+      { label: "복사 (준비중)", show: false },
+      { label: "경로 복사", show: true },
+      { label: "이름 바꾸기", show: true },
+      { label: "삭제", show: true },
+    ].filter(item => item.show);
+
     return (
       <ul
         id="context-menu"
         className="fixed z-50 w-40 bg-white text-gray-800 border border-gray-200 rounded shadow-lg py-1 text-sm"
         style={{ top: position.y, left: position.x }}
       >
-        <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer" onClick={() => handleClick("새 파일")}>새 파일</li>
-        <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer" onClick={() => handleClick("새 폴더")}>새 폴더</li>
-        <hr className="my-1 border-t border-gray-200" />
-        <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">공유 (준비중)</li>
-        <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">복사 (준비중)</li>
-        <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer" onClick={() => handleClick("경로 복사")}>경로 복사</li>
-        <hr className="my-1 border-t border-gray-200" />
-        <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer" onClick={() => handleClick("이름 바꾸기")}>이름 바꾸기</li>
-        <li className="px-4 py-2 text-red-600 hover:text-red-700 hover:bg-gray-100 cursor-pointer" onClick={() => handleClick("삭제")}>삭제</li>
+        {menuItems.map((item, index) => (
+          <li
+            key={item.label}
+            className={`relative ${item.submenu ? "group" : ""}`}
+          >
+            <div
+              className={`px-4 py-2 hover:bg-gray-100 cursor-pointer flex justify-between items-center ${
+                item.label === "삭제" ? "text-red-600 hover:text-red-700" : ""
+              }`}
+              onClick={() => !item.submenu && handleClick(item.label)}
+            >
+              {item.label}
+              {item.submenu && <FaChevronRight className="text-gray-400" />}
+            </div>
+            {item.submenu && (
+              <ul
+                className="absolute left-full top-0 w-48 bg-white border border-gray-200 rounded shadow-lg py-1 text-sm hidden group-hover:block"
+              >
+                {item.submenu.map((subItem) => (
+                  <li
+                    key={subItem.label}
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                    onClick={() => handleClick(item.label, subItem.label)}
+                  >
+                    {subItem.label}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </li>
+        ))}
       </ul>
     );
   };
@@ -460,12 +528,8 @@ const EXT_MAP = {
         <div
           className="flex items-center cursor-pointer hover:underline"
           onClick={() => handleFolderToggle(node)}
-          onContextMenu={(e) => {
-            e.preventDefault();
-            setMenuPosition({ x: e.pageX + 4, y: e.pageY + 6 });
-            setContextMenu({ targetId: `folder-${node.folder_id}` });
-            setMenuVisible(true);
-          }}
+          onContextMenu={handleContextMenu}
+          data-id={`folder-${node.folder_id}`}
         >
           {node.expanded ? <FaChevronDown className="mr-1" /> : <FaChevronRight className="mr-1" />}
           <FaFolder className="text-yellow-600 mr-1" />
@@ -515,12 +579,8 @@ const EXT_MAP = {
                   key={`code-${file.code_id}`}
                   className="flex items-center cursor-pointer hover:underline pl-4"
                   onClick={() => handleFileClick(file)}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    setMenuPosition({ x: e.pageX + 4, y: e.pageY + 6 });
-                    setContextMenu({ targetId: `code-${file.code_id}` });
-                    setMenuVisible(true);
-                  }}
+                  onContextMenu={handleContextMenu}
+                  data-id={`code-${file.code_id}`}
                 >
                   <FaFile className="mr-1 text-gray-500" />
                   {isRenaming ? (
@@ -679,7 +739,6 @@ const EXT_MAP = {
 
   return (
     <div className="p-4">
-    <>
       <div
         className="text-sm text-green-700 font-medium flex items-center gap-2 cursor-pointer mb-4 hover:underline"
         onClick={() => navigate("/self-coding/templates")}
@@ -698,16 +757,12 @@ const EXT_MAP = {
         파일 구조
       </div>
       {showFileTree && folderTree && (
-        <div
-          className="text-xs pb-4 text-gray-700 whitespace-pre-wrap"
-          onContextMenu={handleContextMenu}
-        >
+        <div className="text-xs pb-4 text-gray-700 whitespace-pre-wrap">
           {renderFolderNode(folderTree)}
         </div>
       )}
       {menuVisible && <ContextMenu position={menuPosition} />}
-    </>
-      </div>
+    </div>
   );
 };
 
