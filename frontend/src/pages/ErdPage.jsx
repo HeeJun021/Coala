@@ -2,13 +2,13 @@ import React, { useState } from "react";
 import ProjectHeader from "../components/erd/ProjectHeader";
 import ErdListSidebar from "../components/erd/ErdListSidebar";
 import ErdCanvas from "../components/erd/ErdCanvas";
-import FloatingToolButton from "../components/erd/FloatingToolButton";
 
 const ErdPage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isPlacing, setIsPlacing] = useState(false); // 커서 상태
-  const [tempTable, setTempTable] = useState(null);  // 클릭 위치
-  const [tables, setTables] = useState([]);          // 확정된 테이블 목록
+  const [tempTable, setTempTable] = useState(null); // 클릭 위치
+  const [tables, setTables] = useState([]); // 확정된 테이블 목록
+  
 
   return (
     <div className="w-full h-screen bg-[#1E1E2F] text-white flex flex-col overflow-hidden">
@@ -42,14 +42,6 @@ const ErdPage = () => {
             setTables={setTables}
           />
         </div>
-
-        {/* 플로팅 툴 버튼 */}
-        <FloatingToolButton
-          onAddTable={() => {
-            setIsPlacing(true);
-            setTempTable(null);
-          }}
-        />
       </div>
     </div>
   );

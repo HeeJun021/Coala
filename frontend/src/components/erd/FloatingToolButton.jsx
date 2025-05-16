@@ -1,12 +1,12 @@
 import React, { useState, useRef } from "react";
 import Draggable from "react-draggable";
 
-const FloatingToolButton = ({ onAddTable }) => {
+const FloatingToolButton = ({ onAddTable, onAddRelation }) => {
   const [open, setOpen] = useState(false);
-  const [openDirection, setOpenDirection] = useState("up"); // 'up' or 'down'
+  const [relationMenuOpen, setRelationMenuOpen] = useState(false); // 관계 하위 메뉴 열림
   const wasDragging = useRef(false);
   const buttonRef = useRef(null);
-  const containerRef = useRef(null); // ✅ 추가: Draggable용 ref
+  const containerRef = useRef(null);
 
   const handleClick = () => {
     if (wasDragging.current) {
@@ -14,18 +14,13 @@ const FloatingToolButton = ({ onAddTable }) => {
       return;
     }
 
-    if (buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      const threshold = window.innerHeight / 2;
-      setOpenDirection(rect.top < threshold ? "down" : "up");
-    }
-
     setOpen((prev) => !prev);
+    setRelationMenuOpen(false); // 관계 메뉴는 닫기
   };
 
   return (
     <Draggable
-      nodeRef={containerRef} // ✅ ref 직접 전달로 findDOMNode 제거
+      nodeRef={containerRef}
       defaultPosition={{ x: 25, y: 25 }}
       onStart={() => {
         wasDragging.current = false;
@@ -40,7 +35,7 @@ const FloatingToolButton = ({ onAddTable }) => {
       }}
     >
       <div ref={containerRef} className="z-50 fixed">
-        {/* 🛠 툴 버튼 */}
+        {/* 툴 버튼 */}
         <button
           ref={buttonRef}
           onClick={handleClick}
@@ -52,10 +47,9 @@ const FloatingToolButton = ({ onAddTable }) => {
         {/* 펼쳐진 메뉴 */}
         {open && (
           <div
-            className={`absolute left-0 
-              ${openDirection === "up" ? "bottom-full mb-2" : "top-full mt-2"} 
-              bg-[#2a2a3c] text-white rounded-md shadow-lg w-40 py-2 z-50`}
+            className={`absolute left-0 bg-[#2a2a3c] text-white rounded-md shadow-lg w-44 py-2 z-50`}
           >
+            {/* 테이블 추가 */}
             <button
               onClick={() => {
                 onAddTable();
@@ -65,9 +59,38 @@ const FloatingToolButton = ({ onAddTable }) => {
             >
               ➕ 테이블 추가
             </button>
-            <button className="block w-full text-left px-4 py-2 hover:bg-[#3a3a4c] text-sm">
-              ⇄ 관계 추가
-            </button>
+
+            {/* 관계 추가 */}
+            <div
+              className="relative group"
+              onMouseEnter={() => setRelationMenuOpen(true)}
+              onMouseLeave={() => setRelationMenuOpen(false)}
+            >
+              <button className="block w-full text-left px-4 py-2 hover:bg-[#3a3a4c] text-sm">
+                ⇄ 관계 추가 ▸
+              </button>
+
+              {/* 관계 타입 서브메뉴 */}
+              {relationMenuOpen && (
+                <div className="absolute left-full top-0 bg-[#2a2a3c] border-l border-gray-700 rounded-md shadow-lg w-32 z-50">
+                  {["1:1", "1:N", "N:M"].map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => {
+                        onAddRelation(type); // 콜백으로 전달
+                        setOpen(false);
+                        setRelationMenuOpen(false);
+                      }}
+                      className="block w-full text-left px-3 py-1 hover:bg-[#3a3a4c] text-sm"
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 나머지 항목 */}
             <button className="block w-full text-left px-4 py-2 hover:bg-[#3a3a4c] text-sm">
               📦 내보내기
             </button>
