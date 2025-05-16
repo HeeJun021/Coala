@@ -16,6 +16,8 @@ const ErdTableBox = ({
   onClick,
   onColumnPositionUpdate,
   onColumnClick,
+  isSelected, // ✅ 추가
+  onDragMove,
 }) => {
   const [localName, setLocalName] = useState(tableName || "");
   const [localDesc, setLocalDesc] = useState(description || "");
@@ -23,6 +25,7 @@ const ErdTableBox = ({
 
   const offsetRef = useRef({ x: 0, y: 0 });
   const tableRef = useRef(null);
+
   const draggingRef = useRef(false);
   const columnPositionsRef = useRef({});
 
@@ -41,7 +44,9 @@ const ErdTableBox = ({
   const handleColumnPosUpdate = (colId, el) => {
     if (!tableRef.current || !el) return;
 
-    const canvasRect = document.getElementById("erd-canvas")?.getBoundingClientRect();
+    const canvasRect = document
+      .getElementById("erd-canvas")
+      ?.getBoundingClientRect();
     const tableRect = tableRef.current.getBoundingClientRect();
     const colRect = el.getBoundingClientRect();
     if (!canvasRect) return;
@@ -84,6 +89,11 @@ const ErdTableBox = ({
   }, [id, onColumnPositionUpdate]);
 
   const handleMouseDown = (e) => {
+    if (!e.ctrlKey && !isSelected) {
+      window.dispatchEvent(
+        new CustomEvent("select-single-table", { detail: id })
+      );
+    }
     draggingRef.current = true;
     const rect = tableRef.current.getBoundingClientRect();
     offsetRef.current = {
@@ -91,7 +101,17 @@ const ErdTableBox = ({
       y: e.clientY - rect.top,
     };
     e.stopPropagation();
+    // ✅ 기준점 강제 갱신 요청 이벤트 (선택된 테이블을 움직이려 할 때마다)
+    window.dispatchEvent(
+      new CustomEvent("update-drag-origin", {
+        detail: {
+          mouseX: e.clientX,
+          mouseY: e.clientY,
+        },
+      })
+    );
   };
+  
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -99,14 +119,25 @@ const ErdTableBox = ({
       const parentRect = tableRef.current.parentElement.getBoundingClientRect();
       const newX = e.clientX - parentRect.left - offsetRef.current.x;
       const newY = e.clientY - parentRect.top - offsetRef.current.y;
-      onUpdate({
-        id,
-        x: newX,
-        y: newY,
-        tableName: localName,
-        description: localDesc,
-        columns: localColumns,
-      });
+
+      const isNowSelected = isSelected;
+
+      if (isNowSelected && onDragMove) {
+        // ✅ 마우스 기준 좌표 전달
+        const mouseX = e.clientX - parentRect.left;
+        const mouseY = e.clientY - parentRect.top;
+        onDragMove(mouseX, mouseY);
+      } else {
+        // ✅ 단일 이동
+        onUpdate({
+          id,
+          x: newX,
+          y: newY,
+          tableName: localName,
+          description: localDesc,
+          columns: localColumns,
+        });
+      }
 
       setTimeout(() => {
         if (onColumnPositionUpdate && columnPositionsRef.current) {
@@ -126,7 +157,7 @@ const ErdTableBox = ({
       window.removeEventListener("mouseup", handleMouseUp);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, localName, localDesc, localColumns, onUpdate]);
+  }, [id, x, y, localName, localDesc, localColumns, onUpdate, isSelected]);
 
   const handleAddColumn = () => {
     setLocalColumns((prev) => [
@@ -156,7 +187,9 @@ const ErdTableBox = ({
   return (
     <div
       ref={tableRef}
-      className="absolute bg-[#1e1e2e] text-white border border-blue-400 rounded-md shadow-md w-[440px] px-3 py-2 select-none"
+      className={`absolute bg-[#1e1e2e] text-white border border-blue-400 rounded-md shadow-md w-[440px] px-3 py-2 select-none ${
+        isSelected ? "ring-2 ring-yellow-300" : ""
+      }`}
       style={{ top: y, left: x }}
       onClick={(e) => {
         e.stopPropagation();
@@ -189,7 +222,14 @@ const ErdTableBox = ({
           onChange={(e) => {
             const newName = e.target.value;
             setLocalName(newName);
-            onUpdate({ id, x, y, tableName: newName, description: localDesc, columns: localColumns });
+            onUpdate({
+              id,
+              x,
+              y,
+              tableName: newName,
+              description: localDesc,
+              columns: localColumns,
+            });
           }}
         />
         <input
@@ -199,7 +239,14 @@ const ErdTableBox = ({
           onChange={(e) => {
             const newDesc = e.target.value;
             setLocalDesc(newDesc);
-            onUpdate({ id, x, y, tableName: localName, description: newDesc, columns: localColumns });
+            onUpdate({
+              id,
+              x,
+              y,
+              tableName: localName,
+              description: newDesc,
+              columns: localColumns,
+            });
           }}
         />
       </div>
