@@ -1,6 +1,20 @@
 import React, { useState, useRef } from "react";
 import Draggable from "react-draggable";
 
+// 최상단 import 아래 추가
+const relationOptions = [
+  { label: "1:1 (필수 - 필수)", value: "1|1" },
+  { label: "1:1 (필수 - 선택)", value: "1|0..1" },
+  { label: "1:N (필수 - 필수 다수)", value: "1|1..*" },
+  { label: "1:N (필수 - 선택 다수)", value: "1|0..*" },
+  { label: "1:1 (선택 - 필수)", value: "0..1|1" },
+  { label: "1:N (선택 - 필수 다수)", value: "0..1|1..*" },
+  { label: "1:N (선택 - 선택 다수)", value: "0..1|0..*" },
+  { label: "M:N (필수 - 필수)", value: "1..*|1..*" },
+  { label: "M:N (필수 - 선택)", value: "1..*|0..*" },
+  { label: "M:N (선택 - 필수)", value: "0..*|1..*" },
+];
+
 const FloatingToolButton = ({ onAddTable, onAddRelation }) => {
   const [open, setOpen] = useState(false);
   const [relationMenuOpen, setRelationMenuOpen] = useState(false); // 관계 하위 메뉴 열림
@@ -71,19 +85,20 @@ const FloatingToolButton = ({ onAddTable, onAddRelation }) => {
               </button>
 
               {/* 관계 타입 서브메뉴 */}
+              {/* 관계 타입 서브메뉴 */}
               {relationMenuOpen && (
-                <div className="absolute left-full top-0 bg-[#2a2a3c] border-l border-gray-700 rounded-md shadow-lg w-32 z-50">
-                  {["1:1", "1:N", "N:M"].map((type) => (
+                <div className="absolute left-full top-0 bg-[#2a2a3c] border-l border-gray-700 rounded-md shadow-lg w-60 z-50">
+                  {relationOptions.map((option) => (
                     <button
-                      key={type}
+                      key={option.value}
                       onClick={() => {
-                        onAddRelation(type); // 콜백으로 전달
+                        onAddRelation(option.value); // 콜백 호출 시 value 넘김
                         setOpen(false);
                         setRelationMenuOpen(false);
                       }}
                       className="block w-full text-left px-3 py-1 hover:bg-[#3a3a4c] text-sm"
                     >
-                      {type}
+                      {option.label}
                     </button>
                   ))}
                 </div>
