@@ -1,21 +1,17 @@
 // src/components/erd/ErdCanvas.jsx
 import React, { useRef, useState } from "react";
+import { useCallback } from "react"; // 상단에 추가
 import { v4 as uuidv4 } from "uuid";
 import ErdTableBox from "./ErdTableBox";
 import ErdRelationLine from "./ErdRelationLine";
 import FloatingToolButton from "./FloatingToolButton";
 
-const ErdCanvas = ({
-  isPlacing,
-  setIsPlacing,
-  tables,
-  setTables,
-}) => {
+const ErdCanvas = ({ isPlacing, setIsPlacing, tables, setTables }) => {
   const canvasRef = useRef(null);
   const [relations, setRelations] = useState([]);
   const [isAddingRelation, setIsAddingRelation] = useState(false);
   const [selectedColumnId, setSelectedColumnId] = useState(null);
-  const [columnPositions, setColumnPositions] = useState({});
+  const columnPositionsRef = useRef({});
 
   const handleCanvasClick = (e) => {
     if (!isPlacing) return;
@@ -50,18 +46,18 @@ const ErdCanvas = ({
     );
   };
 
-  const handleColumnPositionUpdate = (tableId, columnPosMap) => {
+  const handleColumnPositionUpdate = useCallback((tableId, columnPosMap) => {
     const flattened = Object.fromEntries(
       Object.entries(columnPosMap).map(([colName, pos]) => [
         `${tableId}.${colName}`,
         pos,
       ])
     );
-    setColumnPositions((prev) => ({
-      ...prev,
+    columnPositionsRef.current = {
+      ...columnPositionsRef.current,
       ...flattened,
-    }));
-  };
+    };
+  }, []);
 
   const handleColumnClick = (tableId, columnName) => {
     if (!isAddingRelation) return;
@@ -83,6 +79,7 @@ const ErdCanvas = ({
       setIsAddingRelation(false);
     }
   };
+
 
   return (
     <div
@@ -119,7 +116,7 @@ const ErdCanvas = ({
             to={rel.to}
             type={rel.type}
             label={rel.label}
-            columnPositions={columnPositions}
+            columnPositions={columnPositionsRef.current}
           />
         ))}
       </svg>
@@ -132,6 +129,8 @@ const ErdCanvas = ({
           onDelete={() => handleDeleteTable(table.id)}
           onColumnPositionUpdate={handleColumnPositionUpdate}
           onColumnClick={handleColumnClick}
+          isAddingRelation={isAddingRelation}
+          selectedColumnId={selectedColumnId}
         />
       ))}
 

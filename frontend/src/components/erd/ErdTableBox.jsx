@@ -16,6 +16,8 @@ const ErdTableBox = ({
   onClick,
   onColumnPositionUpdate,
   onColumnClick,
+  isAddingRelation,
+  selectedColumnId,
 }) => {
   const [localName, setLocalName] = useState(tableName || "");
   const [localDesc, setLocalDesc] = useState(description || "");
@@ -25,7 +27,7 @@ const ErdTableBox = ({
   const tableRef = useRef(null);
   const draggingRef = useRef(false);
 
-  const columnPositionsRef = useRef({}); // ✅ 각 컬럼 위치 저장용
+  const columnRefs = useRef([]); // 컬럼 개수만큼 ref 저장
 
   const { dragIndex, hoverIndex, setHoverIndex, startDrag, endDrag } =
     useDragColumn();
@@ -40,18 +42,9 @@ const ErdTableBox = ({
 
   // 개별 컬럼 위치 갱신 콜백
   const handleColumnPosUpdate = (colName, pos) => {
-    columnPositionsRef.current[colName] = pos;
+    // 바로 상위로 전달
+    onColumnPositionUpdate?.(id, { [colName]: pos });
   };
-
-  // 컬럼 위치 정보를 상위로 전달
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (onColumnPositionUpdate) {
-        onColumnPositionUpdate(id, { ...columnPositionsRef.current });
-      }
-    }, 100);
-    return () => clearTimeout(timeout);
-  }, [id, onColumnPositionUpdate]);
 
   const handleMouseDown = (e) => {
     draggingRef.current = true;
@@ -204,12 +197,10 @@ const ErdTableBox = ({
           isHovering={hoverIndex === index}
           onPositionUpdate={handleColumnPosUpdate}
           onClick={() => {
-            if (!col.name?.trim()) {
-              alert("컬럼 이름을 먼저 입력해주세요.");
-              return;
-            }
             onColumnClick?.(id, col.name);
           }}
+          isSelectable={isAddingRelation}
+          isSelected={selectedColumnId === `${id}.${col.name}`}
         />
       ))}
     </div>

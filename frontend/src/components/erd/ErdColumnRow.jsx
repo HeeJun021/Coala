@@ -15,6 +15,8 @@ const ErdColumnRow = ({
   isHovering,
   onPositionUpdate, // ✅ 추가: 부모에게 위치 전달
   onClick, // ✅ 추가
+  isSelectable, // ✅ 추가
+  isSelected, // ✅ 추가
 }) => {
   const [showDelete, setShowDelete] = useState(false);
   const [showPkMenu, setShowPkMenu] = useState(false);
@@ -31,35 +33,37 @@ const ErdColumnRow = ({
 
   // ✅ 마운트/업데이트 시 위치 계산
   useEffect(() => {
-  let frameId;
+    let frameId;
 
-  const updatePosition = () => {
-    if (!ref.current || !column?.name || !onPositionUpdate) return;
+    const updatePosition = () => {
+      if (!ref.current || !column?.name || !onPositionUpdate) return;
 
-    const rect = ref.current.getBoundingClientRect();
-    const canvasRect = document.getElementById("erd-canvas")?.getBoundingClientRect();
-    if (!canvasRect) return;
+      const rect = ref.current.getBoundingClientRect();
+      const canvasRect = document
+        .getElementById("erd-canvas")
+        ?.getBoundingClientRect();
+      if (!canvasRect) return;
 
-    onPositionUpdate(column.name, {
-      left: rect.left - canvasRect.left,
-      right: rect.left - canvasRect.left + rect.width,
-      y: rect.top - canvasRect.top + rect.height / 2,
-    });
+      onPositionUpdate(column.name, {
+        left: rect.left - canvasRect.left,
+        right: rect.left - canvasRect.left + rect.width,
+        y: rect.top - canvasRect.top + rect.height / 2,
+      });
+
+      frameId = requestAnimationFrame(updatePosition);
+    };
 
     frameId = requestAnimationFrame(updatePosition);
-  };
 
-  frameId = requestAnimationFrame(updatePosition);
-
-  return () => cancelAnimationFrame(frameId);
-}, [column.name, onPositionUpdate]);
-
-
+    return () => cancelAnimationFrame(frameId);
+  }, [column.name, index, onPositionUpdate]);
 
   return (
     <div
-      ref={ref} // ✅ DOM 위치 추적을 위한 ref
-      className={`flex items-center space-x-2 px-2 py-1 relative group rounded-sm select-none`}
+      ref={ref}
+      className={`flex items-center space-x-2 px-2 py-1 relative group rounded-sm select-none
+    ${isSelectable ? "hover:border hover:border-pink-400" : ""}
+    ${isSelected ? "border border-pink-500 bg-[#3a3a4d]" : ""}`}
       draggable
       onDragStart={onDragStart}
       onDragOver={(e) => {
@@ -79,7 +83,7 @@ const ErdColumnRow = ({
         opacity: isDragging ? 0.5 : 1,
         cursor: "grab",
       }}
-      onClick={() => onClick?.()} // ✅ 추가
+      onClick={() => onClick?.()}
     >
       {column.isPrimaryKey && <FaKey className="text-yellow-300 mr-1" />}
 
