@@ -3,7 +3,7 @@ import Draggable from "react-draggable";
 
 const FloatingToolButton = ({ onAddTable, onAddRelation }) => {
   const [open, setOpen] = useState(false);
-  const [relationMenuOpen, setRelationMenuOpen] = useState(false); // 관계 하위 메뉴 열림
+  const [relationMenuOpen, setRelationMenuOpen] = useState(false);
   const wasDragging = useRef(false);
   const buttonRef = useRef(null);
   const containerRef = useRef(null);
@@ -15,8 +15,22 @@ const FloatingToolButton = ({ onAddTable, onAddRelation }) => {
     }
 
     setOpen((prev) => !prev);
-    setRelationMenuOpen(false); // 관계 메뉴는 닫기
+    setRelationMenuOpen(false);
   };
+
+  // ✅ 실제 사용할 10가지 관계 조합
+  const relationOptions = [
+    { label: "1:1 (필수 - 필수)", value: "1|1" },
+    { label: "1:1 (필수 - 선택)", value: "1|0..1" },
+    { label: "1:N (필수 - 필수 다수)", value: "1|1..*" },
+    { label: "1:N (필수 - 선택 다수)", value: "1|0..*" },
+    { label: "1:1 (선택 - 필수)", value: "0..1|1" },
+    { label: "1:N (선택 - 필수 다수)", value: "0..1|1..*" },
+    { label: "1:N (선택 - 선택 다수)", value: "0..1|0..*" },
+    { label: "M:N (필수 - 필수)", value: "1..*|1..*" },
+    { label: "M:N (필수 - 선택)", value: "1..*|0..*" },
+    { label: "M:N (선택 - 필수)", value: "0..*|1..*" },
+  ];
 
   return (
     <Draggable
@@ -46,9 +60,7 @@ const FloatingToolButton = ({ onAddTable, onAddRelation }) => {
 
         {/* 펼쳐진 메뉴 */}
         {open && (
-          <div
-            className={`absolute left-0 bg-[#2a2a3c] text-white rounded-md shadow-lg w-44 py-2 z-50`}
-          >
+          <div className="absolute left-0 bg-[#2a2a3c] text-white rounded-md shadow-lg w-52 py-2 z-50">
             {/* 테이블 추가 */}
             <button
               onClick={() => {
@@ -72,25 +84,25 @@ const FloatingToolButton = ({ onAddTable, onAddRelation }) => {
 
               {/* 관계 타입 서브메뉴 */}
               {relationMenuOpen && (
-                <div className="absolute left-full top-0 bg-[#2a2a3c] border-l border-gray-700 rounded-md shadow-lg w-32 z-50">
-                  {["1:1", "1:N", "N:M"].map((type) => (
+                <div className="absolute left-full top-0 bg-[#2a2a3c] border-l border-gray-700 rounded-md shadow-lg w-[250px] z-50">
+                  {relationOptions.map(({ label, value }) => (
                     <button
-                      key={type}
+                      key={value}
                       onClick={() => {
-                        onAddRelation(type); // 콜백으로 전달
+                        onAddRelation(value); // 콜백에 from|to 전달
                         setOpen(false);
                         setRelationMenuOpen(false);
                       }}
                       className="block w-full text-left px-3 py-1 hover:bg-[#3a3a4c] text-sm"
                     >
-                      {type}
+                      {label}
                     </button>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* 나머지 항목 */}
+            {/* 기타 메뉴 */}
             <button className="block w-full text-left px-4 py-2 hover:bg-[#3a3a4c] text-sm">
               📦 내보내기
             </button>

@@ -11,6 +11,9 @@ const ErdCanvas = ({ isPlacing, setIsPlacing, tables, setTables }) => {
   const [relations, setRelations] = useState([]);
   const [isAddingRelation, setIsAddingRelation] = useState(false);
   const [selectedColumnId, setSelectedColumnId] = useState(null);
+
+  const [relationParticipation, setRelationParticipation] = useState("1|1..*"); // 기본값 설정 가능
+
   const columnPositionsRef = useRef({});
 
   const handleCanvasClick = (e) => {
@@ -71,7 +74,7 @@ const ErdCanvas = ({ isPlacing, setIsPlacing, tables, setTables }) => {
         {
           from: selectedColumnId,
           to: columnId,
-          type: "1:N", // ✅ 기본값 고정 or 추후 UI 선택값 사용
+          type: relationParticipation, // ✅ 여기 수정
           label: "관계",
         },
       ]);
@@ -79,7 +82,6 @@ const ErdCanvas = ({ isPlacing, setIsPlacing, tables, setTables }) => {
       setIsAddingRelation(false);
     }
   };
-
 
   return (
     <div
@@ -136,9 +138,10 @@ const ErdCanvas = ({ isPlacing, setIsPlacing, tables, setTables }) => {
 
       <FloatingToolButton
         onAddTable={() => setIsPlacing(true)}
-        onAddRelation={() => {
+        onAddRelation={(type) => {
           setIsAddingRelation(true);
           setSelectedColumnId(null);
+          setRelationParticipation(type); // ← "1|0..*" 등 저장
         }}
       />
     </div>

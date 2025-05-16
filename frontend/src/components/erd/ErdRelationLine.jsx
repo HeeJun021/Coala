@@ -1,4 +1,3 @@
-// src/components/erd/ErdRelationLine.jsx
 import React from "react";
 
 const ErdRelationLine = ({ from, to, columnPositions, type, label }) => {
@@ -11,7 +10,6 @@ const ErdRelationLine = ({ from, to, columnPositions, type, label }) => {
   const endX = toPos.left;
   const endY = toPos.y;
 
-  // 방향 벡터
   const dx = endX - startX;
   const dy = endY - startY;
   const length = Math.sqrt(dx * dx + dy * dy);
@@ -20,66 +18,123 @@ const ErdRelationLine = ({ from, to, columnPositions, type, label }) => {
   const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
 
   const offset = 16;
-
-  // from, to 기호 기준 위치 (선상 안쪽으로 offset 만큼 이동)
   const fx = startX + ux * offset;
   const fy = startY + uy * offset;
   const tx = endX - ux * offset;
   const ty = endY - uy * offset;
 
-  const drawFromSymbol = () => {
-    if (type === "1:1" || type === "1:N") {
-      return (
-        <g transform={`rotate(${angle}, ${fx}, ${fy})`}>
-          <line x1={fx - 4} y1={fy - 6} x2={fx - 4} y2={fy + 6} stroke="#f472b6" strokeWidth={2} />
-          <line x1={fx}     y1={fy - 6} x2={fx}     y2={fy + 6} stroke="#f472b6" strokeWidth={2} />
-        </g>
-      );
-    } else if (type === "N:1" || type === "N:N") {
-      return (
-        <g transform={`rotate(${angle}, ${fx}, ${fy})`}>
-          <line x1={fx} y1={fy} x2={fx - 6} y2={fy - 6} stroke="#f472b6" strokeWidth={2} />
-          <line x1={fx} y1={fy} x2={fx - 6} y2={fy + 6} stroke="#f472b6" strokeWidth={2} />
-        </g>
-      );
-    }
-  };
+  const [fromPart, toPart] = type.split("|");
 
-  const drawToSymbol = () => {
-    if (type === "1:1" || type === "N:1") {
-      return (
-        <g transform={`rotate(${angle}, ${tx}, ${ty})`}>
-          <line x1={tx}     y1={ty - 6} x2={tx}     y2={ty + 6} stroke="#f472b6" strokeWidth={2} />
-          <line x1={tx + 4} y1={ty - 6} x2={tx + 4} y2={ty + 6} stroke="#f472b6" strokeWidth={2} />
-        </g>
+  const drawParticipationSymbol = (side, participation) => {
+    const baseX = side === "from" ? fx : tx;
+    const baseY = side === "from" ? fy : ty;
+    const direction = side === "from" ? -1 : 1;
+
+    const symbols = [];
+    let x = baseX;
+
+    // 선택 참여도 (O)
+    if (participation === "0..1" || participation === "0..*") {
+      symbols.push(
+        <circle
+          key={`circle-${side}`}
+          cx={x}
+          cy={baseY}
+          r={4}
+          stroke="#f472b6"
+          strokeWidth={2}
+          fill="none"
+        />
       );
-    } else if (type === "1:N" || type === "N:N") {
-      return (
-        <g transform={`rotate(${angle}, ${tx}, ${ty})`}>
-          <line x1={tx} y1={ty} x2={tx + 6} y2={ty - 6} stroke="#f472b6" strokeWidth={2} />
-          <line x1={tx} y1={ty} x2={tx + 6} y2={ty + 6} stroke="#f472b6" strokeWidth={2} />
-        </g>
+      x += direction * 10;
+    }
+
+    // 필수 참여도 (| 또는 ||)
+    if (participation === "1") {
+      symbols.push(
+        <>
+          <line
+            key={`bar1-${side}`}
+            x1={x}
+            y1={baseY - 6}
+            x2={x}
+            y2={baseY + 6}
+            stroke="#f472b6"
+            strokeWidth={2}
+          />
+          <line
+            key={`bar2-${side}`}
+            x1={x + direction * 4}
+            y1={baseY - 6}
+            x2={x + direction * 4}
+            y2={baseY + 6}
+            stroke="#f472b6"
+            strokeWidth={2}
+          />
+        </>
+      );
+      x += direction * 8;
+    } else if (participation === "0..1" || participation === "1..*" || participation === "0..*") {
+      symbols.push(
+        <line
+          key={`bar-${side}`}
+          x1={x}
+          y1={baseY - 6}
+          x2={x}
+          y2={baseY + 6}
+          stroke="#f472b6"
+          strokeWidth={2}
+        />
+      );
+      x += direction * 8;
+    }
+
+    // 다수 (<)
+    if (participation.endsWith("*")) {
+      symbols.push(
+        <React.Fragment key={`crowfoot-${side}`}>
+          <line
+            key={`crowfoot1-${side}`}
+            x1={x}
+            y1={baseY}
+            x2={x + direction * 6}
+            y2={baseY - 6}
+            stroke="#f472b6"
+            strokeWidth={2}
+          />
+          <line
+            key={`crowfoot2-${side}`}
+            x1={x}
+            y1={baseY}
+            x2={x + direction * 6}
+            y2={baseY + 6}
+            stroke="#f472b6"
+            strokeWidth={2}
+          />
+        </React.Fragment>
       );
     }
+
+    return <g transform={`rotate(${angle}, ${baseX}, ${baseY})`}>{symbols}</g>;
   };
 
   return (
     <>
-      {/* 메인 선 */}
+      {/* 관계선 (기호 안쪽만 연결) */}
       <line
-        x1={startX}
-        y1={startY}
-        x2={endX}
-        y2={endY}
+        x1={fx}
+        y1={fy}
+        x2={tx}
+        y2={ty}
         stroke="#f472b6"
         strokeWidth={2}
       />
 
-      {/* 라벨 (선 중앙) */}
+      {/* 라벨 */}
       {label && (
         <text
-          x={(startX + endX) / 2}
-          y={(startY + endY) / 2 - 6}
+          x={(fx + tx) / 2}
+          y={(fy + ty) / 2 - 6}
           fill="#f472b6"
           fontSize="12"
           textAnchor="middle"
@@ -89,8 +144,9 @@ const ErdRelationLine = ({ from, to, columnPositions, type, label }) => {
         </text>
       )}
 
-      {drawFromSymbol()}
-      {drawToSymbol()}
+      {/* 참여도 기호 */}
+      {drawParticipationSymbol("from", fromPart)}
+      {drawParticipationSymbol("to", toPart)}
     </>
   );
 };

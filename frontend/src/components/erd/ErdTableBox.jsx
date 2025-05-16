@@ -27,7 +27,7 @@ const ErdTableBox = ({
   const tableRef = useRef(null);
   const draggingRef = useRef(false);
 
-  const columnRefs = useRef([]); // 컬럼 개수만큼 ref 저장
+  
 
   const { dragIndex, hoverIndex, setHoverIndex, startDrag, endDrag } =
     useDragColumn();
