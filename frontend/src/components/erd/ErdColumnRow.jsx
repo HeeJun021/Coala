@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { FaKey, FaTimes } from "react-icons/fa";
 
 const ErdColumnRow = ({
   column,
-
   index,
   onChange,
   onDelete,
@@ -19,13 +18,13 @@ const ErdColumnRow = ({
 }) => {
   const [showDelete, setShowDelete] = useState(false);
   const [showPkMenu, setShowPkMenu] = useState(false);
-  const [pkMenuPos, setPkMenuPos] = useState({ x: 0, y: 0 }); // ✅ PK 메뉴 위치
+  const [pkMenuPos, setPkMenuPos] = useState({ x: 0, y: 0 });
   const ref = useRef(null);
 
   const handleRightClick = (e) => {
     e.preventDefault();
     setShowPkMenu(true);
-    setPkMenuPos({ x: e.clientX, y: e.clientY }); // ✅ 마우스 위치 저장
+    setPkMenuPos({ x: e.clientX, y: e.clientY });
   };
 
   const handleInputChange = (key, value) => {
@@ -33,32 +32,11 @@ const ErdColumnRow = ({
   };
 
   useEffect(() => {
-    let frameId;
+    if (ref.current && onPositionUpdate && column?.id) {
+      onPositionUpdate(column.id, ref.current);
+    }
+  }, [column.id, onPositionUpdate]);
 
-    const updatePosition = () => {
-      if (!ref.current || !column?.name || !onPositionUpdate) return;
-
-      const rect = ref.current.getBoundingClientRect();
-      const canvasRect = document
-        .getElementById("erd-canvas")
-        ?.getBoundingClientRect();
-      if (!canvasRect) return;
-
-      onPositionUpdate(column.name, {
-        left: rect.left - canvasRect.left,
-        right: rect.left - canvasRect.left + rect.width,
-        y: rect.top - canvasRect.top + rect.height / 2,
-      });
-
-      frameId = requestAnimationFrame(updatePosition);
-    };
-
-    frameId = requestAnimationFrame(updatePosition);
-
-    return () => cancelAnimationFrame(frameId);
-  }, [column.name, onPositionUpdate]);
-
-  // ✅ 메뉴 외부 클릭 시 닫기
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (e.target.closest(".pk-menu")) return;
@@ -70,7 +48,6 @@ const ErdColumnRow = ({
 
   return (
     <>
-      {/* 컬럼 줄 */}
       <div
         ref={ref}
         className="relative group flex items-center px-2 py-1 pr-8 rounded-sm select-none space-x-2"
@@ -90,9 +67,8 @@ const ErdColumnRow = ({
           opacity: isDragging ? 0.5 : 1,
           cursor: "grab",
         }}
-        onClick={() => onClick?.()}
+        onClick={() => onClick?.(column.id)}
       >
-        {/* 🔑 PK 아이콘 */}
         <div className="w-[20px] flex justify-center items-center">
           <FaKey
             className={`text-yellow-300 transition-opacity duration-150 ${
@@ -102,7 +78,6 @@ const ErdColumnRow = ({
           />
         </div>
 
-        {/* 입력 필드 */}
         <div className="flex items-center space-x-1 flex-grow">
           <input
             className="bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 w-[70px] text-sm text-white placeholder:text-gray-500"
@@ -136,7 +111,6 @@ const ErdColumnRow = ({
           />
         </div>
 
-        {/* ❌ 삭제 버튼 */}
         <div className="absolute top-1 right-1 z-10">
           <button
             className={`text-gray-400 hover:text-red-500 transition-opacity duration-150 ${
@@ -149,7 +123,6 @@ const ErdColumnRow = ({
         </div>
       </div>
 
-      {/* 🔑 PK 설정 메뉴 (마우스 위치 기준으로 띄움) */}
       {showPkMenu && (
         <div
           className="fixed z-50 pk-menu bg-[#3a3a4d] border border-gray-600 text-sm rounded px-2 py-1 cursor-pointer shadow"

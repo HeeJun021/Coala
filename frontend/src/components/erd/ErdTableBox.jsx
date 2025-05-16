@@ -37,11 +37,24 @@ const ErdTableBox = ({
     setLocalColumns(newCols);
   };
 
-  const handleColumnPosUpdate = (colName, pos) => {
-    columnPositionsRef.current[colName] = pos;
+  // ✅ 컬럼 위치 계산 (컬럼 DOM 요소 기준이 아닌 테이블 기준으로 조정)
+  const handleColumnPosUpdate = (colId, el) => {
+    if (!tableRef.current || !el) return;
+
+    const canvasRect = document.getElementById("erd-canvas")?.getBoundingClientRect();
+    const tableRect = tableRef.current.getBoundingClientRect();
+    const colRect = el.getBoundingClientRect();
+    if (!canvasRect) return;
+
+    const pos = {
+      left: tableRect.left - canvasRect.left, // 테이블 왼쪽 끝
+      right: tableRect.right - canvasRect.left, // 테이블 오른쪽 끝
+      y: colRect.top - canvasRect.top + colRect.height / 2, // 컬럼 중간
+    };
+
+    columnPositionsRef.current[colId] = pos;
   };
 
-  // ✅ PK 설정 토글
   const handleTogglePK = (targetId) => {
     setLocalColumns((prev) =>
       prev.map((col) =>
@@ -50,7 +63,6 @@ const ErdTableBox = ({
     );
   };
 
-  // ✅ localColumns 변경 시마다 부모에 테이블 상태 업데이트
   useEffect(() => {
     onUpdate({
       id,
@@ -62,7 +74,6 @@ const ErdTableBox = ({
     });
   }, [id, x, y, localName, localDesc, localColumns, onUpdate]);
 
-  // ✅ 컬럼 위치 전달
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (onColumnPositionUpdate) {
@@ -96,6 +107,12 @@ const ErdTableBox = ({
         description: localDesc,
         columns: localColumns,
       });
+
+      setTimeout(() => {
+        if (onColumnPositionUpdate && columnPositionsRef.current) {
+          onColumnPositionUpdate(id, { ...columnPositionsRef.current });
+        }
+      }, 0);
     };
 
     const handleMouseUp = () => {
@@ -108,6 +125,7 @@ const ErdTableBox = ({
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, localName, localDesc, localColumns, onUpdate]);
 
   const handleAddColumn = () => {
@@ -145,7 +163,6 @@ const ErdTableBox = ({
         if (onClick) onClick();
       }}
     >
-      {/* 상단 버튼 */}
       <div
         className="flex justify-end mb-1 cursor-move"
         onMouseDown={handleMouseDown}
@@ -164,7 +181,6 @@ const ErdTableBox = ({
         </button>
       </div>
 
-      {/* 테이블명 + 설명 인풋 한 줄 */}
       <div className="flex items-center justify-start gap-3">
         <input
           className="bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 text-sm font-medium placeholder:text-gray-400 w-[180px]"
@@ -173,14 +189,7 @@ const ErdTableBox = ({
           onChange={(e) => {
             const newName = e.target.value;
             setLocalName(newName);
-            onUpdate({
-              id,
-              x,
-              y,
-              tableName: newName,
-              description: localDesc,
-              columns: localColumns,
-            });
+            onUpdate({ id, x, y, tableName: newName, description: localDesc, columns: localColumns });
           }}
         />
         <input
@@ -190,19 +199,11 @@ const ErdTableBox = ({
           onChange={(e) => {
             const newDesc = e.target.value;
             setLocalDesc(newDesc);
-            onUpdate({
-              id,
-              x,
-              y,
-              tableName: localName,
-              description: newDesc,
-              columns: localColumns,
-            });
+            onUpdate({ id, x, y, tableName: localName, description: newDesc, columns: localColumns });
           }}
         />
       </div>
 
-      {/* 컬럼 영역 */}
       <div className="mt-2">
         {localColumns.map((col, index) => (
           <ErdColumnRow
@@ -221,9 +222,9 @@ const ErdTableBox = ({
             onDragEnd={endDrag}
             isDragging={dragIndex === index}
             isHovering={hoverIndex === index}
-            onPositionUpdate={handleColumnPosUpdate}
+            onPositionUpdate={(colId, el) => handleColumnPosUpdate(colId, el)}
             onClick={() => {
-              onColumnClick?.(id, col.name);
+              onColumnClick?.(col.id);
             }}
           />
         ))}
