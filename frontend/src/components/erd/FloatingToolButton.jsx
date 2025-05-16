@@ -3,9 +3,10 @@ import Draggable from "react-draggable";
 
 const FloatingToolButton = ({ onAddTable }) => {
   const [open, setOpen] = useState(false);
+  const [openDirection, setOpenDirection] = useState("up"); // 'up' or 'down'
   const wasDragging = useRef(false);
   const buttonRef = useRef(null);
-  const [openDirection, setOpenDirection] = useState("up"); // 'up' or 'down'
+  const containerRef = useRef(null); // ✅ 추가: Draggable용 ref
 
   const handleClick = () => {
     if (wasDragging.current) {
@@ -15,17 +16,17 @@ const FloatingToolButton = ({ onAddTable }) => {
 
     if (buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-      const threshold = viewportHeight / 2;
+      const threshold = window.innerHeight / 2;
       setOpenDirection(rect.top < threshold ? "down" : "up");
     }
 
-    setOpen(!open);
+    setOpen((prev) => !prev);
   };
 
   return (
     <Draggable
-      defaultPosition={{ x: 25, y: 25 }} // ✅ 초기 좌표 (화면에 맞게 조절)
+      nodeRef={containerRef} // ✅ ref 직접 전달로 findDOMNode 제거
+      defaultPosition={{ x: 25, y: 25 }}
       onStart={() => {
         wasDragging.current = false;
       }}
@@ -38,7 +39,7 @@ const FloatingToolButton = ({ onAddTable }) => {
         }, 50);
       }}
     >
-      <div className="z-50 fixed">
+      <div ref={containerRef} className="z-50 fixed">
         {/* 🛠 툴 버튼 */}
         <button
           ref={buttonRef}
@@ -51,11 +52,10 @@ const FloatingToolButton = ({ onAddTable }) => {
         {/* 펼쳐진 메뉴 */}
         {open && (
           <div
-  className={`absolute left-0 
-    ${openDirection === "up" ? "bottom-full mb-2" : "top-full mt-2"} 
-    bg-[#2a2a3c] text-white rounded-md shadow-lg w-40 py-2 z-50`}
->
-
+            className={`absolute left-0 
+              ${openDirection === "up" ? "bottom-full mb-2" : "top-full mt-2"} 
+              bg-[#2a2a3c] text-white rounded-md shadow-lg w-40 py-2 z-50`}
+          >
             <button
               onClick={() => {
                 onAddTable();
