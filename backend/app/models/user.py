@@ -14,6 +14,7 @@ class User(Base):
     profile_image_url = Column(Text, default=None)
     bio = Column(Text, default=None)
     birth_date = Column(Date, default=None)
+    is_admin = Column(Boolean, default=False, nullable=False)
     rating = Column(Integer, default=1000)
     tier_id = Column(Integer, ForeignKey("user_tiers.tier_id"), default=1)  
     dailycheck = Column(Boolean, default=False)

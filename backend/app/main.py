@@ -43,6 +43,7 @@ from app.routers import (
     chat_upload,
     chat_download,
     gpt,
+    admin,
 )
 
 from app.schemas.user import UserUpdateSchema
@@ -107,6 +108,9 @@ app.mount("/static", StaticFiles(directory="uploaded_files"), name="static")
 
 # gpt
 app.include_router(gpt.router, prefix="/gpt", tags=["gpt"])
+
+#내가 관리자다.
+app.include_router(admin.router)
 
 # 기본 라우트
 @app.get("/", tags=["Root"])

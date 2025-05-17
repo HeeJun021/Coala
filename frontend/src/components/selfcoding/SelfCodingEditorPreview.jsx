@@ -3,8 +3,8 @@ import { FaTimes } from "react-icons/fa";
 import Split from "react-split";
 import CodeMirror from "@uiw/react-codemirror";
 import { debounce } from "lodash";
-import { getCodeById, updateCodeFile } from "../api/codeApi";
-import { runJsPreview } from "../api/previewApi";
+import { getCodeById, updateCodeFile } from "../../api/codeApi";
+import { runJsPreview } from "../../api/previewApi";
 
 const SelfCodingEditorPreview = ({
   tabs,

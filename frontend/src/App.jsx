@@ -11,11 +11,21 @@ import { AuthProvider } from "./context/AuthContext";
 import { getCurrentUser } from "./api/authApi";
 import koala from "./assets/koala.jpg";
 
-// 레이아웃 & 기본
+// 레이아웃
 import MainLayout from "./Layout/MainLayout";
+import AdminLayout from "./Layout/AdminLayout"; // ✅ 관리자 레이아웃
 import Home from "./pages/Home";
 
-// 채팅 구조변경
+// 관리자 페이지
+import AdminDashboardPage from "./admin/AdminDashboardPage"; // ✅ 관리자 대시보드
+import StudymaterialManagementPage from "./admin/StudymaterialManagementPage";
+import QuizManagementPage from "./admin/QuizManagementPage";
+import CodingtestManagementPage from "./admin/CodingtestManagementPage";
+import BoardManagementPage from "./admin/BoardManagementPage";
+import UserManagementPage from "./admin/UserManagementPage";
+import ProjectManagementPage from "./admin/ProjectManagementPage";
+
+// 채팅
 import { ChatSocketProvider } from "./context/ChatSocketContext";
 
 // 학습자료
@@ -61,6 +71,7 @@ import BoardEditPage from "./pages/BoardEditPage";
 import SelfCodingPage from "./pages/SelfCodingPage";
 import SelfCodingTemplatePage from "./pages/SelfCodingTemplatePage";
 
+// 에러 무시
 const observerError = /ResizeObserver loop completed/;
 window.addEventListener("error", (e) => {
   if (observerError.test(e.message)) {
@@ -79,11 +90,11 @@ const BodyClassManager = () => {
       path.startsWith("/codingtest/correct/");
 
     if (path === "/") {
-      document.body.className = "white-body"; // ✅ 홈 화면 전용 (흰색 배경)
+      document.body.className = "white-body";
     } else if (isFullscreenRoute) {
-      document.body.className = "fullscreen-body"; // ✅ 코딩테스트 전용
+      document.body.className = "fullscreen-body";
     } else {
-      document.body.className = "default-body"; // ✅ 나머지
+      document.body.className = "default-body";
     }
   }, [location.pathname]);
 
@@ -110,6 +121,7 @@ const App = () => {
           created_at: user.created_at,
           updated_at: user.updated_at,
           tier_name: user.tier?.tier_name || "초급",
+          is_admin: user.is_admin || false, // ✅ 관리자 여부
         });
         console.log("✅ 로그인된 사용자:", user);
       } catch (error) {
@@ -124,137 +136,93 @@ const App = () => {
   return (
     <Router>
       <AuthProvider>
-      <ChatSocketProvider>
-        <BodyClassManager />
-        <Routes>
-          
-                  {/* 자율코딩 */}
-                  <Route path="/self-coding" element={<SelfCodingPage />} />
-                  <Route path="/self-coding/templates" element={<SelfCodingTemplatePage />} />
-                  
-          {/* 코딩 테스트 전체화면 전용 */}
-          <Route path="/codingtest/:id" element={<CodingTestDetailPage />} />
+        <ChatSocketProvider>
+          <BodyClassManager />
+          <Routes>
+            {/* ✅ 관리자 라우트 분리 */}
+            {/* 1) 관리자 자동 리다이렉트 */}
+        {userData?.is_admin && (
           <Route
-            path="/codingtest/correct/:testId"
-            element={<CorrectSolutionsPage />}
+            path="/"
+            element={<Navigate to="/admin" replace />}
           />
+        )}
 
-          {/* 공통 레이아웃 포함 */}
-          <Route
-            path="/*"
-            element={
-              <MainLayout>
-                <Routes>
-                  <Route path="/" element={<Home />} />
+        {/* 2) 관리자 라우트 */}
+        {userData?.is_admin && (
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboardPage />} />
+            <Route path="materials" element={<StudymaterialManagementPage />} />
+            <Route path="projects" element={<ProjectManagementPage/>} />
+            <Route path="quizzes" element={<QuizManagementPage />} />
+            <Route path="codingtest" element={<CodingtestManagementPage />} />
+            <Route path="board" element={<BoardManagementPage />} />
+            <Route path="users" element={<UserManagementPage />} />
+          </Route>
+        )}
 
-                  {/* 학습자료 */}
-                  <Route
-                    path="/StudyMaterialsPage"
-                    element={<StudyMaterialsPage />}
-                  />
-                  <Route
-                    path="/StudyMaterialsPage/materials/:language/:id"
-                    element={<StudyMaterialsPageDetails />}
-                  />
-                  <Route
-                    path="/StudyMaterialsPage/examples/:language/:id"
-                    element={<StudyMaterialsPageDetails />}
-                  />
-                  <Route
-                    path="/materials/:language/:id"
-                    element={<StudyMaterialsPageDetails />}
-                  />
-                  <Route path="/materials" element={<StudyMaterialsPage />} />
+            {/* 자율코딩 */}
+            <Route path="/self-coding" element={<SelfCodingPage />} />
+            <Route path="/self-coding/templates" element={<SelfCodingTemplatePage />} />
 
-                  {/* 퀴즈 */}
-                  <Route
-                    path="/quizpage"
-                    element={<QuizPage userData={userData} />}
-                  />
-                  <Route
-                    path="/quizsolve/:quizId"
-                    element={<QuizSolvePage userData={userData} />}
-                  />
-                  <Route
-                    path="/quiz-result/:quizId"
-                    element={<QuizResultPage userData={userData} />}
-                  />
-                  <Route
-                    path="/user-quiz/create"
-                    element={<CreateUserQuiz userData={userData} />}
-                  />
-                  <Route
-                    path="/user-quiz-solve/:quizId"
-                    element={<UserQuizSolvePage userData={userData} />}
-                  />
-                  <Route
-                    path="/user-quiz-result/:uq_submission_id"
-                    element={<UserQuizResultPage userData={userData} />}
-                  />
+            {/* 코딩 테스트 전체화면 */}
+            <Route path="/codingtest/:id" element={<CodingTestDetailPage />} />
+            <Route path="/codingtest/correct/:testId" element={<CorrectSolutionsPage />} />
 
-                  {/* 코딩 테스트 목록 */}
-                  <Route path="/codingtest" element={<CodingTestPage />} />
+            {/* 공통 레이아웃 포함 */}
+            <Route
+              path="/*"
+              element={
+                <MainLayout>
+                  <Routes>
+                    <Route path="/" element={<Home />} />
 
-                  {/* 실습 터미널 */}
-                  <Route path="/codetest" element={<CodeTestPage />} />
-                  <Route path="/terminal" element={<CodeTestTerminalPage />} />
+                    {/* 학습자료 */}
+                    <Route path="/StudyMaterialsPage" element={<StudyMaterialsPage />} />
+                    <Route path="/StudyMaterialsPage/materials/:language/:id" element={<StudyMaterialsPageDetails />} />
+                    <Route path="/StudyMaterialsPage/examples/:language/:id" element={<StudyMaterialsPageDetails />} />
+                    <Route path="/materials/:language/:id" element={<StudyMaterialsPageDetails />} />
+                    <Route path="/materials" element={<StudyMaterialsPage />} />
 
-                  {/* 인증 */}
-                  <Route path="/signup" element={<Signup />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/forgot-password" element={<ForgotPassword />} />
-                  <Route path="/reset-password" element={<ResetPassword />} />
+                    {/* 퀴즈 */}
+                    <Route path="/quizpage" element={<QuizPage userData={userData} />} />
+                    <Route path="/quizsolve/:quizId" element={<QuizSolvePage userData={userData} />} />
+                    <Route path="/quiz-result/:quizId" element={<QuizResultPage userData={userData} />} />
+                    <Route path="/user-quiz/create" element={<CreateUserQuiz userData={userData} />} />
+                    <Route path="/user-quiz-solve/:quizId" element={<UserQuizSolvePage userData={userData} />} />
+                    <Route path="/user-quiz-result/:uq_submission_id" element={<UserQuizResultPage userData={userData} />} />
 
-                  {/* 마이페이지 */}
-                  <Route
-                    path="/mypage/*"
-                    element={<MyPage userData={userData} />}
-                  />
-                  <Route
-                    path="/mypage/modify"
-                    element={
-                      <MyPageModify
-                        userData={userData}
-                        setUserData={setUserData}
-                      />
-                    }
-                  />
-                  <Route
-                    path="/mypage/setting"
-                    element={<MyPageSetting userData={userData} />}
-                  />
-                  <Route
-                    path="/mypage/quiz-history"
-                    element={<MyPageQuizHistory userData={userData} />}
-                  />
-                  <Route
-                    path="/mypage/userquiz-history"
-                    element={<MyPageUserQuizHistory userData={userData} />}
-                  />
+                    {/* 코딩 테스트 목록 */}
+                    <Route path="/codingtest" element={<CodingTestPage />} />
 
-                  {/* 게시판 */}
-                  <Route path="/board/:boardType" element={<BoardPage />} />
-                  <Route
-                    path="/board/:boardType/write"
-                    element={<BoardWritePage />}
-                  />
-                  <Route
-                    path="/board/:boardType/:postId"
-                    element={<BoardDetailPage />}
-                  />
-                  <Route
-                    path="/board/:boardType/edit/:postId"
-                    element={<BoardEditPage />}
-                  />
-                  <Route
-                    path="/board"
-                    element={<Navigate to="/board/free" />}
-                  />
-                </Routes>
-              </MainLayout>
-            }
-          />
-        </Routes>
+                    {/* 실습 터미널 */}
+                    <Route path="/codetest" element={<CodeTestPage />} />
+                    <Route path="/terminal" element={<CodeTestTerminalPage />} />
+
+                    {/* 인증 */}
+                    <Route path="/signup" element={<Signup />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
+
+                    {/* 마이페이지 */}
+                    <Route path="/mypage/*" element={<MyPage userData={userData} />} />
+                    <Route path="/mypage/modify" element={<MyPageModify userData={userData} setUserData={setUserData} />} />
+                    <Route path="/mypage/setting" element={<MyPageSetting userData={userData} />} />
+                    <Route path="/mypage/quiz-history" element={<MyPageQuizHistory userData={userData} />} />
+                    <Route path="/mypage/userquiz-history" element={<MyPageUserQuizHistory userData={userData} />} />
+
+                    {/* 게시판 */}
+                    <Route path="/board/:boardType" element={<BoardPage />} />
+                    <Route path="/board/:boardType/write" element={<BoardWritePage />} />
+                    <Route path="/board/:boardType/:postId" element={<BoardDetailPage />} />
+                    <Route path="/board/:boardType/edit/:postId" element={<BoardEditPage />} />
+                    <Route path="/board" element={<Navigate to="/board/free" />} />
+                  </Routes>
+                </MainLayout>
+              }
+            />
+          </Routes>
         </ChatSocketProvider>
       </AuthProvider>
     </Router>

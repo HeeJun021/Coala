@@ -42,6 +42,7 @@ class UserResponse(BaseModel):
     profile_image_url: Optional[str]
     bio: Optional[str] = None
     birth_date: Optional[date]
+    is_admin: bool
     rating: int
     tier_id: int
     email_verified: bool
