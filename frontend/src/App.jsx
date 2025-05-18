@@ -58,6 +58,10 @@ import BoardEditPage from "./pages/BoardEditPage";
 import SelfCodingPage from "./pages/SelfCodingPage";
 import SelfCodingTemplatePage from "./pages/SelfCodingTemplatePage";
 
+//팀프로젝트
+  import TeamProjectPage from "./pages/TeamProjectPage";
+
+
 const observerError = /ResizeObserver loop completed/;
 window.addEventListener("error", (e) => {
   if (observerError.test(e.message)) {
@@ -227,7 +231,8 @@ const App = () => {
                     path="/mypage/userquiz-history"
                     element={<MyPageUserQuizHistory userData={userData} />}
                   />
-
+                  {/* 팀프로젝트 */}
+                  <Route path="/team-project" element={<TeamProjectPage />} />
                   {/* 게시판 */}
                   <Route path="/board/:boardType" element={<BoardPage />} />
                   <Route
