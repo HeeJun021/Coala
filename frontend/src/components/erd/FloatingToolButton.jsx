@@ -1,7 +1,6 @@
 import React, { useState, useRef } from "react";
 import Draggable from "react-draggable";
 
-// 최상단 import 아래 추가
 const relationOptions = [
   { label: "1:1 (필수 - 필수)", value: "1|1" },
   { label: "1:1 (필수 - 선택)", value: "1|0..1" },
@@ -15,9 +14,14 @@ const relationOptions = [
   { label: "M:N (선택 - 필수)", value: "0..*|1..*" },
 ];
 
-const FloatingToolButton = ({ onAddTable, onAddRelation }) => {
+const FloatingToolButton = ({
+  onAddTable,
+  onAddRelation,
+  onStartDragging,     // ✅ 추가됨
+  onStopDragging       // ✅ 추가됨
+}) => {
   const [open, setOpen] = useState(false);
-  const [relationMenuOpen, setRelationMenuOpen] = useState(false); // 관계 하위 메뉴 열림
+  const [relationMenuOpen, setRelationMenuOpen] = useState(false);
   const wasDragging = useRef(false);
   const buttonRef = useRef(null);
   const containerRef = useRef(null);
@@ -29,7 +33,7 @@ const FloatingToolButton = ({ onAddTable, onAddRelation }) => {
     }
 
     setOpen((prev) => !prev);
-    setRelationMenuOpen(false); // 관계 메뉴는 닫기
+    setRelationMenuOpen(false);
   };
 
   return (
@@ -38,6 +42,7 @@ const FloatingToolButton = ({ onAddTable, onAddRelation }) => {
       defaultPosition={{ x: 25, y: 25 }}
       onStart={() => {
         wasDragging.current = false;
+        onStartDragging?.(); // ✅ 드래그 시작 알림
       }}
       onDrag={() => {
         wasDragging.current = true;
@@ -46,10 +51,16 @@ const FloatingToolButton = ({ onAddTable, onAddRelation }) => {
         setTimeout(() => {
           wasDragging.current = false;
         }, 50);
+        onStopDragging?.(); // ✅ 드래그 끝 알림
       }}
     >
-      <div ref={containerRef} className="z-50 fixed">
-        {/* 툴 버튼 */}
+      <div
+        ref={containerRef}
+        className="z-50 fixed"
+        onMouseDown={(e) => e.stopPropagation()}
+        onMouseMove={(e) => e.stopPropagation()}
+        onMouseUp={(e) => e.stopPropagation()}
+      >
         <button
           ref={buttonRef}
           onClick={handleClick}
@@ -58,12 +69,8 @@ const FloatingToolButton = ({ onAddTable, onAddRelation }) => {
           🛠
         </button>
 
-        {/* 펼쳐진 메뉴 */}
         {open && (
-          <div
-            className={`absolute left-0 bg-[#2a2a3c] text-white rounded-md shadow-lg w-44 py-2 z-50`}
-          >
-            {/* 테이블 추가 */}
+          <div className="absolute left-0 bg-[#2a2a3c] text-white rounded-md shadow-lg w-44 py-2 z-50">
             <button
               onClick={() => {
                 onAddTable();
@@ -74,7 +81,6 @@ const FloatingToolButton = ({ onAddTable, onAddRelation }) => {
               ➕ 테이블 추가
             </button>
 
-            {/* 관계 추가 */}
             <div
               className="relative group"
               onMouseEnter={() => setRelationMenuOpen(true)}
@@ -84,15 +90,13 @@ const FloatingToolButton = ({ onAddTable, onAddRelation }) => {
                 ⇄ 관계 추가 ▸
               </button>
 
-              {/* 관계 타입 서브메뉴 */}
-              {/* 관계 타입 서브메뉴 */}
               {relationMenuOpen && (
                 <div className="absolute left-full top-0 bg-[#2a2a3c] border-l border-gray-700 rounded-md shadow-lg w-60 z-50">
                   {relationOptions.map((option) => (
                     <button
                       key={option.value}
                       onClick={() => {
-                        onAddRelation(option.value); // 콜백 호출 시 value 넘김
+                        onAddRelation(option.value);
                         setOpen(false);
                         setRelationMenuOpen(false);
                       }}
@@ -105,10 +109,6 @@ const FloatingToolButton = ({ onAddTable, onAddRelation }) => {
               )}
             </div>
 
-            {/* 나머지 항목 */}
-            <button className="block w-full text-left px-4 py-2 hover:bg-[#3a3a4c] text-sm">
-              📦 내보내기
-            </button>
             <button className="block w-full text-left px-4 py-2 hover:bg-[#3a3a4c] text-sm">
               🕓 히스토리
             </button>

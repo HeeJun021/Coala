@@ -20,11 +20,17 @@ const ErdCanvas = ({ isPlacing, setIsPlacing, tables, setTables }) => {
 
   const [selectionBox, setSelectionBox] = useState(null);
 
+  const [isToolDragging, setIsToolDragging] = useState(false); // 🆕 툴탭 드래그 중 여부
+
+  const [isDraggingSelectionBox, setIsDraggingSelectionBox] = useState(false);
+  const [wasDraggingSelectionBox, setWasDraggingSelectionBox] = useState(false);
+
   const dragStartRef = useRef(null);
   const dragOriginRef = useRef(null);
   const tablePositionsRef = useRef({});
 
   const handleMouseDown = (e) => {
+    if (e.button !== 0 || isToolDragging) return; // 🛑 툴탭 드래그 중이면 무시
     if (e.button !== 0) return;
 
     const rect = canvasRef.current.getBoundingClientRect();
@@ -42,11 +48,13 @@ const ErdCanvas = ({ isPlacing, setIsPlacing, tables, setTables }) => {
       }
     });
 
-    setSelectionBox({ x, y, width: 0, height: 0 });
+    if (!isToolDragging) {
+      setSelectionBox({ x, y, width: 0, height: 0 });
+    }
   };
 
   const handleMouseMove = (e) => {
-    if (!dragStartRef.current) return;
+    if (!dragStartRef.current || isToolDragging) return;
 
     const rect = canvasRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -63,85 +71,102 @@ const ErdCanvas = ({ isPlacing, setIsPlacing, tables, setTables }) => {
 
     setSelectionBox(box);
 
-    // ✅ 테이블 선택
-    const selected = tables
-      .filter((t) => {
-        const tableWidth = 440;
-        const tableHeight = 100;
-        return (
-          t.x < box.x + box.width &&
-          t.x + tableWidth > box.x &&
-          t.y < box.y + box.height &&
-          t.y + tableHeight > box.y
-        );
-      })
-      .map((t) => t.id);
+    // ✅ selectionBox 크기가 3px 이상이면 진짜 박스로 간주
+    if (box.width > 3 || box.height > 3) {
+      setIsDraggingSelectionBox(true);
 
-    setSelectedTableIds(selected);
+      // ✅ 진짜 박스 드래그일 때만 선택 갱신
+      const selected = tables
+        .filter((t) => {
+          const tableWidth = 440;
+          const tableHeight = 100;
+          return (
+            t.x < box.x + box.width &&
+            t.x + tableWidth > box.x &&
+            t.y < box.y + box.height &&
+            t.y + tableHeight > box.y
+          );
+        })
+        .map((t) => t.id);
 
-    // ✅ 관계선 선택
-    const selectedRelations = relations
-      .filter((rel) => {
-        const from = columnPositions[rel.fromColumnId];
-        const to = columnPositions[rel.toColumnId];
+      setSelectedTableIds(selected);
 
-        if (
-          !from ||
-          !to ||
-          from.left === undefined ||
-          from.right === undefined ||
-          from.y === undefined ||
-          to.left === undefined ||
-          to.right === undefined ||
-          to.y === undefined
-        ) {
-          console.warn("❌ 좌표 정보 누락!", rel.relationId, from, to);
-          return false;
-        }
+      const selectedRelations = relations
+        .filter((rel) => {
+          const from = columnPositions[rel.fromColumnId];
+          const to = columnPositions[rel.toColumnId];
 
-        // 💡 실제 라인 그릴 때와 동일한 방식으로 midX 계산
-        const fromX = from.left < to.left ? from.right : from.left;
-        const toX = from.left < to.left ? to.left : to.right;
-        const midX = (fromX + toX) / 2;
-        const midY = (from.y + to.y) / 2;
+          if (
+            !from ||
+            !to ||
+            from.left === undefined ||
+            from.right === undefined ||
+            from.y === undefined ||
+            to.left === undefined ||
+            to.right === undefined ||
+            to.y === undefined
+          ) {
+            return false;
+          }
 
-        // ✅ 선택 박스 안에 라벨 중심점이 포함되는지 확인
-        return (
-          midX >= box.x &&
-          midX <= box.x + box.width &&
-          midY >= box.y &&
-          midY <= box.y + box.height
-        );
-      })
-      .map((rel) => rel.relationId);
+          const fromX = from.left < to.left ? from.right : from.left;
+          const toX = from.left < to.left ? to.left : to.right;
+          const midX = (fromX + toX) / 2;
+          const midY = (from.y + to.y) / 2;
 
-    setSelectedRelationIds(selectedRelations);
+          return (
+            midX >= box.x &&
+            midX <= box.x + box.width &&
+            midY >= box.y &&
+            midY <= box.y + box.height
+          );
+        })
+        .map((rel) => rel.relationId);
+
+      setSelectedRelationIds(selectedRelations);
+    }
   };
 
   const handleMouseUp = () => {
-    if (!selectionBox) return;
+    // ✅ 실제 박스 드래그일 때만 선택 적용
+    if (isDraggingSelectionBox && selectionBox) {
+      const { x, y, width, height } = selectionBox;
+      const selected = tables
+        .filter(
+          (t) =>
+            t.x + 440 >= x &&
+            t.x <= x + width &&
+            t.y + 100 >= y &&
+            t.y <= y + height
+        )
+        .map((t) => t.id);
 
-    const { x, y, width, height } = selectionBox;
-    const selected = tables
-      .filter(
-        (t) =>
-          t.x + 440 >= x &&
-          t.x <= x + width &&
-          t.y + 100 >= y &&
-          t.y <= y + height
-      )
-      .map((t) => t.id);
+      setSelectedTableIds(selected);
+    }
 
-    setSelectedTableIds(selected);
+    // ✅ 드래그하지 않았거나 box가 매우 작을 경우 선택 갱신하지 않음
+    // (즉, 선택 상태 유지)
+
+    // ✅ 무조건 selectionBox 및 drag 상태 초기화
     setSelectionBox(null);
+    setIsDraggingSelectionBox(false);
     dragStartRef.current = null;
     dragOriginRef.current = null;
     tablePositionsRef.current = {};
+
+    setWasDraggingSelectionBox(isDraggingSelectionBox); // 🔴 드래그했음을 기록
+
+    // 플래그는 잠시 뒤 자동 초기화
+    setTimeout(() => setWasDraggingSelectionBox(false), 0);
   };
 
   const handleCanvasClick = (e) => {
+    if (wasDraggingSelectionBox) return; // ✅ 드래그 직후면 해제 금지
+
     setSelectedTableId(null);
+    setSelectedTableIds([]);
     setSelectedRelationId(null);
+    setSelectedRelationIds([]);
 
     if (!isPlacing) return;
 
@@ -343,8 +368,10 @@ const ErdCanvas = ({ isPlacing, setIsPlacing, tables, setTables }) => {
           setSelectedRelationType(type);
           setPendingFromColumnId(null);
         }}
+        onStartDragging={() => setIsToolDragging(true)} // 🆕 추가
+        onStopDragging={() => setIsToolDragging(false)} // 🆕 추가
       />
-      {selectionBox && (
+      {selectionBox && selectionBox.width > 0 && selectionBox.height > 0 && (
         <div
           className="absolute border-2 border-blue-400 bg-blue-300/20 z-50 pointer-events-none"
           style={{
