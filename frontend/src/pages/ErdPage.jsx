@@ -8,7 +8,8 @@ const ErdPage = () => {
   const [isPlacing, setIsPlacing] = useState(false); // 커서 상태
   const [tempTable, setTempTable] = useState(null); // 클릭 위치
   const [tables, setTables] = useState([]); // 확정된 테이블 목록
-  
+
+  const [zoomLevel, setZoomLevel] = useState(1); // 🔍 확대/축소 상태
 
   return (
     <div className="w-full h-screen bg-[#1E1E2F] text-white flex flex-col overflow-hidden">
@@ -19,6 +20,8 @@ const ErdPage = () => {
           onEditName={() => {}}
           onOpenLog={() => {}}
           onOpenSidebar={() => setIsSidebarOpen(true)}
+          zoomLevel={zoomLevel} // ✅ 추가
+          setZoomLevel={setZoomLevel} // ✅ 추가
         />
       </div>
 
@@ -40,6 +43,7 @@ const ErdPage = () => {
             setTempTable={setTempTable}
             tables={tables}
             setTables={setTables}
+            zoomLevel={zoomLevel}             // ✅ 추가
           />
         </div>
       </div>

@@ -4,7 +4,13 @@ import ErdTableBox from "./ErdTableBox";
 import FloatingToolButton from "./FloatingToolButton";
 import ErdRelationLine from "./ErdRelationLine";
 
-const ErdCanvas = ({ isPlacing, setIsPlacing, tables, setTables }) => {
+const ErdCanvas = ({
+  isPlacing,
+  setIsPlacing,
+  tables,
+  setTables,
+  zoomLevel,
+}) => {
   const canvasRef = useRef(null);
 
   const [relations, setRelations] = useState([]);
@@ -34,8 +40,8 @@ const ErdCanvas = ({ isPlacing, setIsPlacing, tables, setTables }) => {
     if (e.button !== 0) return;
 
     const rect = canvasRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = (e.clientX - rect.left) / zoomLevel;
+    const y = (e.clientY - rect.top) / zoomLevel;
 
     dragStartRef.current = { x, y };
     dragOriginRef.current = { x, y };
@@ -57,8 +63,8 @@ const ErdCanvas = ({ isPlacing, setIsPlacing, tables, setTables }) => {
     if (!dragStartRef.current || isToolDragging) return;
 
     const rect = canvasRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = (e.clientX - rect.left) / zoomLevel;
+    const y = (e.clientY - rect.top) / zoomLevel;
 
     const startX = dragStartRef.current.x;
     const startY = dragStartRef.current.y;
@@ -171,8 +177,8 @@ const ErdCanvas = ({ isPlacing, setIsPlacing, tables, setTables }) => {
     if (!isPlacing) return;
 
     const rect = canvasRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = (e.clientX - rect.left) / zoomLevel;
+    const y = (e.clientY - rect.top) / zoomLevel;
 
     const newTable = {
       id: uuidv4(),
@@ -301,16 +307,25 @@ const ErdCanvas = ({ isPlacing, setIsPlacing, tables, setTables }) => {
   }, [selectedTableIds, selectedRelationIds, setTables, setRelations]);
 
   return (
+  <div
+    id="erd-canvas"
+    ref={canvasRef}
+    onClick={handleCanvasClick}
+    onMouseDown={handleMouseDown}
+    onMouseMove={handleMouseMove}
+    onMouseUp={handleMouseUp}
+    className={`relative w-full h-full bg-[#1e1e2f] overflow-hidden ${
+      isPlacing || isAddingRelation ? "cursor-crosshair" : "cursor-default"
+    } select-none`}
+  >
+    {/* 확대/축소 대상 내부 컨테이너 */}
     <div
-      id="erd-canvas"
-      ref={canvasRef}
-      onClick={handleCanvasClick}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      className={`relative w-full h-full bg-[#1e1e2f] overflow-hidden ${
-        isPlacing || isAddingRelation ? "cursor-crosshair" : "cursor-default"
-      } select-none`}
+      className="absolute top-0 left-0 origin-top-left"
+      style={{
+        transform: `scale(${zoomLevel})`,
+        width: `${100 / zoomLevel}%`,
+        height: `${100 / zoomLevel}%`,
+      }}
     >
       {relations.map((rel) => {
         const from = columnPositions[rel.fromColumnId];
@@ -347,11 +362,12 @@ const ErdCanvas = ({ isPlacing, setIsPlacing, tables, setTables }) => {
           onColumnClick={handleColumnClick}
           onColumnPositionUpdate={handleColumnPositionUpdate}
           isSelected={
-            selectedTableIds.includes(table.id) || selectedTableId === table.id
+            selectedTableIds.includes(table.id) ||
+            selectedTableId === table.id
           }
           onClick={() => {
             setSelectedTableId(table.id);
-            setSelectedTableIds([table.id]); // 단일 선택
+            setSelectedTableIds([table.id]);
             setSelectedRelationId(null);
             setSelectedRelationIds([]);
           }}
@@ -361,16 +377,6 @@ const ErdCanvas = ({ isPlacing, setIsPlacing, tables, setTables }) => {
         />
       ))}
 
-      <FloatingToolButton
-        onAddTable={() => setIsPlacing(true)}
-        onAddRelation={(type) => {
-          setIsAddingRelation(true);
-          setSelectedRelationType(type);
-          setPendingFromColumnId(null);
-        }}
-        onStartDragging={() => setIsToolDragging(true)} // 🆕 추가
-        onStopDragging={() => setIsToolDragging(false)} // 🆕 추가
-      />
       {selectionBox && selectionBox.width > 0 && selectionBox.height > 0 && (
         <div
           className="absolute border-2 border-blue-400 bg-blue-300/20 z-50 pointer-events-none"
@@ -383,7 +389,21 @@ const ErdCanvas = ({ isPlacing, setIsPlacing, tables, setTables }) => {
         />
       )}
     </div>
-  );
+
+    {/* 고정 위치 FloatingToolButton (확대 X) */}
+    <FloatingToolButton
+      onAddTable={() => setIsPlacing(true)}
+      onAddRelation={(type) => {
+        setIsAddingRelation(true);
+        setSelectedRelationType(type);
+        setPendingFromColumnId(null);
+      }}
+      onStartDragging={() => setIsToolDragging(true)}
+      onStopDragging={() => setIsToolDragging(false)}
+    />
+  </div>
+);
+
 };
 
 export default ErdCanvas;
