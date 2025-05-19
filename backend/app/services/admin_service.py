@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, desc, literal, text, literal_column, select, union_all, func, cast
 from datetime import date, datetime, timedelta
 from app.models.user import User
@@ -99,7 +99,7 @@ def get_weekly_report_trend(db: Session):
     for row in comment_counts:
         date_to_count[row.date] = date_to_count.get(row.date, 0) + row.count
 
-    # 📌 지난 7일 데이터 생성 (누락된 날짜 0으로 채움)
+    # 지난 7일 데이터 생성 (누락된 날짜 0으로 채움)
     result = []
     for i in range(7):
         day = seven_days_ago + timedelta(days=i)
@@ -110,3 +110,86 @@ def get_weekly_report_trend(db: Session):
         })
 
     return result
+
+def get_all_users_with_stats(db: Session):
+    users = (
+        db.query(User)
+        .options(joinedload(User.tier)) 
+        .all()
+    )
+
+    results = []
+    for user in users:
+        post_count = db.query(func.count()).select_from(Post).filter(Post.user_id == user.user_id).scalar()
+        comment_count = db.query(func.count()).select_from(Comment).filter(Comment.user_id == user.user_id).scalar()
+
+        post_report_count = (
+            db.query(func.count(PostReport.report_id))
+            .join(Post, Post.post_id == PostReport.post_id)
+            .filter(Post.user_id == user.user_id)
+            .scalar()
+        )
+
+        comment_report_count = (
+            db.query(func.count(CommentReport.report_id))
+            .join(Comment, Comment.comment_id == CommentReport.comment_id)
+            .filter(Comment.user_id == user.user_id)
+            .scalar()
+        )
+
+        total_reports = post_report_count + comment_report_count
+
+        results.append({
+            "user_id": user.user_id,
+            "nickname": user.nickname,
+            "email": user.email,
+            "created_at": user.created_at,
+            "post_count": post_count,
+            "comment_count": comment_count,
+            "report_count": total_reports,
+            "tier_name": user.tier.tier_name if user.tier else None  
+        })
+
+    return results
+
+def get_user_detail_by_id(db: Session, user_id: int):
+    # 유저 + 티어 정보
+    user = (
+        db.query(User)
+        .options(joinedload(User.tier))
+        .filter(User.user_id == user_id)
+        .first()
+    )
+
+    if not user:
+        return None
+
+    # 해당 유저가 작성한 게시글 목록
+    posts = db.query(Post).filter(Post.user_id == user_id).order_by(Post.created_at.desc()).all()
+
+    # 해당 유저가 작성한 댓글 목록
+    comments = db.query(Comment).filter(Comment.user_id == user_id).order_by(Comment.created_at.desc()).all()
+
+    # 신고 누적 수 (본인이 작성한 게시글/댓글에 대해 신고된 수)
+    post_report_count = (
+        db.query(func.count(PostReport.report_id))
+        .join(Post, Post.post_id == PostReport.post_id)
+        .filter(Post.user_id == user_id)
+        .scalar()
+    )
+
+    comment_report_count = (
+        db.query(func.count(CommentReport.report_id))
+        .join(Comment, Comment.comment_id == CommentReport.comment_id)
+        .filter(Comment.user_id == user_id)
+        .scalar()
+    )
+
+    total_report_count = post_report_count + comment_report_count
+
+    return {
+        "user": user,
+        "posts": posts,
+        "comments": comments,
+        "report_count": total_report_count,
+    }
