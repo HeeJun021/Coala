@@ -1,13 +1,30 @@
-// src/components/project/ProjectCreateModal.jsx
 import React, { useState } from "react";
-import Modal from "../common/Modal";
 import { createProject } from "../../api/projectApi";
+
+const Modal = ({ onClose, title, children }) => {
+  return (
+    <div className="fixed inset-0 z-50 bg-black bg-opacity-30 flex items-center justify-center">
+      <div className="bg-white rounded-xl w-[500px] max-h-[90vh] overflow-y-auto shadow-xl p-6 relative">
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-4 text-gray-500 hover:text-black text-xl"
+        >
+          ×
+        </button>
+        <h2 className="text-xl font-bold mb-4 text-black">{title}</h2>
+        {children}
+      </div>
+    </div>
+  );
+};
 
 const WIDGET_OPTIONS = [
   { key: "erd", label: "ERD 설계" },
-  { key: "git", label: "Git 연동" },
-  { key: "memo", label: "메모" },
+  { key: "git", label: "GitHub 공유" },
+  { key: "docs", label: "문서 관리" },
+  { key: "chat", label: "채팅" },
   { key: "calendar", label: "캘린더" },
+  { key: "memo", label: "메모" },
 ];
 
 const ProjectCreateModal = ({ onClose, onCreated }) => {
@@ -16,7 +33,7 @@ const ProjectCreateModal = ({ onClose, onCreated }) => {
 
   const toggleWidget = (key) => {
     setSelectedWidgets((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+      prev.includes(key) ? prev.filter((item) => item !== key) : [...prev, key]
     );
   };
 
@@ -24,24 +41,36 @@ const ProjectCreateModal = ({ onClose, onCreated }) => {
     if (!projectName.trim()) return alert("프로젝트 이름을 입력하세요");
 
     try {
+      const widgetData = {
+        erd: selectedWidgets.includes("erd"),
+        git: selectedWidgets.includes("git"),
+        docs: selectedWidgets.includes("docs"),
+        chat: selectedWidgets.includes("chat"),
+        calendar: selectedWidgets.includes("calendar"),
+        memo: selectedWidgets.includes("memo"),
+      };
       const res = await createProject({
         name: projectName,
-        widgets: selectedWidgets,
+        description: null,
+        widgets: widgetData,
       });
-      onCreated?.(res.data);
+      onCreated?.(res);
       onClose();
     } catch (err) {
       console.error("프로젝트 생성 실패", err);
+      alert("프로젝트 생성에 실패했습니다.");
     }
   };
 
   return (
     <Modal onClose={onClose} title="새 프로젝트 생성">
-      <div className="space-y-4">
+      <div className="space-y-4 text-black">
         <div>
-          <label className="block text-sm font-medium mb-1">프로젝트 이름</label>
+          <label className="block text-sm font-medium mb-1 text-black">
+            프로젝트 이름
+          </label>
           <input
-            className="w-full px-3 py-2 border rounded"
+            className="w-full px-3 py-2 border rounded text-black"
             placeholder="프로젝트 이름을 입력하세요"
             value={projectName}
             onChange={(e) => setProjectName(e.target.value)}
@@ -49,17 +78,19 @@ const ProjectCreateModal = ({ onClose, onCreated }) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-2">위젯 선택</label>
+          <label className="block text-sm font-medium mb-2 text-black">
+            위젯 선택
+          </label>
           <div className="grid grid-cols-2 gap-2">
             {WIDGET_OPTIONS.map((opt) => (
               <button
                 key={opt.key}
                 onClick={() => toggleWidget(opt.key)}
-                className={`border px-4 py-2 rounded text-sm text-left hover:bg-gray-100 transition ${
+                className={`border px-4 py-2 rounded text-sm text-left transition ${
                   selectedWidgets.includes(opt.key)
                     ? "bg-blue-100 border-blue-400"
                     : "bg-white"
-                }`}
+                } text-black hover:bg-gray-100`}
               >
                 ✅ {opt.label}
               </button>

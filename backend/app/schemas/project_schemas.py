@@ -2,17 +2,24 @@ from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 
-
 # ✅ 위젯 타입 정의
 class ProjectWidget(BaseModel):
     erd: bool = False
     git: bool = False
-    memo: bool = False
+    docs: bool = False
+    chat: bool = False
     calendar: bool = False
+    memo: bool = False
 
 # ✅ 프로젝트 생성 요청
 class ProjectCreateRequest(BaseModel):
     name: str
+    description: Optional[str] = None
+    widgets: ProjectWidget
+
+# ✅ 프로젝트 수정 요청
+class ProjectUpdateRequest(BaseModel):
+    name: Optional[str] = None
     description: Optional[str] = None
     widgets: ProjectWidget
 
@@ -26,7 +33,6 @@ class ProjectCreateResponse(BaseModel):
 
     class Config:
         from_attributes = True
-
 
 # ✅ 단일 프로젝트 응답
 class ProjectItem(BaseModel):

@@ -1,7 +1,24 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import ProjectCreateModal from "./ProjectCreateModal";
+import { getMyProjects } from "../../api/projectApi";
 
-const ProjectSidebar = ({ projects = [], setActiveTab, onProjectSelect }) => {
+const ProjectSidebar = ({ setActiveTab, onProjectSelect, selectedProjectId, onUpdate }) => {
+  const [projects, setProjects] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const fetchProjects = async () => {
+    try {
+      const projectList = await getMyProjects();
+      setProjects(projectList);
+    } catch (err) {
+      console.error("프로젝트 목록 가져오기 실패", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
   const handleTabClick = (tabName) => {
     if (typeof setActiveTab === "function") {
       setActiveTab(tabName);
@@ -9,15 +26,26 @@ const ProjectSidebar = ({ projects = [], setActiveTab, onProjectSelect }) => {
   };
 
   const handleProjectClick = (projectId) => {
-    if (typeof onProjectSelect === "function") {
-      onProjectSelect(projectId);
+    onProjectSelect(projectId);
+  };
+
+  const handleProjectCreated = async (newProject) => {
+    try {
+      await fetchProjects();
+      setIsModalOpen(false);
+      if (newProject?.project_id) {
+        onProjectSelect(newProject.project_id);
+      }
+      onUpdate();
+    } catch (err) {
+      console.error("프로젝트 목록 갱신 실패", err);
     }
   };
 
   return (
     <aside className="w-64 bg-[#1d1d1d] text-white flex flex-col px-4 py-6">
       <button
-        onClick={() => alert("프로젝트 생성 예정")}
+        onClick={() => setIsModalOpen(true)}
         className="bg-blue-600 text-white py-2 px-3 rounded mb-6 hover:bg-blue-700"
       >
         + 생성
@@ -39,17 +67,34 @@ const ProjectSidebar = ({ projects = [], setActiveTab, onProjectSelect }) => {
       <hr className="my-6 border-gray-600" />
 
       <div className="text-sm">
-        <div className="text-gray-400 uppercase tracking-wide mb-2">프로젝트</div>
+        <div className="flex items-center justify-between text-gray-400 uppercase tracking-wide mb-2">
+          <span>프로젝트</span>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="text-white hover:text-blue-300 text-lg"
+          >
+            +
+          </button>
+        </div>
         {projects.map((project) => (
           <button
-            key={project.id}
-            onClick={() => handleProjectClick(project.id)}
-            className="text-left text-gray-200 hover:text-white hover:underline block mb-1"
+            key={project.project_id}
+            onClick={() => handleProjectClick(project.project_id)}
+            className={`text-left text-gray-200 hover:text-white hover:underline block mb-1 ${
+              selectedProjectId === project.project_id ? "text-white underline" : ""
+            }`}
           >
             {project.name}
           </button>
         ))}
       </div>
+
+      {isModalOpen && (
+        <ProjectCreateModal
+          onClose={() => setIsModalOpen(false)}
+          onCreated={handleProjectCreated}
+        />
+      )}
     </aside>
   );
 };

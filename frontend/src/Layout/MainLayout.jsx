@@ -10,6 +10,7 @@ const MainLayout = ({ children }) => {
 
   const showSidebar = location.pathname.startsWith("/StudyMaterialsPage") || 
                       location.pathname.startsWith("/materials/");
+  const isTeamProject = location.pathname.startsWith("/team-project");
 
   return (
     <div className="layout flex">
@@ -20,7 +21,7 @@ const MainLayout = ({ children }) => {
       {/* ✅ 메인 컨텐츠 영역 */}
       <main
         className={`content flex-1 min-h-screen w-full ${
-          isHome ? "px-0" : "px-10 mx-auto"
+          isHome || isTeamProject ? "px-0" : "px-10 mx-auto"
         }`}
       >
       {children}
