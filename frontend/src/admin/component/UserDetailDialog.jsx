@@ -16,10 +16,8 @@ const UserDetailDialog = ({ open, onClose, user, onUserDeleted }) => {
 
     try {
       await deleteUser(user.user_id);
-      alert("사용자가 성공적으로 삭제되었습니다.");
       onUserDeleted?.();
     } catch (error) {
-      alert("사용자 삭제에 실패했습니다.");
     }
   };
 

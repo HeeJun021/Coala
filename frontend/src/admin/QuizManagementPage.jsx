@@ -10,21 +10,22 @@ const QuizManagementPage = () => {
   const [difficultyFilter, setDifficultyFilter] = useState("all");
   const [openDialog, setOpenDialog] = useState(false);
 
-  // ✅ 문제 전체 불러오기
-  useEffect(() => {
-    const loadQuestions = async () => {
-      try {
-        const data = await fetchQuestions({});
-        setQuestions(data);
-      } catch (err) {
-        console.error("퀴즈 데이터를 불러오지 못했습니다:", err);
-      }
-    };
+  // ✅ 문제 전체 불러오기 함수
+  const loadQuestions = async () => {
+    try {
+      const data = await fetchQuestions({});
+      setQuestions(data);
+    } catch (err) {
+      console.error("퀴즈 데이터를 불러오지 못했습니다:", err);
+    }
+  };
 
+  // ✅ 첫 로딩 시 전체 문제 불러오기
+  useEffect(() => {
     loadQuestions();
   }, []);
 
-  // ✅ 필터 적용
+  // ✅ 필터링된 문제 리스트 계산
   useEffect(() => {
     const filtered = questions.filter((q) => {
       const matchType = typeFilter === "all" || String(q.question_type) === typeFilter;
@@ -35,12 +36,12 @@ const QuizManagementPage = () => {
     setFilteredQuestions(filtered);
   }, [typeFilter, difficultyFilter, questions]);
 
-  // ✅ 문제 삭제
+  // ✅ 문제 삭제 처리
   const handleDelete = async (id) => {
     if (window.confirm("정말 삭제하시겠습니까?")) {
       try {
         await deleteQuestion(id);
-        setQuestions((prev) => prev.filter((q) => q.question_id !== id));
+        await loadQuestions(); // 삭제 후 목록 갱신
       } catch (err) {
         console.error("문제 삭제 중 오류 발생:", err);
         alert("문제 삭제에 실패했습니다.");
@@ -48,9 +49,9 @@ const QuizManagementPage = () => {
     }
   };
 
-  // ✅ 문제 생성 후 상태 반영
-  const handleCreate = (newQuestion) => {
-    setQuestions((prev) => [...prev, newQuestion]);
+  // ✅ 문제 생성 완료 시 목록 갱신 + 다이얼로그 닫기
+  const handleCreate = async () => {
+    await loadQuestions();
     setOpenDialog(false);
   };
 
@@ -94,7 +95,7 @@ const QuizManagementPage = () => {
         ) : (
           filteredQuestions.map((q) => (
             <li
-              key={q.question_id} // ✅ key는 고유 ID로!
+              key={q.question_id}
               className="p-4 bg-white rounded shadow-sm flex justify-between items-start"
             >
               <div>
