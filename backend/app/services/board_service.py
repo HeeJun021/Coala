@@ -7,7 +7,8 @@ from app.models.board import (
     PostReport, CommentReport,
     ProjectApplicant
 )
-from app.models.user import User  # ✅ User 모델 추가
+from app.models.user import User
+from app.models.code import Code, CodeFolder, CodeFolderMapping
 from app.schemas.board import (
     PostCreate, PostResponse,
     CommentCreate, CommentResponse,
@@ -16,7 +17,7 @@ from app.schemas.board import (
     ProjectApplicantCreate, ProjectApplicantResponse
 )
 
-# 포스트 생성
+# 기존 함수들 (변경 없음)
 def create_post(post: PostCreate, db: Session):
     print("받은 데이터:", post.dict())  # ← 여기 추가
     new_post = Post(**post.dict())
@@ -53,11 +54,12 @@ def get_posts(board_type: str, page: int, page_size: int, sort_order: str, db: S
     .outerjoin(accepted_subq, Post.post_id == accepted_subq.c.post_id) \
     .filter(Post.board_type == board_type)
     # 정렬 기준 적용
+
     if sort_order == "좋아요 많은 순":
         query = query.order_by(func.coalesce(like_subq.c.like_count, 0).desc(), Post.created_at.desc())
     elif sort_order == "댓글 많은 순":
         query = query.order_by(func.coalesce(comment_subq.c.comment_count, 0).desc(), Post.created_at.desc())
-    else:  # 최신 순
+    else:
         query = query.order_by(Post.created_at.desc())
 
     posts = query.offset((page - 1) * page_size).limit(page_size).all()
@@ -74,7 +76,6 @@ def get_posts(board_type: str, page: int, page_size: int, sort_order: str, db: S
 
     return {"posts": result, "total": total}
 
-# 포스트 단건 조회 (작성자 닉네임 포함)
 def get_post(post_id: int, db: Session):
     like_subq = db.query(
         PostLike.post_id, func.count(PostLike.user_id).label("like_count")
@@ -114,6 +115,7 @@ def get_post(post_id: int, db: Session):
 
 
 # 포스트 수정
+
 def update_post(post_id: int, post: PostCreate, db: Session):
     existing_post = db.query(Post).filter(Post.post_id == post_id).first()
     if not existing_post:
@@ -124,7 +126,6 @@ def update_post(post_id: int, post: PostCreate, db: Session):
     db.refresh(existing_post)
     return existing_post
 
-# 포스트 삭제
 def delete_post(post_id: int, db: Session):
     post = db.query(Post).filter(Post.post_id == post_id).first()
     if not post:
@@ -132,7 +133,6 @@ def delete_post(post_id: int, db: Session):
     db.delete(post)
     db.commit()
 
-# 댓글 생성
 def create_comment(post_id: int, comment: CommentCreate, db: Session):
     new_comment = Comment(
         post_id=post_id,
@@ -145,7 +145,6 @@ def create_comment(post_id: int, comment: CommentCreate, db: Session):
     db.refresh(new_comment)
     return new_comment
 
-# 댓글 수정
 def update_comment(comment_id: int, comment: CommentCreate, db: Session):
     existing_comment = db.query(Comment).filter(Comment.comment_id == comment_id).first()
     if not existing_comment:
@@ -155,7 +154,6 @@ def update_comment(comment_id: int, comment: CommentCreate, db: Session):
     db.refresh(existing_comment)
     return existing_comment
 
-# 댓글 삭제
 def delete_comment(comment_id: int, db: Session):
     comment = db.query(Comment).filter(Comment.comment_id == comment_id).first()
     if not comment:
@@ -166,11 +164,9 @@ def delete_comment(comment_id: int, db: Session):
     db.delete(comment)
     db.commit()
 
-# 댓글 조회
 def get_comments(post_id: int, db: Session):
     return db.query(Comment).filter(Comment.post_id == post_id).order_by(Comment.created_at).all()
 
-# 포스트 좋아요 등록
 def like_post(payload: PostLikeCreate, db: Session):
     existing = db.query(PostLike).filter_by(post_id=payload.post_id, user_id=payload.user_id).first()
     if existing:
@@ -178,7 +174,6 @@ def like_post(payload: PostLikeCreate, db: Session):
     db.add(PostLike(**payload.dict()))
     db.commit()
 
-# 포스트 좋아요 취소
 def unlike_post(payload: PostLikeCreate, db: Session):
     like = db.query(PostLike).filter_by(post_id=payload.post_id, user_id=payload.user_id).first()
     if not like:
@@ -186,13 +181,11 @@ def unlike_post(payload: PostLikeCreate, db: Session):
     db.delete(like)
     db.commit()
 
-# 포스트 좋아요 조회
 def check_post_liked(post_id: int, user_id: int, db: Session):
     liked = db.query(PostLike).filter_by(post_id=post_id, user_id=user_id).first() is not None
     count = db.query(PostLike).filter_by(post_id=post_id).count()
     return {"liked": liked, "count": count}
 
-# 댓글 좋아요 등록
 def like_comment(payload: CommentLikeCreate, db: Session):
     existing = db.query(CommentLike).filter_by(comment_id=payload.comment_id, user_id=payload.user_id).first()
     if existing:
@@ -200,7 +193,6 @@ def like_comment(payload: CommentLikeCreate, db: Session):
     db.add(CommentLike(**payload.dict()))
     db.commit()
 
-# 댓글 좋아요 취소
 def unlike_comment(payload: CommentLikeCreate, db: Session):
     existing = db.query(CommentLike).filter_by(comment_id=payload.comment_id, user_id=payload.user_id).first()
     if not existing:
@@ -208,13 +200,11 @@ def unlike_comment(payload: CommentLikeCreate, db: Session):
     db.delete(existing)
     db.commit()
 
-# 댓글 좋아요 조회
 def check_comment_liked(comment_id: int, user_id: int, db: Session):
     liked = db.query(CommentLike).filter_by(comment_id=comment_id, user_id=user_id).first() is not None
     count = db.query(CommentLike).filter_by(comment_id=comment_id).count()
     return {"liked": liked, "count": count}
 
-# 포스트 신고
 def report_post(payload: PostReportCreate, db: Session):
     existing = db.query(PostReport).filter_by(post_id=payload.post_id, user_id=payload.user_id).first()
     if existing:
@@ -222,7 +212,6 @@ def report_post(payload: PostReportCreate, db: Session):
     db.add(PostReport(**payload.dict()))
     db.commit()
 
-# 댓글 신고
 def report_comment(payload: CommentReportCreate, db: Session):
     existing = db.query(CommentReport).filter_by(comment_id=payload.comment_id, user_id=payload.user_id).first()
     if existing:
@@ -294,3 +283,91 @@ def update_applicant_status(applicant_id: int, status: str, db: Session):
 # 수락된 지원자 수 조회 함수
 def get_accepted_count(post_id: int, db: Session):
     return db.query(ProjectApplicant).filter_by(post_id=post_id, status="수락").count()
+# 코드 가져오기 함수 추가
+def import_code(post_id: int, user_id: int, db: Session):
+    # 게시글 조회
+    post = db.query(Post).filter(Post.post_id == post_id).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="게시글을 찾을 수 없습니다.")
+    
+    # 사용자 조회
+    user = db.query(User).filter(User.user_id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+    
+    # 루트 폴더 조회/생성
+    root_folder = db.query(CodeFolder).filter(
+        CodeFolder.user_id == user_id,
+        CodeFolder.parent_folder_id.is_(None)
+    ).first()
+    if not root_folder:
+        root_folder = CodeFolder(
+            user_id=user_id,
+            folder_name="내 코드",
+            user_folder_index=1,
+            parent_folder_id=None,
+            created_at=func.now()
+        )
+        db.add(root_folder)
+        db.commit()
+        db.refresh(root_folder)
+    
+    # 폴더 이름 생성 (홍길동님의 코드)
+    base_folder_name = f"{user.nickname}님의 코드"
+    folder_name = base_folder_name
+    existing_folders = db.query(CodeFolder).filter(
+        CodeFolder.parent_folder_id == root_folder.folder_id,
+        CodeFolder.folder_name.like(f"{base_folder_name}%")
+    ).all()
+    if existing_folders:
+        folder_name = f"{base_folder_name}({len(existing_folders) + 1})"
+    
+    # 새 폴더 생성
+    max_index = db.query(func.max(CodeFolder.user_folder_index)).filter(CodeFolder.user_id == user_id).scalar() or 0
+    folder = CodeFolder(
+        user_id=user_id,
+        user_folder_index=max_index + 1,
+        folder_name=folder_name,
+        parent_folder_id=root_folder.folder_id,
+        created_at=func.now()
+    )
+    db.add(folder)
+    db.commit()
+    db.refresh(folder)
+    
+    # 언어 매핑
+    ext_map = {
+        "javascript": 3,
+        "python": 4,
+        "html": 1,
+        "css": 2,
+        "jsx": 3,
+        "vue": 3,
+        "json": 5,
+        "txt": 5
+    }
+    language_id = ext_map.get(post.code_language.lower() if post.code_language else "javascript", 5)
+    
+    # 코드 파일 생성
+    code = Code(
+        user_id=user_id,
+        title=post.code_filename or f"{post.title}.js",
+        content=post.code or "",
+        language_id=language_id,
+        created_at=func.now(),
+        updated_at=func.now()
+    )
+    db.add(code)
+    db.commit()
+    db.refresh(code)
+    
+    # 폴더와 코드 매핑
+    mapping = CodeFolderMapping(
+        folder_id=folder.folder_id,
+        code_id=code.code_id,
+        updated_at=func.now()
+    )
+    db.add(mapping)
+    db.commit()
+    
+    return {"folder_id": folder.folder_id, "code_id": code.code_id}

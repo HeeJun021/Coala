@@ -10,8 +10,13 @@ export const getBoardList = async (boardType, page = 1, sortOrder = "최신 순"
 
 // ✅ 게시글 상세 조회
 export const getBoardDetail = async (postId) => {
-  const response = await apiClient.get(`/board/post/${postId}`);
-  return response.data;
+  try {
+    const response = await apiClient.get(`/board/post/${postId}`);
+    return response.data;
+  } catch (error) {
+    console.error("getBoardDetail error:", error.response?.data || error.message);
+    throw error;
+  }
 };
 
 // ✅ 게시글 생성 (필수 필드 포함)
@@ -20,9 +25,11 @@ export const createBoard = async ({
   title,
   content,
   user_id,
-  code = "",            // ✅ 누락 방지
-  image_url = "",       // ✅ 누락 방지
-  recruit_limit = 1     // ✅ 기본값 설정
+  code = "",
+  image_url = "",
+  recruit_limit = 1,
+  code_filename = "",
+  code_language = "javascript",
 }) => {
   const response = await apiClient.post(
     `/board/posts`,
@@ -34,6 +41,8 @@ export const createBoard = async ({
       code,
       image_url,
       recruit_limit,
+      code_filename,
+      code_language,
     },
     {
       headers: {
@@ -45,10 +54,19 @@ export const createBoard = async ({
 };
 
 // ✅ 게시글 수정
-export const updateBoard = async (postId, { title, content }) => {
+export const updateBoard = async(postId, {
+  title,
+  content,
+  code = "",
+  code_filename = "",
+  code_language = "javascript"
+}) => {
   return await apiClient.put(`/board/post/${postId}`, {
     title,
     content,
+    code,
+    code_filename,
+    code_language,
   });
 };
 

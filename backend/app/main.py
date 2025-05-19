@@ -43,6 +43,7 @@ from app.routers import (
     chat_upload,
     chat_download,
     gpt,
+    project
 )
 
 from app.schemas.user import UserUpdateSchema
@@ -108,6 +109,7 @@ app.mount("/static", StaticFiles(directory="uploaded_files"), name="static")
 # gpt
 app.include_router(gpt.router, prefix="/gpt", tags=["gpt"])
 
+app.include_router(project.router)
 # 기본 라우트
 @app.get("/", tags=["Root"])
 def read_root():

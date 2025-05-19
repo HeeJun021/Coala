@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { Editor } from "@toast-ui/react-editor";
 import { useAuth } from "../context/AuthContext";
 import { createBoard } from "../api/boardApi";
@@ -10,9 +10,13 @@ const BoardWritePage = () => {
   const { boardType } = useParams();
   const navigate = useNavigate();
 
-  const [title, setTitle] = useState("");
   const [recruitLimit, setRecruitLimit] = useState(""); // 사용자 입력 (문자열)
   const editorRef = useRef();
+  const location = useLocation();
+  const [title, setTitle] = useState(location.state?.codeTitle || "");
+  const [content, setContent] = useState("");
+  const [codeFilename, setCodeFilename] = useState(location.state?.codeTitle || "");
+  const codeEditorRef = useRef();
 
   useEffect(() => {
     if (!user) {
@@ -21,13 +25,38 @@ const BoardWritePage = () => {
     }
   }, [user, navigate]);
 
+  useEffect(() => {
+    if (boardType === "code" && location.state?.codeContent && codeEditorRef.current) {
+      codeEditorRef.current.getInstance().setMarkdown(location.state.codeContent);
+    }
+  }, [boardType, location.state]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const content =
+    const textContent = content.trim();
+    const codeContent =
       boardType === "code"
-        ? editorRef.current.getInstance().getMarkdown()
-        : editorRef.current.value;
+        ? codeEditorRef.current.getInstance().getMarkdown().trim()
+        : "";
+    const filename = codeFilename.trim() || "code.js";
+
+    if (!title.trim()) {
+      alert("제목을 입력하세요.");
+      return;
+    }
+    if (boardType === "code" && !codeContent) {
+      alert("코드를 입력하세요.");
+      return;
+    }
+
+    const extMap = {
+      ".js": "javascript",
+      ".py": "python",
+      ".html": "html",
+      ".css": "css",
+    };
+    const ext = filename.includes(".") ? filename.split(".").pop() : "js";
+    const codeLanguage = extMap[`.${ext}`] || "javascript";
 
     // 숫자 변환 및 유효성 처리
     const recruitLimitNumber =
@@ -38,11 +67,11 @@ const BoardWritePage = () => {
     const payload = {
       boardType: boardType, // ✅ 여기서 수정됨
       title,
-      content,
+      content: textContent,
+      code: codeContent,
       user_id: user.user_id,
-      code: "",
-      image_url: "",
-      recruit_limit: boardType === "project" ? recruitLimitNumber : 1,
+      code_filename: filename,
+      code_language: codeLanguage,
     };
 
     console.log("✅ 보내는 payload:", payload);
@@ -83,37 +112,32 @@ const BoardWritePage = () => {
           required
         />
 
-        {boardType === "project" && (
-          <div>
-            <label className="block mb-1 text-sm font-medium">모집 인원 수</label>
-            <input
-              type="number"
-              min="1"
-              placeholder="예: 3"
-              value={recruitLimit}
-              onChange={(e) => setRecruitLimit(e.target.value)}
-              className="w-full border p-2"
-              required
-            />
-          </div>
-        )}
+        <textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="본문을 입력하세요"
+          className="w-full border p-2 h-60"
+        />
 
-        {boardType === "code" ? (
-          <Editor
-            ref={editorRef}
-            initialValue=""
-            previewStyle="vertical"
-            height="400px"
-            initialEditType="markdown"
-            useCommandShortcut={true}
-          />
-        ) : (
-          <textarea
-            ref={editorRef}
-            placeholder="내용을 입력하세요"
-            className="w-full border p-2 h-60"
-            required
-          />
+        {boardType === "code" && (
+          <>
+            <input
+              type="text"
+              placeholder="코드 파일 이름 (예: main.js)"
+              value={codeFilename}
+              onChange={(e) => setCodeFilename(e.target.value)}
+              className="w-full border p-2"
+            />
+            <Editor
+              ref={codeEditorRef}
+              initialValue=""
+              previewStyle="vertical"
+              height="400px"
+              initialEditType="markdown"
+              useCommandShortcut={true}
+              placeholder="코드를 입력하세요"
+            />
+          </>
         )}
 
         <div className="flex gap-2">

@@ -15,6 +15,8 @@ class Post(Base):
     content = Column(Text, nullable=False)
     code = Column(Text)
     image_url = Column(Text)
+    code_filename = Column(String(255))  # 추가
+    code_language = Column(String(50))   # 추가
     view_count = Column(Integer, default=0)
     like_count = Column(Integer, default=0)
     comment_count = Column(Integer, default=0)
@@ -29,7 +31,6 @@ class Post(Base):
     user = relationship("User", back_populates="posts")
     comments = relationship("Comment", back_populates="post", cascade="all, delete")
     applicants = relationship("ProjectApplicant", back_populates="post", cascade="all, delete")  # ✅ 추가
-
 
 class Comment(Base):
     __tablename__ = 'comments'
@@ -47,20 +48,17 @@ class Comment(Base):
     user = relationship("User")
     replies = relationship("Comment", remote_side=[comment_id])
 
-
 class PostLike(Base):
     __tablename__ = 'post_likes'
 
     post_id = Column(Integer, ForeignKey('posts.post_id', ondelete="CASCADE"), primary_key=True)
     user_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), primary_key=True)
 
-
 class CommentLike(Base):
     __tablename__ = 'comment_likes'
 
     comment_id = Column(Integer, ForeignKey('comments.comment_id', ondelete="CASCADE"), primary_key=True)
     user_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), primary_key=True)
-
 
 class PostReport(Base):
     __tablename__ = 'post_reports'
@@ -70,7 +68,6 @@ class PostReport(Base):
     user_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"))
     reason = Column(Text, nullable=False)
     created_at = Column(DateTime, server_default=func.now())
-
 
 class CommentReport(Base):
     __tablename__ = 'comment_reports'
@@ -98,3 +95,4 @@ class ProjectApplicant(Base):
 
     post = relationship("Post", back_populates="applicants")
     user = relationship("User")
+    created_at = Column(DateTime, server_default=func.now())
