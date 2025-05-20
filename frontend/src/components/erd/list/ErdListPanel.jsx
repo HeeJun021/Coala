@@ -1,19 +1,31 @@
 import React, { useState } from "react";
 import ErdCard from "./ErdCard";
 import ErdAddCard from "./ErdAddCard";
-import CreateErdModal from "./CreateErdModal"; // 🧩 모달 import
+import CreateErdModal from "./CreateErdModal";
+import { createErd } from "../../../api/erdApi";
 
-const ErdListPanel = ({ erds, onSelect }) => {
+const ErdListPanel = ({ erds, onSelect, onRefresh, project }) => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const safeErds = erds || [];
+  const projectId = project?.project_id;
 
-  const handleCreate = (data) => {
-    console.log("생성할 ERD:", data);
-    // 실제 생성 API 호출 예정이면 여기서 실행
-    setShowCreateModal(false);
+  const handleCreate = async (data) => {
+    if (!projectId) {
+      alert("project_id를 찾을 수 없습니다.");
+      return;
+    }
+
+    try {
+      await createErd(projectId, data);
+      alert("ERD 생성 완료");
+      setShowCreateModal(false);
+      onRefresh?.();
+    } catch (error) {
+      alert("ERD 생성 실패");
+      console.error(error);
+    }
   };
 
-  // ERD가 없는 경우
   if (safeErds.length === 0) {
     return (
       <>
@@ -36,13 +48,18 @@ const ErdListPanel = ({ erds, onSelect }) => {
     );
   }
 
-  // ERD가 있는 경우
   return (
     <>
-      <div className="p-6">
-        <div className="grid grid-cols-2 gap-6">
+      <div className="p-6 flex justify-center">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {safeErds.map((erd) => (
-            <ErdCard key={erd.erd_id} erd={erd} onSelect={onSelect} />
+            <ErdCard
+              key={erd.erd_id}
+              erd={erd}
+              onSelect={onSelect}
+              onDelete={onRefresh}
+              project={project}
+            />
           ))}
           <ErdAddCard onClick={() => setShowCreateModal(true)} />
         </div>

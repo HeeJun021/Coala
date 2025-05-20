@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import ProjectDetailPanel from "./ProjectDetailPanel";
 import { updateProject, getMyProjects } from "../../api/projectApi";
+import { getErds } from "../../api/erdApi";
 import ErdListPanel from "../erd/list/ErdListPanel";
 
 const WIDGET_TABS = [
@@ -18,6 +19,7 @@ const ProjectWidgetTabs = ({ project }) => {
   const [enabledTabs, setEnabledTabs] = useState(["overview"]);
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [currentProject, setCurrentProject] = useState(project);
+  const [erds, setErds] = useState([]);
 
   useEffect(() => {
     const initialTabs = ["overview"];
@@ -57,6 +59,21 @@ const ProjectWidgetTabs = ({ project }) => {
     setShowAddMenu(false);
   };
 
+  const loadErds = useCallback(async () => {
+    try {
+      const res = await getErds(project.project_id);
+      setErds(res);
+    } catch (err) {
+      console.error("ERD 목록 조회 실패", err);
+    }
+  }, [project.project_id]);
+
+  useEffect(() => {
+    if (project?.project_id) {
+      loadErds();
+    }
+  }, [project, loadErds]);
+
   const handleUpdate = async () => {
     try {
       const projects = await getMyProjects();
@@ -84,7 +101,14 @@ const ProjectWidgetTabs = ({ project }) => {
           />
         );
       case "erd":
-        return <ErdListPanel project={currentProject} />;
+        return (
+          <ErdListPanel
+            project={currentProject}
+            erds={erds} // ✅ ERD 목록 전달
+            onRefresh={loadErds} // ✅ 생성 후 목록 새로고침용
+            onSelect={() => {}} // ✅ 필요 시 선택 핸들러
+          />
+        );
       default:
         return (
           <div className="p-10 text-gray-500 text-sm">
