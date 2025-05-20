@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { FaPlus, FaTimes } from "react-icons/fa";
 import ErdColumnRow from "./ErdColumnRow";
 import { v4 as uuidv4 } from "uuid";
-import { useDragColumn } from "./drag/useDragColumn";
+import { useDragColumn } from "../drag/useDragColumn";
 
 const ErdTableBox = ({
   id,

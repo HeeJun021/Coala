@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import ProjectHeader from "../components/erd/ProjectHeader";
-import ErdListSidebar from "../components/erd/ErdListSidebar";
-import ErdCanvas from "../components/erd/ErdCanvas";
+import ProjectHeader from "../components/erd/canvas/ProjectHeader";
+import ErdListSidebar from "../components/erd/canvas/ErdListSidebar";
+import ErdCanvas from "../components/erd/canvas/ErdCanvas";
 import CodeGeneratorPanel from "../components/erd/CodeGeneratorPanel";
 
 const ErdPage = () => {

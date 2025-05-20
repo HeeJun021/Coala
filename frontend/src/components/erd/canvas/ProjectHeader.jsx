@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import Toast from "../Toast";
-import CodeConvertHeaderPanel from "./CodeConvertHeaderPanel";
+import Toast from "../../Toast";
+import CodeConvertHeaderPanel from "../CodeConvertHeaderPanel";
 
 const ProjectHeader = ({
   projectName,

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import ProjectDetailPanel from "./ProjectDetailPanel";
 import { updateProject, getMyProjects } from "../../api/projectApi";
+import ErdListPanel from "../erd/list/ErdListPanel";
 
 const WIDGET_TABS = [
   { key: "overview", label: "개요" },
@@ -38,7 +39,9 @@ const ProjectWidgetTabs = ({ project }) => {
           widgets: updatedWidgets,
         });
         const projects = await getMyProjects();
-        const updatedProject = projects.find((p) => p.project_id === currentProject.project_id);
+        const updatedProject = projects.find(
+          (p) => p.project_id === currentProject.project_id
+        );
         setCurrentProject(updatedProject);
         const newTabs = ["overview"];
         Object.keys(updatedProject.widgets).forEach((widgetKey) => {
@@ -57,7 +60,9 @@ const ProjectWidgetTabs = ({ project }) => {
   const handleUpdate = async () => {
     try {
       const projects = await getMyProjects();
-      const updatedProject = projects.find((p) => p.project_id === currentProject.project_id);
+      const updatedProject = projects.find(
+        (p) => p.project_id === currentProject.project_id
+      );
       setCurrentProject(updatedProject);
       const newTabs = ["overview"];
       Object.keys(updatedProject.widgets).forEach((widgetKey) => {
@@ -72,11 +77,21 @@ const ProjectWidgetTabs = ({ project }) => {
   const renderTabContent = () => {
     switch (activeTab) {
       case "overview":
-        return <ProjectDetailPanel project={currentProject} onUpdate={handleUpdate} />;
+        return (
+          <ProjectDetailPanel
+            project={currentProject}
+            onUpdate={handleUpdate}
+          />
+        );
+      case "erd":
+        return <ErdListPanel project={currentProject} />;
       default:
         return (
           <div className="p-10 text-gray-500 text-sm">
-            <p>🚧 `{WIDGET_TABS.find((t) => t.key === activeTab)?.label}` 탭은 준비 중입니다.</p>
+            <p>
+              🚧 `{WIDGET_TABS.find((t) => t.key === activeTab)?.label}` 탭은
+              준비 중입니다.
+            </p>
           </div>
         );
     }
