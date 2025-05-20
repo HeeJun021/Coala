@@ -18,10 +18,10 @@ const UserQuizResultPage = ({ userData }) => {
 
       try {
         const response = await getUserQuizResult(uq_submission_id);
-        console.log("✅ 사용자 퀴즈 결과:", response);
+        console.log("사용자 퀴즈 결과:", response);
         setQuizResult(response);
       } catch (err) {
-        console.error("🚨 퀴즈 결과 불러오기 실패:", err);
+        console.error("퀴즈 결과 불러오기 실패:", err);
         setError("퀴즈 결과를 불러오는 중 오류가 발생했습니다.");
       } finally {
         setLoading(false);
@@ -38,60 +38,75 @@ const UserQuizResultPage = ({ userData }) => {
   return (
     <div className="bg-white min-h-screen py-10 px-4">
       <div className="max-w-4xl mx-auto">
+        {/* 제목 */}
         <h2 className="text-3xl font-bold text-center mb-4 text-gray-900">
           {quizResult.title}
         </h2>
-        <p className="text-center text-gray-700 text-lg mb-8">
-          정답 개수: {quizResult.correct_count} / {quizResult.questions.length}
-        </p>
 
+        {/* 정답 개수 */}
+        <div className="text-center mb-8">
+          <p className="text-lg text-gray-800">
+            <strong>정답 개수:</strong> {quizResult.correct_count} / {quizResult.questions.length}
+          </p>
+        </div>
+
+        {/* 문제 리스트 */}
         <div className="space-y-6">
           {quizResult.questions.map((q, index) => (
             <div
               key={index}
-              className={`border shadow-sm rounded-xl p-6 ${
-                q.is_correct ? "border-green-300 bg-green-50" : "border-red-300 bg-red-50"
-              }`}
+              className="relative border border-gray-200 shadow-sm rounded-xl p-6"
             >
-              <p className="text-lg font-bold text-gray-900 mb-2">
-                문제 {index + 1}{" "}
-                {q.question_type === 1
-                  ? "(O/X)"
-                  : q.question_type === 2
-                  ? "(객관식)"
-                  : "(단답형)"}
-              </p>
-              <p className="text-gray-800 mb-3">{q.question_text}</p>
+              {/* 좌측 색 바 */}
+              <div
+                className={`absolute top-0 left-0 h-full w-2 rounded-l-xl ${
+                  q.is_correct ? "bg-green-400" : "bg-red-400"
+                }`}
+              ></div>
 
-              <div className="mb-2 text-sm">
-                <span className="font-medium text-gray-700">제출한 정답: </span>
-                <span className={q.is_correct ? "text-green-600" : "text-red-600"}>
-                  {q.user_answer}
-                </span>
-              </div>
+              <div className="pl-4">
+                <p className="text-lg font-semibold text-gray-900 mb-2">
+                  문제 {index + 1} (
+                  {q.question_type === 1
+                    ? "O/X"
+                    : q.question_type === 2
+                    ? "객관식"
+                    : "단답형"}
+                  )
+                </p>
+                <p className="text-gray-800 mb-3">{q.question_text}</p>
 
-              <div className="mb-2 text-sm">
-                <span className="font-medium text-gray-700">정답: </span>
-                <span className="text-blue-600">{q.correct_answer}</span>
-              </div>
+                <div className="mb-2 text-sm">
+                  <span className="font-medium text-gray-700">제출한 정답: </span>
+                  <span className={q.is_correct ? "text-green-600" : "text-red-600"}>
+                    {q.user_answer}
+                  </span>
+                </div>
 
-              <div className="text-sm text-gray-700">
-                <span className="font-medium">해설:</span>{" "}
-                {q.explanation || "해설이 제공되지 않았습니다."}
+                <div className="mb-2 text-sm">
+                  <span className="font-medium text-gray-700">정답: </span>
+                  <span className="text-blue-600">{q.correct_answer}</span>
+                </div>
+
+                <div className="text-sm text-gray-700">
+                  <span className="font-medium">해설:</span>{" "}
+                  {q.explanation || "해설이 제공되지 않았습니다."}
+                </div>
               </div>
             </div>
           ))}
         </div>
 
+        {/* 하단 버튼 */}
         <div className="mt-10 flex justify-center gap-4">
           <button
-            className="px-6 py-2 border border-navbar text-navbar font-semibold rounded-lg hover:bg-[#f1f9f1] transition"
+            className="px-6 py-2 rounded-lg border border-navbar text-navbar font-semibold hover:bg-[#f1f9f1] transition"
             onClick={() => navigate(`/user-quiz-solve/${quizResult.userquiz_id}`)}
           >
             다시 풀기
           </button>
           <button
-            className="px-6 py-2 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition"
+            className="px-6 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition"
             onClick={() => navigate("/mypage/userquiz-history")}
           >
             마이페이지로 이동

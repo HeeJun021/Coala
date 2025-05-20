@@ -28,6 +28,7 @@ from app.routers import (
     user_quiz,
     wrong_note,
     languages,
+    code,
     coding_tests,
     coding_test_case,
     coding_test_submission,
@@ -36,11 +37,15 @@ from app.routers import (
     code_runner,
     code_terminal,
     board,
+    preview,
+    github,
     chat_rest,
     chat_upload,
     chat_download,
-    gpt
+    gpt,
+    project
 )
+
 from app.schemas.user import UserUpdateSchema
 from datetime import datetime
 from sqlalchemy import text
@@ -87,6 +92,9 @@ app.include_router(coding_test_submission.router)
 app.include_router(code_runner.router)
 app.include_router(code_terminal.router)
 app.include_router(code_execution.router, prefix="/code")  # WebSocket용이면 prefix 유지 가능
+app.include_router(code.router)
+app.include_router(preview.router)
+app.include_router(github.router)
 
 # 채팅
 app.include_router(chat_ws.router)
@@ -101,7 +109,9 @@ app.mount("/static", StaticFiles(directory="uploaded_files"), name="static")
 # gpt
 app.include_router(gpt.router, prefix="/gpt", tags=["gpt"])
 
+app.include_router(project.router)
 # 기본 라우트
 @app.get("/", tags=["Root"])
 def read_root():
     return {"message": "FastAPI is running!"}
+

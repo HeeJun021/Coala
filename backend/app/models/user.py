@@ -18,6 +18,7 @@ class User(Base):
     tier_id = Column(Integer, ForeignKey("user_tiers.tier_id"), default=1)  
     dailycheck = Column(Boolean, default=False)
     email_verified = Column(Boolean, default=False)
+    github_access_token = Column(String, nullable=True)  # GitHub 액세스 토큰 추가
     
     created_at = Column(TIMESTAMP, server_default=func.now())  # ✅ `CURRENT_TIMESTAMP` → `func.now()`로 변경
     updated_at = Column(TIMESTAMP, default=func.now(), onupdate=func.now())  # ✅ 수정된 시간 자동 업데이트

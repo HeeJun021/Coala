@@ -1,0 +1,70 @@
+import React from "react";
+import SelfCodingExplorerPanel from "./SelfCodingExplorerPanel";
+import SelfCodingGitPanel from "./SelfCodingGitPanel";
+
+const SelfCodingPanel = ({
+  activePanel,
+  navigate,
+  templateId,
+  setTemplateId,
+  folders,
+  setFolders,
+  tabs,
+  setTabs,
+  activeTab,
+  setActiveTab,
+  setActiveTabId,
+  previewTabs,
+  setPreviewTabs,
+  activePreviewTab,
+  setActivePreviewTab,
+  previewSrcDoc,
+  setPreviewSrcDoc,
+  selectedFilename,
+  setSelectedFilename,
+  selectedFileContent,
+  setSelectedFileContent,
+  location,
+  templateFiles,
+  templateDescriptions,
+  isGithubConnected,
+  reloadFolderTree,
+}) => {
+  return (
+    <div className="w-64 bg-[#f3f3f3] border-r border-gray-300 h-full overflow-auto">
+      {activePanel === "explorer" && (
+        <SelfCodingExplorerPanel
+          navigate={navigate}
+          templateId={templateId}
+          setTemplateId={setTemplateId}
+          folders={folders}
+          setFolders={setFolders}
+          tabs={tabs}
+          setTabs={setTabs}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          setActiveTabId={setActiveTabId}
+          previewTabs={previewTabs}
+          setPreviewTabs={setPreviewTabs}
+          activePreviewTab={activePreviewTab}
+          setActivePreviewTab={setActivePreviewTab}
+          previewSrcDoc={previewSrcDoc}
+          setPreviewSrcDoc={setPreviewSrcDoc}
+          selectedFilename={selectedFilename}
+          setSelectedFilename={setSelectedFilename}
+          selectedFileContent={selectedFileContent}
+          setSelectedFileContent={setSelectedFileContent}
+          location={location}
+          templateFiles={templateFiles}
+          templateDescriptions={templateDescriptions}
+          reloadFolderTree={reloadFolderTree}
+        />
+      )}
+      {activePanel === "git" && (
+        <SelfCodingGitPanel isGithubConnected={isGithubConnected} />
+      )}
+    </div>
+  );
+};
+
+export default SelfCodingPanel;

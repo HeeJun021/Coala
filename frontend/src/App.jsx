@@ -56,9 +56,24 @@ import BoardPage from "./pages/BoardPage";
 import BoardDetailPage from "./pages/BoardDetailPage";
 import BoardWritePage from "./pages/BoardWritePage";
 import BoardEditPage from "./pages/BoardEditPage";
+import ProjectApplicantsPage from "./pages/ProjectApplicantsPage"; // ✅ 지원자 목록 페이지
+
+// 자율학습
+import SelfCodingPage from "./pages/SelfCodingPage";
+import SelfCodingTemplatePage from "./pages/SelfCodingTemplatePage";
+
+//팀프로젝트
+import TeamProjectPage from "./pages/TeamProjectPage";
 
 // ERD UI
 import ErdPage from "./pages/ErdPage";
+
+const observerError = /ResizeObserver loop completed/;
+window.addEventListener("error", (e) => {
+  if (observerError.test(e.message)) {
+    e.stopImmediatePropagation();
+  }
+});
 
 const BodyClassManager = () => {
   const location = useLocation();
@@ -120,6 +135,13 @@ const App = () => {
         <ChatSocketProvider>
           <BodyClassManager />
           <Routes>
+            {/* 자율코딩 */}
+            <Route path="/self-coding" element={<SelfCodingPage />} />
+            <Route
+              path="/self-coding/templates"
+              element={<SelfCodingTemplatePage />}
+            />
+
             {/* 코딩 테스트 전체화면 전용 */}
             <Route path="/codingtest/:id" element={<CodingTestDetailPage />} />
             <Route
@@ -229,6 +251,9 @@ const App = () => {
                       element={<MyPageUserQuizHistory userData={userData} />}
                     />
 
+                    {/* 팀프로젝트 */}
+                    <Route path="/team-project" element={<TeamProjectPage />} />
+
                     {/* 게시판 */}
                     <Route path="/board/:boardType" element={<BoardPage />} />
                     <Route
@@ -242,6 +267,10 @@ const App = () => {
                     <Route
                       path="/board/:boardType/edit/:postId"
                       element={<BoardEditPage />}
+                    />
+                    <Route
+                      path="/board/:boardType/applicants/:postId"
+                      element={<ProjectApplicantsPage />}
                     />
                     <Route
                       path="/board"

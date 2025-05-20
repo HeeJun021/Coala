@@ -3,13 +3,14 @@ from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User
+from app.models.social_login import SocialLogin
 from app.config import settings
 from typing import Optional
 
-def get_current_user(request: Request, db: Session = Depends(get_db)) -> Optional[User]:
+def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
     token = request.cookies.get("access_token")  # 🍪 쿠키에서 access_token 꺼냄
     if token is None:
-        return None  # 로그인 안 되어 있어도 None 반환하게
+        raise HTTPException(status_code=401, detail="Access token missing")
 
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
@@ -22,6 +23,16 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> Optiona
     user = db.query(User).filter(User.user_id == user_id).first()
     if user is None:
         raise HTTPException(status_code=401, detail="User not found")
+
+    # GitHub 액세스 토큰 설정 (SocialLogin에서 가져옴)
+    social_login = db.query(SocialLogin).filter(
+        SocialLogin.user_id == user_id,
+        SocialLogin.provider == "github"
+    ).first()
+    if social_login and social_login.access_token:
+        user.github_access_token = social_login.access_token
+
+    return user  # ✅ github_access_token이 포함된 User 객체 반환
     return user
 
 # WebSocket용 인증
