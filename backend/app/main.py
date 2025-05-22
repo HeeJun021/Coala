@@ -44,6 +44,8 @@ from app.routers import (
     chat_download,
     gpt,
     admin,
+    project,
+    erd
 )
 
 from app.schemas.user import UserUpdateSchema
@@ -111,8 +113,13 @@ app.include_router(gpt.router, prefix="/gpt", tags=["gpt"])
 
 #내가 관리자다.
 app.include_router(admin.router)
+app.include_router(project.router)
+
+# 프로젝트의 erd
+app.include_router(erd.router)
 
 # 기본 라우트
 @app.get("/", tags=["Root"])
 def read_root():
     return {"message": "FastAPI is running!"}
+
