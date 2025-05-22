@@ -1,9 +1,11 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import List, Optional
+
 
 class ErdCreate(BaseModel):
     name: str
     description: Optional[str] = None
+
 
 class ErdResponse(BaseModel):
     erd_id: int
@@ -17,3 +19,133 @@ class ErdResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# erd details
+class ErdColumnOut(BaseModel):
+    column_id: int
+    name: str
+    data_type: str
+    is_primary: bool
+    is_foreign: bool
+    is_not_null: bool
+    default_value: Optional[str]
+    column_order: int
+
+    model_config = {"from_attributes": True}
+
+
+class ErdTableOut(BaseModel):
+    table_id: int
+    name: str
+    pos_x: int
+    pos_y: int
+    description: Optional[str] = None
+    columns: List[ErdColumnOut]
+
+    model_config = {"from_attributes": True}
+
+
+class ErdRelationOut(BaseModel):
+    relation_id: int
+    source_table_id: int
+    source_column_id: int
+    target_table_id: int
+    target_column_id: int
+    relation_type: str
+
+
+class ErdDetailOut(BaseModel):
+    erd_id: int
+    name: str
+    description: Optional[str]
+    project_id: int
+    tables: List[ErdTableOut]
+    relations: List[ErdRelationOut]
+
+
+# 테이블 생성
+class ErdTableCreate(BaseModel):
+    name: str
+    pos_x: int
+    pos_y: int
+    description: Optional[str] = None
+
+
+class ErdTableOut(BaseModel):
+    table_id: int
+    name: str
+    pos_x: int
+    pos_y: int
+    description: Optional[str]
+    columns: List[ErdColumnOut] = []
+
+
+# 속성 추가
+class ErdColumnCreate(BaseModel):
+    name: str
+    data_type: str
+    is_primary: bool = False
+    is_foreign: bool = False
+    is_not_null: bool = False
+    default_value: Optional[str] = None
+    column_order: int
+
+
+# 테이블 간 관계
+class ErdRelationCreate(BaseModel):
+    source_table_id: int
+    source_column_id: int
+    target_table_id: int
+    target_column_id: int
+    relation_type: str
+
+
+class ErdRelationOut(BaseModel):
+    relation_id: int
+    source_table_id: int
+    source_column_id: int
+    target_table_id: int
+    target_column_id: int
+    relation_type: str
+
+
+# 다중 삭제
+class ErdBulkDeleteRequest(BaseModel):
+    table_ids: list[int] = []
+    column_ids: list[int] = []
+    relation_ids: list[int] = []
+
+
+# 🔧 변경용 테이블/컬럼/관계
+class ErdTableUpdate(BaseModel):
+    table_id: int
+    name: Optional[str] = None
+    pos_x: Optional[int] = None
+    pos_y: Optional[int] = None
+    description: Optional[str] = None
+
+
+class ErdColumnUpdate(BaseModel):
+    column_id: int
+    name: Optional[str] = None
+    data_type: Optional[str] = None
+    is_primary: Optional[bool] = None
+    is_foreign: Optional[bool] = None
+    is_not_null: Optional[bool] = None
+    default_value: Optional[str] = None
+    column_order: Optional[int] = None
+
+
+class ErdRelationUpdate(BaseModel):
+    relation_id: int
+    relation_type: Optional[str] = None
+    auto_create_fk: Optional[bool] = None
+    cascade_delete: Optional[bool] = None
+
+
+# 🧩 전체 요청 바디
+class ErdSyncRequest(BaseModel):
+    updated_tables: List[ErdTableUpdate] = []
+    updated_columns: List[ErdColumnUpdate] = []
+    updated_relations: List[ErdRelationUpdate] = []

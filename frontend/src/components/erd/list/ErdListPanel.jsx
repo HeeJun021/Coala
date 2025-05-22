@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import ErdCard from "./ErdCard";
 import ErdAddCard from "./ErdAddCard";
 import CreateErdModal from "./CreateErdModal";
-import { createErd } from "../../../api/erdApi";
+import { createErd } from "../../../api/erd/erdApi";
 
 const ErdListPanel = ({ erds, onSelect, onRefresh, project }) => {
   const [showCreateModal, setShowCreateModal] = useState(false);

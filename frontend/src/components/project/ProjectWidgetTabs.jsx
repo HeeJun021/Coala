@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import ProjectDetailPanel from "./ProjectDetailPanel";
 import { updateProject, getMyProjects } from "../../api/projectApi";
-import { getErds } from "../../api/erdApi";
+import { getErds } from "../../api/erd/erdApi";
 import ErdListPanel from "../erd/list/ErdListPanel";
 
 const WIDGET_TABS = [

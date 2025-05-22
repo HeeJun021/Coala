@@ -4,7 +4,7 @@ import { FaThumbtack } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { AiOutlineCalendar, AiOutlineDatabase } from "react-icons/ai";
 import { BsClockHistory } from "react-icons/bs";
-import { deleteErd } from "../../../api/erdApi";
+import { deleteErd } from "../../../api/erd/erdApi";
 
 const ErdCard = ({ erd, onDelete, project }) => {
   const navigate = useNavigate(); // ✅ 추가

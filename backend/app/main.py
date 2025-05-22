@@ -44,7 +44,8 @@ from app.routers import (
     chat_download,
     gpt,
     project,
-    erd
+    erd,
+    erd_detail
 )
 
 from app.schemas.user import UserUpdateSchema
@@ -114,6 +115,7 @@ app.include_router(project.router)
 
 # 프로젝트의 erd
 app.include_router(erd.router)
+app.include_router(erd_detail.router)
 
 # 기본 라우트
 @app.get("/", tags=["Root"])

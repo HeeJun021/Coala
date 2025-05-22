@@ -1,5 +1,5 @@
 // api/erdApi.js
-import apiClient from "./apiClient";
+import apiClient from "../apiClient";
 
 // 1. ERD 목록 조회
 export const getErds = async (projectId) => {
