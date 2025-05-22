@@ -84,7 +84,7 @@ const BodyClassManager = () => {
     const isFullscreenRoute =
       (path.startsWith("/codingtest/") && path !== "/codingtest") ||
       path.startsWith("/codingtest/correct/") ||
-      path === "/erd"; // ✅ ERD도 전체화면 처리
+      (path.startsWith("/team-project/") && path.includes("/erd/")); // ✅ ERD 상세 페이지 포함
 
     if (path === "/") {
       document.body.className = "white-body"; // ✅ 홈 화면 전용 (흰색 배경)
@@ -150,7 +150,10 @@ const App = () => {
             />
 
             {/* ERD 페이지 전체화면 추가 */}
-            <Route path="/erd" element={<ErdPage />} />
+            <Route
+              path="/team-project/:projectId/erd/:erdId"
+              element={<ErdPage />}
+            />
 
             {/* 공통 레이아웃 포함 */}
             <Route

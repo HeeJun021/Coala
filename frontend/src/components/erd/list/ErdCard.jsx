@@ -1,11 +1,13 @@
 import React from "react";
+import { useNavigate } from "react-router-dom"; // ✅ 추가
 import { FaThumbtack } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { AiOutlineCalendar, AiOutlineDatabase } from "react-icons/ai";
 import { BsClockHistory } from "react-icons/bs";
 import { deleteErd } from "../../../api/erdApi";
 
-const ErdCard = ({ erd, onSelect, onDelete, project }) => {
+const ErdCard = ({ erd, onDelete, project }) => {
+  const navigate = useNavigate(); // ✅ 추가
   const projectId = project?.project_id || erd.project_id;
 
   const handleDelete = async (e) => {
@@ -23,10 +25,14 @@ const ErdCard = ({ erd, onSelect, onDelete, project }) => {
     }
   };
 
+  const handleClick = () => {
+    navigate(`/team-project/${projectId}/erd/${erd.erd_id}`); // ✅ ERD 상세 페이지로 이동
+  };
+
   return (
     <div
       className="w-[340px] h-[200px] border rounded-xl p-5 shadow-sm hover:shadow-md cursor-pointer transition bg-white"
-      onClick={() => onSelect(erd)}
+      onClick={handleClick} // ✅ 클릭 시 이동
     >
       <div className="flex justify-between items-center font-semibold text-sm mb-2">
         <div className="flex items-center gap-2">
