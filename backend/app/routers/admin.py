@@ -1,10 +1,12 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.services import admin_service, question as question_service
 from app.schemas.question import QuestionCreate
 from app.schemas.admin_user import UserDetailResponse, UserSummary
+from app.schemas.board import PostResponse
 from app.services.admin_service import get_user_detail_by_id, get_all_users_with_stats
+from app.services import board_service
 from typing import List
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
@@ -50,8 +52,21 @@ def get_user_detail(user_id: int, db: Session = Depends(get_db)):
         "posts": data["posts"],
         "comments": data["comments"],
     }
-    
-    
+        
 @router.get("/users", response_model=List[UserSummary])
 def get_all_users(db: Session = Depends(get_db)):
     return get_all_users_with_stats(db)
+
+@router.delete("/comments/{comment_id}", response_model=dict)
+def admin_delete_comment(comment_id: int, db: Session = Depends(get_db)):
+    admin_service.admin_delete_comment(comment_id, db)
+    return {"message": "댓글이 삭제되었습니다."}
+
+@router.get("/posts", response_model=List[PostResponse])
+def get_all_posts(board_type: str = Query(...), db: Session = Depends(get_db)):
+    return admin_service.get_all_posts_by_board(board_type, db)
+
+@router.delete("/posts/{post_id}", response_model=dict)
+def admin_delete_post(post_id: int, db: Session = Depends(get_db)):
+    board_service.delete_post(post_id, db)
+    return {"message": "게시글이 삭제되었습니다."}

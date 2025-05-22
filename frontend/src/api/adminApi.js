@@ -62,3 +62,23 @@ export const fetchAdminUserDetail = async (userId) => {
   }
   */
 };
+
+// 게시판 종류에 따라 전체 게시글 목록 조회
+export const fetchAdminPosts = async (boardType) => {
+  const response = await apiClient.get(`/admin/posts`, {
+    params: { board_type: boardType },
+  });
+  return response.data;
+};
+
+// 특정 게시글 삭제
+export const deleteAdminPost = async (postId) => {
+  const response = await apiClient.delete(`/admin/posts/${postId}`);
+  return response.data;
+};
+
+// 댓글 내용 '삭제된 댓글입니다.'로 변경
+export const deleteAdminComment = async (commentId) => {
+  const response = await apiClient.delete(`/admin/comments/${commentId}`);
+  return response.data;
+};

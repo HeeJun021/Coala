@@ -1,15 +1,19 @@
 import React, { useState } from "react";
-import defaultProfile from "../../assets/koala.jpg"; // 기본 이미지
-import { deleteUser } from "../../api/authApi"; // ✅ 삭제 API import
+import { useNavigate } from "react-router-dom";
+import defaultProfile from "../../assets/koala.jpg";
+import { deleteUser } from "../../api/authApi";
 
 const TABS = ["신고 내역", "게시글", "댓글"];
 
 const UserDetailDialog = ({ open, onClose, user, onUserDeleted }) => {
   const [activeTab, setActiveTab] = useState("신고 내역");
+  const navigate = useNavigate();
+
+  console.log("🔍 사용자 상세 정보(user):", user);
+  console.log("📝 댓글 리스트(user.comments):", user?.comments);
 
   if (!open || !user) return null;
 
-  // 삭제 처리 함수
   const handleDelete = async () => {
     const confirmed = window.confirm(`정말 ${user.nickname}님을 삭제하시겠습니까?`);
     if (!confirmed) return;
@@ -18,13 +22,14 @@ const UserDetailDialog = ({ open, onClose, user, onUserDeleted }) => {
       await deleteUser(user.user_id);
       onUserDeleted?.();
     } catch (error) {
+      console.error("사용자 삭제 실패:", error);
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
       <div className="bg-white w-full max-w-3xl rounded-lg shadow-lg p-6 relative">
-        {/* ❌ 닫기 버튼 */}
+        {/* 닫기 버튼 */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-500 hover:text-gray-800"
@@ -33,7 +38,7 @@ const UserDetailDialog = ({ open, onClose, user, onUserDeleted }) => {
           ✕
         </button>
 
-        {/* 🗑 삭제 버튼 */}
+        {/* 삭제 버튼 */}
         <button
           onClick={handleDelete}
           className="absolute top-4 right-12 text-red-500 hover:text-red-700 text-sm font-semibold"
@@ -42,7 +47,7 @@ const UserDetailDialog = ({ open, onClose, user, onUserDeleted }) => {
           삭제
         </button>
 
-        {/* 상단 사용자 정보 */}
+        {/* 사용자 정보 */}
         <div className="flex items-center gap-4 border-b pb-4 mb-4">
           <img
             src={user.profile_image_url || defaultProfile}
@@ -56,7 +61,7 @@ const UserDetailDialog = ({ open, onClose, user, onUserDeleted }) => {
           </div>
         </div>
 
-        {/* 탭 선택 */}
+        {/* 탭 버튼 */}
         <div className="flex gap-4 mb-4 border-b">
           {TABS.map((tab) => (
             <button
@@ -73,12 +78,16 @@ const UserDetailDialog = ({ open, onClose, user, onUserDeleted }) => {
           ))}
         </div>
 
-        {/* 탭 내용 */}
+        {/* 탭 콘텐츠 */}
         <div className="h-[300px] overflow-y-auto text-sm">
           {activeTab === "신고 내역" && (
             <div className="text-gray-700 space-y-2">
-              <p>🚨 총 신고 횟수: <strong>{user.report_count}</strong></p>
-              {user.report_count === 0 && <p className="text-gray-400">신고 내역이 없습니다.</p>}
+              <p>
+                🚨 총 신고 횟수: <strong>{user.report_count}</strong>
+              </p>
+              {user.report_count === 0 && (
+                <p className="text-gray-400">신고 내역이 없습니다.</p>
+              )}
             </div>
           )}
 
@@ -88,7 +97,11 @@ const UserDetailDialog = ({ open, onClose, user, onUserDeleted }) => {
                 <p className="text-gray-400">작성한 게시글이 없습니다.</p>
               ) : (
                 user.posts.map((post) => (
-                  <li key={post.post_id} className="border p-2 rounded">
+                  <li
+                    key={post.post_id}
+                    className="border p-2 rounded cursor-pointer hover:bg-gray-50"
+                    onClick={() => navigate(`/admin/posts/${post.post_id}`)}
+                  >
                     <p className="font-medium">{post.title}</p>
                     <p className="text-gray-500 text-xs">
                       📂 {post.board_type} | 🕒 {new Date(post.created_at).toLocaleString()}
@@ -104,15 +117,22 @@ const UserDetailDialog = ({ open, onClose, user, onUserDeleted }) => {
               {user.comments.length === 0 ? (
                 <p className="text-gray-400">작성한 댓글이 없습니다.</p>
               ) : (
-                user.comments.map((comment) => (
-                  <li key={comment.comment_id} className="border p-2 rounded">
-                    <p className="text-gray-800">{comment.content}</p>
-                    <p className="text-gray-500 text-xs">
-                      📝 게시글 ID: {comment.post_id} | 🕒{" "}
-                      {new Date(comment.created_at).toLocaleString()}
-                    </p>
-                  </li>
-                ))
+                user.comments.map((comment) => {
+                  console.log("📝 댓글 정보:", comment); // 🔍 여기서 post_title 포함 여부 확인
+                  return (
+                    <li
+                      key={comment.comment_id}
+                      className="border p-2 rounded cursor-pointer hover:bg-gray-50"
+                      onClick={() => navigate(`/admin/posts/${comment.post_id}`)}
+                    >
+                      <p className="text-gray-800">{comment.content}</p>
+                      <p className="text-gray-500 text-xs">
+                        📝 게시글 제목: {comment.post_title || "(제목 없음)"} | 🕒{" "}
+                        {new Date(comment.created_at).toLocaleString()}
+                      </p>
+                    </li>
+                  );
+                })
               )}
             </ul>
           )}

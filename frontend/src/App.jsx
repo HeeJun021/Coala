@@ -24,6 +24,7 @@ import CodingtestManagementPage from "./admin/CodingtestManagementPage";
 import BoardManagementPage from "./admin/BoardManagementPage";
 import UserManagementPage from "./admin/UserManagementPage";
 import ProjectManagementPage from "./admin/ProjectManagementPage";
+import BoardManagementDetailPage from "./admin/BoardManagementDetailPage";
 
 // 채팅
 import { ChatSocketProvider } from "./context/ChatSocketContext";
@@ -158,6 +159,7 @@ const App = () => {
             <Route path="codingtest" element={<CodingtestManagementPage />} />
             <Route path="board" element={<BoardManagementPage />} />
             <Route path="users" element={<UserManagementPage />} />
+            <Route path="posts/:postId" element={<BoardManagementDetailPage />} />
           </Route>
         )}
 

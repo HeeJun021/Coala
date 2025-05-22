@@ -1,6 +1,12 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import ReportTrendChart from "./component/ReportTrendChart";
-import { fetchAdminSummary, fetchRecentReports, fetchWeeklyReportTrend } from "../api/adminApi"; 
+import {
+  fetchAdminSummary,
+  fetchRecentReports,
+  fetchWeeklyReportTrend,
+} from "../api/adminApi";
+
 const AdminDashboardPage = () => {
   const [totalUsers, setTotalUsers] = useState(0);
   const [totalPosts, setTotalPosts] = useState(0);
@@ -8,37 +14,39 @@ const AdminDashboardPage = () => {
   const [todayReports, setTodayReports] = useState(0);
   const [recentReports, setRecentReports] = useState([]);
   const [trendData, setTrendData] = useState([]);
- 
 
-useEffect(() => {
-  const fetchData = async () => {
-    try {
-      const summary = await fetchAdminSummary();
-      const reports = await fetchRecentReports();
-      const trend = await fetchWeeklyReportTrend();
+  const navigate = useNavigate();
 
-      setTotalUsers(summary.user_count);
-      setTotalPosts(summary.post_count);
-      setTotalComments(summary.comment_count);
-      setTodayReports(summary.today_reports);
-      setRecentReports(
-        reports.map((r, idx) => ({
-          id: idx,
-          type: r.type,
-          reason: r.reason,
-          targetId: r.target_id,
-          reporter: r.reporter_id,  // 추후 닉네임 연결 가능
-          date: new Date(r.created_at).toLocaleDateString("ko-KR"),
-        }))
-      );
-      setTrendData(trend);
-    } catch (error) {
-      console.error("관리자 데이터 불러오기 실패:", error);
-    }
-  };
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const summary = await fetchAdminSummary();
+        const reports = await fetchRecentReports();
+        const trend = await fetchWeeklyReportTrend();
 
-  fetchData();
-}, []);
+        setTotalUsers(summary.user_count);
+        setTotalPosts(summary.post_count);
+        setTotalComments(summary.comment_count);
+        setTodayReports(summary.today_reports);
+        setRecentReports(
+          reports.map((r, idx) => ({
+            id: idx,
+            type: r.type,
+            reason: r.reason,
+            targetId: r.target_id,
+            postId: r.post_id, // ✅ 게시글 ID도 함께 받는다고 가정
+            reporter: r.reporter_id,
+            date: new Date(r.created_at).toLocaleDateString("ko-KR"),
+          }))
+        );
+        setTrendData(trend);
+      } catch (error) {
+        console.error("관리자 데이터 불러오기 실패:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   return (
     <div className="space-y-8 px-4 md:px-8">
@@ -60,7 +68,11 @@ useEffect(() => {
             <p className="text-gray-500">신고 내역이 없습니다.</p>
           ) : (
             recentReports.map((report) => (
-              <li key={report.id} className="py-2">
+              <li
+                key={report.id}
+                className="py-2 cursor-pointer hover:bg-gray-50 px-2 rounded"
+                onClick={() => navigate(`/admin/posts/${report.postId}`)}
+              >
                 <div className="flex justify-between items-center">
                   <div>
                     <span className="font-medium text-red-600">[{report.type}]</span>{" "}
@@ -76,11 +88,12 @@ useEffect(() => {
           )}
         </ul>
       </div>
-       {/* 🔽 아래에 추가할 그래프 영역 */}
-  <div className="bg-white rounded shadow p-6 mt-8">
-    <h2 className="text-lg font-bold mb-4">📈 최근 7일 신고 추이</h2>
-    <ReportTrendChart data={trendData} />  {/* <== 컴포넌트로 분리 */}
-  </div>
+
+      {/* 🔽 아래에 추가할 그래프 영역 */}
+      <div className="bg-white rounded shadow p-6 mt-8">
+        <h2 className="text-lg font-bold mb-4">📈 최근 7일 신고 추이</h2>
+        <ReportTrendChart data={trendData} />
+      </div>
     </div>
   );
 };

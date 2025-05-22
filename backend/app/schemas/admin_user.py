@@ -29,6 +29,7 @@ class CommentSummary(BaseModel):
     comment_id: int
     content: str
     post_id: int
+    post_title: str
     created_at: datetime
 
     class Config:
