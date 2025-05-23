@@ -66,9 +66,16 @@ class ErdDetailOut(BaseModel):
 
 # 테이블 생성
 class ErdTableCreate(BaseModel):
-    name: str
+    name: Optional[str] = ""  # 기본값 ""로 설정
     pos_x: int
     pos_y: int
+    description: Optional[str] = ""
+    
+# 개별 수정용 (name, description, 위치 등)
+class ErdTablePartialUpdate(BaseModel):
+    name: Optional[str] = None
+    pos_x: Optional[int] = None
+    pos_y: Optional[int] = None
     description: Optional[str] = None
 
 
@@ -83,13 +90,23 @@ class ErdTableOut(BaseModel):
 
 # 속성 추가
 class ErdColumnCreate(BaseModel):
-    name: str
-    data_type: str
+    name: Optional[str] = ""                # ✅ 기본값 빈 문자열
+    data_type: Optional[str] = ""
     is_primary: bool = False
     is_foreign: bool = False
     is_not_null: bool = False
     default_value: Optional[str] = None
-    column_order: int
+    column_order: int = 0
+    
+# 속성 변경
+class ErdColumnPartialUpdate(BaseModel):
+    name: Optional[str] = None
+    data_type: Optional[str] = None
+    is_primary: Optional[bool] = None
+    is_foreign: Optional[bool] = None
+    is_not_null: Optional[bool] = None
+    default_value: Optional[str] = None
+    column_order: Optional[int] = None
 
 
 # 테이블 간 관계

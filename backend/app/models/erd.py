@@ -25,7 +25,7 @@ class ErdTables(Base):
 
     table_id = Column(Integer, primary_key=True, index=True)
     erd_id = Column(Integer, ForeignKey("erds.erd_id", ondelete="CASCADE"), nullable=False)
-    name = Column(String(100), nullable=False)
+    name = Column(String(100), nullable=True)
     description = Column(Text)
     pos_x = Column(Integer, default=0)
     pos_y = Column(Integer, default=0)
