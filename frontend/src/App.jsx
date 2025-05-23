@@ -142,7 +142,7 @@ const App = () => {
             {userData?.is_admin && (
               <>
                 <Route path="/" element={<Navigate to="/admin" replace />} />
-                <Route path="/admin" element={<AdminLayout />}>
+                <Route path="/admin" element={<AdminLayout userData={userData} setUser={setUserData}/>}>
                   <Route index element={<AdminDashboardPage />} />
                   <Route path="materials" element={<StudymaterialManagementPage />} />
                   <Route path="projects" element={<ProjectManagementPage />} />

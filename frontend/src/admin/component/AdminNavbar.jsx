@@ -1,22 +1,24 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { logoutUser } from "../../api/authApi";
-import { useAuth } from "../../context/AuthContext";
 
-const AdminNavbar = () => {
-  const { setUser } = useAuth();
+const AdminNavbar = ({ setUser }) => {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    try {
-      await logoutUser();           // ✅ API 호출
-      setUser(null);                // ✅ context 상태 초기화
-      navigate("/");                // ✅ 홈으로 이동
-      window.location.reload();     // ✅ 전체 새로고침으로 상태 리셋
-    } catch (err) {
-      console.error("로그아웃 실패:", err);
-    }
-  };
+  try {
+    await logoutUser();       // ✅ API 호출
+    setUser(null);            // ✅ context 상태 초기화
+    navigate("/");            // ✅ 홈으로 이동
+
+    // 🔁 100ms 정도 지연 후 새로고침
+    setTimeout(() => {
+      window.location.reload(); 
+    }, 100);
+  } catch (err) {
+    console.error("로그아웃 실패:", err);
+  }
+};
 
   const adminMenuItems = [
     { label: "학습자료", path: "/admin/materials" },
