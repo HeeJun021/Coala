@@ -1,35 +1,51 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { getErdDetail } from "../api/erd/erdDetailApi"; // ✅ API 임포트
+import { useParams } from "react-router-dom"; // ✅ 추가
 import ProjectHeader from "../components/erd/canvas/ProjectHeader";
 import ErdListSidebar from "../components/erd/canvas/ErdListSidebar";
 import ErdCanvas from "../components/erd/canvas/ErdCanvas";
 import CodeGeneratorPanel from "../components/erd/CodeGeneratorPanel";
 
 const ErdPage = () => {
+  const { erdId } = useParams(); // ✅ URL에서 erdId 추출
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isPlacing, setIsPlacing] = useState(false);
   const [tempTable, setTempTable] = useState(null);
   const [tables, setTables] = useState([]);
+  const [columns, setColumns] = useState([]);           // ✅ 추가
+  const [relations, setRelations] = useState([]);       // ✅ 추가
   const [zoomLevel, setZoomLevel] = useState(1);
   const [mode, setMode] = useState("default");
 
-  // ✅ 자동 생성된 SQL 쿼리 상태
-  const [sqlQuery, setSqlQuery] = useState(
-    "-- (자동 로딩 or 붙여넣기한 SQL 쿼리)"
-  );
+  const [sqlQuery, setSqlQuery] = useState("-- (자동 로딩 or 붙여넣기한 SQL 쿼리)");
   const [language, setLanguage] = useState("Python");
   const [convertType, setConvertType] = useState("class");
 
-  // 🔁 헤더에서 자동 가져오기 트리거 시
+  // ✅ ERD 상세 조회
+  useEffect(() => {
+    const fetchErdDetail = async () => {
+      try {
+        const data = await getErdDetail(erdId); // ✅ 동적 erdId 사용
+        setTables(data.tables || []);
+        setColumns(data.columns || []);
+        setRelations(data.relations || []);
+      } catch (err) {
+        console.error("ERD 상세 조회 실패:", err);
+      }
+    };
+
+    fetchErdDetail();
+  }, [erdId]);
+
+  // 샘플 쿼리 자동 로딩
   const handleFetchAutoSql = () => {
-    // 이후 실제 변환 로직으로 대체 가능
     const dummySql = `
 -- Users 테이블
 CREATE TABLE users (
   id INT PRIMARY KEY,
   name VARCHAR(100),
   email VARCHAR(255) UNIQUE
-);
-    `.trim();
+);`.trim();
     setSqlQuery(dummySql);
   };
 
@@ -50,7 +66,7 @@ CREATE TABLE users (
           setLanguage={setLanguage}
           convertType={convertType}
           setConvertType={setConvertType}
-          onFetch={handleFetchAutoSql} // ✅ 자동 쿼리 가져오기 함수 전달
+          onFetch={handleFetchAutoSql}
         />
       </div>
 
@@ -63,7 +79,7 @@ CREATE TABLE users (
           </div>
         )}
 
-        {/* 메인 콘텐츠 (ERD 캔버스 or 코드 생성기) */}
+        {/* 메인 콘텐츠 */}
         <div className="flex-1 relative min-w-0 min-h-0">
           {mode === "default" ? (
             <ErdCanvas
@@ -73,6 +89,8 @@ CREATE TABLE users (
               setTempTable={setTempTable}
               tables={tables}
               setTables={setTables}
+              columns={columns}          // ✅ 전달
+              relations={relations}      // ✅ 전달
               zoomLevel={zoomLevel}
             />
           ) : (
