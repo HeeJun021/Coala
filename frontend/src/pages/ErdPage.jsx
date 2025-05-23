@@ -12,12 +12,14 @@ const ErdPage = () => {
   const [isPlacing, setIsPlacing] = useState(false);
   const [tempTable, setTempTable] = useState(null);
   const [tables, setTables] = useState([]);
-  const [columns, setColumns] = useState([]);           // ✅ 추가
-  const [relations, setRelations] = useState([]);       // ✅ 추가
+  const [columns, setColumns] = useState([]); // ✅ 추가
+  const [relations, setRelations] = useState([]); // ✅ 추가
   const [zoomLevel, setZoomLevel] = useState(1);
   const [mode, setMode] = useState("default");
 
-  const [sqlQuery, setSqlQuery] = useState("-- (자동 로딩 or 붙여넣기한 SQL 쿼리)");
+  const [sqlQuery, setSqlQuery] = useState(
+    "-- (자동 로딩 or 붙여넣기한 SQL 쿼리)"
+  );
   const [language, setLanguage] = useState("Python");
   const [convertType, setConvertType] = useState("class");
 
@@ -26,8 +28,19 @@ const ErdPage = () => {
     const fetchErdDetail = async () => {
       try {
         const data = await getErdDetail(erdId); // ✅ 동적 erdId 사용
-        setTables(data.tables || []);
-        setColumns(data.columns || []);
+
+        // ✅ 테이블 데이터 매핑
+        const parsedTables = (data.tables || []).map((t) => ({
+          id: t.table_id, // ✅ 반드시 필요
+          x: t.pos_x,
+          y: t.pos_y,
+          tableName: t.name,
+          description: t.description || "",
+          columns: t.columns || [],
+        }));
+
+        setTables(parsedTables);
+        setColumns(data.columns || []); // 필요 없으면 생략 가능
         setRelations(data.relations || []);
       } catch (err) {
         console.error("ERD 상세 조회 실패:", err);
@@ -89,9 +102,10 @@ CREATE TABLE users (
               setTempTable={setTempTable}
               tables={tables}
               setTables={setTables}
-              columns={columns}          // ✅ 전달
-              relations={relations}      // ✅ 전달
+              columns={columns} // ✅ 전달
+              relations={relations} // ✅ 전달
               zoomLevel={zoomLevel}
+              erdId={parseInt(erdId)} // ✅ 전달
             />
           ) : (
             <CodeGeneratorPanel sqlQuery={sqlQuery} setSqlQuery={setSqlQuery} />

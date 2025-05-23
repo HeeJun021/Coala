@@ -6,8 +6,8 @@ export const createRelation = async (erdId, relationData) => {
   return response.data;
 };
 
-// ✅ 관계 삭제
+// ✅ 관계 삭제 (DELETE /erds/relations/{relation_id})
 export const deleteRelation = async (relationId) => {
-  const response = await apiClient.delete(`/relations/${relationId}`);
+  const response = await apiClient.delete(`/erds/relations/${relationId}`);
   return response.data;
 };

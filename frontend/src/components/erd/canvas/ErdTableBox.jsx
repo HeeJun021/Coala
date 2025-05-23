@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import { FaPlus, FaTimes } from "react-icons/fa";
 import ErdColumnRow from "./ErdColumnRow";
-import { v4 as uuidv4 } from "uuid";
 import { useDragColumn } from "../drag/useDragColumn";
+
+import { patchTable } from "../../../api/erd/tableApi"; // 경로 맞게 수정
+import { createColumn, deleteColumn } from "../../../api/erd/columnApi"; // 실제 경로 맞게 수정
 
 const ErdTableBox = ({
   id,
@@ -16,8 +18,9 @@ const ErdTableBox = ({
   onClick,
   onColumnPositionUpdate,
   onColumnClick,
-  isSelected, // ✅ 추가
+  isSelected,
   onDragMove,
+  erdId,
 }) => {
   const [localName, setLocalName] = useState(tableName || "");
   const [localDesc, setLocalDesc] = useState(description || "");
@@ -31,6 +34,35 @@ const ErdTableBox = ({
 
   const { dragIndex, hoverIndex, setHoverIndex, startDrag, endDrag } =
     useDragColumn();
+
+  const generateTableUpdateData = (key, value) => {
+    switch (key) {
+      case "tableName":
+        return { name: value };
+      case "description":
+        return { description: value };
+      default:
+        return {};
+    }
+  };
+
+  const handleTableFieldChange = (key, value) => {
+    const updateData = generateTableUpdateData(key, value);
+
+    patchTable(erdId, id, updateData).catch((err) => {
+      console.error("테이블 수정 실패", err);
+    });
+
+    // 상태 업데이트 및 렌더링용 onUpdate 호출
+    onUpdate({
+      id,
+      x,
+      y,
+      tableName: key === "tableName" ? value : localName,
+      description: key === "description" ? value : localDesc,
+      columns: localColumns,
+    });
+  };
 
   const handleReorderColumns = (from, to) => {
     if (from === to || from === null || to === null) return;
@@ -111,7 +143,6 @@ const ErdTableBox = ({
       })
     );
   };
-  
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -148,6 +179,13 @@ const ErdTableBox = ({
 
     const handleMouseUp = () => {
       draggingRef.current = false;
+
+      // ✅ 위치 서버에 저장
+      if (isSelected && x !== undefined && y !== undefined) {
+        patchTable(erdId, id, { pos_x: x, pos_y: y }).catch((err) => {
+          console.error("🛑 테이블 위치 저장 실패:", err);
+        });
+      }
     };
 
     window.addEventListener("mousemove", handleMouseMove);
@@ -159,19 +197,27 @@ const ErdTableBox = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, x, y, localName, localDesc, localColumns, onUpdate, isSelected]);
 
-  const handleAddColumn = () => {
-    setLocalColumns((prev) => [
-      ...prev,
-      {
-        id: uuidv4(),
-        name: "",
-        dataType: "",
-        isNullable: false,
-        isPrimaryKey: false,
-        defaultValue: "",
-        comment: "",
-      },
-    ]);
+  const handleAddColumn = async () => {
+    try {
+      const newColumn = await createColumn(id); // id는 테이블 ID (props)
+
+      setLocalColumns((prev) => [
+        ...prev,
+        {
+          ...newColumn,
+          id: newColumn.column_id, // 프론트 전용 id
+          name: newColumn.name || "",
+          dataType: newColumn.data_type || "",
+          isNullable: !newColumn.is_not_null,
+          isPrimaryKey: newColumn.is_primary,
+          defaultValue: newColumn.default_value || "",
+          comment: newColumn.description || "",
+        },
+      ]);
+    } catch (err) {
+      console.error("컬럼 생성 실패:", err);
+      alert("컬럼 생성 중 오류가 발생했습니다.");
+    }
   };
 
   const handleColumnChange = (index, key, value) => {
@@ -180,8 +226,17 @@ const ErdTableBox = ({
     setLocalColumns(updated);
   };
 
-  const handleDeleteColumn = (index) => {
-    setLocalColumns((prev) => prev.filter((_, i) => i !== index));
+  const handleDeleteColumn = async (index) => {
+    const columnId = localColumns[index]?.id;
+    if (!columnId) return;
+
+    try {
+      await deleteColumn(columnId); // 서버에 삭제 요청
+      setLocalColumns((prev) => prev.filter((_, i) => i !== index)); // 상태 갱신
+    } catch (err) {
+      console.error("컬럼 삭제 실패:", err);
+      alert("컬럼 삭제 중 오류가 발생했습니다.");
+    }
   };
 
   return (
@@ -222,14 +277,7 @@ const ErdTableBox = ({
           onChange={(e) => {
             const newName = e.target.value;
             setLocalName(newName);
-            onUpdate({
-              id,
-              x,
-              y,
-              tableName: newName,
-              description: localDesc,
-              columns: localColumns,
-            });
+            handleTableFieldChange("tableName", newName);
           }}
         />
         <input
@@ -239,14 +287,7 @@ const ErdTableBox = ({
           onChange={(e) => {
             const newDesc = e.target.value;
             setLocalDesc(newDesc);
-            onUpdate({
-              id,
-              x,
-              y,
-              tableName: localName,
-              description: newDesc,
-              columns: localColumns,
-            });
+            handleTableFieldChange("description", newDesc);
           }}
         />
       </div>

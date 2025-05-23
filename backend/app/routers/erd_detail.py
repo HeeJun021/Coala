@@ -27,6 +27,12 @@ def get_erd_detail(erd_id: int, db: Session = Depends(get_db)):
     erd = db.query(Erds).filter(Erds.erd_id == erd_id).first()
     if not erd:
         raise HTTPException(status_code=404, detail="ERD not found")
+    
+    print(f"🔍 ERD 조회: {erd.erd_id} - {erd.name}")
+    print(f"🔍 테이블 수: {len(erd.tables)}")
+    for t in erd.tables:
+        print(f"  - table_id: {t.table_id}, name: {t.name}, pos=({t.pos_x}, {t.pos_y})")
+
 
     return {
         "erd_id": erd.erd_id,
@@ -83,6 +89,7 @@ def create_erd_table(erd_id: int, table: ErdTableCreate, db: Session = Depends(g
     db.commit()
     db.refresh(new_table)
     return {
+        "id": new_table.table_id,  # ✅ 프론트가 바로 사용 가능
         "table_id": new_table.table_id,
         "name": new_table.name,
         "pos_x": new_table.pos_x,
@@ -92,7 +99,7 @@ def create_erd_table(erd_id: int, table: ErdTableCreate, db: Session = Depends(g
     }
 
 
-# 테이블 이름, 설명 수정
+# 테이블 이름, 설명 수정, 테이블 이동
 @router.patch("/{erd_id}/tables/{table_id}")
 def update_erd_table_name_or_position(
     erd_id: int,
@@ -113,7 +120,7 @@ def update_erd_table_name_or_position(
 
 
     
-# 테이블 삭제
+# 테이블 삭제(단일 x 버튼)
 @router.delete("/tables/{table_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_table(table_id: int, db: Session = Depends(get_db)):
     table = db.query(ErdTables).filter(ErdTables.table_id == table_id).first()

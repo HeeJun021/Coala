@@ -4,12 +4,15 @@ import ErdTableBox from "./ErdTableBox";
 import FloatingToolButton from "./FloatingToolButton";
 import ErdRelationLine from "./ErdRelationLine";
 
+import { createTable, deleteTable, deleteMultipleTables  } from "../../../api/erd/tableApi";
+
 const ErdCanvas = ({
   isPlacing,
   setIsPlacing,
   tables,
   setTables,
   zoomLevel,
+  erdId,
 }) => {
   const canvasRef = useRef(null);
 
@@ -166,8 +169,8 @@ const ErdCanvas = ({
     setTimeout(() => setWasDraggingSelectionBox(false), 0);
   };
 
-  const handleCanvasClick = (e) => {
-    if (wasDraggingSelectionBox) return; // ✅ 드래그 직후면 해제 금지
+  const handleCanvasClick = async (e) => {
+    if (wasDraggingSelectionBox) return;
 
     setSelectedTableId(null);
     setSelectedTableIds([]);
@@ -180,16 +183,29 @@ const ErdCanvas = ({
     const x = (e.clientX - rect.left) / zoomLevel;
     const y = (e.clientY - rect.top) / zoomLevel;
 
-    const newTable = {
-      id: uuidv4(),
-      x,
-      y,
-      tableName: "",
-      description: "",
-      columns: [],
-    };
+    try {
+      const newTable = await createTable(erdId, {
+        pos_x: Math.round(x),
+        pos_y: Math.round(y),
+      });
 
-    setTables((prev) => [...prev, newTable]);
+      console.log("🧪 newTable 응답 확인", newTable);
+
+      setTables((prev) => [
+        ...prev,
+        {
+          id: newTable.table_id,
+          x: newTable.pos_x,
+          y: newTable.pos_y,
+          tableName: newTable.name,
+          columns: [],
+        },
+      ]);
+    } catch (err) {
+      console.error("테이블 생성 실패:", err);
+      alert("테이블 생성 중 오류가 발생했습니다.");
+    }
+
     setIsPlacing(false);
   };
 
@@ -208,8 +224,13 @@ const ErdCanvas = ({
   );
 
   const handleDeleteTable = useCallback(
-    (id) => {
-      setTables((prev) => prev.filter((t) => t.id !== id));
+    async (id) => {
+      try {
+        await deleteTable(id); // ✅ erdId는 전달하지 않음
+        setTables((prev) => prev.filter((t) => t.id !== id));
+      } catch (err) {
+        console.error("테이블 삭제 실패:", err);
+      }
     },
     [setTables]
   );
@@ -281,129 +302,134 @@ const ErdCanvas = ({
   };
 
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === "Delete" || e.key === "Backspace") {
-        // ✅ 테이블 삭제
-        if (selectedTableIds.length > 0) {
-          setTables((prev) =>
-            prev.filter((t) => !selectedTableIds.includes(t.id))
-          );
-          setSelectedTableIds([]);
-        }
+  const handleKeyDown = async (e) => {
+    if (e.key !== "Delete") return;
 
-        // ✅ 관계선 삭제 (배열 기반)
-        if (selectedRelationIds.length > 0) {
-          setRelations((prev) =>
-            prev.filter((r) => !selectedRelationIds.includes(r.relationId))
-          );
-          setSelectedRelationIds([]);
-          setSelectedRelationId(null); // 단일 선택도 초기화
-        }
+    // ✅ 테이블 다중 삭제
+    if (selectedTableIds.length > 0) {
+      try {
+        await deleteMultipleTables(erdId, selectedTableIds);  // ✅ 서버에 삭제 요청
+        setTables((prev) =>
+          prev.filter((t) => !selectedTableIds.includes(t.id))
+        );
+        setSelectedTableIds([]);  // ✅ 선택 초기화
+      } catch (err) {
+        console.error("다중 테이블 삭제 실패:", err);
       }
-    };
+    }
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedTableIds, selectedRelationIds, setTables, setRelations]);
+    // ✅ 관계선 삭제 (프론트 전용, 필요 시 백엔드 연동 가능)
+    if (selectedRelationIds.length > 0) {
+      setRelations((prev) =>
+        prev.filter((r) => !selectedRelationIds.includes(r.relationId))
+      );
+      setSelectedRelationIds([]);
+      setSelectedRelationId(null);
+    }
+  };
+
+  window.addEventListener("keydown", handleKeyDown);
+  return () => window.removeEventListener("keydown", handleKeyDown);
+}, [selectedTableIds, selectedRelationIds, erdId, setTables, setRelations]);
 
   return (
-  <div
-    id="erd-canvas"
-    ref={canvasRef}
-    onClick={handleCanvasClick}
-    onMouseDown={handleMouseDown}
-    onMouseMove={handleMouseMove}
-    onMouseUp={handleMouseUp}
-    className={`relative w-full h-full bg-[#1e1e2f] overflow-hidden ${
-      isPlacing || isAddingRelation ? "cursor-crosshair" : "cursor-default"
-    } select-none`}
-  >
-    {/* 확대/축소 대상 내부 컨테이너 */}
     <div
-      className="absolute top-0 left-0 origin-top-left"
-      style={{
-        transform: `scale(${zoomLevel})`,
-        width: `${100 / zoomLevel}%`,
-        height: `${100 / zoomLevel}%`,
-      }}
+      id="erd-canvas"
+      ref={canvasRef}
+      onClick={handleCanvasClick}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      className={`relative w-full h-full bg-[#1e1e2f] overflow-hidden ${
+        isPlacing || isAddingRelation ? "cursor-crosshair" : "cursor-default"
+      } select-none`}
     >
-      {relations.map((rel) => {
-        const from = columnPositions[rel.fromColumnId];
-        const to = columnPositions[rel.toColumnId];
+      {/* 확대/축소 대상 내부 컨테이너 */}
+      <div
+        className="absolute top-0 left-0 origin-top-left"
+        style={{
+          transform: `scale(${zoomLevel})`,
+          width: `${100 / zoomLevel}%`,
+          height: `${100 / zoomLevel}%`,
+        }}
+      >
+        {relations.map((rel) => {
+          const from = columnPositions[rel.fromColumnId];
+          const to = columnPositions[rel.toColumnId];
 
-        return (
-          <ErdRelationLine
-            key={rel.relationId}
-            fromColumn={from}
-            toColumn={to}
-            label={rel.relationType}
+          return (
+            <ErdRelationLine
+              key={rel.relationId}
+              fromColumn={from}
+              toColumn={to}
+              label={rel.relationType}
+              isSelected={
+                selectedRelationIds.includes(rel.relationId) ||
+                selectedRelationId === rel.relationId
+              }
+              onClick={() => {
+                setSelectedRelationId(rel.relationId);
+                setSelectedRelationIds([rel.relationId]);
+                setSelectedTableId(null);
+                setSelectedTableIds([]);
+              }}
+            />
+          );
+        })}
+
+        {tables.map((table) => (
+          <ErdTableBox
+            erdId={erdId} // ✅ 전달
+            {...table}
+            key={table.id}
+            onUpdate={handleUpdateTable}
+            onDelete={() => handleDeleteTable(table.id)}
+            isAddingRelation={isAddingRelation}
+            selectedColumnId={pendingFromColumnId}
+            onColumnClick={handleColumnClick}
+            onColumnPositionUpdate={handleColumnPositionUpdate}
             isSelected={
-              selectedRelationIds.includes(rel.relationId) ||
-              selectedRelationId === rel.relationId
+              selectedTableIds.includes(table.id) ||
+              selectedTableId === table.id
             }
             onClick={() => {
-              setSelectedRelationId(rel.relationId);
-              setSelectedRelationIds([rel.relationId]);
-              setSelectedTableId(null);
-              setSelectedTableIds([]);
+              setSelectedTableId(table.id);
+              setSelectedTableIds([table.id]);
+              setSelectedRelationId(null);
+              setSelectedRelationIds([]);
+            }}
+            onDragMove={(mouseX, mouseY) =>
+              handleBatchUpdateTablePosition(table.id, mouseX, mouseY)
+            }
+          />
+        ))}
+
+        {selectionBox && selectionBox.width > 0 && selectionBox.height > 0 && (
+          <div
+            className="absolute border-2 border-blue-400 bg-blue-300/20 z-50 pointer-events-none"
+            style={{
+              top: selectionBox.y,
+              left: selectionBox.x,
+              width: selectionBox.width,
+              height: selectionBox.height,
             }}
           />
-        );
-      })}
+        )}
+      </div>
 
-      {tables.map((table) => (
-        <ErdTableBox
-          key={table.id}
-          {...table}
-          onUpdate={handleUpdateTable}
-          onDelete={() => handleDeleteTable(table.id)}
-          isAddingRelation={isAddingRelation}
-          selectedColumnId={pendingFromColumnId}
-          onColumnClick={handleColumnClick}
-          onColumnPositionUpdate={handleColumnPositionUpdate}
-          isSelected={
-            selectedTableIds.includes(table.id) ||
-            selectedTableId === table.id
-          }
-          onClick={() => {
-            setSelectedTableId(table.id);
-            setSelectedTableIds([table.id]);
-            setSelectedRelationId(null);
-            setSelectedRelationIds([]);
-          }}
-          onDragMove={(mouseX, mouseY) =>
-            handleBatchUpdateTablePosition(table.id, mouseX, mouseY)
-          }
-        />
-      ))}
-
-      {selectionBox && selectionBox.width > 0 && selectionBox.height > 0 && (
-        <div
-          className="absolute border-2 border-blue-400 bg-blue-300/20 z-50 pointer-events-none"
-          style={{
-            top: selectionBox.y,
-            left: selectionBox.x,
-            width: selectionBox.width,
-            height: selectionBox.height,
-          }}
-        />
-      )}
+      {/* 고정 위치 FloatingToolButton (확대 X) */}
+      <FloatingToolButton
+        onAddTable={() => setIsPlacing(true)}
+        onAddRelation={(type) => {
+          setIsAddingRelation(true);
+          setSelectedRelationType(type);
+          setPendingFromColumnId(null);
+        }}
+        onStartDragging={() => setIsToolDragging(true)}
+        onStopDragging={() => setIsToolDragging(false)}
+      />
     </div>
-
-    {/* 고정 위치 FloatingToolButton (확대 X) */}
-    <FloatingToolButton
-      onAddTable={() => setIsPlacing(true)}
-      onAddRelation={(type) => {
-        setIsAddingRelation(true);
-        setSelectedRelationType(type);
-        setPendingFromColumnId(null);
-      }}
-      onStartDragging={() => setIsToolDragging(true)}
-      onStopDragging={() => setIsToolDragging(false)}
-    />
-  </div>
-);
-
+  );
 };
 
 export default ErdCanvas;

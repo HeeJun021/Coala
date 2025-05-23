@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { patchColumn } from "../../../api/erd/columnApi";
 import { FaKey, FaTimes } from "react-icons/fa";
 
 const ErdColumnRow = ({
@@ -19,6 +20,7 @@ const ErdColumnRow = ({
   const [showDelete, setShowDelete] = useState(false);
   const [showPkMenu, setShowPkMenu] = useState(false);
   const [pkMenuPos, setPkMenuPos] = useState({ x: 0, y: 0 });
+
   const ref = useRef(null);
 
   const handleRightClick = (e) => {
@@ -27,8 +29,32 @@ const ErdColumnRow = ({
     setPkMenuPos({ x: e.clientX, y: e.clientY });
   };
 
+  const generateUpdateData = (key, value) => {
+    switch (key) {
+      case "name":
+        return { name: value };
+      case "dataType":
+        return { data_type: value };
+      case "defaultValue":
+        return { default_value: value };
+      case "comment":
+        return { description: value };
+      case "isNullable":
+        return { is_not_null: !value };
+      default:
+        return {};
+    }
+  };
+
   const handleInputChange = (key, value) => {
     onChange(index, key, value);
+
+    if (!column.column_id) return;
+
+    const updateData = generateUpdateData(key, value); // ← 단일 필드만 포함
+    patchColumn(column.column_id, updateData).catch((err) => {
+      console.error("컬럼 즉시 수정 실패", err);
+    });
   };
 
   useEffect(() => {

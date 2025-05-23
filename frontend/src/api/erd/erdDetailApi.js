@@ -1,5 +1,7 @@
 import apiClient from "../apiClient";
 
+// 상세조회만 가능 나머지 연동해야됨
+
 // ✅ ERD 상세 조회
 export const getErdDetail = async (erdId) => {
   const response = await apiClient.get(`/erds/${erdId}`);
