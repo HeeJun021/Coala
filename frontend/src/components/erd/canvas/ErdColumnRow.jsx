@@ -71,6 +71,7 @@ const ErdColumnRow = ({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+  
 
   return (
     <>
@@ -108,13 +109,13 @@ const ErdColumnRow = ({
           <input
             className="bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 w-[70px] text-sm text-white placeholder:text-gray-500"
             placeholder="column"
-            value={column.name}
+            value={column.name ?? ""}
             onChange={(e) => handleInputChange("name", e.target.value)}
           />
           <input
             className="bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 w-[70px] text-sm text-white placeholder:text-gray-500"
             placeholder="type"
-            value={column.dataType}
+            value={column.dataType ?? ""}
             onChange={(e) => handleInputChange("dataType", e.target.value)}
           />
           <div
@@ -126,13 +127,13 @@ const ErdColumnRow = ({
           <input
             className="bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 w-[70px] text-sm text-white placeholder:text-gray-500"
             placeholder="default"
-            value={column.defaultValue}
+            value={column.defaultValue ?? ""}
             onChange={(e) => handleInputChange("defaultValue", e.target.value)}
           />
           <input
             className="bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 w-[70px] text-sm text-white placeholder:text-gray-500"
             placeholder="desc"
-            value={column.comment}
+            value={column.comment ?? ""}
             onChange={(e) => handleInputChange("comment", e.target.value)}
           />
         </div>

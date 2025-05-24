@@ -11,7 +11,7 @@ class ErdResponse(BaseModel):
     erd_id: int
     project_id: int
     name: str
-    description: Optional[str]
+    description: Optional[str] = None  # ✅ 이게 지금 누락되어 있었음!
     created_at: str  # ✅ datetime → str로 포맷된 형태 받음
     updated_at: Optional[str]
     last_editor_name: Optional[str]
@@ -31,6 +31,7 @@ class ErdColumnOut(BaseModel):
     is_not_null: bool
     default_value: Optional[str]
     column_order: int
+    description: Optional[str] = None  # ✅ 추가 필드!
 
     model_config = {"from_attributes": True}
 
@@ -107,6 +108,7 @@ class ErdColumnPartialUpdate(BaseModel):
     is_not_null: Optional[bool] = None
     default_value: Optional[str] = None
     column_order: Optional[int] = None
+    description: Optional[str]  # ✅ 이 줄 추가!
 
 
 # 테이블 간 관계

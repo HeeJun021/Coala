@@ -205,7 +205,7 @@ const ErdTableBox = ({
         ...prev,
         {
           ...newColumn,
-          id: newColumn.column_id, // 프론트 전용 id
+          id: newColumn.column_id ?? `temp-${Date.now()}`, // column_id 없을 경우 임시 ID 생성
           name: newColumn.name || "",
           dataType: newColumn.data_type || "",
           isNullable: !newColumn.is_not_null,
@@ -295,7 +295,7 @@ const ErdTableBox = ({
       <div className="mt-2">
         {localColumns.map((col, index) => (
           <ErdColumnRow
-            key={col.id}
+            key={`col-${col.id ?? index}`} // 🔥 안전한 key 설정
             column={col}
             index={index}
             onChange={handleColumnChange}

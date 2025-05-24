@@ -28,14 +28,35 @@ const ErdPage = () => {
     try {
       const data = await getErdDetail(erdId);
 
-      const parsedTables = (data.tables || []).map((t) => ({
-        id: t.table_id,
-        x: t.pos_x,
-        y: t.pos_y,
-        tableName: t.name,
-        description: t.description || "",
-        columns: t.columns || [],
-      }));
+      console.log("📦 ERD 상세 데이터", data);
+
+      const parsedTables = (data.tables || []).map((t) => {
+        const parsed = {
+          id: t.table_id,
+          x: t.pos_x,
+          y: t.pos_y,
+          tableName: t.name ?? "",
+          description: t.description ?? "", // ⚠️ null 방지
+          columns: (t.columns || []).map((c) => ({
+            ...c,
+            id: c.column_id,
+            name: c.name ?? "",
+            dataType: c.data_type ?? "",
+            isNullable: !c.is_not_null,
+            isPrimaryKey: c.is_primary,
+            defaultValue: c.default_value ?? "",
+            comment: c.description ?? "", // ✅ 여기!! ← 빠져 있으면 안 보임
+          })),
+        };
+
+        console.log("🧾 테이블 파싱", {
+          id: parsed.id,
+          name: parsed.tableName,
+          description: parsed.description,
+        });
+
+        return parsed;
+      });
 
       setTables(parsedTables);
       setColumns(data.columns || []);
@@ -43,7 +64,7 @@ const ErdPage = () => {
     } catch (err) {
       console.error("ERD 상세 조회 실패:", err);
     }
-  }, [erdId]); // ✅ 의존성 배열에 erdId 포함
+  }, [erdId]);
 
   useEffect(() => {
     fetchErdDetail();

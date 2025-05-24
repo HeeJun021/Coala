@@ -45,6 +45,7 @@ def get_erd_detail(erd_id: int, db: Session = Depends(get_db)):
             {
                 "table_id": t.table_id,
                 "name": t.name,
+                "description": t.description,
                 "pos_x": t.pos_x,
                 "pos_y": t.pos_y,
                 "columns": [
@@ -57,6 +58,7 @@ def get_erd_detail(erd_id: int, db: Session = Depends(get_db)):
                         "is_not_null": c.is_not_null,
                         "default_value": c.default_value,
                         "column_order": c.column_order,
+                        "description": c.description,
                     }
                     for c in t.columns
                 ],

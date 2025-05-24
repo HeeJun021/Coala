@@ -50,6 +50,7 @@ class ErdColumns(Base):
     is_not_null = Column(Boolean, default=False)
     default_value = Column(String(100))
     column_order = Column(Integer, default=0)
+    description = Column(Text, nullable=True)
 
     table = relationship("ErdTables", back_populates="columns")
     source_relations = relationship("ErdRelations", foreign_keys="[ErdRelations.source_column_id]", back_populates="source_column")
