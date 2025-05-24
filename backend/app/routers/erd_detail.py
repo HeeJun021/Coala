@@ -3,7 +3,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User
-from app.models.erd import Erds, ErdTables, ErdRelations, ErdColumns, ErdActivityLogs, ErdActivityLogDetails
+from app.models.erd import (
+    Erds,
+    ErdTables,
+    ErdRelations,
+    ErdColumns,
+    ErdActivityLogs,
+    ErdActivityLogDetails,
+)
 from app.dependencies.auth import get_current_user
 from app.schemas.erd import (
     ErdDetailOut,
@@ -16,10 +23,11 @@ from app.schemas.erd import (
     ErdColumnPartialUpdate,
     ErdColumnOut,
     ErdBulkDeleteRequest,
-    ErdSyncRequest
+    ErdSyncRequest,
 )
 
 router = APIRouter(prefix="/erds", tags=["ERD Detail"])
+
 
 # ERD 상세 조회
 @router.get("/{erd_id}", response_model=ErdDetailOut)
@@ -27,12 +35,6 @@ def get_erd_detail(erd_id: int, db: Session = Depends(get_db)):
     erd = db.query(Erds).filter(Erds.erd_id == erd_id).first()
     if not erd:
         raise HTTPException(status_code=404, detail="ERD not found")
-    
-    print(f"🔍 ERD 조회: {erd.erd_id} - {erd.name}")
-    print(f"🔍 테이블 수: {len(erd.tables)}")
-    for t in erd.tables:
-        print(f"  - table_id: {t.table_id}, name: {t.name}, pos=({t.pos_x}, {t.pos_y})")
-
 
     return {
         "erd_id": erd.erd_id,
@@ -119,7 +121,6 @@ def update_erd_table_name_or_position(
     return {"message": "테이블이 업데이트되었습니다."}
 
 
-    
 # 테이블 삭제(단일 x 버튼)
 @router.delete("/tables/{table_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_table(table_id: int, db: Session = Depends(get_db)):
@@ -131,12 +132,11 @@ def delete_table(table_id: int, db: Session = Depends(get_db)):
     db.commit()
     return
 
+
 # 테이블의 컬럼 추가
 @router.post("/tables/{table_id}/columns", response_model=ErdColumnOut)
 def create_column_for_table(
-    table_id: int,
-    column: ErdColumnCreate,
-    db: Session = Depends(get_db)
+    table_id: int, column: ErdColumnCreate, db: Session = Depends(get_db)
 ):
     new_column = ErdColumns(
         table_id=table_id,
@@ -152,6 +152,7 @@ def create_column_for_table(
     db.commit()
     db.refresh(new_column)
     return new_column
+
 
 # 테이블의 컬럼 변경
 @router.patch("/columns/{column_id}")
@@ -172,6 +173,7 @@ def update_column(
     db.commit()
     return {"message": "컬럼이 업데이트되었습니다."}
 
+
 # 테이블의 컬럼 삭제
 @router.delete("/columns/{column_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_column(column_id: int, db: Session = Depends(get_db)):
@@ -185,71 +187,70 @@ def delete_column(column_id: int, db: Session = Depends(get_db)):
 
 
 # 테이블 간 관계
-@router.post("/{erd_id}/relations", response_model=ErdRelationOut)
+@router.post(
+    "/{erd_id}/relations",
+    response_model=ErdRelationOut,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_erd_relation(
     erd_id: int, relation: ErdRelationCreate, db: Session = Depends(get_db)
 ):
-    new_relation = ErdRelations(
-        erd_id=erd_id,
-        source_table_id=relation.source_table_id,
-        source_column_id=relation.source_column_id,
-        target_table_id=relation.target_table_id,
-        target_column_id=relation.target_column_id,
-        relation_type=relation.relation_type,
-    )
-    db.add(new_relation)
-    db.commit()
-    db.refresh(new_relation)
-    return {
-        "relation_id": new_relation.relation_id,
-        "source_table_id": new_relation.source_table_id,
-        "source_column_id": new_relation.source_column_id,
-        "target_table_id": new_relation.target_table_id,
-        "target_column_id": new_relation.target_column_id,
-        "relation_type": new_relation.relation_type,
-    }
+    try:
+        new_relation = ErdRelations(
+            erd_id=erd_id,
+            source_table_id=relation.source_table_id,
+            source_column_id=relation.source_column_id,
+            target_table_id=relation.target_table_id,
+            target_column_id=relation.target_column_id,
+            relation_type=relation.relation_type,
+            auto_create_fk=getattr(relation, "auto_create_fk", True),
+            cascade_delete=getattr(relation, "cascade_delete", False),
+        )
+        db.add(new_relation)
+        db.commit()
+        db.refresh(new_relation)
 
-# 테이블간 관계 삭제
-@router.delete("/relations/{relation_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_relation(relation_id: int, db: Session = Depends(get_db)):
-    relation = db.query(ErdRelations).filter(ErdRelations.relation_id == relation_id).first()
-    if not relation:
-        raise HTTPException(status_code=404, detail="Relation not found")
+        return ErdRelationOut(
+            relation_id=new_relation.relation_id,
+            source_table_id=new_relation.source_table_id,
+            source_column_id=new_relation.source_column_id,
+            target_table_id=new_relation.target_table_id,
+            target_column_id=new_relation.target_column_id,
+            relation_type=new_relation.relation_type,
+        )
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"관계 생성 실패: {str(e)}")
 
-    db.delete(relation)
-    db.commit()
-    return
 
 # 다중 삭제
 @router.delete("/{erd_id}/bulk-delete", status_code=204)
 def bulk_delete_erd_items(
-    erd_id: int,
-    req: ErdBulkDeleteRequest,
-    db: Session = Depends(get_db)
+    erd_id: int, req: ErdBulkDeleteRequest, db: Session = Depends(get_db)
 ):
     # 관계 먼저 삭제
     if req.relation_ids:
         db.query(ErdRelations).filter(
             ErdRelations.relation_id.in_(req.relation_ids),
-            ErdRelations.erd_id == erd_id
+            ErdRelations.erd_id == erd_id,
         ).delete(synchronize_session=False)
 
     # 컬럼 삭제
     if req.column_ids:
         db.query(ErdColumns).filter(
             ErdColumns.column_id.in_(req.column_ids),
-            ErdColumns.table.has(erd_id=erd_id)  # table 관계 필터
+            ErdColumns.table.has(erd_id=erd_id),  # table 관계 필터
         ).delete(synchronize_session=False)
 
     # 테이블 삭제
     if req.table_ids:
         db.query(ErdTables).filter(
-            ErdTables.table_id.in_(req.table_ids),
-            ErdTables.erd_id == erd_id
+            ErdTables.table_id.in_(req.table_ids), ErdTables.erd_id == erd_id
         ).delete(synchronize_session=False)
 
     db.commit()
     return
+
 
 # 변경사항 있을 시 자동저장
 @router.put("/{erd_id}/sync")
@@ -257,11 +258,13 @@ def sync_erd_changes(
     erd_id: int,
     req: ErdSyncRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     # ✅ 테이블 업데이트
     for t in req.updated_tables or []:
-        table = db.query(ErdTables).filter_by(table_id=t.table_id, erd_id=erd_id).first()
+        table = (
+            db.query(ErdTables).filter_by(table_id=t.table_id, erd_id=erd_id).first()
+        )
         if not table:
             continue
         updates = t.dict(exclude_unset=True, exclude={"table_id", "erd_id"})
@@ -279,7 +282,11 @@ def sync_erd_changes(
 
     # ✅ 관계 업데이트
     for r in req.updated_relations or []:
-        relation = db.query(ErdRelations).filter_by(relation_id=r.relation_id, erd_id=erd_id).first()
+        relation = (
+            db.query(ErdRelations)
+            .filter_by(relation_id=r.relation_id, erd_id=erd_id)
+            .first()
+        )
         if not relation:
             continue
         updates = r.dict(exclude_unset=True, exclude={"relation_id", "erd_id"})
@@ -296,7 +303,7 @@ def commit_erd_changes(
     erd_id: int,
     req: ErdSyncRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     # ✅ 활동 로그 생성
     log = ErdActivityLogs(
@@ -304,14 +311,16 @@ def commit_erd_changes(
         user_id=current_user.user_id,
         action_type="commit",
         target_name=None,
-        message="사용자가 수동 저장을 수행했습니다."
+        message="사용자가 수동 저장을 수행했습니다.",
     )
     db.add(log)
     db.flush()  # log_id 확보용
 
     # ✅ 테이블 변경 로그 기록
     for t in req.updated_tables:
-        table = db.query(ErdTables).filter_by(table_id=t.table_id, erd_id=erd_id).first()
+        table = (
+            db.query(ErdTables).filter_by(table_id=t.table_id, erd_id=erd_id).first()
+        )
         if not table:
             continue
         original = table.__dict__.copy()
@@ -323,8 +332,9 @@ def commit_erd_changes(
                     change_type="update",
                     target_type="table",
                     target_name=table.name,
+                    target_field=field,  # ✅ 변경된 필드명 저장
                     before_value=str(before),
-                    after_value=str(value)
+                    after_value=str(value),
                 )
                 db.add(detail)
                 setattr(table, field, value)
@@ -342,15 +352,20 @@ def commit_erd_changes(
                     change_type="update",
                     target_type="column",
                     target_name=column.name,
+                    target_field=field,  # ✅ 변경된 필드명 저장
                     before_value=str(before),
-                    after_value=str(value)
+                    after_value=str(value),
                 )
                 db.add(detail)
                 setattr(column, field, value)
 
     # ✅ 관계 변경 로그 기록
     for r in req.updated_relations:
-        relation = db.query(ErdRelations).filter_by(relation_id=r.relation_id, erd_id=erd_id).first()
+        relation = (
+            db.query(ErdRelations)
+            .filter_by(relation_id=r.relation_id, erd_id=erd_id)
+            .first()
+        )
         if not relation:
             continue
         for field, value in r.dict(exclude_unset=True).items():
@@ -361,8 +376,9 @@ def commit_erd_changes(
                     change_type="update",
                     target_type="relation",
                     target_name=str(relation.relation_id),
+                    target_field=field,  # ✅ 변경된 필드명 저장
                     before_value=str(before),
-                    after_value=str(value)
+                    after_value=str(value),
                 )
                 db.add(detail)
                 setattr(relation, field, value)

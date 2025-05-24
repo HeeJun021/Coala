@@ -45,7 +45,8 @@ from app.routers import (
     gpt,
     project,
     erd,
-    erd_detail
+    erd_detail,
+    erd_log_action
 )
 
 from app.schemas.user import UserUpdateSchema
@@ -116,6 +117,7 @@ app.include_router(project.router)
 # 프로젝트의 erd
 app.include_router(erd.router)
 app.include_router(erd_detail.router)
+app.include_router(erd_log_action.router)
 
 # 기본 라우트
 @app.get("/", tags=["Root"])

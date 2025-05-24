@@ -1,10 +1,17 @@
 import React, { useRef, useCallback, useState, useEffect } from "react";
-import { v4 as uuidv4 } from "uuid";
 import ErdTableBox from "./ErdTableBox";
 import FloatingToolButton from "./FloatingToolButton";
 import ErdRelationLine from "./ErdRelationLine";
 
-import { createTable, deleteTable, deleteMultipleTables  } from "../../../api/erd/tableApi";
+import {
+  createTable,
+  deleteTable,
+  deleteMultipleTables,
+} from "../../../api/erd/tableApi";
+import {
+  createRelation,
+  deleteMultipleRelations,
+} from "../../../api/erd/relationApi"; // 상단에 추가
 
 const ErdCanvas = ({
   isPlacing,
@@ -137,9 +144,10 @@ const ErdCanvas = ({
   };
 
   const handleMouseUp = () => {
-    // ✅ 실제 박스 드래그일 때만 선택 적용
     if (isDraggingSelectionBox && selectionBox) {
       const { x, y, width, height } = selectionBox;
+
+      // ✅ 선택된 테이블 ID 추출
       const selected = tables
         .filter(
           (t) =>
@@ -151,21 +159,37 @@ const ErdCanvas = ({
         .map((t) => t.id);
 
       setSelectedTableIds(selected);
+
+      // ✅ 선택된 테이블 간의 관계선도 함께 선택
+      const getTableIdByColumnId = (columnId) => {
+        for (const table of tables) {
+          if (table.columns.some((col) => col.column_id === columnId)) {
+            return table.id;
+          }
+        }
+        return null;
+      };
+
+      const tableIdSet = new Set(selected);
+      const relatedRelationIds = relations
+        .filter((rel) => {
+          const fromTableId = getTableIdByColumnId(rel.fromColumnId);
+          const toTableId = getTableIdByColumnId(rel.toColumnId);
+          return tableIdSet.has(fromTableId) && tableIdSet.has(toTableId);
+        })
+        .map((rel) => rel.relationId);
+
+      setSelectedRelationIds(relatedRelationIds);
     }
 
-    // ✅ 드래그하지 않았거나 box가 매우 작을 경우 선택 갱신하지 않음
-    // (즉, 선택 상태 유지)
-
-    // ✅ 무조건 selectionBox 및 drag 상태 초기화
     setSelectionBox(null);
     setIsDraggingSelectionBox(false);
     dragStartRef.current = null;
     dragOriginRef.current = null;
     tablePositionsRef.current = {};
 
-    setWasDraggingSelectionBox(isDraggingSelectionBox); // 🔴 드래그했음을 기록
+    setWasDraggingSelectionBox(isDraggingSelectionBox);
 
-    // 플래그는 잠시 뒤 자동 초기화
     setTimeout(() => setWasDraggingSelectionBox(false), 0);
   };
 
@@ -281,19 +305,74 @@ const ErdCanvas = ({
     };
   }, [tables, selectedTableIds]);
 
-  const handleColumnClick = (columnId) => {
+  const handleColumnClick = async (columnId) => {
     if (!isAddingRelation || !selectedRelationType) return;
 
     if (!pendingFromColumnId) {
       setPendingFromColumnId(columnId);
     } else {
-      const newRelation = {
-        relationId: uuidv4(),
-        fromColumnId: pendingFromColumnId,
-        toColumnId: columnId,
-        relationType: selectedRelationType,
-      };
-      setRelations((prev) => [...prev, newRelation]);
+      try {
+        // ✅ 프론트 → 백엔드 전송용 relation_type 매핑
+        const relationTypeMapForBackend = {
+          "1|1": "1..1",
+          "1|0..1": "1..0..1",
+          "1|1..*": "1..1..*",
+          "1|0..*": "1..0..*",
+          "0..1|1": "0..1..1",
+          "0..1|1..*": "0..1..1..*",
+          "0..1|0..*": "0..1..0..*",
+          "1..*|1..*": "1..*..1..*",
+          "1..*|0..*": "1..*..0..*",
+          "0..*|1..*": "0..*..1..*",
+        };
+
+        const relation_type = relationTypeMapForBackend[selectedRelationType];
+
+        if (!relation_type) {
+          alert("잘못된 관계 타입입니다.");
+          return;
+        }
+
+        // ✅ 컬럼 ID → 해당 컬럼이 속한 테이블 ID 찾기
+        const getTableIdByColumnId = (colId) => {
+          for (const table of tables) {
+            if (table.columns.some((col) => col.column_id === colId)) {
+              return table.id;
+            }
+          }
+          return null;
+        };
+
+        const source_table_id = getTableIdByColumnId(pendingFromColumnId);
+        const target_table_id = getTableIdByColumnId(columnId);
+
+        if (!source_table_id || !target_table_id) {
+          alert("테이블 ID를 찾을 수 없습니다.");
+          return;
+        }
+
+        const relationData = {
+          source_table_id,
+          source_column_id: pendingFromColumnId,
+          target_table_id,
+          target_column_id: columnId,
+          relation_type,
+        };
+
+        const created = await createRelation(erdId, relationData);
+
+        const newRelation = {
+          relationId: created.relation_id,
+          fromColumnId: created.source_column_id,
+          toColumnId: created.target_column_id,
+          relationType: created.relation_type,
+        };
+
+        setRelations((prev) => [...prev, newRelation]);
+      } catch (err) {
+        console.error("❌ 관계 생성 실패:", err.response?.data || err);
+        alert("관계 생성 중 오류가 발생했습니다.");
+      }
 
       setIsAddingRelation(false);
       setSelectedRelationType(null);
@@ -302,35 +381,53 @@ const ErdCanvas = ({
   };
 
   useEffect(() => {
-  const handleKeyDown = async (e) => {
-    if (e.key !== "Delete") return;
+    const handleKeyDown = async (e) => {
+      if (e.key !== "Delete") return;
 
-    // ✅ 테이블 다중 삭제
-    if (selectedTableIds.length > 0) {
-      try {
-        await deleteMultipleTables(erdId, selectedTableIds);  // ✅ 서버에 삭제 요청
-        setTables((prev) =>
-          prev.filter((t) => !selectedTableIds.includes(t.id))
-        );
-        setSelectedTableIds([]);  // ✅ 선택 초기화
-      } catch (err) {
-        console.error("다중 테이블 삭제 실패:", err);
+      // ✅ 테이블 삭제
+      if (selectedTableIds.length > 0) {
+        try {
+          await deleteMultipleTables(erdId, selectedTableIds);
+          setTables((prev) =>
+            prev.filter((t) => !selectedTableIds.includes(t.id))
+          );
+          setSelectedTableIds([]);
+        } catch (err) {
+          console.error("다중 테이블 삭제 실패:", err);
+        }
       }
-    }
 
-    // ✅ 관계선 삭제 (프론트 전용, 필요 시 백엔드 연동 가능)
-    if (selectedRelationIds.length > 0) {
-      setRelations((prev) =>
-        prev.filter((r) => !selectedRelationIds.includes(r.relationId))
-      );
-      setSelectedRelationIds([]);
-      setSelectedRelationId(null);
-    }
-  };
+      // ✅ 관계 삭제
+      if (selectedRelationIds.length > 0) {
+        // 숫자 ID만 추려내기
+        const serverRelationIds = selectedRelationIds.filter(
+          (id) => typeof id === "number" && !isNaN(id)
+        );
 
-  window.addEventListener("keydown", handleKeyDown);
-  return () => window.removeEventListener("keydown", handleKeyDown);
-}, [selectedTableIds, selectedRelationIds, erdId, setTables, setRelations]);
+        if (serverRelationIds.length > 0) {
+          console.log("🧪 bulk 삭제 요청할 relationIds:", serverRelationIds);
+
+          try {
+            await deleteMultipleRelations(erdId, serverRelationIds); // ✅ bulk API 호출
+
+            // 프론트 상태에서도 제거
+            setRelations((prev) =>
+              prev.filter((r) => !selectedRelationIds.includes(r.relationId))
+            );
+
+            setSelectedRelationIds([]);
+            setSelectedRelationId(null);
+          } catch (err) {
+            console.error("관계 삭제 실패:", err);
+            alert("관계 삭제 중 오류 발생");
+          }
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedTableIds, selectedRelationIds, erdId, setTables, setRelations]);
 
   return (
     <div

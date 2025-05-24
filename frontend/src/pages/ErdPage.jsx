@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { getErdDetail } from "../api/erd/erdDetailApi"; // ✅ API 임포트
 import { useParams } from "react-router-dom"; // ✅ 추가
 import ProjectHeader from "../components/erd/canvas/ProjectHeader";
@@ -24,31 +24,30 @@ const ErdPage = () => {
   const [convertType, setConvertType] = useState("class");
 
   // ✅ ERD 상세 조회
+  const fetchErdDetail = useCallback(async () => {
+    try {
+      const data = await getErdDetail(erdId);
+
+      const parsedTables = (data.tables || []).map((t) => ({
+        id: t.table_id,
+        x: t.pos_x,
+        y: t.pos_y,
+        tableName: t.name,
+        description: t.description || "",
+        columns: t.columns || [],
+      }));
+
+      setTables(parsedTables);
+      setColumns(data.columns || []);
+      setRelations(data.relations || []);
+    } catch (err) {
+      console.error("ERD 상세 조회 실패:", err);
+    }
+  }, [erdId]); // ✅ 의존성 배열에 erdId 포함
+
   useEffect(() => {
-    const fetchErdDetail = async () => {
-      try {
-        const data = await getErdDetail(erdId); // ✅ 동적 erdId 사용
-
-        // ✅ 테이블 데이터 매핑
-        const parsedTables = (data.tables || []).map((t) => ({
-          id: t.table_id, // ✅ 반드시 필요
-          x: t.pos_x,
-          y: t.pos_y,
-          tableName: t.name,
-          description: t.description || "",
-          columns: t.columns || [],
-        }));
-
-        setTables(parsedTables);
-        setColumns(data.columns || []); // 필요 없으면 생략 가능
-        setRelations(data.relations || []);
-      } catch (err) {
-        console.error("ERD 상세 조회 실패:", err);
-      }
-    };
-
     fetchErdDetail();
-  }, [erdId]);
+  }, [fetchErdDetail]); // ✅ ESLint가 만족함
 
   // 샘플 쿼리 자동 로딩
   const handleFetchAutoSql = () => {
@@ -68,6 +67,7 @@ CREATE TABLE users (
       <div className="shrink-0">
         <ProjectHeader
           projectName="ERD 샘플 프로젝트"
+          erdId={erdId}
           onEditName={() => {}}
           onOpenLog={() => {}}
           onOpenSidebar={() => setIsSidebarOpen(true)}
@@ -80,6 +80,7 @@ CREATE TABLE users (
           convertType={convertType}
           setConvertType={setConvertType}
           onFetch={handleFetchAutoSql}
+          onRefresh={fetchErdDetail}
         />
       </div>
 

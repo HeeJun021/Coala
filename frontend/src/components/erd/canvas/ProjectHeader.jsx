@@ -1,9 +1,15 @@
 import React, { useState } from "react";
 import Toast from "../../Toast";
 import CodeConvertHeaderPanel from "../CodeConvertHeaderPanel";
+import {
+  commitErd,
+  undoErdChange,
+  redoErdChange,
+} from "../../../api/erd/erdDetailApi";
 
 const ProjectHeader = ({
   projectName,
+  erdId,
   onEditName,
   onOpenSidebar,
   onOpenLog,
@@ -16,6 +22,7 @@ const ProjectHeader = ({
   convertType, // ✅ 외부 상태로부터 전달
   setConvertType, // ✅ 외부 상태로부터 전달
   onFetch, // ✅ 외부 상태로부터 전달
+  onRefresh 
 }) => {
   const [toastMessage, setToastMessage] = useState("");
 
@@ -29,6 +36,46 @@ const ProjectHeader = ({
 
   const handleZoomOut = () => {
     setZoomLevel((prev) => Math.max(prev - 0.1, 0.1));
+  };
+
+  const handleCommit = async () => {
+    const dataToCommit = {
+      updated_tables: [], // 실제 상태와 연동 필요
+      updated_columns: [],
+      updated_relations: [],
+    };
+
+    try {
+      await commitErd(erdId, dataToCommit); // erdId 또는 projectId 맞게 교체
+      showToast("📝 ERD 로그 기록 완료!");
+    } catch (err) {
+      console.error("로그 기록 실패:", err);
+      showToast("❌ 로그 기록 중 오류 발생");
+    }
+  };
+
+  const handleUndo = async () => {
+    try {
+      await undoErdChange(erdId);
+      onRefresh?.();  // ✅ 진짜 상태 다시 불러오기
+      showToast("🪄 마지막 작업을 되돌렸습니다.");
+      onFetch?.(); // ✅ 여기서 다시 최신 상태 불러오기
+    } catch (err) {
+      console.error("Undo 실패:", err);
+      showToast("⛔ 되돌리기 실패");
+    }
+  };
+
+  const handleRedo = async () => {
+    try {
+      await redoErdChange(erdId);
+      onRefresh?.();  // ✅ 진짜 상태 다시 불러오기
+      showToast("🔁 마지막 작업을 다시 실행했습니다.");
+      onFetch?.(); // ✅ 여기서도 다시 불러오기
+    } catch (err) {
+      console.error("Redo 실패:", err);
+      showToast("⛔ 다시 실행 실패");
+    }
   };
 
   return (
@@ -70,14 +117,7 @@ const ProjectHeader = ({
           </button>
 
           <button
-            onClick={() => showToast("📅 ERD 저장 완료!")}
-            className="px-3 py-1.5 hover:bg-[#333] rounded"
-          >
-            📅 저장
-          </button>
-
-          <button
-            onClick={() => showToast("📝 ERD 로그 기록 완료!")}
+            onClick={handleCommit}
             className="px-3 py-1.5 hover:bg-[#333] rounded"
           >
             📝 로그 기록
@@ -98,13 +138,14 @@ const ProjectHeader = ({
           </button>
 
           <button
-            onClick={() => showToast("⏪ 실행 취소는 추후 구현 예정")}
+            onClick={handleUndo}
             className="px-3 py-1.5 hover:bg-[#333] rounded"
           >
             ↩️
           </button>
+
           <button
-            onClick={() => showToast("⏭ 다시 실행은 추후 구현 예정")}
+            onClick={handleRedo}
             className="px-3 py-1.5 hover:bg-[#333] rounded"
           >
             ↪️

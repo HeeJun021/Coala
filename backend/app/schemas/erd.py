@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Literal
 
 
 class ErdCreate(BaseModel):
@@ -115,8 +115,11 @@ class ErdRelationCreate(BaseModel):
     source_column_id: int
     target_table_id: int
     target_column_id: int
-    relation_type: str
-
+    relation_type: Literal[
+        '1..1', '1..0..1', '1..1..*', '1..0..*',
+        '0..1..1', '0..1..1..*', '0..1..0..*',
+        '1..*..1..*', '1..*..0..*', '0..*..1..*'
+    ]
 
 class ErdRelationOut(BaseModel):
     relation_id: int

@@ -65,7 +65,7 @@ class ErdRelations(Base):
     source_column_id = Column(Integer, ForeignKey("erdcolumns.column_id", ondelete="CASCADE"), nullable=False)
     target_table_id = Column(Integer, ForeignKey("erdtables.table_id", ondelete="CASCADE"), nullable=False)
     target_column_id = Column(Integer, ForeignKey("erdcolumns.column_id", ondelete="CASCADE"), nullable=False)
-    relation_type = Column(String(10), nullable=False)
+    relation_type = Column(String(20), nullable=False)
     auto_create_fk = Column(Boolean, default=True)
     cascade_delete = Column(Boolean, default=False)
 
@@ -86,6 +86,9 @@ class ErdActivityLogs(Base):
     target_name = Column(String(100))
     message = Column(Text)
     created_at = Column(TIMESTAMP, server_default=func.now())
+    
+    # ✅ Undo/Redo 상태 관리용 필드
+    undone = Column(Boolean, default=False)
 
     erd = relationship("Erds", back_populates="activity_logs")
     user = relationship("User")
@@ -100,6 +103,7 @@ class ErdActivityLogDetails(Base):
     change_type = Column(String(20), nullable=False)
     target_type = Column(String(20), nullable=False)
     target_name = Column(String(100))
+    target_field = Column(String(50)) # ✅ 변경된 속성명 (예: name, data_type)
     before_value = Column(Text)
     after_value = Column(Text)
 
