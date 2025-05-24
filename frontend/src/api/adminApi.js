@@ -82,3 +82,17 @@ export const deleteAdminComment = async (commentId) => {
   const response = await apiClient.delete(`/admin/comments/${commentId}`);
   return response.data;
 };
+
+// ✅ 언어별 학습자료 목록 및 완료 횟수 조회
+export const fetchStudyMaterialSummary = async (language) => {
+  const res = await apiClient.get("/admin/study-materials/summary", {
+    params: { language },
+  });
+  return res.data;
+};
+
+// ✅ 학습자료 삭제
+export const deleteStudyMaterial = async (materialId) => {
+  const res = await apiClient.delete(`/admin/study-materials/${materialId}`);
+  return res.data;
+};

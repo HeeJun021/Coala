@@ -7,9 +7,9 @@ const AdminNavbar = ({ setUser }) => {
 
   const handleLogout = async () => {
   try {
-    await logoutUser();       // ✅ API 호출
-    setUser(null);            // ✅ context 상태 초기화
-    navigate("/");            // ✅ 홈으로 이동
+    await logoutUser();       
+    setUser(null);            
+    navigate("/");            
 
     // 🔁 100ms 정도 지연 후 새로고침
     setTimeout(() => {

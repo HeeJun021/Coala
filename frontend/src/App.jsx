@@ -21,6 +21,7 @@ import AdminDashboardPage from "./admin/AdminDashboardPage";
 import StudymaterialManagementPage from "./admin/StudymaterialManagementPage";
 import QuizManagementPage from "./admin/QuizManagementPage";
 import CodingtestManagementPage from "./admin/CodingtestManagementPage";
+import AdminCodingTestDetailPage from "./admin/AdminCodingtestDetailPage";
 import BoardManagementPage from "./admin/BoardManagementPage";
 import UserManagementPage from "./admin/UserManagementPage";
 import ProjectManagementPage from "./admin/ProjectManagementPage";
@@ -148,6 +149,7 @@ const App = () => {
                   <Route path="projects" element={<ProjectManagementPage />} />
                   <Route path="quizzes" element={<QuizManagementPage />} />
                   <Route path="codingtest" element={<CodingtestManagementPage />} />
+                  <Route path="codingtest/:testId" element={<AdminCodingTestDetailPage />} /> {/* ✅ 이 줄 추가 */}
                   <Route path="board" element={<BoardManagementPage />} />
                   <Route path="users" element={<UserManagementPage />} />
                   <Route path="posts/:postId" element={<BoardManagementDetailPage />} />

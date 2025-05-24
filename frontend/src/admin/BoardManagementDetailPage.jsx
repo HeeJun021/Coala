@@ -64,45 +64,45 @@ const BoardManagementDetailPage = () => {
   if (!post) return <div className="p-6 text-red-500">게시글을 찾을 수 없습니다.</div>;
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="p-8">
+      <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">📝 게시글 상세</h1>
         <button onClick={handleDeletePost} className="text-sm text-red-500 hover:underline">
           삭제
         </button>
       </div>
 
-      <div className="bg-white shadow p-4 rounded">
-        <h2 className="text-xl font-semibold mb-1">{post.title}</h2>
-        <p className="text-sm text-gray-500 mb-2">
+      <div className="bg-white shadow p-6 rounded mb-6">
+        <h2 className="text-xl font-semibold mb-2 text-gray-800">{post.title}</h2>
+        <p className="text-sm text-gray-500 mb-4">
           작성자: {post.author_nickname} | 게시판: {post.board_type} | 작성일: {new Date(post.created_at).toLocaleString()}
         </p>
-        <p className="whitespace-pre-line text-gray-800">{post.content}</p>
+        <p className="whitespace-pre-line text-gray-700 leading-relaxed">{post.content}</p>
       </div>
 
-      <div>
-        <h3 className="text-lg font-semibold mb-2">💬 댓글 목록</h3>
+      <div className="bg-white shadow p-6 rounded">
+        <h3 className="text-lg font-semibold mb-4">💬 댓글 목록</h3>
         {comments.length === 0 ? (
           <p className="text-gray-500">댓글이 없습니다.</p>
         ) : (
-          <ul className="space-y-3">
+          <ul className="space-y-4">
             {comments.map((comment) => (
               <li
                 key={comment.comment_id}
-                className="bg-white border p-3 rounded flex justify-between items-start"
+                className="border p-4 rounded flex justify-between items-start hover:bg-gray-50"
               >
                 <div>
-                  <p className="text-sm text-gray-700 whitespace-pre-line">
+                  <p className="text-sm text-gray-800 whitespace-pre-line">
                     {comment.content}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-500 mt-2">
                     작성자: {comment.user?.nickname || "알 수 없음"} | 작성일: {new Date(comment.created_at).toLocaleString()}
                   </p>
                 </div>
                 {comment.content !== "삭제된 댓글입니다." && (
                   <button
                     onClick={() => handleDeleteComment(comment.comment_id)}
-                    className="text-sm text-red-500 hover:underline"
+                    className="text-xs text-red-500 hover:underline mt-1"
                   >
                     삭제
                   </button>

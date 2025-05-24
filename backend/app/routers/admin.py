@@ -70,3 +70,13 @@ def get_all_posts(board_type: str = Query(...), db: Session = Depends(get_db)):
 def admin_delete_post(post_id: int, db: Session = Depends(get_db)):
     board_service.delete_post(post_id, db)
     return {"message": "게시글이 삭제되었습니다."}
+
+# ✅ 학습자료 제목 + 완료 수 조회 라우터 추가
+@router.get("/study-materials/summary")
+def get_study_material_summary(language: str, db: Session = Depends(get_db)):
+    return admin_service.get_study_material_summary_by_language(db, language)
+
+# ✅ 학습자료 삭제 라우터 추가
+@router.delete("/study-materials/{material_id}")
+def delete_study_material(material_id: int, db: Session = Depends(get_db)):
+    return admin_service.delete_study_material(db, material_id)

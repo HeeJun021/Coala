@@ -3,6 +3,9 @@ from sqlalchemy import func, desc, literal, text, literal_column, select, union_
 from datetime import date, datetime, timedelta
 from app.models.user import User
 from app.models.board import PostReport, CommentReport, Post, Comment, PostLike
+from app.models.language import Language
+from app.models.study_materials import StudyMaterials
+from app.models.studymaterialread import studymaterialreads
 from sqlalchemy.types import Date
 from app.schemas.board import PostResponse
 
@@ -257,3 +260,34 @@ def get_all_posts_by_board(board_type: str, db: Session):
         result.append(post_data)
 
     return result
+
+def get_study_material_summary_by_language(db: Session, language: str):
+    language_obj = db.query(Language).filter(Language.language == language).first()
+    if not language_obj:
+        raise HTTPException(status_code=404, detail="해당 언어를 찾을 수 없습니다.")
+
+    results = (
+        db.query(
+            StudyMaterials.material_id,
+            StudyMaterials.title,
+            func.count().label("read_count")
+        )
+        .outerjoin(studymaterialreads, StudyMaterials.material_id == studymaterialreads.material_id)
+        .filter(StudyMaterials.language_id == language_obj.language_id)
+        .group_by(StudyMaterials.material_id)
+        .all()
+    )
+
+    return [
+        {"material_id": r.material_id, "title": r.title, "read_count": r.read_count}
+        for r in results
+    ]
+    
+# ✅ 학습자료 삭제
+def delete_study_material(db: Session, material_id: int):
+    material = db.query(StudyMaterials).filter(StudyMaterials.material_id == material_id).first()
+    if not material:
+        raise ValueError("해당 학습자료를 찾을 수 없습니다.")
+    db.delete(material)
+    db.commit()
+    return {"message": "학습자료가 삭제되었습니다."}

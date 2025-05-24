@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { fetchAdminPosts, deleteAdminPost } from "../api/adminApi";
-import { getBoardDetail } from "../api/boardApi";
 import { useNavigate } from "react-router-dom";
+import { FaEllipsisV } from "react-icons/fa";
 
 const BOARD_TYPES = [
   { label: "자유 게시판", value: "free" },
@@ -12,25 +12,17 @@ const BOARD_TYPES = [
 const BoardManagementPage = () => {
   const [boardType, setBoardType] = useState("free");
   const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(false);
-
+  const [dropdownOpenId, setDropdownOpenId] = useState(null);
   const navigate = useNavigate();
 
   const loadPosts = async () => {
-    setLoading(true);
     try {
       const data = await fetchAdminPosts(boardType);
       setPosts(data);
     } catch (err) {
       console.error("게시글을 불러오지 못했습니다:", err);
-    } finally {
-      setLoading(false);
     }
   };
-
-  useEffect(() => {
-    loadPosts();
-  }, [boardType]);
 
   const handleDelete = async (postId) => {
     if (window.confirm("정말 삭제하시겠습니까?")) {
@@ -43,54 +35,89 @@ const BoardManagementPage = () => {
     }
   };
 
-  const handleDetail = (postId) => {
-    navigate(`/admin/posts/${postId}`); // 관리자용 상세 페이지 경로로 이동
-  };
+  useEffect(() => {
+    loadPosts();
+  }, [boardType]);
+
+  useEffect(() => {
+    const handleClickOutside = () => setDropdownOpenId(null);
+    window.addEventListener("click", handleClickOutside);
+    return () => window.removeEventListener("click", handleClickOutside);
+  }, []);
 
   return (
-    <div className="px-6 py-6 space-y-6">
-      <h1 className="text-2xl font-bold">📋 게시글 관리</h1>
+    <div className="p-8">
+      <h1 className="text-2xl font-bold mb-6">📋 게시글 관리</h1>
 
-      <div className="flex gap-4">
-        {BOARD_TYPES.map((item) => (
-          <button
-            key={item.value}
-            onClick={() => setBoardType(item.value)}
-            className={`px-4 py-2 rounded border ${
-              boardType === item.value ? "bg-blue-600 text-white" : "bg-white"
-            }`}
-          >
-            {item.label}
-          </button>
-        ))}
+      {/* 게시판 선택 */}
+      <div className="mb-4">
+        <select
+          value={boardType}
+          onChange={(e) => setBoardType(e.target.value)}
+          className="px-3 py-1 border rounded"
+        >
+          {BOARD_TYPES.map((item) => (
+            <option key={item.value} value={item.value}>
+              {item.label}
+            </option>
+          ))}
+        </select>
       </div>
 
-      {loading ? (
-        <p>로딩 중...</p>
-      ) : posts.length === 0 ? (
-        <p className="text-gray-500">게시글이 없습니다.</p>
-      ) : (
-        <ul className="space-y-4">
-          {posts.map((post) => (
-            <li
-              key={post.post_id}
-              className="p-4 bg-white rounded shadow flex justify-between items-start"
-            >
-              <div className="cursor-pointer" onClick={() => handleDetail(post.post_id)}>
-                <p className="font-semibold">{post.title}</p>
-                <p className="text-sm text-gray-500">
-                  작성자: {post.author_nickname} | 댓글: {post.comment_count} | 좋아요: {post.like_count}
-                </p>
-              </div>
-              <button
-                onClick={() => handleDelete(post.post_id)}
-                className="text-sm text-red-500 hover:underline"
-              >
-                삭제
-              </button>
-            </li>
-          ))}
-        </ul>
+      {/* 게시글 목록 */}
+      <div className="bg-white rounded shadow overflow-hidden">
+        <table className="w-full table-auto text-left">
+          <thead className="bg-navbar text-white">
+            <tr>
+              <th className="px-4 py-3">제목</th>
+              <th className="px-4 py-3">작성자</th>
+              <th className="px-4 py-3">댓글</th>
+              <th className="px-4 py-3">좋아요</th>
+              <th className="px-4 py-3 text-center">관리</th>
+            </tr>
+          </thead>
+          <tbody>
+            {posts.map((post) => (
+              <tr key={post.post_id} className="border-t hover:bg-gray-50">
+                <td
+                  className="px-4 py-3 cursor-pointer text-blue-600 hover:underline"
+                  onClick={() => navigate(`/admin/posts/${post.post_id}`)}
+                >
+                  {post.title}
+                </td>
+                <td className="px-4 py-3">{post.author_nickname}</td>
+                <td className="px-4 py-3">{post.comment_count}</td>
+                <td className="px-4 py-3">{post.like_count}</td>
+                <td className="px-4 py-3 text-center relative">
+                  <button
+                    className="text-gray-600 hover:text-black"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDropdownOpenId(dropdownOpenId === post.post_id ? null : post.post_id);
+                    }}
+                  >
+                    <FaEllipsisV />
+                  </button>
+                  {dropdownOpenId === post.post_id && (
+                    <div className="absolute right-6 mt-2 bg-white border rounded shadow-md z-10 w-32">
+                      <button
+                        className="block w-full text-left px-4 py-2 text-sm hover:bg-red-100 text-red-600"
+                        onClick={() => handleDelete(post.post_id)}
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* 게시글 없을 때 */}
+      {posts.length === 0 && (
+        <p className="text-gray-500 text-center py-6">게시글이 없습니다.</p>
       )}
     </div>
   );
