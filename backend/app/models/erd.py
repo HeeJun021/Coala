@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, TIMESTAMP, func, Boolean
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, TIMESTAMP, func, Boolean, JSON, DateTime
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -18,6 +18,7 @@ class Erds(Base):
     tables = relationship("ErdTables", back_populates="erd", cascade="all, delete-orphan")
     relations = relationship("ErdRelations", back_populates="erd", cascade="all, delete-orphan")
     activity_logs = relationship("ErdActivityLogs", back_populates="erd", cascade="all, delete-orphan")
+    snapshots = relationship("ErdSnapshot", back_populates="erd", cascade="all, delete-orphan")
 
 
 class ErdTables(Base):
@@ -76,6 +77,17 @@ class ErdRelations(Base):
     source_column = relationship("ErdColumns", foreign_keys=[source_column_id], back_populates="source_relations")
     target_column = relationship("ErdColumns", foreign_keys=[target_column_id], back_populates="target_relations")
 
+class ErdSnapshot(Base):
+    __tablename__ = "erdsnapshots"  # PascalCase로 테이블 이름 유지
+
+    snapshot_id = Column(Integer, primary_key=True, autoincrement=True)  # PostgreSQL IDENTITY 호환
+    erd_id = Column(Integer, ForeignKey("erds.erd_id", ondelete="CASCADE"), nullable=False)
+    state_json = Column(JSON, nullable=False)
+    is_active = Column(Boolean, default=False)
+    created_at = Column(DateTime, server_default=func.now())
+
+    # 관계 설정 (역참조: 필요 시 사용 가능)
+    erd = relationship("Erds", back_populates="snapshots", lazy="joined")
 
 class ErdActivityLogs(Base):
     __tablename__ = "erdactivitylogs"

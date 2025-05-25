@@ -21,6 +21,7 @@ const ErdTableBox = ({
   isSelected,
   onDragMove,
   erdId,
+  onSnapshotRequest,
 }) => {
   const [localName, setLocalName] = useState(tableName || "");
   const [localDesc, setLocalDesc] = useState(description || "");
@@ -185,6 +186,11 @@ const ErdTableBox = ({
         patchTable(erdId, id, { pos_x: x, pos_y: y }).catch((err) => {
           console.error("🛑 테이블 위치 저장 실패:", err);
         });
+
+        // ✅ 스냅샷 저장 요청
+        if (onSnapshotRequest) {
+          onSnapshotRequest();
+        }
       }
     };
 

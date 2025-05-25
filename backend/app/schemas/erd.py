@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional, Literal
+from typing import List, Optional, Literal, Any
 
 
 class ErdCreate(BaseModel):
@@ -171,3 +171,7 @@ class ErdSyncRequest(BaseModel):
     updated_tables: List[ErdTableUpdate] = []
     updated_columns: List[ErdColumnUpdate] = []
     updated_relations: List[ErdRelationUpdate] = []
+
+# 스냅샷
+class ErdSnapshotCreate(BaseModel):
+    state_json: Any  # 전체 ERD 구조를 JSON 형태로 받음

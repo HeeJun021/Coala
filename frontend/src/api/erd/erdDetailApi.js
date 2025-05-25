@@ -20,13 +20,35 @@ export const commitErd = async (erdId, data) => {
   return response.data;
 };
 
-// ✅ ERD 작업 Undo
+// 스냅샷 저장
+export const saveErdSnapshot = async (erdId, stateJson) => {
+  const response = await apiClient.post(`/erds/${erdId}/snapshots`, {
+    state_json: stateJson,
+  });
+  return response.data;
+};
+
+
+// ✅ ERD 상태 복원 (Undo)
 export const undoErdChange = async (erdId) => {
   const response = await apiClient.post(`/erds/${erdId}/undo`);
   return response.data;
 };
-// ✅ ERD 작업 Redo
+
+// ✅ ERD 상태 복원 (Redo)
 export const redoErdChange = async (erdId) => {
   const response = await apiClient.post(`/erds/${erdId}/redo`);
+  return response.data;
+};
+
+// 🗃️ (보관용) 로그 기반 Undo
+export const undoErdByLog = async (erdId) => {
+  const response = await apiClient.post(`/erds/${erdId}/__log_undo`);
+  return response.data;
+};
+
+// 🗃️ (보관용) 로그 기반 Redo
+export const redoErdByLog = async (erdId) => {
+  const response = await apiClient.post(`/erds/${erdId}/__log_redo`);
   return response.data;
 };

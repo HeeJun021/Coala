@@ -15,7 +15,7 @@ from app.dependencies.auth import get_current_user
 router = APIRouter(tags=["ERD Actions"])
 
 # ✅ Undo: 마지막 변경을 되돌리기
-@router.post("/erds/{erd_id}/undo")
+@router.post("/erds/{erd_id}/__log_undo")
 def undo_last_erd_change(
     erd_id: int,
     db: Session = Depends(get_db),
@@ -76,7 +76,7 @@ def undo_last_erd_change(
 
 
 # ✅ Redo: 마지막 Undo를 다시 실행
-@router.post("/erds/{erd_id}/redo")
+@router.post("/erds/{erd_id}/__log_redo")
 def redo_last_undone_change(
     erd_id: int,
     db: Session = Depends(get_db),

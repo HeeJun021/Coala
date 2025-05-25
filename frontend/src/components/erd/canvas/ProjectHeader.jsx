@@ -55,28 +55,36 @@ const ProjectHeader = ({
   };
 
   const handleUndo = async () => {
-    try {
-      await undoErdChange(erdId);
-      onRefresh?.();  // ✅ 진짜 상태 다시 불러오기
-      showToast("🪄 마지막 작업을 되돌렸습니다.");
-      onFetch?.(); // ✅ 여기서 다시 최신 상태 불러오기
-    } catch (err) {
-      console.error("Undo 실패:", err);
-      showToast("⛔ 되돌리기 실패");
+    console.log("📦 erdId =", erdId); // 🔥 이거 넣어보세요
+  try {
+    const res = await undoErdChange(erdId);
+    const { state_json } = res;
+    if (state_json) {
+      onRefresh?.(); // optional
+      onFetch?.(state_json); // ✅ 아래 예시처럼 state_json 넘기기
     }
-  };
+    showToast("🪄 마지막 상태로 되돌렸습니다.");
+  } catch (err) {
+    console.error("Undo 실패:", err);
+    showToast("⛔ 되돌리기 실패");
+  }
+};
 
-  const handleRedo = async () => {
-    try {
-      await redoErdChange(erdId);
-      onRefresh?.();  // ✅ 진짜 상태 다시 불러오기
-      showToast("🔁 마지막 작업을 다시 실행했습니다.");
-      onFetch?.(); // ✅ 여기서도 다시 불러오기
-    } catch (err) {
-      console.error("Redo 실패:", err);
-      showToast("⛔ 다시 실행 실패");
+const handleRedo = async () => {
+  try {
+    const res = await redoErdChange(erdId);
+    const { state_json } = res;
+    if (state_json) {
+      onRefresh?.();
+      onFetch?.(state_json); // ✅ Redo도 마찬가지
     }
-  };
+    showToast("🔁 다음 상태로 되돌렸습니다.");
+  } catch (err) {
+    console.error("Redo 실패:", err);
+    showToast("⛔ 다시 실행 실패");
+  }
+};
+
 
   return (
     <div className="w-full bg-[#252836] text-white px-4 py-3 shadow-md relative">

@@ -13,6 +13,8 @@ import {
   deleteMultipleRelations,
 } from "../../../api/erd/relationApi"; // 상단에 추가
 
+import { saveErdSnapshot } from "../../../api/erd/erdDetailApi";
+
 const ErdCanvas = ({
   isPlacing,
   setIsPlacing,
@@ -44,6 +46,10 @@ const ErdCanvas = ({
   const dragStartRef = useRef(null);
   const dragOriginRef = useRef(null);
   const tablePositionsRef = useRef({});
+  useEffect(() => {
+  console.log("🔁 [ErdCanvas] props.tables 변경 감지됨:", tables);
+}, [tables]);
+
 
   const handleMouseDown = (e) => {
     if (e.button !== 0 || isToolDragging) return; // 🛑 툴탭 드래그 중이면 무시
@@ -215,16 +221,22 @@ const ErdCanvas = ({
 
       console.log("🧪 newTable 응답 확인", newTable);
 
-      setTables((prev) => [
-        ...prev,
-        {
-          id: newTable.table_id,
-          x: newTable.pos_x,
-          y: newTable.pos_y,
-          tableName: newTable.name,
-          columns: [],
-        },
-      ]);
+      setTables((prev) => {
+        const updated = [
+          ...prev,
+          {
+            id: newTable.table_id,
+            x: newTable.pos_x,
+            y: newTable.pos_y,
+            tableName: newTable.name,
+            columns: [],
+          },
+        ];
+
+        // ✅ 테이블 추가 완료 후 스냅샷 저장
+        handleSnapshotSaveWithColumns(updated, relations);
+        return updated;
+      });
     } catch (err) {
       console.error("테이블 생성 실패:", err);
       alert("테이블 생성 중 오류가 발생했습니다.");
@@ -312,7 +324,6 @@ const ErdCanvas = ({
       setPendingFromColumnId(columnId);
     } else {
       try {
-        // ✅ 프론트 → 백엔드 전송용 relation_type 매핑
         const relationTypeMapForBackend = {
           "1|1": "1..1",
           "1|0..1": "1..0..1",
@@ -327,13 +338,11 @@ const ErdCanvas = ({
         };
 
         const relation_type = relationTypeMapForBackend[selectedRelationType];
-
         if (!relation_type) {
           alert("잘못된 관계 타입입니다.");
           return;
         }
 
-        // ✅ 컬럼 ID → 해당 컬럼이 속한 테이블 ID 찾기
         const getTableIdByColumnId = (colId) => {
           for (const table of tables) {
             if (table.columns.some((col) => col.column_id === colId)) {
@@ -345,7 +354,6 @@ const ErdCanvas = ({
 
         const source_table_id = getTableIdByColumnId(pendingFromColumnId);
         const target_table_id = getTableIdByColumnId(columnId);
-
         if (!source_table_id || !target_table_id) {
           alert("테이블 ID를 찾을 수 없습니다.");
           return;
@@ -368,7 +376,11 @@ const ErdCanvas = ({
           relationType: created.relation_type,
         };
 
-        setRelations((prev) => [...prev, newRelation]);
+        const updatedRelations = [...relations, newRelation];
+        setRelations(updatedRelations);
+
+        // ✅ 스냅샷 저장
+        await handleSnapshotSaveWithColumns(tables, updatedRelations);
       } catch (err) {
         console.error("❌ 관계 생성 실패:", err.response?.data || err);
         alert("관계 생성 중 오류가 발생했습니다.");
@@ -380,18 +392,47 @@ const ErdCanvas = ({
     }
   };
 
+  const handleSnapshotSaveWithColumns = useCallback(
+    async (newTables, newRelations) => {
+      const allColumns = newTables.flatMap((table) =>
+        (table.columns || []).map((column) => ({
+          ...column,
+          table_id: table.id,
+        }))
+      );
+
+      try {
+        await saveErdSnapshot(erdId, {
+          tables: newTables,
+          columns: allColumns,
+          relations: newRelations,
+        });
+        console.log("✅ 스냅샷 저장 완료");
+      } catch (err) {
+        console.error("❌ 스냅샷 저장 실패:", err);
+      }
+    },
+    [erdId] // ✅ 의존성은 erdId만
+  );
+
   useEffect(() => {
     const handleKeyDown = async (e) => {
       if (e.key !== "Delete") return;
+
+      let updatedTables = tables;
+      let updatedRelations = relations;
+      let changed = false;
 
       // ✅ 테이블 삭제
       if (selectedTableIds.length > 0) {
         try {
           await deleteMultipleTables(erdId, selectedTableIds);
-          setTables((prev) =>
-            prev.filter((t) => !selectedTableIds.includes(t.id))
+          updatedTables = tables.filter(
+            (t) => !selectedTableIds.includes(t.id)
           );
+          setTables(updatedTables);
           setSelectedTableIds([]);
+          changed = true;
         } catch (err) {
           console.error("다중 테이블 삭제 실패:", err);
         }
@@ -399,35 +440,45 @@ const ErdCanvas = ({
 
       // ✅ 관계 삭제
       if (selectedRelationIds.length > 0) {
-        // 숫자 ID만 추려내기
         const serverRelationIds = selectedRelationIds.filter(
           (id) => typeof id === "number" && !isNaN(id)
         );
 
         if (serverRelationIds.length > 0) {
-          console.log("🧪 bulk 삭제 요청할 relationIds:", serverRelationIds);
-
           try {
-            await deleteMultipleRelations(erdId, serverRelationIds); // ✅ bulk API 호출
-
-            // 프론트 상태에서도 제거
-            setRelations((prev) =>
-              prev.filter((r) => !selectedRelationIds.includes(r.relationId))
+            await deleteMultipleRelations(erdId, serverRelationIds);
+            updatedRelations = relations.filter(
+              (r) => !selectedRelationIds.includes(r.relationId)
             );
-
+            setRelations(updatedRelations);
             setSelectedRelationIds([]);
             setSelectedRelationId(null);
+            changed = true;
           } catch (err) {
             console.error("관계 삭제 실패:", err);
             alert("관계 삭제 중 오류 발생");
           }
         }
       }
+
+      // ✅ 삭제 후에만 스냅샷 저장
+      if (changed) {
+        handleSnapshotSaveWithColumns(updatedTables, updatedRelations);
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedTableIds, selectedRelationIds, erdId, setTables, setRelations]);
+  }, [
+    selectedTableIds,
+    selectedRelationIds,
+    tables,
+    relations,
+    erdId,
+    setTables,
+    setRelations,
+    handleSnapshotSaveWithColumns,
+  ]);
 
   return (
     <div
@@ -497,6 +548,9 @@ const ErdCanvas = ({
             }}
             onDragMove={(mouseX, mouseY) =>
               handleBatchUpdateTablePosition(table.id, mouseX, mouseY)
+            }
+            onSnapshotRequest={() =>
+              handleSnapshotSaveWithColumns(tables, relations)
             }
           />
         ))}

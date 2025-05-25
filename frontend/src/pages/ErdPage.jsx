@@ -102,6 +102,7 @@ CREATE TABLE users (
           setConvertType={setConvertType}
           onFetch={handleFetchAutoSql}
           onRefresh={fetchErdDetail}
+
         />
       </div>
 
