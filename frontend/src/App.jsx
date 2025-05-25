@@ -111,6 +111,7 @@ const App = () => {
     const fetchUserData = async () => {
       try {
         const user = await getCurrentUser();
+        console.log("🔍 user:", user);
         setUserData({
           user_id: user.user_id,
           email: user.email,
@@ -125,6 +126,7 @@ const App = () => {
           updated_at: user.updated_at,
           tier_name: user.tier?.tier_name || "초급",
           is_admin: user.is_admin || false,
+           eucalyptus_balance: user.eucalyptus_balance ?? 0,
         });
       } catch (error) {
         console.error("⚠️ 사용자 데이터를 가져오는 중 오류 발생:", error);
@@ -191,11 +193,12 @@ const App = () => {
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
 
-                  <Route path="/mypage/*" element={<MyPage userData={userData} />} />
-                  <Route path="/mypage/modify" element={<MyPageModify userData={userData} setUserData={setUserData} />} />
-                  <Route path="/mypage/setting" element={<MyPageSetting userData={userData} />} />
-                  <Route path="/mypage/quiz-history" element={<MyPageQuizHistory userData={userData} />} />
-                  <Route path="/mypage/userquiz-history" element={<MyPageUserQuizHistory userData={userData} />} />
+                  <Route path="mypage" element={<MyPage userData={userData} setUserData={setUserData} />}>
+                    <Route path="modify" element={<MyPageModify />} />
+                    <Route path="setting" element={<MyPageSetting />} />
+                    <Route path="quiz-history" element={<MyPageQuizHistory />} />
+                    <Route path="userquiz-history" element={<MyPageUserQuizHistory />} />
+                  </Route>
 
                   <Route path="/team-project" element={<TeamProjectPage />} />
 

@@ -47,6 +47,7 @@ from app.routers import (
     project,
     erd,
     admin_codingtest_router,
+    eucalyptus,
 )
 
 from app.schemas.user import UserUpdateSchema
@@ -120,6 +121,7 @@ app.include_router(admin_codingtest_router.router)
 # 프로젝트의 erd
 app.include_router(erd.router)
 
+app.include_router(eucalyptus.router)
 
 # 기본 라우트
 @app.get("/", tags=["Root"])

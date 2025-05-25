@@ -1,15 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import { getUserQuizHistory } from "../api/userQuizApi";
 import MyPageSidebar from "../Layout/MyPageSideBar";
 
-const MyPageUserQuizHistory = ({ userData }) => {
+const MyPageUserQuizHistory = () => {
   const navigate = useNavigate();
+  const { userData } = useOutletContext();
   const [quizHistory, setQuizHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // 페이지네이션 상태
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
 
@@ -45,7 +44,6 @@ const MyPageUserQuizHistory = ({ userData }) => {
   if (loading) return <p>로딩 중...</p>;
   if (error) return <p>{error}</p>;
 
-  // 페이지네이션 계산
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = quizHistory.slice(indexOfFirstItem, indexOfLastItem);
@@ -58,92 +56,89 @@ const MyPageUserQuizHistory = ({ userData }) => {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="flex min-h-screen">
       <div className="w-[250px]">
-        <MyPageSidebar />
+        <MyPageSidebar userData={userData} />
       </div>
-      <h2 className="text-xl font-semibold mt-12">📜 사용자 퀴즈 풀이 내역</h2>
+      <div className="flex-1 p-6">
+        <h2 className="text-xl font-semibold mt-4">📜 사용자 퀴즈 풀이 내역</h2>
 
-      {quizHistory.length === 0 ? (
-        <p className="text-sm text-gray-500">풀이한 퀴즈가 없습니다.</p>
-      ) : (
-        <div className="bg-white shadow-md rounded-lg p-4 mt-4">
-          <table className="w-full border-collapse border text-base">
-            <thead>
-              <tr className="bg-gray-100 text-sm">
-                <th className="border px-4 py-2 text-center">퀴즈 제목</th>
-                <th className="border px-4 py-2 text-center">정답 개수</th>
-                <th className="border px-4 py-2 text-center">제출 날짜</th>
-                <th className="border px-4 py-2 text-center">제작자</th>
-                <th className="border px-4 py-2 text-center">결과 보기</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentItems.map((quiz) => (
-                <tr key={quiz.uq_submission_id} className="border text-sm">
-                  <td className="px-4 py-2 text-center">{quiz.title}</td>
-                  <td className="px-4 py-2 text-center">{quiz.correct_count}</td>
-                  <td className="px-4 py-2 text-center">
-                    {new Date(quiz.submitted_at).toLocaleString()}
-                  </td>
-                  <td className="px-4 py-2 text-center">{quiz.creator_name}</td>
-                  <td className="px-4 py-2 text-center">
-                    <button
-                      className="px-4 py-2 bg-accent text-white text-sm rounded-lg"
-                      onClick={() =>
-                        navigate(`/user-quiz-result/${quiz.uq_submission_id}`)
-                      }
-                    >
-                      보기
-                    </button>
-                  </td>
+        {quizHistory.length === 0 ? (
+          <p className="text-sm text-gray-500">풀이한 퀴즈가 없습니다.</p>
+        ) : (
+          <div className="bg-white shadow-md rounded-lg p-4 mt-4">
+            <table className="w-full border-collapse border text-base">
+              <thead>
+                <tr className="bg-gray-100 text-sm">
+                  <th className="border px-4 py-2 text-center">퀴즈 제목</th>
+                  <th className="border px-4 py-2 text-center">정답 개수</th>
+                  <th className="border px-4 py-2 text-center">제출 날짜</th>
+                  <th className="border px-4 py-2 text-center">제작자</th>
+                  <th className="border px-4 py-2 text-center">결과 보기</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </thead>
+              <tbody>
+                {currentItems.map((quiz) => (
+                  <tr key={quiz.uq_submission_id} className="border text-sm">
+                    <td className="px-4 py-2 text-center">{quiz.title}</td>
+                    <td className="px-4 py-2 text-center">{quiz.correct_count}</td>
+                    <td className="px-4 py-2 text-center">
+                      {new Date(quiz.submitted_at).toLocaleString()}
+                    </td>
+                    <td className="px-4 py-2 text-center">{quiz.creator_name}</td>
+                    <td className="px-4 py-2 text-center">
+                      <button
+                        className="px-4 py-2 bg-accent text-white text-sm rounded-lg"
+                        onClick={() => navigate(`/user-quiz-result/${quiz.uq_submission_id}`)}
+                      >
+                        보기
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-      {/* 페이지네이션 UI */}
-      {totalPages > 1 && (
-        <div className="flex justify-center mt-6 space-x-2">
-          <button
-            onClick={() => handlePageChange(currentPage - 1)}
-            className={`px-3 py-2 rounded-lg ${
-              currentPage === 1
-                ? "bg-gray-300 text-gray-600"
-                : "bg-accent text-white"
-            }`}
-            disabled={currentPage === 1}
-          >
-            ◀
-          </button>
-          {Array.from({ length: totalPages }, (_, index) => (
+        {totalPages > 1 && (
+          <div className="flex justify-center mt-6 space-x-2">
             <button
-              key={index}
-              onClick={() => handlePageChange(index + 1)}
-              className={`px-4 py-2 rounded-lg ${
-                currentPage === index + 1
-                  ? "bg-accent text-white"
-                  : "bg-gray-300 text-gray-700"
+              onClick={() => handlePageChange(currentPage - 1)}
+              className={`px-3 py-2 rounded-lg ${
+                currentPage === 1 ? "bg-gray-300 text-gray-600" : "bg-accent text-white"
               }`}
+              disabled={currentPage === 1}
             >
-              {index + 1}
+              ◀
             </button>
-          ))}
-          <button
-            onClick={() => handlePageChange(currentPage + 1)}
-            className={`px-3 py-2 rounded-lg ${
-              currentPage === totalPages
-                ? "bg-gray-300 text-gray-600"
-                : "bg-accent text-white"
-            }`}
-            disabled={currentPage === totalPages}
-          >
-            ▶
-          </button>
-        </div>
-      )}
+            {Array.from({ length: totalPages }, (_, index) => (
+              <button
+                key={index}
+                onClick={() => handlePageChange(index + 1)}
+                className={`px-4 py-2 rounded-lg ${
+                  currentPage === index + 1
+                    ? "bg-accent text-white"
+                    : "bg-gray-300 text-gray-700"
+                }`}
+              >
+                {index + 1}
+              </button>
+            ))}
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              className={`px-3 py-2 rounded-lg ${
+                currentPage === totalPages
+                  ? "bg-gray-300 text-gray-600"
+                  : "bg-accent text-white"
+              }`}
+              disabled={currentPage === totalPages}
+            >
+              ▶
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
