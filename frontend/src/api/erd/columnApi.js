@@ -33,6 +33,15 @@ export const deleteColumn = async (columnId) => {
   return response.data;
 };
 
+// ✅ 컬럼 순서 변경 API
+export const reorderColumns = async (tableId, orderedColumnIds) => {
+  const response = await apiClient.put("/erds/columns/reorder", {
+    table_id: tableId,
+    ordered_column_ids: orderedColumnIds,
+  });
+  return response.data;
+};
+
 // ✅ 컬럼의 PK 설정/해제
 export const setColumnPrimaryKey = async (columnId, isPrimary) => {
   const response = await apiClient.patch(`/erds/columns/${columnId}/set-primary`, {

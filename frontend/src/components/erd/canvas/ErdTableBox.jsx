@@ -4,7 +4,11 @@ import ErdColumnRow from "./ErdColumnRow";
 import { useDragColumn } from "../drag/useDragColumn";
 
 import { patchTable } from "../../../api/erd/tableApi";
-import { createColumn, deleteColumn } from "../../../api/erd/columnApi";
+import {
+  createColumn,
+  deleteColumn,
+  reorderColumns,
+} from "../../../api/erd/columnApi";
 
 const ErdTableBox = ({
   id,
@@ -64,15 +68,33 @@ const ErdTableBox = ({
       columns: localColumns,
     });
   };
-  const handleReorderColumns = (from, to) => {
-    if (from === to || from === null || to === null) return;
+  const handleReorderColumns = async (from, to) => {
+    if (from === to || from == null || to == null) return;
 
     const newCols = [...localColumns];
     const [moved] = newCols.splice(from, 1);
     newCols.splice(to, 0, moved);
-
     setLocalColumns(newCols);
+
+    // ✅ 백엔드로 순서 업데이트 요청
+    try {
+      const newColumnIds = newCols.map((c) => c.id); // 서버에 보낼 column_id 배열
+      await reorderColumns(id, newColumnIds);
+    } catch (err) {
+      console.error("컬럼 순서 변경 실패:", err);
+    }
+
+    // ✅ 부모에게 업데이트 반영
+    onUpdate({
+      id,
+      x,
+      y,
+      tableName: localName,
+      description: localDesc,
+      columns: newCols,
+    });
   };
+
   const handleColumnPosUpdate = (colId, el) => {
     if (!tableRef.current || !el) return;
 
@@ -193,7 +215,20 @@ const ErdTableBox = ({
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [id, x, y, localName, localDesc, localColumns, onUpdate, isSelected, erdId, onColumnPositionUpdate, onDragMove, onSnapshotRequest]);
+  }, [
+    id,
+    x,
+    y,
+    localName,
+    localDesc,
+    localColumns,
+    onUpdate,
+    isSelected,
+    erdId,
+    onColumnPositionUpdate,
+    onDragMove,
+    onSnapshotRequest,
+  ]);
   const handleAddColumn = async () => {
     try {
       const newColumn = await createColumn(id); // id = 테이블 ID
@@ -253,6 +288,11 @@ const ErdTableBox = ({
         e.stopPropagation();
         if (onClick) onClick();
       }}
+      onMouseDown={(e) => {
+        e.stopPropagation(); // ✅ 캔버스 드래그 시작 방지
+      }}
+      // ✅ 아예 제거하거나 다음처럼 조건화
+      onMouseUp={undefined}
     >
       <div
         className="flex justify-end mb-1 cursor-move"

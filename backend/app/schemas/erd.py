@@ -111,6 +111,11 @@ class ErdColumnPartialUpdate(BaseModel):
     default_value: Optional[str] = None
     column_order: Optional[int] = None
     description: Optional[str]  = None
+    
+# 속성 순서 변경
+class ColumnReorderRequest(BaseModel):
+    table_id: int
+    ordered_column_ids: List[int]
 
 
 # 테이블 간 관계

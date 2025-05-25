@@ -21,6 +21,7 @@ from app.schemas.erd import (
     ErdRelationOut,
     ErdColumnCreate,
     ErdColumnPartialUpdate,
+    ColumnReorderRequest,
     ErdColumnOut,
     ErdBulkDeleteRequest,
     ErdSyncRequest,
@@ -176,6 +177,30 @@ def update_column(
     db.commit()
     return {"message": "컬럼이 업데이트되었습니다."}
 
+# 컬럼 위치 변경
+@router.put("/columns/reorder")
+def reorder_columns(
+    req: ColumnReorderRequest,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
+):
+    # 컬럼 ID 유효성 확인
+    columns = db.query(ErdColumns).filter(
+        ErdColumns.table_id == req.table_id,
+        ErdColumns.column_id.in_(req.ordered_column_ids)
+    ).all()
+
+    if len(columns) != len(req.ordered_column_ids):
+        raise HTTPException(status_code=400, detail="일치하지 않는 컬럼 ID가 포함되어 있습니다.")
+
+    # 컬럼 순서 업데이트
+    for order, col_id in enumerate(req.ordered_column_ids):
+        db.query(ErdColumns).filter(ErdColumns.column_id == col_id).update({
+            "column_order": order
+        })
+
+    db.commit()
+    return {"message": "컬럼 순서가 업데이트되었습니다."}
 
 # 테이블의 컬럼 삭제
 @router.delete("/columns/{column_id}", status_code=status.HTTP_204_NO_CONTENT)
