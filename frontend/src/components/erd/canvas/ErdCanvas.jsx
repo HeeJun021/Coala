@@ -11,8 +11,7 @@ import {
 import {
   createRelation,
   deleteMultipleRelations,
-} from "../../../api/erd/relationApi"; // 상단에 추가
-
+} from "../../../api/erd/relationApi";
 import { saveErdSnapshot } from "../../../api/erd/erdDetailApi";
 
 const ErdCanvas = ({
@@ -25,31 +24,35 @@ const ErdCanvas = ({
 }) => {
   const canvasRef = useRef(null);
 
+  // 🧱 관계, 위치
   const [relations, setRelations] = useState([]);
+  const [columnPositions, setColumnPositions] = useState({});
+
+  // 🧱 관계 생성 상태
   const [isAddingRelation, setIsAddingRelation] = useState(false);
   const [selectedRelationType, setSelectedRelationType] = useState(null);
   const [pendingFromColumnId, setPendingFromColumnId] = useState(null);
-  const [columnPositions, setColumnPositions] = useState({});
 
+  // 🧱 선택 상태
   const [selectedTableId, setSelectedTableId] = useState(null);
   const [selectedTableIds, setSelectedTableIds] = useState([]);
   const [selectedRelationId, setSelectedRelationId] = useState(null);
   const [selectedRelationIds, setSelectedRelationIds] = useState([]);
 
+  // 🧱 드래그 박스 선택
   const [selectionBox, setSelectionBox] = useState(null);
-
-  const [isToolDragging, setIsToolDragging] = useState(false); // 🆕 툴탭 드래그 중 여부
-
   const [isDraggingSelectionBox, setIsDraggingSelectionBox] = useState(false);
   const [wasDraggingSelectionBox, setWasDraggingSelectionBox] = useState(false);
 
+  // 🧱 도구 툴 드래그 여부
+  const [isToolDragging, setIsToolDragging] = useState(false);
+
+  // 🧱 드래그 원점, 시작 위치
   const dragStartRef = useRef(null);
   const dragOriginRef = useRef(null);
   const tablePositionsRef = useRef({});
-
   const handleMouseDown = (e) => {
-    if (e.button !== 0 || isToolDragging) return; // 🛑 툴탭 드래그 중이면 무시
-    if (e.button !== 0) return;
+    if (e.button !== 0 || isToolDragging) return;
 
     const rect = canvasRef.current.getBoundingClientRect();
     const x = (e.clientX - rect.left) / zoomLevel;
@@ -66,11 +69,8 @@ const ErdCanvas = ({
       }
     });
 
-    if (!isToolDragging) {
-      setSelectionBox({ x, y, width: 0, height: 0 });
-    }
+    setSelectionBox({ x, y, width: 0, height: 0 });
   };
-
   const handleMouseMove = (e) => {
     if (!dragStartRef.current || isToolDragging) return;
 
@@ -89,11 +89,9 @@ const ErdCanvas = ({
 
     setSelectionBox(box);
 
-    // ✅ selectionBox 크기가 3px 이상이면 진짜 박스로 간주
     if (box.width > 3 || box.height > 3) {
       setIsDraggingSelectionBox(true);
 
-      // ✅ 진짜 박스 드래그일 때만 선택 갱신
       const selected = tables
         .filter((t) => {
           const tableWidth = 440;
@@ -113,19 +111,7 @@ const ErdCanvas = ({
         .filter((rel) => {
           const from = columnPositions[rel.fromColumnId];
           const to = columnPositions[rel.toColumnId];
-
-          if (
-            !from ||
-            !to ||
-            from.left === undefined ||
-            from.right === undefined ||
-            from.y === undefined ||
-            to.left === undefined ||
-            to.right === undefined ||
-            to.y === undefined
-          ) {
-            return false;
-          }
+          if (!from || !to) return false;
 
           const fromX = from.left < to.left ? from.right : from.left;
           const toX = from.left < to.left ? to.left : to.right;
@@ -144,12 +130,10 @@ const ErdCanvas = ({
       setSelectedRelationIds(selectedRelations);
     }
   };
-
   const handleMouseUp = () => {
     if (isDraggingSelectionBox && selectionBox) {
       const { x, y, width, height } = selectionBox;
 
-      // ✅ 선택된 테이블 ID 추출
       const selected = tables
         .filter(
           (t) =>
@@ -162,7 +146,6 @@ const ErdCanvas = ({
 
       setSelectedTableIds(selected);
 
-      // ✅ 선택된 테이블 간의 관계선도 함께 선택
       const getTableIdByColumnId = (columnId) => {
         for (const table of tables) {
           if (table.columns.some((col) => col.column_id === columnId)) {
@@ -191,13 +174,12 @@ const ErdCanvas = ({
     tablePositionsRef.current = {};
 
     setWasDraggingSelectionBox(isDraggingSelectionBox);
-
     setTimeout(() => setWasDraggingSelectionBox(false), 0);
   };
-
   const handleCanvasClick = async (e) => {
     if (wasDraggingSelectionBox) return;
 
+    // 선택 초기화
     setSelectedTableId(null);
     setSelectedTableIds([]);
     setSelectedRelationId(null);
@@ -229,7 +211,6 @@ const ErdCanvas = ({
           },
         ];
 
-        // ✅ 테이블 추가 완료 후 스냅샷 저장
         handleSnapshotSaveWithColumns(updated, relations);
         return updated;
       });
@@ -240,33 +221,81 @@ const ErdCanvas = ({
 
     setIsPlacing(false);
   };
+  const handleColumnClick = async (columnId) => {
+    if (!isAddingRelation || !selectedRelationType) return;
 
-  const handleColumnPositionUpdate = (tableId, colPosMap) => {
-    setColumnPositions((prev) => ({
-      ...prev,
-      ...colPosMap,
-    }));
-  };
+    if (!pendingFromColumnId) {
+      setPendingFromColumnId(columnId);
+      return;
+    }
 
-  const handleUpdateTable = useCallback(
-    (updated) => {
-      setTables((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
-    },
-    [setTables]
-  );
+    try {
+      const relationTypeMapForBackend = {
+        "1|1": "1..1",
+        "1|0..1": "1..0..1",
+        "1|1..*": "1..1..*",
+        "1|0..*": "1..0..*",
+        "0..1|1": "0..1..1",
+        "0..1|1..*": "0..1..1..*",
+        "0..1|0..*": "0..1..0..*",
+        "1..*|1..*": "1..*..1..*",
+        "1..*|0..*": "1..*..0..*",
+        "0..*|1..*": "0..*..1..*",
+      };
 
-  const handleDeleteTable = useCallback(
-    async (id) => {
-      try {
-        await deleteTable(id); // ✅ erdId는 전달하지 않음
-        setTables((prev) => prev.filter((t) => t.id !== id));
-      } catch (err) {
-        console.error("테이블 삭제 실패:", err);
+      const relation_type = relationTypeMapForBackend[selectedRelationType];
+      if (!relation_type) {
+        alert("잘못된 관계 타입입니다.");
+        return;
       }
-    },
-    [setTables]
-  );
 
+      const getTableIdByColumnId = (colId) => {
+        for (const table of tables) {
+          if (table.columns.some((col) => col.column_id === colId)) {
+            return table.id;
+          }
+        }
+        return null;
+      };
+
+      const source_table_id = getTableIdByColumnId(pendingFromColumnId);
+      const target_table_id = getTableIdByColumnId(columnId);
+
+      if (!source_table_id || !target_table_id) {
+        alert("테이블 ID를 찾을 수 없습니다.");
+        return;
+      }
+
+      const relationData = {
+        source_table_id,
+        source_column_id: pendingFromColumnId,
+        target_table_id,
+        target_column_id: columnId,
+        relation_type,
+      };
+
+      const created = await createRelation(erdId, relationData);
+
+      const newRelation = {
+        relationId: created.relation_id,
+        fromColumnId: created.source_column_id,
+        toColumnId: created.target_column_id,
+        relationType: created.relation_type,
+      };
+
+      const updatedRelations = [...relations, newRelation];
+      setRelations(updatedRelations);
+
+      await handleSnapshotSaveWithColumns(tables, updatedRelations);
+    } catch (err) {
+      console.error("❌ 관계 생성 실패:", err.response?.data || err);
+      alert("관계 생성 중 오류가 발생했습니다.");
+    }
+
+    setIsAddingRelation(false);
+    setSelectedRelationType(null);
+    setPendingFromColumnId(null);
+  };
   const handleBatchUpdateTablePosition = (movedTableId, mouseX, mouseY) => {
     if (!dragOriginRef.current || !tablePositionsRef.current) return;
 
@@ -288,106 +317,29 @@ const ErdCanvas = ({
       })
     );
   };
-  useEffect(() => {
-    const handleUpdateOrigin = (e) => {
-      const { mouseX, mouseY } = e.detail;
-      const rect = canvasRef.current.getBoundingClientRect();
-      const x = mouseX - rect.left;
-      const y = mouseY - rect.top;
-
-      dragOriginRef.current = { x, y };
-
-      // 선택된 테이블들의 기준 위치 초기화
-      tablePositionsRef.current = {};
-      selectedTableIds.forEach((id) => {
-        const t = tables.find((t) => t.id === id);
-        if (t) {
-          tablePositionsRef.current[id] = { x: t.x, y: t.y };
-        }
-      });
-    };
-
-    window.addEventListener("update-drag-origin", handleUpdateOrigin);
-    return () => {
-      window.removeEventListener("update-drag-origin", handleUpdateOrigin);
-    };
-  }, [tables, selectedTableIds]);
-
-  const handleColumnClick = async (columnId) => {
-    if (!isAddingRelation || !selectedRelationType) return;
-
-    if (!pendingFromColumnId) {
-      setPendingFromColumnId(columnId);
-    } else {
+  const handleDeleteTable = useCallback(
+    async (id) => {
       try {
-        const relationTypeMapForBackend = {
-          "1|1": "1..1",
-          "1|0..1": "1..0..1",
-          "1|1..*": "1..1..*",
-          "1|0..*": "1..0..*",
-          "0..1|1": "0..1..1",
-          "0..1|1..*": "0..1..1..*",
-          "0..1|0..*": "0..1..0..*",
-          "1..*|1..*": "1..*..1..*",
-          "1..*|0..*": "1..*..0..*",
-          "0..*|1..*": "0..*..1..*",
-        };
-
-        const relation_type = relationTypeMapForBackend[selectedRelationType];
-        if (!relation_type) {
-          alert("잘못된 관계 타입입니다.");
-          return;
-        }
-
-        const getTableIdByColumnId = (colId) => {
-          for (const table of tables) {
-            if (table.columns.some((col) => col.column_id === colId)) {
-              return table.id;
-            }
-          }
-          return null;
-        };
-
-        const source_table_id = getTableIdByColumnId(pendingFromColumnId);
-        const target_table_id = getTableIdByColumnId(columnId);
-        if (!source_table_id || !target_table_id) {
-          alert("테이블 ID를 찾을 수 없습니다.");
-          return;
-        }
-
-        const relationData = {
-          source_table_id,
-          source_column_id: pendingFromColumnId,
-          target_table_id,
-          target_column_id: columnId,
-          relation_type,
-        };
-
-        const created = await createRelation(erdId, relationData);
-
-        const newRelation = {
-          relationId: created.relation_id,
-          fromColumnId: created.source_column_id,
-          toColumnId: created.target_column_id,
-          relationType: created.relation_type,
-        };
-
-        const updatedRelations = [...relations, newRelation];
-        setRelations(updatedRelations);
-
-        // ✅ 스냅샷 저장
-        await handleSnapshotSaveWithColumns(tables, updatedRelations);
+        await deleteTable(id);
+        setTables((prev) => prev.filter((t) => t.id !== id));
       } catch (err) {
-        console.error("❌ 관계 생성 실패:", err.response?.data || err);
-        alert("관계 생성 중 오류가 발생했습니다.");
+        console.error("테이블 삭제 실패:", err);
       }
-
-      setIsAddingRelation(false);
-      setSelectedRelationType(null);
-      setPendingFromColumnId(null);
-    }
+    },
+    [setTables]
+  );
+  const handleUpdateTable = useCallback(
+    (updated) => {
+      setTables((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+    },
+    [setTables]
+  );
+  const handleColumnPositionUpdate = (tableId, colPosMap) => {
+    setColumnPositions((prev) => ({
+      ...prev,
+      ...colPosMap,
+    }));
   };
-
   const handleSnapshotSaveWithColumns = useCallback(
     async (newTables, newRelations) => {
       const allColumns = newTables.flatMap((table) =>
@@ -408,9 +360,8 @@ const ErdCanvas = ({
         console.error("❌ 스냅샷 저장 실패:", err);
       }
     },
-    [erdId] // ✅ 의존성은 erdId만
+    [erdId]
   );
-
   useEffect(() => {
     const handleKeyDown = async (e) => {
       if (e.key !== "Delete") return;
@@ -457,7 +408,6 @@ const ErdCanvas = ({
         }
       }
 
-      // ✅ 삭제 후에만 스냅샷 저장
       if (changed) {
         handleSnapshotSaveWithColumns(updatedTables, updatedRelations);
       }
@@ -471,11 +421,32 @@ const ErdCanvas = ({
     tables,
     relations,
     erdId,
-    setTables,
-    setRelations,
     handleSnapshotSaveWithColumns,
+    setTables, // ✅ 추가
   ]);
+  useEffect(() => {
+    const handleUpdateOrigin = (e) => {
+      const { mouseX, mouseY } = e.detail;
+      const rect = canvasRef.current.getBoundingClientRect();
+      const x = mouseX - rect.left;
+      const y = mouseY - rect.top;
 
+      dragOriginRef.current = { x, y };
+
+      tablePositionsRef.current = {};
+      selectedTableIds.forEach((id) => {
+        const t = tables.find((t) => t.id === id);
+        if (t) {
+          tablePositionsRef.current[id] = { x: t.x, y: t.y };
+        }
+      });
+    };
+
+    window.addEventListener("update-drag-origin", handleUpdateOrigin);
+    return () => {
+      window.removeEventListener("update-drag-origin", handleUpdateOrigin);
+    };
+  }, [tables, selectedTableIds]);
   return (
     <div
       id="erd-canvas"
@@ -488,7 +459,7 @@ const ErdCanvas = ({
         isPlacing || isAddingRelation ? "cursor-crosshair" : "cursor-default"
       } select-none`}
     >
-      {/* 확대/축소 대상 내부 컨테이너 */}
+      {/* 확대/축소 대상 */}
       <div
         className="absolute top-0 left-0 origin-top-left"
         style={{
@@ -497,6 +468,7 @@ const ErdCanvas = ({
           height: `${100 / zoomLevel}%`,
         }}
       >
+        {/* 관계선 */}
         {relations.map((rel) => {
           const from = columnPositions[rel.fromColumnId];
           const to = columnPositions[rel.toColumnId];
@@ -521,11 +493,12 @@ const ErdCanvas = ({
           );
         })}
 
+        {/* 테이블들 */}
         {tables.map((table) => (
           <ErdTableBox
-            erdId={erdId} // ✅ 전달
-            {...table}
             key={table.id}
+            erdId={erdId}
+            {...table}
             onUpdate={handleUpdateTable}
             onDelete={() => handleDeleteTable(table.id)}
             isAddingRelation={isAddingRelation}
@@ -551,6 +524,7 @@ const ErdCanvas = ({
           />
         ))}
 
+        {/* 드래그 선택 박스 */}
         {selectionBox && selectionBox.width > 0 && selectionBox.height > 0 && (
           <div
             className="absolute border-2 border-blue-400 bg-blue-300/20 z-50 pointer-events-none"
@@ -564,7 +538,7 @@ const ErdCanvas = ({
         )}
       </div>
 
-      {/* 고정 위치 FloatingToolButton (확대 X) */}
+      {/* 고정 FloatingToolButton */}
       <FloatingToolButton
         onAddTable={() => setIsPlacing(true)}
         onAddRelation={(type) => {

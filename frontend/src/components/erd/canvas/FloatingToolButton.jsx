@@ -17,21 +17,21 @@ const relationOptions = [
 const FloatingToolButton = ({
   onAddTable,
   onAddRelation,
-  onStartDragging,     // ✅ 추가됨
-  onStopDragging       // ✅ 추가됨
+  onStartDragging,
+  onStopDragging,
 }) => {
   const [open, setOpen] = useState(false);
   const [relationMenuOpen, setRelationMenuOpen] = useState(false);
-  const wasDragging = useRef(false);
-  const buttonRef = useRef(null);
-  const containerRef = useRef(null);
 
-  const handleClick = () => {
+  const wasDragging = useRef(false);
+  const containerRef = useRef(null);
+  const buttonRef = useRef(null);
+
+  const handleMainClick = () => {
     if (wasDragging.current) {
       wasDragging.current = false;
       return;
     }
-
     setOpen((prev) => !prev);
     setRelationMenuOpen(false);
   };
@@ -42,7 +42,7 @@ const FloatingToolButton = ({
       defaultPosition={{ x: 25, y: 25 }}
       onStart={() => {
         wasDragging.current = false;
-        onStartDragging?.(); // ✅ 드래그 시작 알림
+        onStartDragging?.();
       }}
       onDrag={() => {
         wasDragging.current = true;
@@ -51,7 +51,7 @@ const FloatingToolButton = ({
         setTimeout(() => {
           wasDragging.current = false;
         }, 50);
-        onStopDragging?.(); // ✅ 드래그 끝 알림
+        onStopDragging?.();
       }}
     >
       <div
@@ -61,19 +61,21 @@ const FloatingToolButton = ({
         onMouseMove={(e) => e.stopPropagation()}
         onMouseUp={(e) => e.stopPropagation()}
       >
+        {/* 🔘 메인 플로팅 버튼 */}
         <button
           ref={buttonRef}
-          onClick={handleClick}
+          onClick={handleMainClick}
           className="w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xl shadow-lg"
         >
           🛠
         </button>
 
+        {/* 📂 확장 메뉴 */}
         {open && (
           <div className="absolute left-0 bg-[#2a2a3c] text-white rounded-md shadow-lg w-44 py-2 z-50">
             <button
               onClick={() => {
-                onAddTable();
+                onAddTable?.();
                 setOpen(false);
               }}
               className="block w-full text-left px-4 py-2 hover:bg-[#3a3a4c] text-sm"
@@ -81,6 +83,7 @@ const FloatingToolButton = ({
               ➕ 테이블 추가
             </button>
 
+            {/* ⇄ 관계 추가 메뉴 */}
             <div
               className="relative group"
               onMouseEnter={() => setRelationMenuOpen(true)}
@@ -96,7 +99,7 @@ const FloatingToolButton = ({
                     <button
                       key={option.value}
                       onClick={() => {
-                        onAddRelation(option.value);
+                        onAddRelation?.(option.value);
                         setOpen(false);
                         setRelationMenuOpen(false);
                       }}
@@ -109,6 +112,7 @@ const FloatingToolButton = ({
               )}
             </div>
 
+            {/* 🔧 기타 버튼 (추후 기능 추가용) */}
             <button className="block w-full text-left px-4 py-2 hover:bg-[#3a3a4c] text-sm">
               🕓 히스토리
             </button>

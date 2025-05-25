@@ -8,18 +8,14 @@ const ErdRelationLine = ({
   isSelected,
 }) => {
   if (
-    !fromColumn ||
-    !toColumn ||
-    fromColumn.left === undefined ||
-    fromColumn.right === undefined ||
-    fromColumn.y === undefined ||
-    toColumn.left === undefined ||
-    toColumn.right === undefined ||
-    toColumn.y === undefined
+    !fromColumn || !toColumn ||
+    fromColumn.left === undefined || fromColumn.right === undefined || fromColumn.y === undefined ||
+    toColumn.left === undefined || toColumn.right === undefined || toColumn.y === undefined
   ) {
-    return null; // ❗ 좌표가 없으면 그리지 않음
+    return null;
   }
 
+  // 💡 방향 계산
   const from = {
     x: fromColumn.left < toColumn.left ? fromColumn.right : fromColumn.left,
     y: fromColumn.y,
@@ -34,27 +30,27 @@ const ErdRelationLine = ({
 
   return (
     <svg className="absolute top-0 left-0 w-full h-full pointer-events-none z-10">
-      {/* ✅ 선택 시 아래 그림자 선 먼저 렌더링 */}
+      {/* 선택 시 배경 그림자 선 */}
       {isSelected && (
         <line
           x1={from.x}
           y1={from.y}
           x2={to.x}
           y2={to.y}
-          stroke="#fde68a" // 연노랑 그림자
+          stroke="#fde68a"
           strokeWidth="6"
           opacity="0.6"
           className="pointer-events-none"
         />
       )}
 
-      {/* 실제 메인 선 */}
+      {/* 메인 관계선 */}
       <line
         x1={from.x}
         y1={from.y}
         x2={to.x}
         y2={to.y}
-        stroke={isSelected ? "#facc15" : "#f472b6"} // 노랑 or 핑크
+        stroke={isSelected ? "#facc15" : "#f472b6"}
         strokeWidth="2.5"
         className="pointer-events-auto cursor-pointer"
         onClick={(e) => {
@@ -63,7 +59,7 @@ const ErdRelationLine = ({
         }}
       />
 
-      {/* 라벨 텍스트 */}
+      {/* 라벨 */}
       <text
         x={midX}
         y={midY - 6}

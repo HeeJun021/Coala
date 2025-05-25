@@ -23,11 +23,34 @@ const ErdColumnRow = ({
 
   const ref = useRef(null);
 
+  const generateUpdateData = (key, value) => {
+    switch (key) {
+      case "name": return { name: value };
+      case "dataType": return { data_type: value };
+      case "defaultValue": return { default_value: value };
+      case "comment": return { description: value };
+      case "isNullable": return { is_not_null: !value };
+      default: return {};
+    }
+  };
+
+  const handleInputChange = (key, value) => {
+    onChange(index, key, value);
+
+    if (!column.column_id) return;
+
+    const updateData = generateUpdateData(key, value);
+    if (!updateData || Object.keys(updateData).length === 0) return;
+
+    patchColumn(column.column_id, updateData).catch((err) => {
+      console.error("PATCH 실패:", err.response?.data || err);
+    });
+  };
+
   const handleRightClick = (e) => {
     e.preventDefault();
-
     const rect = e.currentTarget.getBoundingClientRect();
-    const parentRect = e.currentTarget.offsetParent.getBoundingClientRect(); // relative 기준
+    const parentRect = e.currentTarget.offsetParent.getBoundingClientRect();
 
     setPkMenuPos({
       x: rect.left - parentRect.left + 10,
@@ -37,62 +60,19 @@ const ErdColumnRow = ({
     setShowPkMenu(true);
   };
 
-  const generateUpdateData = (key, value) => {
-    switch (key) {
-      case "name":
-        return { name: value };
-      case "dataType":
-        return { data_type: value };
-      case "defaultValue":
-        return { default_value: value };
-      case "comment":
-        return { description: value };
-      case "isNullable":
-        return { is_not_null: !value };
-      default:
-        return {};
-    }
-  };
-
-  const handleInputChange = (key, value) => {
-
-    onChange(index, key, value); // 상태 반영 (부모)
-
-    if (!column.column_id) {
-      console.warn("⚠️ 컬럼 ID 없음, patch 생략"); // ✅ 예외 방지
-      return;
-    }
-
-    const updateData = generateUpdateData(key, value);
-
-    if (!updateData || Object.keys(updateData).length === 0) {
-      console.warn("⚠️ PATCH 요청 보낼 데이터 없음, 요청 생략"); // ✅ 빈 데이터 방지
-      return;
-    }
-
-    patchColumn(column.column_id, updateData)
-      .then((res) => {
-        console.log("🟢 patchColumn 응답:", res); // ✅ 성공 시 응답 확인
-      })
-      .catch((err) => {
-        console.error("🔴 patchColumn 실패:", err.response?.data || err);
-      });
-  };
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest(".pk-menu")) setShowPkMenu(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     if (ref.current && onPositionUpdate && column?.id) {
       onPositionUpdate(column.id, ref.current);
     }
   }, [column.id, onPositionUpdate]);
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (e.target.closest(".pk-menu")) return;
-      setShowPkMenu(false);
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   return (
     <>
@@ -178,7 +158,7 @@ const ErdColumnRow = ({
           onClick={async () => {
             try {
               await setColumnPrimaryKey(column.column_id, !column.isPrimaryKey);
-              onTogglePrimaryKey(column.id); // ✅ 상태 반영용 콜백 유지
+              onTogglePrimaryKey(column.id);
               setShowPkMenu(false);
             } catch (error) {
               console.error("PK 설정 실패:", error);

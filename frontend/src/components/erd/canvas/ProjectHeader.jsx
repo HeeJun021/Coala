@@ -17,36 +17,35 @@ const ProjectHeader = ({
   setZoomLevel,
   mode,
   setMode,
-  language, // ✅ 외부 상태로부터 전달
-  setLanguage, // ✅ 외부 상태로부터 전달
-  convertType, // ✅ 외부 상태로부터 전달
-  setConvertType, // ✅ 외부 상태로부터 전달
-  onFetch, // ✅ 외부 상태로부터 전달
-  onRefresh 
+  language,
+  setLanguage,
+  convertType,
+  setConvertType,
+  onFetch,
+  onRefresh,
 }) => {
   const [toastMessage, setToastMessage] = useState("");
 
   const showToast = (msg) => {
     setToastMessage(msg);
+    setTimeout(() => setToastMessage(""), 2500); // 자동 사라짐 처리
   };
 
-  const handleZoomIn = () => {
-    setZoomLevel((prev) => Math.min(prev + 0.1, 2));
-  };
-
-  const handleZoomOut = () => {
-    setZoomLevel((prev) => Math.max(prev - 0.1, 0.1));
+  const handleZoom = (direction) => {
+    setZoomLevel((prev) =>
+      direction === "in"
+        ? Math.min(prev + 0.1, 2)
+        : Math.max(prev - 0.1, 0.1)
+    );
   };
 
   const handleCommit = async () => {
-    const dataToCommit = {
-      updated_tables: [], // 실제 상태와 연동 필요
-      updated_columns: [],
-      updated_relations: [],
-    };
-
     try {
-      await commitErd(erdId, dataToCommit); // erdId 또는 projectId 맞게 교체
+      await commitErd(erdId, {
+        updated_tables: [],
+        updated_columns: [],
+        updated_relations: [],
+      });
       showToast("📝 ERD 로그 기록 완료!");
     } catch (err) {
       console.error("로그 기록 실패:", err);
@@ -55,44 +54,38 @@ const ProjectHeader = ({
   };
 
   const handleUndo = async () => {
-    console.log("📦 erdId =", erdId); // 🔥 이거 넣어보세요
-  try {
-    const res = await undoErdChange(erdId);
-    const { state_json } = res;
-    if (state_json) {
-      onRefresh?.(); // optional
-      onFetch?.(state_json); // ✅ 아래 예시처럼 state_json 넘기기
+    try {
+      const res = await undoErdChange(erdId);
+      if (res?.state_json) {
+        onRefresh?.();
+        onFetch?.(res.state_json);
+        showToast("🪄 마지막 상태로 되돌렸습니다.");
+      }
+    } catch (err) {
+      console.error("Undo 실패:", err);
+      showToast("⛔ 되돌리기 실패");
     }
-    showToast("🪄 마지막 상태로 되돌렸습니다.");
-  } catch (err) {
-    console.error("Undo 실패:", err);
-    showToast("⛔ 되돌리기 실패");
-  }
-};
+  };
 
-const handleRedo = async () => {
-  try {
-    const res = await redoErdChange(erdId);
-    const { state_json } = res;
-    if (state_json) {
-      onRefresh?.();
-      onFetch?.(state_json); // ✅ Redo도 마찬가지
+  const handleRedo = async () => {
+    try {
+      const res = await redoErdChange(erdId);
+      if (res?.state_json) {
+        onRefresh?.();
+        onFetch?.(res.state_json);
+        showToast("🔁 다음 상태로 되돌렸습니다.");
+      }
+    } catch (err) {
+      console.error("Redo 실패:", err);
+      showToast("⛔ 다시 실행 실패");
     }
-    showToast("🔁 다음 상태로 되돌렸습니다.");
-  } catch (err) {
-    console.error("Redo 실패:", err);
-    showToast("⛔ 다시 실행 실패");
-  }
-};
-
+  };
 
   return (
     <div className="w-full bg-[#252836] text-white px-4 py-3 shadow-md relative">
-      {toastMessage && (
-        <Toast message={toastMessage} onClose={() => setToastMessage("")} />
-      )}
+      {toastMessage && <Toast message={toastMessage} onClose={() => setToastMessage("")} />}
 
-      {/* ✅ 줄 1: 프로젝트 이름 (codegen 모드에서는 숨김) */}
+      {/* 🔤 프로젝트 이름 */}
       {mode !== "codegen" && (
         <div className="flex items-center space-x-2 text-[17px] font-semibold mb-2 pl-1">
           <span>{projectName}</span>
@@ -105,72 +98,45 @@ const handleRedo = async () => {
         </div>
       )}
 
-      {/* ✅ 줄 2: 모드에 따라 다른 헤더 렌더링 */}
+      {/* 🧱 모드에 따른 헤더 영역 */}
       {mode === "codegen" ? (
         <CodeConvertHeaderPanel
           onBack={() => setMode("default")}
-          onFetch={onFetch} // ✅ 꼭 넘겨야 함
-          language={language} // ✅ 추가
-          setLanguage={setLanguage} // ✅ 추가
-          convertType={convertType} // ✅ 추가
-          setConvertType={setConvertType} // ✅ 추가
+          onFetch={onFetch}
+          language={language}
+          setLanguage={setLanguage}
+          convertType={convertType}
+          setConvertType={setConvertType}
         />
       ) : (
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px] pl-1">
-          <button
-            onClick={onOpenSidebar}
-            className="px-3 py-1.5 hover:bg-[#333] rounded"
-          >
+          <button onClick={onOpenSidebar} className="px-3 py-1.5 hover:bg-[#333] rounded">
             📁 ERD 목록
           </button>
-
-          <button
-            onClick={handleCommit}
-            className="px-3 py-1.5 hover:bg-[#333] rounded"
-          >
+          <button onClick={handleCommit} className="px-3 py-1.5 hover:bg-[#333] rounded">
             📝 로그 기록
           </button>
-
           <button
             onClick={() => showToast("📦 내보내기 기능은 추후 구현 예정")}
             className="px-3 py-1.5 hover:bg-[#333] rounded"
           >
             📦 내보내기
           </button>
-
-          <button
-            onClick={() => setMode("codegen")}
-            className="px-3 py-1.5 hover:bg-[#333] rounded"
-          >
+          <button onClick={() => setMode("codegen")} className="px-3 py-1.5 hover:bg-[#333] rounded">
             🧱 코드 변환
           </button>
-
-          <button
-            onClick={handleUndo}
-            className="px-3 py-1.5 hover:bg-[#333] rounded"
-          >
+          <button onClick={handleUndo} className="px-3 py-1.5 hover:bg-[#333] rounded">
             ↩️
           </button>
-
-          <button
-            onClick={handleRedo}
-            className="px-3 py-1.5 hover:bg-[#333] rounded"
-          >
+          <button onClick={handleRedo} className="px-3 py-1.5 hover:bg-[#333] rounded">
             ↪️
           </button>
-
           <div className="flex items-center gap-1 px-2">
-            <button
-              onClick={handleZoomOut}
-              className="px-2 py-1 rounded hover:bg-[#333]"
-            >
+            <button onClick={() => handleZoom("out")} className="px-2 py-1 rounded hover:bg-[#333]">
               🔍−
             </button>
             <span className="text-sm">{Math.round(zoomLevel * 100)}%</span>
-            <button
-              onClick={handleZoomIn}
-              className="px-2 py-1 rounded hover:bg-[#333]"
-            >
+            <button onClick={() => handleZoom("in")} className="px-2 py-1 rounded hover:bg-[#333]">
               🔍+
             </button>
           </div>
