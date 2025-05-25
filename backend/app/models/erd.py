@@ -44,12 +44,12 @@ class ErdColumns(Base):
 
     column_id = Column(Integer, primary_key=True, index=True)
     table_id = Column(Integer, ForeignKey("erdtables.table_id", ondelete="CASCADE"), nullable=False)
-    name = Column(String(100), nullable=False)
-    data_type = Column(String(50), nullable=False)
+    name = Column(String(100), nullable=True)
+    data_type = Column(String(50), nullable=True)
     is_primary = Column(Boolean, default=False)
     is_foreign = Column(Boolean, default=False)
     is_not_null = Column(Boolean, default=False)
-    default_value = Column(String(100))
+    default_value = Column(String(100), nullable=True)
     column_order = Column(Integer, default=0)
     description = Column(Text, nullable=True)
 

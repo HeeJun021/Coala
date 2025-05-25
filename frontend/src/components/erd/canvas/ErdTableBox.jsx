@@ -230,6 +230,16 @@ const ErdTableBox = ({
     const updated = [...localColumns];
     updated[index][key] = value;
     setLocalColumns(updated);
+
+    // ✅ 컬럼 수정 시 바로 부모에도 업데이트 전달
+    onUpdate({
+      id,
+      x,
+      y,
+      tableName: localName,
+      description: localDesc,
+      columns: updated,
+    });
   };
 
   const handleDeleteColumn = async (index) => {

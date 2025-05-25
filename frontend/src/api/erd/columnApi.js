@@ -19,7 +19,11 @@ export const createColumn = async (tableId) => {
 
 // 컬럼 속성 수정 (PATCH /erds/columns/{column_id})
 export const patchColumn = async (columnId, updateData) => {
-  const response = await apiClient.patch(`/erds/columns/${columnId}`, updateData);
+  const response = await apiClient.patch(`/erds/columns/${columnId}`, updateData, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
   return response.data;
 };
 

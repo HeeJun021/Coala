@@ -46,10 +46,6 @@ const ErdCanvas = ({
   const dragStartRef = useRef(null);
   const dragOriginRef = useRef(null);
   const tablePositionsRef = useRef({});
-  useEffect(() => {
-  console.log("🔁 [ErdCanvas] props.tables 변경 감지됨:", tables);
-}, [tables]);
-
 
   const handleMouseDown = (e) => {
     if (e.button !== 0 || isToolDragging) return; // 🛑 툴탭 드래그 중이면 무시

@@ -2,6 +2,10 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from app.database import engine, get_db, Base
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from fastapi import Request
+
 
 
 # ✅ 모델 불러오기
@@ -126,3 +130,10 @@ app.include_router(erd_snapshot.router)
 def read_root():
     return {"message": "FastAPI is running!"}
 
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    print("❌ [422 Validation Error]", exc.errors())  # ✅ 여기에 찍힘
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors()},
+    )

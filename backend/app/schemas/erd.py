@@ -110,7 +110,7 @@ class ErdColumnPartialUpdate(BaseModel):
     is_not_null: Optional[bool] = None
     default_value: Optional[str] = None
     column_order: Optional[int] = None
-    description: Optional[str]  # ✅ 이 줄 추가!
+    description: Optional[str]  = None
 
 
 # 테이블 간 관계

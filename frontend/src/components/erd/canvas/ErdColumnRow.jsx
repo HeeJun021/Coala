@@ -24,20 +24,18 @@ const ErdColumnRow = ({
   const ref = useRef(null);
 
   const handleRightClick = (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  const rect = e.currentTarget.getBoundingClientRect();
-  const parentRect = e.currentTarget.offsetParent.getBoundingClientRect(); // relative 기준
+    const rect = e.currentTarget.getBoundingClientRect();
+    const parentRect = e.currentTarget.offsetParent.getBoundingClientRect(); // relative 기준
 
-  setPkMenuPos({
-    x: rect.left - parentRect.left + 10,
-    y: rect.top - parentRect.top + rect.height + 4,
-  });
+    setPkMenuPos({
+      x: rect.left - parentRect.left + 10,
+      y: rect.top - parentRect.top + rect.height + 4,
+    });
 
-  setShowPkMenu(true);
-};
-
-
+    setShowPkMenu(true);
+  };
 
   const generateUpdateData = (key, value) => {
     switch (key) {
@@ -57,14 +55,28 @@ const ErdColumnRow = ({
   };
 
   const handleInputChange = (key, value) => {
-    onChange(index, key, value);
 
-    if (!column.column_id) return;
+    onChange(index, key, value); // 상태 반영 (부모)
 
-    const updateData = generateUpdateData(key, value); // ← 단일 필드만 포함
-    patchColumn(column.column_id, updateData).catch((err) => {
-      console.error("컬럼 즉시 수정 실패", err);
-    });
+    if (!column.column_id) {
+      console.warn("⚠️ 컬럼 ID 없음, patch 생략"); // ✅ 예외 방지
+      return;
+    }
+
+    const updateData = generateUpdateData(key, value);
+
+    if (!updateData || Object.keys(updateData).length === 0) {
+      console.warn("⚠️ PATCH 요청 보낼 데이터 없음, 요청 생략"); // ✅ 빈 데이터 방지
+      return;
+    }
+
+    patchColumn(column.column_id, updateData)
+      .then((res) => {
+        console.log("🟢 patchColumn 응답:", res); // ✅ 성공 시 응답 확인
+      })
+      .catch((err) => {
+        console.error("🔴 patchColumn 실패:", err.response?.data || err);
+      });
   };
 
   useEffect(() => {
