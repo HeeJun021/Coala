@@ -24,6 +24,7 @@ from app.schemas.erd import (
     ErdColumnOut,
     ErdBulkDeleteRequest,
     ErdSyncRequest,
+    SetPrimaryKeyRequest
 )
 
 router = APIRouter(prefix="/erds", tags=["ERD Detail"])
@@ -387,3 +388,20 @@ def commit_erd_changes(
 
     db.commit()
     return {"message": "변경 사항이 저장되었고 활동 로그가 기록되었습니다."}
+
+
+# 컬럼에 pk 설정
+@router.patch("/columns/{column_id}/set-primary")
+def set_primary_key(
+    column_id: int,
+    req: SetPrimaryKeyRequest,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    column = db.query(ErdColumns).filter_by(column_id=column_id).first()
+    if not column:
+        raise HTTPException(status_code=404, detail="컬럼을 찾을 수 없습니다.")
+
+    column.is_primary = req.is_primary
+    db.commit()
+    return {"message": f"컬럼의 PK 상태가 {req.is_primary}로 설정되었습니다."}

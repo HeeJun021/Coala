@@ -20,7 +20,7 @@ export const commitErd = async (erdId, data) => {
   return response.data;
 };
 
-// 스냅샷 저장
+// 스냅샷 
 export const saveErdSnapshot = async (erdId, stateJson) => {
   const response = await apiClient.post(`/erds/${erdId}/snapshots`, {
     state_json: stateJson,

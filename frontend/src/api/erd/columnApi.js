@@ -28,3 +28,11 @@ export const deleteColumn = async (columnId) => {
   const response = await apiClient.delete(`/erds/columns/${columnId}`);
   return response.data;
 };
+
+// ✅ 컬럼의 PK 설정/해제
+export const setColumnPrimaryKey = async (columnId, isPrimary) => {
+  const response = await apiClient.patch(`/erds/columns/${columnId}/set-primary`, {
+    is_primary: isPrimary,
+  });
+  return response.data;
+};

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { patchColumn } from "../../../api/erd/columnApi";
+import { patchColumn, setColumnPrimaryKey } from "../../../api/erd/columnApi";
 import { FaKey, FaTimes } from "react-icons/fa";
 
 const ErdColumnRow = ({
@@ -24,10 +24,20 @@ const ErdColumnRow = ({
   const ref = useRef(null);
 
   const handleRightClick = (e) => {
-    e.preventDefault();
-    setShowPkMenu(true);
-    setPkMenuPos({ x: e.clientX, y: e.clientY });
-  };
+  e.preventDefault();
+
+  const rect = e.currentTarget.getBoundingClientRect();
+  const parentRect = e.currentTarget.offsetParent.getBoundingClientRect(); // relative 기준
+
+  setPkMenuPos({
+    x: rect.left - parentRect.left + 10,
+    y: rect.top - parentRect.top + rect.height + 4,
+  });
+
+  setShowPkMenu(true);
+};
+
+
 
   const generateUpdateData = (key, value) => {
     switch (key) {
@@ -71,7 +81,6 @@ const ErdColumnRow = ({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-  
 
   return (
     <>
@@ -152,12 +161,17 @@ const ErdColumnRow = ({
 
       {showPkMenu && (
         <div
-          className="fixed z-50 pk-menu bg-[#3a3a4d] border border-gray-600 text-sm rounded px-2 py-1 cursor-pointer shadow"
+          className="absolute z-50 pk-menu bg-[#3a3a4d] border border-gray-600 text-sm rounded px-2 py-1 cursor-pointer shadow"
           style={{ top: pkMenuPos.y, left: pkMenuPos.x }}
-          onClick={() => {
-            console.log("✅ PK 설정 요청:", column.id);
-            onTogglePrimaryKey(column.id);
-            setShowPkMenu(false);
+          onClick={async () => {
+            try {
+              await setColumnPrimaryKey(column.column_id, !column.isPrimaryKey);
+              onTogglePrimaryKey(column.id); // ✅ 상태 반영용 콜백 유지
+              setShowPkMenu(false);
+            } catch (error) {
+              console.error("PK 설정 실패:", error);
+              alert("PK 설정에 실패했습니다.");
+            }
           }}
         >
           🔑 PK 설정

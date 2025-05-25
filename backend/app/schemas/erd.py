@@ -71,7 +71,8 @@ class ErdTableCreate(BaseModel):
     pos_x: int
     pos_y: int
     description: Optional[str] = ""
-    
+
+
 # 개별 수정용 (name, description, 위치 등)
 class ErdTablePartialUpdate(BaseModel):
     name: Optional[str] = None
@@ -91,14 +92,15 @@ class ErdTableOut(BaseModel):
 
 # 속성 추가
 class ErdColumnCreate(BaseModel):
-    name: Optional[str] = ""                # ✅ 기본값 빈 문자열
+    name: Optional[str] = ""  # ✅ 기본값 빈 문자열
     data_type: Optional[str] = ""
     is_primary: bool = False
     is_foreign: bool = False
     is_not_null: bool = False
     default_value: Optional[str] = None
     column_order: int = 0
-    
+
+
 # 속성 변경
 class ErdColumnPartialUpdate(BaseModel):
     name: Optional[str] = None
@@ -118,10 +120,18 @@ class ErdRelationCreate(BaseModel):
     target_table_id: int
     target_column_id: int
     relation_type: Literal[
-        '1..1', '1..0..1', '1..1..*', '1..0..*',
-        '0..1..1', '0..1..1..*', '0..1..0..*',
-        '1..*..1..*', '1..*..0..*', '0..*..1..*'
+        "1..1",
+        "1..0..1",
+        "1..1..*",
+        "1..0..*",
+        "0..1..1",
+        "0..1..1..*",
+        "0..1..0..*",
+        "1..*..1..*",
+        "1..*..0..*",
+        "0..*..1..*",
     ]
+
 
 class ErdRelationOut(BaseModel):
     relation_id: int
@@ -172,6 +182,12 @@ class ErdSyncRequest(BaseModel):
     updated_columns: List[ErdColumnUpdate] = []
     updated_relations: List[ErdRelationUpdate] = []
 
+
 # 스냅샷
 class ErdSnapshotCreate(BaseModel):
     state_json: Any  # 전체 ERD 구조를 JSON 형태로 받음
+
+
+# pk 설정
+class SetPrimaryKeyRequest(BaseModel):
+    is_primary: bool
