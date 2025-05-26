@@ -6,7 +6,8 @@ class ActionType(str, Enum):
     coding_test_passed = "coding_test_passed"
     daily_login = "daily_login"
     team_project_complete = "team_project_complete"
-
+    change_profile_image = "change_profile_image"
+    
 class EucalyptusRewardRequest(BaseModel):
     action: ActionType
 

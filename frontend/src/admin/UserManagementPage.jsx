@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { fetchAdminUsers, fetchAdminUserDetail } from "../api/adminApi";
 import UserDetailDialog from "./component/UserDetailDialog";
-import defaultProfile from "../assets/koala.jpg";
 
 const UserManagementPage = () => {
   const [users, setUsers] = useState([]);
@@ -48,7 +47,7 @@ const UserManagementPage = () => {
           >
             <div className="flex items-center gap-3 mb-4">
               <img
-                src={user.profile_image_url || defaultProfile}
+                src={user.profile_image_url || "assets/koala.jpg"}
                 alt="profile"
                 className="w-12 h-12 rounded-full object-cover border"
               />

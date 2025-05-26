@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import defaultProfile from "../../assets/koala.jpg";
 import { deleteUser } from "../../api/authApi";
 
 const TABS = ["신고 내역", "게시글", "댓글"];
@@ -50,7 +49,7 @@ const UserDetailDialog = ({ open, onClose, user, onUserDeleted }) => {
         {/* 사용자 정보 */}
         <div className="flex items-center gap-4 border-b pb-4 mb-4">
           <img
-            src={user.profile_image_url || defaultProfile}
+            src={user.profile_image_url || "assets/koala.jpg"}
             alt="profile"
             className="w-16 h-16 rounded-full object-cover"
           />

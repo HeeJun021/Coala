@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, ConfigDict, Field
-from typing import Optional
+from typing import Optional, Literal
 from datetime import date, datetime
 
 
@@ -71,3 +71,7 @@ class UserSimpleInfo(BaseModel):
     profile_image: Optional[str] = Field(alias="profile_image_url")  # ✅ DB 컬럼명을 alias로
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+    
+class ProfileImageUpdateRequest(BaseModel):
+    image_url: str
+    action: Literal["change_profile_image"]  # 화폐 차감용

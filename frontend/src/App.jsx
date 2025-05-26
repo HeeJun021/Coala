@@ -9,7 +9,6 @@ import {
 
 import { AuthProvider } from "./context/AuthContext";
 import { getCurrentUser } from "./api/authApi";
-import koala from "./assets/koala.jpg";
 
 // 레이아웃
 import MainLayout from "./Layout/MainLayout";
@@ -116,7 +115,7 @@ const App = () => {
           user_id: user.user_id,
           email: user.email,
           nickname: user.nickname || "사용자",
-          profile_image_url: user.profile_image_url || koala,
+          profile_image_url: user.profile_image_url || "assets/koala.jpg",
           bio: user.bio || "",
           rating: user.rating || 1000,
           tier_id: user.tier_id || 1,

@@ -48,11 +48,13 @@ def reward_user_by_action(user: User, action: ActionType, db: Session) -> int:
 
 
 # 🌿 화폐 사용 (차감)
-def use_eucalyptus_by_action(user: User, action: str, db: Session) -> int:
+def use_eucalyptus_by_action(user: User, action: ActionType, db: Session) -> int:
     cost_table = {
-        "background_change": 30,
-        "character_change": 50,
-        "nickname_effect": 20,
+        ActionType.quiz_correct: 5,
+        ActionType.coding_test_passed: 10,
+        ActionType.daily_login: 3,
+        ActionType.team_project_complete: 20,
+        ActionType.change_profile_image: 30,
     }
 
     cost = cost_table.get(action)
@@ -65,3 +67,10 @@ def use_eucalyptus_by_action(user: User, action: str, db: Session) -> int:
     user.eucalyptus_balance -= cost
     db.commit()
     return -cost  # 사용은 음수로 반환
+
+
+def update_profile_image(user: User, image_url: str, db: Session):
+    user.profile_image_url = image_url
+    db.commit()
+    db.refresh(user)
+    return user

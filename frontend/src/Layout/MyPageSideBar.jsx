@@ -2,7 +2,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import ProfileSummary from './ProfileSummary';
-import koala from '../assets/koala.jpg';
 
 const MyPageSidebar = ({ userData }) => {
   return (
@@ -10,7 +9,7 @@ const MyPageSidebar = ({ userData }) => {
       <h1 className="text-2xl font-bold text-center mb-4">마이페이지</h1>
 
       <ProfileSummary 
-        profile_image_url={userData?.profile_image_url || koala}
+        profile_image_url={userData?.profile_image_url || "/assets/koala.jpg"}
         nickname={userData?.nickname || "익명 사용자"}
         eucalyptus_balance={userData?.eucalyptus_balance ?? 0}
       />
