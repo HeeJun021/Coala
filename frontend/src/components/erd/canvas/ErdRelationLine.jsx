@@ -3,19 +3,15 @@ import React from "react";
 const ErdRelationLine = ({
   fromColumn,
   toColumn,
-  label,
-  onClick,
+  participation_left,
+  relation_left,
+  relation_right,
+  participation_right,
   isSelected,
+  onClick,
 }) => {
-  if (
-    !fromColumn || !toColumn ||
-    fromColumn.left === undefined || fromColumn.right === undefined || fromColumn.y === undefined ||
-    toColumn.left === undefined || toColumn.right === undefined || toColumn.y === undefined
-  ) {
-    return null;
-  }
+  if (!fromColumn || !toColumn) return null;
 
-  // 💡 방향 계산
   const from = {
     x: fromColumn.left < toColumn.left ? fromColumn.right : fromColumn.left,
     y: fromColumn.y,
@@ -25,12 +21,74 @@ const ErdRelationLine = ({
     y: toColumn.y,
   };
 
-  const midX = (from.x + to.x) / 2;
-  const midY = (from.y + to.y) / 2;
+  const getRelationSymbol = (type, x, y, isLeft) => {
+    if (type === "bar") {
+      return (
+        <line
+          x1={x - 4}
+          y1={y - 6}
+          x2={x - 4}
+          y2={y + 6}
+          stroke={isSelected ? "#facc15" : "#f472b6"}
+          strokeWidth="1.5"
+        />
+      );
+    } else if (type === "crow") {
+      const size = 10;
+      const direction = isLeft ? -1 : 1;
+
+      return (
+        <g
+          stroke={isSelected ? "#facc15" : "#f472b6"}
+          strokeWidth="1.5"
+          fill="none"
+        >
+          <polyline
+            points={`${x},${y} ${x + direction * size},${y - size}`}
+          />
+          <polyline
+            points={`${x},${y} ${x + direction * size},${y}`}
+          />
+          <polyline
+            points={`${x},${y} ${x + direction * size},${y + size}`}
+          />
+        </g>
+      );
+    }
+    return null;
+  };
+
+  const getParticipationSymbol = (value, x, y) => {
+    const color = isSelected ? "#facc15" : "#f472b6";
+
+    if (value === "1") {
+      return (
+        <line
+          x1={x}
+          y1={y - 6}
+          x2={x}
+          y2={y + 6}
+          stroke={color}
+          strokeWidth="2"
+        />
+      );
+    } else {
+      return (
+        <circle
+          cx={x}
+          cy={y}
+          r="5"
+          stroke={color}
+          strokeWidth="1.5"
+          fill="#1e1e2e" // ✅ 너의 캔버스 배경색
+        />
+      );
+    }
+  };
 
   return (
     <svg className="absolute top-0 left-0 w-full h-full pointer-events-none z-10">
-      {/* 선택 시 배경 그림자 선 */}
+      {/* 선택된 그림자 배경선 */}
       {isSelected && (
         <line
           x1={from.x}
@@ -39,12 +97,11 @@ const ErdRelationLine = ({
           y2={to.y}
           stroke="#fde68a"
           strokeWidth="6"
-          opacity="0.6"
-          className="pointer-events-none"
+          opacity="0.4"
         />
       )}
 
-      {/* 메인 관계선 */}
+      {/* 메인 선 */}
       <line
         x1={from.x}
         y1={from.y}
@@ -59,22 +116,13 @@ const ErdRelationLine = ({
         }}
       />
 
-      {/* 라벨 */}
-      <text
-        x={midX}
-        y={midY - 6}
-        textAnchor="middle"
-        fill={isSelected ? "#facc15" : "#f472b6"}
-        fontSize="10px"
-        fontFamily="monospace"
-        className="pointer-events-auto cursor-pointer"
-        onClick={(e) => {
-          e.stopPropagation();
-          onClick?.();
-        }}
-      >
-        {label}
-      </text>
+      {/* 왼쪽 기호 */}
+      {getRelationSymbol(relation_left, from.x + 10, from.y, true)}
+      {getParticipationSymbol(participation_left, from.x + 20, from.y)}
+
+      {/* 오른쪽 기호 */}
+      {getParticipationSymbol(participation_right, to.x - 20, to.y)}
+      {getRelationSymbol(relation_right, to.x - 10, to.y, false)}
     </svg>
   );
 };

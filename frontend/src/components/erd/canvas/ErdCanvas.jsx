@@ -234,6 +234,7 @@ const ErdCanvas = ({
       setPendingFromColumnId(columnId);
       return;
     }
+
     // 🔍 첫 번째 클릭한 컬럼이 PK가 아닐 경우 자동 설정
     const fromTable = tables.find((table) =>
       table.columns.some((col) => col.column_id === pendingFromColumnId)
@@ -245,7 +246,6 @@ const ErdCanvas = ({
     if (fromColumn && !fromColumn.isPrimaryKey) {
       try {
         await setColumnPrimaryKey(pendingFromColumnId, true);
-        // ✅ 테이블 상태 업데이트
         setTables((prev) =>
           prev.map((table) => {
             if (table.id !== fromTable.id) return table;
@@ -265,20 +265,6 @@ const ErdCanvas = ({
     }
 
     try {
-      const relationTypeMapForBackend = {
-        "1|1": "1..1",
-        "1|0..1": "1..0..1",
-        "1|1..*": "1..1..*",
-        "1|0..*": "1..0..*",
-        "0..1|1": "0..1..1",
-        "0..1|1..*": "0..1..1..*",
-        "0..1|0..*": "0..1..0..*",
-        "1..*|1..*": "1..*..1..*",
-        "1..*|0..*": "1..*..0..*",
-        "0..*|1..*": "0..*..1..*",
-      };
-
-      const relation_type = relationTypeMapForBackend[selectedRelationType];
       const getTableIdByColumnId = (colId) => {
         for (const table of tables) {
           if (table.columns.some((col) => col.column_id === colId)) {
@@ -296,12 +282,25 @@ const ErdCanvas = ({
         return;
       }
 
+      // ✅ selectedRelationType 예: "1|0..*"
+      const [participation_left, participation_right] =
+        selectedRelationType.split("|");
+
+      // ✅ 관계 기호 설정 (관습적 표현 방식)
+      const relation_left = participation_left.includes("*") ? "crow" : "bar";
+      const relation_right = participation_right.includes("*") ? "crow" : "bar";
+
       const relationData = {
         source_table_id,
         source_column_id: pendingFromColumnId,
         target_table_id,
         target_column_id: columnId,
-        relation_type,
+        participation_left,
+        relation_left,
+        relation_right,
+        participation_right,
+        auto_create_fk: true,
+        cascade_delete: false,
       };
 
       const created = await createRelation(erdId, relationData);
@@ -328,7 +327,10 @@ const ErdCanvas = ({
         relationId: created.relation_id,
         fromColumnId: created.source_column_id,
         toColumnId: created.target_column_id,
-        relationType: created.relation_type,
+        participation_left: created.participation_left,
+        relation_left: created.relation_left,
+        relation_right: created.relation_right,
+        participation_right: created.participation_right,
       };
 
       const updatedRelations = [...relations, newRelation];
@@ -557,7 +559,10 @@ const ErdCanvas = ({
               key={rel.relationId}
               fromColumn={from}
               toColumn={to}
-              label={rel.relationType}
+              participation_left={rel.participation_left}
+              relation_left={rel.relation_left}
+              relation_right={rel.relation_right}
+              participation_right={rel.participation_right}
               isSelected={
                 selectedRelationIds.includes(rel.relationId) ||
                 selectedRelationId === rel.relationId

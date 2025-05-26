@@ -45,15 +45,32 @@ class ErdTableOut(BaseModel):
     columns: List[ErdColumnOut]
 
     model_config = {"from_attributes": True}
+    
+class ErdForeignKeyColumnOut(BaseModel):
+    column_id: int
+    name: str
+    table_id: int
+    is_foreign: bool = True
 
-
+    
 class ErdRelationOut(BaseModel):
     relation_id: int
     source_table_id: int
     source_column_id: int
     target_table_id: int
-    target_column_id: int
-    relation_type: str
+    target_column_id: Optional[int]
+
+    participation_left: str
+    relation_left: str
+    relation_right: str
+    participation_right: str
+
+    auto_create_fk: bool
+    cascade_delete: bool
+
+    fk_column: Optional[ErdForeignKeyColumnOut] = None
+
+    model_config = {"from_attributes": True}
 
 
 class ErdDetailOut(BaseModel):
@@ -123,38 +140,21 @@ class ErdRelationCreate(BaseModel):
     source_table_id: int
     source_column_id: int
     target_table_id: int
-    target_column_id: Optional[int] = None  # ✅ Optional로 수정
-    relation_type: Literal[
-        "1..1",
-        "1..0..1",
-        "1..1..*",
-        "1..0..*",
-        "0..1..1",
-        "0..1..1..*",
-        "0..1..0..*",
-        "1..*..1..*",
-        "1..*..0..*",
-        "0..*..1..*",
-    ]
-    auto_create_fk: Optional[bool] = True           # ✅ 추가
-    cascade_delete: Optional[bool] = False          # ✅ 추가
+    target_column_id: Optional[int] = None
+
+    participation_left: Literal["1", "0..1", "1..*", "0..*"]
+    relation_left: Literal["bar", "crow"]
+    relation_right: Literal["bar", "crow"]
+    participation_right: Literal["1", "0..1", "1..*", "0..*"]
+
+    auto_create_fk: Optional[bool] = True
+    cascade_delete: Optional[bool] = False
 
 
-class ErdForeignKeyColumnOut(BaseModel):
-    column_id: int
-    name: str
-    table_id: int
-    is_foreign: bool = True
 
 
-class ErdRelationOut(BaseModel):
-    relation_id: int
-    source_table_id: int
-    source_column_id: int
-    target_table_id: int
-    target_column_id: int
-    relation_type: str
-    fk_column: Optional[ErdForeignKeyColumnOut] = None  # ✅ 추가
+
+
 
 
 # 다중 삭제
@@ -186,9 +186,15 @@ class ErdColumnUpdate(BaseModel):
 
 class ErdRelationUpdate(BaseModel):
     relation_id: int
-    relation_type: Optional[str] = None
+
+    participation_left: Optional[Literal["1", "0..1", "1..*", "0..*"]] = None
+    relation_left: Optional[Literal["bar", "crow"]] = None
+    relation_right: Optional[Literal["bar", "crow"]] = None
+    participation_right: Optional[Literal["1", "0..1", "1..*", "0..*"]] = None
+
     auto_create_fk: Optional[bool] = None
     cascade_delete: Optional[bool] = None
+
 
 
 # 🧩 전체 요청 바디

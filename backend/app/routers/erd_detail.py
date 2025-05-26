@@ -76,7 +76,12 @@ def get_erd_detail(erd_id: int, db: Session = Depends(get_db)):
                 "source_column_id": r.source_column_id,
                 "target_table_id": r.target_table_id,
                 "target_column_id": r.target_column_id,
-                "relation_type": r.relation_type,
+                "participation_left": r.participation_left,
+                "relation_left": r.relation_left,
+                "relation_right": r.relation_right,
+                "participation_right": r.participation_right,
+                "auto_create_fk": r.auto_create_fk,  # ✅ 추가
+                "cascade_delete": r.cascade_delete,  # ✅ 추가
             }
             for r in erd.relations
         ],
@@ -223,49 +228,50 @@ def delete_column(column_id: int, db: Session = Depends(get_db)):
     db.commit()
     return
 
+
 # 컬럼-컬럼 관계
-@router.post("/{erd_id}/relations", response_model=ErdRelationOut, status_code=status.HTTP_201_CREATED)
+# 컬럼-컬럼 관계
+@router.post(
+    "/{erd_id}/relations",
+    response_model=ErdRelationOut,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_erd_relation(
     erd_id: int, relation: ErdRelationCreate, db: Session = Depends(get_db)
 ):
     try:
-        # 1. 기본 정보 조회
-        source_col = db.query(ErdColumns).filter_by(column_id=relation.source_column_id).first()
-        source_table = db.query(ErdTables).filter_by(table_id=relation.source_table_id).first()
-        target_table = db.query(ErdTables).filter_by(table_id=relation.target_table_id).first()
+        # 기본 정보 확인
+        source_col = (
+            db.query(ErdColumns).filter_by(column_id=relation.source_column_id).first()
+        )
+        target_col = (
+            db.query(ErdColumns).filter_by(column_id=relation.target_column_id).first()
+        )
 
-        if not source_col or not source_table or not target_table:
-            raise HTTPException(status_code=404, detail="테이블 또는 컬럼을 찾을 수 없습니다.")
+        if not source_col or not target_col:
+            raise HTTPException(
+                status_code=404, detail="컬럼 또는 테이블 정보를 찾을 수 없습니다."
+            )
 
-        # 관계 객체 생성
         new_relation = ErdRelations(
             erd_id=erd_id,
             source_table_id=relation.source_table_id,
             source_column_id=relation.source_column_id,
             target_table_id=relation.target_table_id,
-            relation_type=relation.relation_type,
+            target_column_id=relation.target_column_id,
+            participation_left=relation.participation_left,
+            relation_left=relation.relation_left,
+            relation_right=relation.relation_right,
+            participation_right=relation.participation_right,
             auto_create_fk=relation.auto_create_fk,
             cascade_delete=relation.cascade_delete,
         )
 
         fk_col = None
-
-        # ✅ 컬럼 → 컬럼 관계만 허용
-        if not relation.target_column_id:
-            raise HTTPException(status_code=400, detail="컬럼 간 관계만 허용됩니다.")
-
-        target_col = db.query(ErdColumns).filter_by(column_id=relation.target_column_id).first()
-        if not target_col:
-            raise HTTPException(status_code=404, detail="대상 컬럼을 찾을 수 없습니다.")
-
-        new_relation.target_column_id = target_col.column_id
-
-        # ✅ FK 설정
         if relation.auto_create_fk:
             target_col.is_foreign = True
             fk_col = target_col
 
-        # 관계 저장
         db.add(new_relation)
         db.commit()
         db.refresh(new_relation)
@@ -276,17 +282,27 @@ def create_erd_relation(
             source_column_id=new_relation.source_column_id,
             target_table_id=new_relation.target_table_id,
             target_column_id=new_relation.target_column_id,
-            relation_type=new_relation.relation_type,
-            fk_column=ErdForeignKeyColumnOut(
-                column_id=fk_col.column_id,
-                name=fk_col.name,
-                table_id=fk_col.table_id,
-                is_foreign=True,
-            ) if fk_col else None,
+            participation_left=new_relation.participation_left,
+            relation_left=new_relation.relation_left,
+            relation_right=new_relation.relation_right,
+            participation_right=new_relation.participation_right,
+            auto_create_fk=new_relation.auto_create_fk,
+            cascade_delete=new_relation.cascade_delete,
+            fk_column=(
+                ErdForeignKeyColumnOut(
+                    column_id=fk_col.column_id,
+                    name=fk_col.name,
+                    table_id=fk_col.table_id,
+                    is_foreign=True,
+                )
+                if fk_col
+                else None
+            ),
         )
 
     except Exception as e:
         import traceback
+
         traceback.print_exc()
         db.rollback()
         raise HTTPException(status_code=500, detail=f"관계 생성 실패: {str(e)}")
@@ -294,11 +310,15 @@ def create_erd_relation(
 
 # FK만 해제
 @router.patch("/columns/{column_id}/unset-foreign")
-def unset_foreign_key(column_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def unset_foreign_key(
+    column_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     column = db.query(ErdColumns).filter_by(column_id=column_id).first()
     if not column:
         raise HTTPException(status_code=404, detail="컬럼을 찾을 수 없습니다.")
-    
+
     column.is_foreign = False
     db.commit()
     return {"message": "FK 해제 완료"}

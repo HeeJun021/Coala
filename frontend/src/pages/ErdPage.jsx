@@ -54,12 +54,16 @@ const ErdPage = () => {
         })),
       }));
 
-      // ✅ 관계 파싱
+      // ✅ 관계 파싱 (4개 속성 → relationType 조합)
       const parsedRelations = (data.relations || []).map((r) => ({
         relationId: r.relation_id,
         fromColumnId: r.source_column_id,
         toColumnId: r.target_column_id,
-        relationType: r.relation_type,
+        participation_left: r.participation_left,
+        relation_left: r.relation_left,
+        relation_right: r.relation_right,
+        participation_right: r.participation_right,
+        relationType: `${r.participation_left}|${r.participation_right}`, // UI 표시용 라벨
       }));
 
       // ✅ 상태 세팅

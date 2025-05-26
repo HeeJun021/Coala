@@ -67,10 +67,17 @@ class ErdRelations(Base):
     source_column_id = Column(Integer, ForeignKey("erdcolumns.column_id", ondelete="CASCADE"), nullable=False)
     target_table_id = Column(Integer, ForeignKey("erdtables.table_id", ondelete="CASCADE"), nullable=False)
     target_column_id = Column(Integer, ForeignKey("erdcolumns.column_id", ondelete="CASCADE"), nullable=True)
-    relation_type = Column(String(20), nullable=False)
+
+    # ✅ 분리된 4개 속성
+    participation_left = Column(String(10), nullable=False)
+    relation_left = Column(String(10), nullable=False)
+    relation_right = Column(String(10), nullable=False)
+    participation_right = Column(String(10), nullable=False)
+
     auto_create_fk = Column(Boolean, default=True)
     cascade_delete = Column(Boolean, default=False)
 
+    # ✅ 관계 설정
     erd = relationship("Erds", back_populates="relations")
     source_table = relationship("ErdTables", foreign_keys=[source_table_id], back_populates="source_relations")
     target_table = relationship("ErdTables", foreign_keys=[target_table_id], back_populates="target_relations")
