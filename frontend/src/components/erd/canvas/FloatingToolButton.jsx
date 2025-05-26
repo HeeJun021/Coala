@@ -2,17 +2,98 @@ import React, { useState, useRef } from "react";
 import Draggable from "react-draggable";
 
 const relationOptions = [
-  { label: "1:1 (필수 - 필수)", value: "1|1" },
-  { label: "1:1 (필수 - 선택)", value: "1|0..1" },
-  { label: "1:N (필수 - 필수 다수)", value: "1|1..*" },
-  { label: "1:N (필수 - 선택 다수)", value: "1|0..*" },
-  { label: "1:1 (선택 - 필수)", value: "0..1|1" },
-  { label: "1:N (선택 - 필수 다수)", value: "0..1|1..*" },
-  { label: "1:N (선택 - 선택 다수)", value: "0..1|0..*" },
-  { label: "M:N (필수 - 필수)", value: "1..*|1..*" },
-  { label: "M:N (필수 - 선택)", value: "1..*|0..*" },
-  { label: "M:N (선택 - 필수)", value: "0..*|1..*" },
+  {
+    label: "1:1 (필수 - 필수)",
+    value: {
+      participation_left: "1",
+      relation_left: "bar",
+      relation_right: "bar",
+      participation_right: "1"
+    }
+  },
+  {
+    label: "1:1 (필수 - 선택)",
+    value: {
+      participation_left: "1",
+      relation_left: "bar",
+      relation_right: "crow",
+      participation_right: "0..1"
+    }
+  },
+  {
+    label: "1:N (필수 - 필수 다수)",
+    value: {
+      participation_left: "1",
+      relation_left: "bar",
+      relation_right: "crow",
+      participation_right: "1..*"
+    }
+  },
+  {
+    label: "1:N (필수 - 선택 다수)",
+    value: {
+      participation_left: "1",
+      relation_left: "bar",
+      relation_right: "crow",
+      participation_right: "0..*"
+    }
+  },
+  {
+    label: "1:1 (선택 - 필수)",
+    value: {
+      participation_left: "0..1",
+      relation_left: "crow",
+      relation_right: "bar",
+      participation_right: "1"
+    }
+  },
+  {
+    label: "1:N (선택 - 필수 다수)",
+    value: {
+      participation_left: "0..1",
+      relation_left: "crow",
+      relation_right: "crow",
+      participation_right: "1..*"
+    }
+  },
+  {
+    label: "1:N (선택 - 선택 다수)",
+    value: {
+      participation_left: "0..1",
+      relation_left: "crow",
+      relation_right: "crow",
+      participation_right: "0..*"
+    }
+  },
+  {
+    label: "M:N (필수 - 필수)",
+    value: {
+      participation_left: "1..*",
+      relation_left: "crow",
+      relation_right: "crow",
+      participation_right: "1..*"
+    }
+  },
+  {
+    label: "M:N (필수 - 선택)",
+    value: {
+      participation_left: "1..*",
+      relation_left: "crow",
+      relation_right: "crow",
+      participation_right: "0..*"
+    }
+  },
+  {
+    label: "M:N (선택 - 필수)",
+    value: {
+      participation_left: "0..*",
+      relation_left: "crow",
+      relation_right: "crow",
+      participation_right: "1..*"
+    }
+  }
 ];
+
 
 const FloatingToolButton = ({
   onAddTable,
@@ -97,7 +178,7 @@ const FloatingToolButton = ({
                 <div className="absolute left-full top-0 bg-[#2a2a3c] border-l border-gray-700 rounded-md shadow-lg w-60 z-50">
                   {relationOptions.map((option) => (
                     <button
-                      key={option.value}
+                      key={option.label}
                       onClick={() => {
                         onAddRelation?.(option.value);
                         setOpen(false);

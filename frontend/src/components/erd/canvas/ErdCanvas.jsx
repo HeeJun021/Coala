@@ -228,124 +228,141 @@ const ErdCanvas = ({
   };
 
   const handleColumnClick = async (columnId) => {
-    if (!isAddingRelation || !selectedRelationType) return;
+  if (!isAddingRelation || !selectedRelationType) return;
 
-    if (!pendingFromColumnId) {
-      setPendingFromColumnId(columnId);
+  if (!pendingFromColumnId) {
+    setPendingFromColumnId(columnId);
+    return;
+  }
+
+  // 🔍 첫 번째 클릭한 컬럼이 PK가 아닐 경우 자동 설정
+  const fromTable = tables.find((table) =>
+    table.columns.some((col) => col.column_id === pendingFromColumnId)
+  );
+  const fromColumn = fromTable?.columns.find(
+    (col) => col.column_id === pendingFromColumnId
+  );
+
+  if (fromColumn && !fromColumn.isPrimaryKey) {
+    try {
+      await setColumnPrimaryKey(pendingFromColumnId, true);
+      setTables((prev) =>
+        prev.map((table) => {
+          if (table.id !== fromTable.id) return table;
+          return {
+            ...table,
+            columns: table.columns.map((col) =>
+              col.column_id === pendingFromColumnId
+                ? { ...col, isPrimaryKey: true }
+                : col
+            ),
+          };
+        })
+      );
+    } catch (err) {
+      console.error("PK 자동 설정 실패:", err);
+    }
+  }
+
+  try {
+    const getTableIdByColumnId = (colId) => {
+      for (const table of tables) {
+        if (table.columns.some((col) => col.column_id === colId)) {
+          return table.id;
+        }
+      }
+      return null;
+    };
+
+    let source_column_id = pendingFromColumnId;
+    let target_column_id = columnId;
+    let source_table_id = getTableIdByColumnId(source_column_id);
+    let target_table_id = getTableIdByColumnId(target_column_id);
+    let {
+      participation_left,
+      relation_left,
+      relation_right,
+      participation_right,
+    } = selectedRelationType;
+
+    // 🧠 컬럼의 실제 위치 좌표를 기준으로 방향 보정
+    const fromX = columnPositions[source_column_id]?.left ?? 0;
+    const toX = columnPositions[target_column_id]?.left ?? 0;
+
+    if (fromX > toX) {
+      // 순서 반대일 경우 스왑
+      [source_column_id, target_column_id] = [target_column_id, source_column_id];
+      [source_table_id, target_table_id] = [target_table_id, source_table_id];
+
+      // 관계 타입 좌우 교체
+      [participation_left, participation_right] = [
+        participation_right,
+        participation_left,
+      ];
+      [relation_left, relation_right] = [relation_right, relation_left];
+    }
+
+    if (!source_table_id || !target_table_id) {
+      alert("테이블 ID를 찾을 수 없습니다.");
       return;
     }
 
-    // 🔍 첫 번째 클릭한 컬럼이 PK가 아닐 경우 자동 설정
-    const fromTable = tables.find((table) =>
-      table.columns.some((col) => col.column_id === pendingFromColumnId)
-    );
-    const fromColumn = fromTable?.columns.find(
-      (col) => col.column_id === pendingFromColumnId
-    );
+    const relationData = {
+      source_table_id,
+      source_column_id,
+      target_table_id,
+      target_column_id,
+      participation_left,
+      relation_left,
+      relation_right,
+      participation_right,
+      auto_create_fk: true,
+      cascade_delete: false,
+    };
 
-    if (fromColumn && !fromColumn.isPrimaryKey) {
-      try {
-        await setColumnPrimaryKey(pendingFromColumnId, true);
-        setTables((prev) =>
-          prev.map((table) => {
-            if (table.id !== fromTable.id) return table;
-            return {
-              ...table,
-              columns: table.columns.map((col) =>
-                col.column_id === pendingFromColumnId
-                  ? { ...col, isPrimaryKey: true }
-                  : col
-              ),
-            };
-          })
-        );
-      } catch (err) {
-        console.error("PK 자동 설정 실패:", err);
-      }
+    const created = await createRelation(erdId, relationData);
+
+    if (created.fk_column) {
+      const fk = created.fk_column;
+      setTables((prev) =>
+        prev.map((table) => {
+          if (table.id !== fk.table_id) return table;
+          return {
+            ...table,
+            columns: table.columns.map((col) =>
+              col.column_id === fk.column_id
+                ? { ...col, isForeignKey: true }
+                : col
+            ),
+          };
+        })
+      );
     }
 
-    try {
-      const getTableIdByColumnId = (colId) => {
-        for (const table of tables) {
-          if (table.columns.some((col) => col.column_id === colId)) {
-            return table.id;
-          }
-        }
-        return null;
-      };
+    const newRelation = {
+      relationId: created.relation_id,
+      fromColumnId: created.source_column_id,
+      toColumnId: created.target_column_id,
+      participation_left: created.participation_left,
+      relation_left: created.relation_left,
+      relation_right: created.relation_right,
+      participation_right: created.participation_right,
+    };
 
-      const source_table_id = getTableIdByColumnId(pendingFromColumnId);
-      const target_table_id = getTableIdByColumnId(columnId);
+    const updatedRelations = [...relations, newRelation];
+    setRelations(updatedRelations);
 
-      if (!source_table_id || !target_table_id) {
-        alert("테이블 ID를 찾을 수 없습니다.");
-        return;
-      }
+    await handleSnapshotSaveWithColumns(tables, updatedRelations);
+  } catch (err) {
+    console.error("❌ 관계 생성 실패:", err.response?.data || err);
+    alert("관계 생성 중 오류가 발생했습니다.");
+  }
 
-      // ✅ selectedRelationType 예: "1|0..*"
-      const [participation_left, participation_right] =
-        selectedRelationType.split("|");
+  setIsAddingRelation(false);
+  setSelectedRelationType(null);
+  setPendingFromColumnId(null);
+};
 
-      // ✅ 관계 기호 설정 (관습적 표현 방식)
-      const relation_left = participation_left.includes("*") ? "crow" : "bar";
-      const relation_right = participation_right.includes("*") ? "crow" : "bar";
-
-      const relationData = {
-        source_table_id,
-        source_column_id: pendingFromColumnId,
-        target_table_id,
-        target_column_id: columnId,
-        participation_left,
-        relation_left,
-        relation_right,
-        participation_right,
-        auto_create_fk: true,
-        cascade_delete: false,
-      };
-
-      const created = await createRelation(erdId, relationData);
-
-      // ✅ FK 컬럼 정보 반영
-      if (created.fk_column) {
-        const fk = created.fk_column;
-        setTables((prev) =>
-          prev.map((table) => {
-            if (table.id !== fk.table_id) return table;
-            return {
-              ...table,
-              columns: table.columns.map((col) =>
-                col.column_id === fk.column_id
-                  ? { ...col, isForeignKey: true }
-                  : col
-              ),
-            };
-          })
-        );
-      }
-
-      const newRelation = {
-        relationId: created.relation_id,
-        fromColumnId: created.source_column_id,
-        toColumnId: created.target_column_id,
-        participation_left: created.participation_left,
-        relation_left: created.relation_left,
-        relation_right: created.relation_right,
-        participation_right: created.participation_right,
-      };
-
-      const updatedRelations = [...relations, newRelation];
-      setRelations(updatedRelations);
-
-      await handleSnapshotSaveWithColumns(tables, updatedRelations);
-    } catch (err) {
-      console.error("❌ 관계 생성 실패:", err.response?.data || err);
-      alert("관계 생성 중 오류가 발생했습니다.");
-    }
-
-    setIsAddingRelation(false);
-    setSelectedRelationType(null);
-    setPendingFromColumnId(null);
-  };
 
   const handleBatchUpdateTablePosition = (movedTableId, mouseX, mouseY) => {
     if (!dragOriginRef.current || !tablePositionsRef.current) return;

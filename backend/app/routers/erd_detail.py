@@ -230,7 +230,6 @@ def delete_column(column_id: int, db: Session = Depends(get_db)):
 
 
 # 컬럼-컬럼 관계
-# 컬럼-컬럼 관계
 @router.post(
     "/{erd_id}/relations",
     response_model=ErdRelationOut,
