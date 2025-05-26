@@ -1,6 +1,7 @@
 # backend/app/routers/erd_detail.py
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from app.database import get_db
 from app.models.user import User
 from app.models.erd import (
@@ -19,13 +20,14 @@ from app.schemas.erd import (
     ErdTableOut,
     ErdRelationCreate,
     ErdRelationOut,
+    ErdForeignKeyColumnOut,
     ErdColumnCreate,
     ErdColumnPartialUpdate,
     ColumnReorderRequest,
     ErdColumnOut,
     ErdBulkDeleteRequest,
     ErdSyncRequest,
-    SetPrimaryKeyRequest
+    SetPrimaryKeyRequest,
 )
 
 router = APIRouter(prefix="/erds", tags=["ERD Detail"])
@@ -177,30 +179,38 @@ def update_column(
     db.commit()
     return {"message": "컬럼이 업데이트되었습니다."}
 
+
 # 컬럼 위치 변경
 @router.put("/columns/reorder")
 def reorder_columns(
     req: ColumnReorderRequest,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     # 컬럼 ID 유효성 확인
-    columns = db.query(ErdColumns).filter(
-        ErdColumns.table_id == req.table_id,
-        ErdColumns.column_id.in_(req.ordered_column_ids)
-    ).all()
+    columns = (
+        db.query(ErdColumns)
+        .filter(
+            ErdColumns.table_id == req.table_id,
+            ErdColumns.column_id.in_(req.ordered_column_ids),
+        )
+        .all()
+    )
 
     if len(columns) != len(req.ordered_column_ids):
-        raise HTTPException(status_code=400, detail="일치하지 않는 컬럼 ID가 포함되어 있습니다.")
+        raise HTTPException(
+            status_code=400, detail="일치하지 않는 컬럼 ID가 포함되어 있습니다."
+        )
 
     # 컬럼 순서 업데이트
     for order, col_id in enumerate(req.ordered_column_ids):
-        db.query(ErdColumns).filter(ErdColumns.column_id == col_id).update({
-            "column_order": order
-        })
+        db.query(ErdColumns).filter(ErdColumns.column_id == col_id).update(
+            {"column_order": order}
+        )
 
     db.commit()
     return {"message": "컬럼 순서가 업데이트되었습니다."}
+
 
 # 테이블의 컬럼 삭제
 @router.delete("/columns/{column_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -213,27 +223,49 @@ def delete_column(column_id: int, db: Session = Depends(get_db)):
     db.commit()
     return
 
-
-# 테이블 간 관계
-@router.post(
-    "/{erd_id}/relations",
-    response_model=ErdRelationOut,
-    status_code=status.HTTP_201_CREATED,
-)
+# 컬럼-컬럼 관계
+@router.post("/{erd_id}/relations", response_model=ErdRelationOut, status_code=status.HTTP_201_CREATED)
 def create_erd_relation(
     erd_id: int, relation: ErdRelationCreate, db: Session = Depends(get_db)
 ):
     try:
+        # 1. 기본 정보 조회
+        source_col = db.query(ErdColumns).filter_by(column_id=relation.source_column_id).first()
+        source_table = db.query(ErdTables).filter_by(table_id=relation.source_table_id).first()
+        target_table = db.query(ErdTables).filter_by(table_id=relation.target_table_id).first()
+
+        if not source_col or not source_table or not target_table:
+            raise HTTPException(status_code=404, detail="테이블 또는 컬럼을 찾을 수 없습니다.")
+
+        # 관계 객체 생성
         new_relation = ErdRelations(
             erd_id=erd_id,
             source_table_id=relation.source_table_id,
             source_column_id=relation.source_column_id,
             target_table_id=relation.target_table_id,
-            target_column_id=relation.target_column_id,
             relation_type=relation.relation_type,
-            auto_create_fk=getattr(relation, "auto_create_fk", True),
-            cascade_delete=getattr(relation, "cascade_delete", False),
+            auto_create_fk=relation.auto_create_fk,
+            cascade_delete=relation.cascade_delete,
         )
+
+        fk_col = None
+
+        # ✅ 컬럼 → 컬럼 관계만 허용
+        if not relation.target_column_id:
+            raise HTTPException(status_code=400, detail="컬럼 간 관계만 허용됩니다.")
+
+        target_col = db.query(ErdColumns).filter_by(column_id=relation.target_column_id).first()
+        if not target_col:
+            raise HTTPException(status_code=404, detail="대상 컬럼을 찾을 수 없습니다.")
+
+        new_relation.target_column_id = target_col.column_id
+
+        # ✅ FK 설정
+        if relation.auto_create_fk:
+            target_col.is_foreign = True
+            fk_col = target_col
+
+        # 관계 저장
         db.add(new_relation)
         db.commit()
         db.refresh(new_relation)
@@ -245,10 +277,31 @@ def create_erd_relation(
             target_table_id=new_relation.target_table_id,
             target_column_id=new_relation.target_column_id,
             relation_type=new_relation.relation_type,
+            fk_column=ErdForeignKeyColumnOut(
+                column_id=fk_col.column_id,
+                name=fk_col.name,
+                table_id=fk_col.table_id,
+                is_foreign=True,
+            ) if fk_col else None,
         )
+
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         db.rollback()
         raise HTTPException(status_code=500, detail=f"관계 생성 실패: {str(e)}")
+
+
+# FK만 해제
+@router.patch("/columns/{column_id}/unset-foreign")
+def unset_foreign_key(column_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    column = db.query(ErdColumns).filter_by(column_id=column_id).first()
+    if not column:
+        raise HTTPException(status_code=404, detail="컬럼을 찾을 수 없습니다.")
+    
+    column.is_foreign = False
+    db.commit()
+    return {"message": "FK 해제 완료"}
 
 
 # 다중 삭제
@@ -421,7 +474,7 @@ def set_primary_key(
     column_id: int,
     req: SetPrimaryKeyRequest,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
     column = db.query(ErdColumns).filter_by(column_id=column_id).first()
     if not column:

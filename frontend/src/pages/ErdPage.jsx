@@ -22,7 +22,9 @@ const ErdPage = () => {
   const [relations, setRelations] = useState([]);
 
   // 🧱 상태: 코드 변환기
-  const [sqlQuery, setSqlQuery] = useState("-- (자동 로딩 or 붙여넣기한 SQL 쿼리)");
+  const [sqlQuery, setSqlQuery] = useState(
+    "-- (자동 로딩 or 붙여넣기한 SQL 쿼리)"
+  );
   const [language, setLanguage] = useState("Python");
   const [convertType, setConvertType] = useState("class");
 
@@ -32,6 +34,7 @@ const ErdPage = () => {
       const data = await getErdDetail(erdId);
       console.log("📦 ERD 상세 데이터", data);
 
+      // ✅ 테이블 + 컬럼 구조 파싱
       const parsedTables = (data.tables || []).map((t) => ({
         id: t.table_id,
         x: t.pos_x,
@@ -45,14 +48,24 @@ const ErdPage = () => {
           dataType: c.data_type ?? "",
           isNullable: !c.is_not_null,
           isPrimaryKey: c.is_primary,
+          isForeignKey: c.is_foreign, // ✅ FK 표시
           defaultValue: c.default_value ?? "",
           comment: c.description ?? "",
         })),
       }));
 
+      // ✅ 관계 파싱
+      const parsedRelations = (data.relations || []).map((r) => ({
+        relationId: r.relation_id,
+        fromColumnId: r.source_column_id,
+        toColumnId: r.target_column_id,
+        relationType: r.relation_type,
+      }));
+
+      // ✅ 상태 세팅
       setTables(parsedTables);
       setColumns(data.columns || []);
-      setRelations(data.relations || []);
+      setRelations(parsedRelations); // ✅ 관계 반영됨
     } catch (err) {
       console.error("ERD 상세 조회 실패:", err);
     }
@@ -60,7 +73,7 @@ const ErdPage = () => {
 
   useEffect(() => {
     fetchErdDetail();
-  }, [fetchErdDetail]);
+  }, [erdId, fetchErdDetail]); // ✅ erdId 추가
 
   // 💡 샘플 SQL 쿼리 자동 삽입
   const handleFetchAutoSql = () => {
@@ -117,6 +130,7 @@ CREATE TABLE users (
               setTables={setTables}
               columns={columns}
               relations={relations}
+              setRelations={setRelations}
               zoomLevel={zoomLevel}
             />
           ) : (

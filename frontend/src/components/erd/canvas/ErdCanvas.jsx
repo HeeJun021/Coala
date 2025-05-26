@@ -13,6 +13,10 @@ import {
   deleteMultipleRelations,
 } from "../../../api/erd/relationApi";
 import { saveErdSnapshot } from "../../../api/erd/erdDetailApi";
+import {
+  setColumnPrimaryKey,
+  unsetForeignKey,
+} from "../../../api/erd/columnApi";
 
 const ErdCanvas = ({
   isPlacing,
@@ -21,11 +25,12 @@ const ErdCanvas = ({
   setTables,
   zoomLevel,
   erdId,
+  relations,
+  setRelations,
 }) => {
   const canvasRef = useRef(null);
 
   // 🧱 관계, 위치
-  const [relations, setRelations] = useState([]);
   const [columnPositions, setColumnPositions] = useState({});
 
   // 🧱 관계 생성 상태
@@ -221,12 +226,42 @@ const ErdCanvas = ({
 
     setIsPlacing(false);
   };
+
   const handleColumnClick = async (columnId) => {
     if (!isAddingRelation || !selectedRelationType) return;
 
     if (!pendingFromColumnId) {
       setPendingFromColumnId(columnId);
       return;
+    }
+    // 🔍 첫 번째 클릭한 컬럼이 PK가 아닐 경우 자동 설정
+    const fromTable = tables.find((table) =>
+      table.columns.some((col) => col.column_id === pendingFromColumnId)
+    );
+    const fromColumn = fromTable?.columns.find(
+      (col) => col.column_id === pendingFromColumnId
+    );
+
+    if (fromColumn && !fromColumn.isPrimaryKey) {
+      try {
+        await setColumnPrimaryKey(pendingFromColumnId, true);
+        // ✅ 테이블 상태 업데이트
+        setTables((prev) =>
+          prev.map((table) => {
+            if (table.id !== fromTable.id) return table;
+            return {
+              ...table,
+              columns: table.columns.map((col) =>
+                col.column_id === pendingFromColumnId
+                  ? { ...col, isPrimaryKey: true }
+                  : col
+              ),
+            };
+          })
+        );
+      } catch (err) {
+        console.error("PK 자동 설정 실패:", err);
+      }
     }
 
     try {
@@ -244,11 +279,6 @@ const ErdCanvas = ({
       };
 
       const relation_type = relationTypeMapForBackend[selectedRelationType];
-      if (!relation_type) {
-        alert("잘못된 관계 타입입니다.");
-        return;
-      }
-
       const getTableIdByColumnId = (colId) => {
         for (const table of tables) {
           if (table.columns.some((col) => col.column_id === colId)) {
@@ -276,6 +306,24 @@ const ErdCanvas = ({
 
       const created = await createRelation(erdId, relationData);
 
+      // ✅ FK 컬럼 정보 반영
+      if (created.fk_column) {
+        const fk = created.fk_column;
+        setTables((prev) =>
+          prev.map((table) => {
+            if (table.id !== fk.table_id) return table;
+            return {
+              ...table,
+              columns: table.columns.map((col) =>
+                col.column_id === fk.column_id
+                  ? { ...col, isForeignKey: true }
+                  : col
+              ),
+            };
+          })
+        );
+      }
+
       const newRelation = {
         relationId: created.relation_id,
         fromColumnId: created.source_column_id,
@@ -296,6 +344,7 @@ const ErdCanvas = ({
     setSelectedRelationType(null);
     setPendingFromColumnId(null);
   };
+
   const handleBatchUpdateTablePosition = (movedTableId, mouseX, mouseY) => {
     if (!dragOriginRef.current || !tablePositionsRef.current) return;
 
@@ -374,6 +423,7 @@ const ErdCanvas = ({
       if (selectedTableIds.length > 0) {
         try {
           await deleteMultipleTables(erdId, selectedTableIds);
+
           updatedTables = tables.filter(
             (t) => !selectedTableIds.includes(t.id)
           );
@@ -386,20 +436,47 @@ const ErdCanvas = ({
       }
 
       // ✅ 관계 삭제
+      let serverRelationIds = [];
+
       if (selectedRelationIds.length > 0) {
-        const serverRelationIds = selectedRelationIds.filter(
+        serverRelationIds = selectedRelationIds.filter(
           (id) => typeof id === "number" && !isNaN(id)
         );
 
         if (serverRelationIds.length > 0) {
           try {
             await deleteMultipleRelations(erdId, serverRelationIds);
+
+            // ✅ FK 해제 처리
+            serverRelationIds.forEach((relationId) => {
+              const deleted = relations.find(
+                (r) => r.relationId === relationId
+              );
+              if (deleted?.toColumnId) {
+                // 1) 서버에 isForeignKey false 요청
+                unsetForeignKey(deleted.toColumnId).catch((err) =>
+                  console.error("❌ FK 해제 실패:", err)
+                );
+
+                // 2) 프론트 테이블 상태도 수정
+                updatedTables = updatedTables.map((table) => ({
+                  ...table,
+                  columns: table.columns.map((col) =>
+                    col.column_id === deleted.toColumnId
+                      ? { ...col, isForeignKey: false }
+                      : col
+                  ),
+                }));
+              }
+            });
+
             updatedRelations = relations.filter(
               (r) => !selectedRelationIds.includes(r.relationId)
             );
             setRelations(updatedRelations);
             setSelectedRelationIds([]);
             setSelectedRelationId(null);
+            setTables(updatedTables); // FK 반영된 테이블 상태 반영
             changed = true;
           } catch (err) {
             console.error("관계 삭제 실패:", err);
@@ -422,8 +499,10 @@ const ErdCanvas = ({
     relations,
     erdId,
     handleSnapshotSaveWithColumns,
-    setTables, // ✅ 추가
+    setTables,
+    setRelations,
   ]);
+
   useEffect(() => {
     const handleUpdateOrigin = (e) => {
       const { mouseX, mouseY } = e.detail;
@@ -510,6 +589,7 @@ const ErdCanvas = ({
               selectedTableId === table.id
             }
             onClick={() => {
+              // 단순 선택만 가능, 관계 생성 안 함
               setSelectedTableId(table.id);
               setSelectedTableIds([table.id]);
               setSelectedRelationId(null);

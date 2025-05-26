@@ -66,7 +66,7 @@ class ErdRelations(Base):
     source_table_id = Column(Integer, ForeignKey("erdtables.table_id", ondelete="CASCADE"), nullable=False)
     source_column_id = Column(Integer, ForeignKey("erdcolumns.column_id", ondelete="CASCADE"), nullable=False)
     target_table_id = Column(Integer, ForeignKey("erdtables.table_id", ondelete="CASCADE"), nullable=False)
-    target_column_id = Column(Integer, ForeignKey("erdcolumns.column_id", ondelete="CASCADE"), nullable=False)
+    target_column_id = Column(Integer, ForeignKey("erdcolumns.column_id", ondelete="CASCADE"), nullable=True)
     relation_type = Column(String(20), nullable=False)
     auto_create_fk = Column(Boolean, default=True)
     cascade_delete = Column(Boolean, default=False)

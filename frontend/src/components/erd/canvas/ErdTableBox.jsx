@@ -31,6 +31,9 @@ const ErdTableBox = ({
   const [localName, setLocalName] = useState(tableName || "");
   const [localDesc, setLocalDesc] = useState(description || "");
   const [localColumns, setLocalColumns] = useState(() => columns || []);
+  useEffect(() => {
+  setLocalColumns(columns || []);
+}, [columns]);
 
   // 🧱 DOM 참조 및 위치 계산용
   const tableRef = useRef(null);

@@ -25,12 +25,18 @@ const ErdColumnRow = ({
 
   const generateUpdateData = (key, value) => {
     switch (key) {
-      case "name": return { name: value };
-      case "dataType": return { data_type: value };
-      case "defaultValue": return { default_value: value };
-      case "comment": return { description: value };
-      case "isNullable": return { is_not_null: !value };
-      default: return {};
+      case "name":
+        return { name: value };
+      case "dataType":
+        return { data_type: value };
+      case "defaultValue":
+        return { default_value: value };
+      case "comment":
+        return { description: value };
+      case "isNullable":
+        return { is_not_null: !value };
+      default:
+        return {};
     }
   };
 
@@ -74,6 +80,10 @@ const ErdColumnRow = ({
     }
   }, [column.id, onPositionUpdate]);
 
+  // ✅ PK / FK 안전 처리 (isPrimaryKey / isForeignKey 또는 is_primary / is_foreign 모두 대응)
+  const isPK = column.isPrimaryKey ?? column.is_primary ?? false;
+  const isFK = column.isForeignKey ?? column.is_foreign ?? false;
+
   return (
     <>
       <div
@@ -95,15 +105,14 @@ const ErdColumnRow = ({
           opacity: isDragging ? 0.5 : 1,
           cursor: "grab",
         }}
-        onClick={() => onClick?.(column.id)}
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick?.(column.id);
+        }}
       >
         <div className="w-[20px] flex justify-center items-center">
-          <FaKey
-            className={`text-yellow-300 transition-opacity duration-150 ${
-              column.isPrimaryKey ? "opacity-100" : "opacity-0"
-            }`}
-            size={12}
-          />
+          {isPK && <FaKey className="text-yellow-300 mr-1" size={12} />}
+          {isFK && <FaKey className="text-red-400" size={12} />}
         </div>
 
         <div className="flex items-center space-x-1 flex-grow">
@@ -157,7 +166,7 @@ const ErdColumnRow = ({
           style={{ top: pkMenuPos.y, left: pkMenuPos.x }}
           onClick={async () => {
             try {
-              await setColumnPrimaryKey(column.column_id, !column.isPrimaryKey);
+              await setColumnPrimaryKey(column.column_id, !isPK);
               onTogglePrimaryKey(column.id);
               setShowPkMenu(false);
             } catch (error) {
