@@ -88,6 +88,7 @@ const ErdColumnRow = ({
     <>
       <div
         ref={ref}
+        data-column-id={column.id}
         className="relative group flex items-center px-2 py-1 pr-8 rounded-sm select-none space-x-2"
         draggable
         onDragStart={onDragStart}

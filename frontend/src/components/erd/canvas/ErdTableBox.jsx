@@ -32,8 +32,8 @@ const ErdTableBox = ({
   const [localDesc, setLocalDesc] = useState(description || "");
   const [localColumns, setLocalColumns] = useState(() => columns || []);
   useEffect(() => {
-  setLocalColumns(columns || []);
-}, [columns]);
+    setLocalColumns(columns || []);
+  }, [columns]);
 
   // 🧱 DOM 참조 및 위치 계산용
   const tableRef = useRef(null);
@@ -170,68 +170,90 @@ const ErdTableBox = ({
     );
   };
   useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (!draggingRef.current) return;
+  const handleMouseMove = (e) => {
+    if (!draggingRef.current) return;
 
-      const parentRect = tableRef.current.parentElement.getBoundingClientRect();
-      const newX = e.clientX - parentRect.left - offsetRef.current.x;
-      const newY = e.clientY - parentRect.top - offsetRef.current.y;
+    const parentRect = tableRef.current.parentElement.getBoundingClientRect();
+    const newX = e.clientX - parentRect.left - offsetRef.current.x;
+    const newY = e.clientY - parentRect.top - offsetRef.current.y;
 
-      if (isSelected && onDragMove) {
-        const mouseX = e.clientX - parentRect.left;
-        const mouseY = e.clientY - parentRect.top;
-        onDragMove(mouseX, mouseY);
-      } else {
-        onUpdate({
-          id,
-          x: newX,
-          y: newY,
-          tableName: localName,
-          description: localDesc,
-          columns: localColumns,
-        });
+    // ✅ 실시간 컬럼 위치 재계산 + 즉시 전송
+    if (tableRef.current) {
+      const canvasRect = document
+        .getElementById("erd-canvas")
+        ?.getBoundingClientRect();
+      const tableRect = tableRef.current.getBoundingClientRect();
+      const columnElements = tableRef.current.querySelectorAll("[data-column-id]");
+
+      columnElements.forEach((el) => {
+        const colId = el.getAttribute("data-column-id");
+        const rect = el.getBoundingClientRect();
+        if (!canvasRect) return;
+
+        columnPositionsRef.current[colId] = {
+          left: tableRect.left - canvasRect.left,
+          right: tableRect.right - canvasRect.left,
+          y: rect.top - canvasRect.top + rect.height / 2,
+        };
+      });
+
+      if (onColumnPositionUpdate) {
+        onColumnPositionUpdate(id, { ...columnPositionsRef.current });
       }
+    }
 
-      setTimeout(() => {
-        if (onColumnPositionUpdate && columnPositionsRef.current) {
-          onColumnPositionUpdate(id, { ...columnPositionsRef.current });
-        }
-      }, 0);
-    };
-    const handleMouseUp = () => {
-      draggingRef.current = false;
+    // ✅ 위치 갱신
+    if (isSelected && onDragMove) {
+      const mouseX = e.clientX - parentRect.left;
+      const mouseY = e.clientY - parentRect.top;
+      onDragMove(mouseX, mouseY);
+    } else {
+      onUpdate({
+        id,
+        x: newX,
+        y: newY,
+        tableName: localName,
+        description: localDesc,
+        columns: localColumns,
+      });
+    }
+  };
 
-      if (isSelected && x !== undefined && y !== undefined) {
-        patchTable(erdId, id, { pos_x: x, pos_y: y }).catch((err) => {
-          console.error("🛑 테이블 위치 저장 실패:", err);
-        });
+  const handleMouseUp = () => {
+    draggingRef.current = false;
 
-        if (onSnapshotRequest) {
-          onSnapshotRequest();
-        }
+    if (isSelected && x !== undefined && y !== undefined) {
+      patchTable(erdId, id, { pos_x: x, pos_y: y }).catch((err) => {
+        console.error("🛑 테이블 위치 저장 실패:", err);
+      });
+
+      if (onSnapshotRequest) {
+        onSnapshotRequest();
       }
-    };
+    }
+  };
 
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [
-    id,
-    x,
-    y,
-    localName,
-    localDesc,
-    localColumns,
-    onUpdate,
-    isSelected,
-    erdId,
-    onColumnPositionUpdate,
-    onDragMove,
-    onSnapshotRequest,
-  ]);
+  window.addEventListener("mousemove", handleMouseMove);
+  window.addEventListener("mouseup", handleMouseUp);
+  return () => {
+    window.removeEventListener("mousemove", handleMouseMove);
+    window.removeEventListener("mouseup", handleMouseUp);
+  };
+}, [
+  id,
+  x,
+  y,
+  localName,
+  localDesc,
+  localColumns,
+  onUpdate,
+  isSelected,
+  erdId,
+  onColumnPositionUpdate,
+  onDragMove,
+  onSnapshotRequest,
+]);
+
   const handleAddColumn = async () => {
     try {
       const newColumn = await createColumn(id); // id = 테이블 ID

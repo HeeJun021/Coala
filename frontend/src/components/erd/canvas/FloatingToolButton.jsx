@@ -5,94 +5,50 @@ const relationOptions = [
   {
     label: "1:1 (필수 - 필수)",
     value: {
-      participation_left: "1",
+      participation_left: "required",
       relation_left: "bar",
       relation_right: "bar",
-      participation_right: "1"
+      participation_right: "required"
     }
   },
   {
     label: "1:1 (필수 - 선택)",
     value: {
-      participation_left: "1",
+      participation_left: "required",
       relation_left: "bar",
-      relation_right: "crow",
-      participation_right: "0..1"
-    }
-  },
-  {
-    label: "1:N (필수 - 필수 다수)",
-    value: {
-      participation_left: "1",
-      relation_left: "bar",
-      relation_right: "crow",
-      participation_right: "1..*"
-    }
-  },
-  {
-    label: "1:N (필수 - 선택 다수)",
-    value: {
-      participation_left: "1",
-      relation_left: "bar",
-      relation_right: "crow",
-      participation_right: "0..*"
-    }
-  },
-  {
-    label: "1:1 (선택 - 필수)",
-    value: {
-      participation_left: "0..1",
-      relation_left: "crow",
       relation_right: "bar",
-      participation_right: "1"
+      participation_right: "optional"
     }
   },
   {
-    label: "1:N (선택 - 필수 다수)",
+    label: "1:N (필수 - 필수)",
     value: {
-      participation_left: "0..1",
-      relation_left: "crow",
+      participation_left: "required",
+      relation_left: "bar",
       relation_right: "crow",
-      participation_right: "1..*"
+      participation_right: "required"
     }
   },
   {
-    label: "1:N (선택 - 선택 다수)",
+    label: "1:N (필수 - 선택)",
     value: {
-      participation_left: "0..1",
-      relation_left: "crow",
+      participation_left: "required",
+      relation_left: "bar",
       relation_right: "crow",
-      participation_right: "0..*"
+      participation_right: "optional"
     }
   },
   {
-    label: "M:N (필수 - 필수)",
+    label: "1:N (선택 - 선택)",
     value: {
-      participation_left: "1..*",
-      relation_left: "crow",
+      participation_left: "optional",
+      relation_left: "bar",
       relation_right: "crow",
-      participation_right: "1..*"
-    }
-  },
-  {
-    label: "M:N (필수 - 선택)",
-    value: {
-      participation_left: "1..*",
-      relation_left: "crow",
-      relation_right: "crow",
-      participation_right: "0..*"
-    }
-  },
-  {
-    label: "M:N (선택 - 필수)",
-    value: {
-      participation_left: "0..*",
-      relation_left: "crow",
-      relation_right: "crow",
-      participation_right: "1..*"
+      participation_right: "optional"
     }
   }
 ];
+
 
 
 const FloatingToolButton = ({

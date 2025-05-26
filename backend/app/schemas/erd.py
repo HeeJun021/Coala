@@ -53,6 +53,7 @@ class ErdForeignKeyColumnOut(BaseModel):
     is_foreign: bool = True
 
     
+# ✅ 관계 응답 객체
 class ErdRelationOut(BaseModel):
     relation_id: int
     source_table_id: int
@@ -60,10 +61,10 @@ class ErdRelationOut(BaseModel):
     target_table_id: int
     target_column_id: Optional[int]
 
-    participation_left: str
-    relation_left: str
-    relation_right: str
-    participation_right: str
+    participation_left: Literal["required", "optional"]
+    relation_left: Literal["bar", "crow"]
+    relation_right: Literal["bar", "crow"]
+    participation_right: Literal["required", "optional"]
 
     auto_create_fk: bool
     cascade_delete: bool
@@ -71,7 +72,6 @@ class ErdRelationOut(BaseModel):
     fk_column: Optional[ErdForeignKeyColumnOut] = None
 
     model_config = {"from_attributes": True}
-
 
 class ErdDetailOut(BaseModel):
     erd_id: int
@@ -142,19 +142,13 @@ class ErdRelationCreate(BaseModel):
     target_table_id: int
     target_column_id: Optional[int] = None
 
-    participation_left: Literal["1", "0..1", "1..*", "0..*"]
+    participation_left: Literal["required", "optional"]
     relation_left: Literal["bar", "crow"]
     relation_right: Literal["bar", "crow"]
-    participation_right: Literal["1", "0..1", "1..*", "0..*"]
+    participation_right: Literal["required", "optional"]
 
     auto_create_fk: Optional[bool] = True
     cascade_delete: Optional[bool] = False
-
-
-
-
-
-
 
 
 # 다중 삭제
@@ -184,13 +178,14 @@ class ErdColumnUpdate(BaseModel):
     column_order: Optional[int] = None
 
 
+# ✅ 관계 수정용
 class ErdRelationUpdate(BaseModel):
     relation_id: int
 
-    participation_left: Optional[Literal["1", "0..1", "1..*", "0..*"]] = None
+    participation_left: Optional[Literal["required", "optional"]] = None
     relation_left: Optional[Literal["bar", "crow"]] = None
     relation_right: Optional[Literal["bar", "crow"]] = None
-    participation_right: Optional[Literal["1", "0..1", "1..*", "0..*"]] = None
+    participation_right: Optional[Literal["required", "optional"]] = None
 
     auto_create_fk: Optional[bool] = None
     cascade_delete: Optional[bool] = None
