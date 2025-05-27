@@ -1,7 +1,9 @@
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func
 from app.models.user import User
+from app.models.eucalyptus_transaction import EucalyptusTransaction
 from app.schemas.user import UserUpdateSchema
-from app.schemas.eucalyptus_schema import ActionType
+from app.schemas.eucalyptus_schema import RewardActionType, UseActionType
 from fastapi import HTTPException
 from datetime import datetime
 
@@ -29,32 +31,47 @@ def update_user_info(db: Session, user_id: int, user_update: UserUpdateSchema):
     db.refresh(user)
     return user
 
-# 🌿 보상 지급 (획득)
-def reward_user_by_action(user: User, action: ActionType, db: Session) -> int:
+def reward_user_by_action(user: User, action: RewardActionType, db: Session) -> int:
     reward_table = {
-        ActionType.quiz_correct: 10,
-        ActionType.coding_test_passed: 30,
-        ActionType.daily_login: 5,
-        ActionType.team_project_complete: 50,
+        RewardActionType.quiz_correct: 10,
+        RewardActionType.coding_test_passed: 30,
+        RewardActionType.daily_login: 5,
+        RewardActionType.team_project_complete: 50,
     }
 
     reward = reward_table.get(action)
     if reward is None:
         raise HTTPException(status_code=400, detail="유효하지 않은 보상 타입입니다.")
 
+    # ✅ 하루 누적 획득량 계산
+    today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_total = db.query(func.sum(EucalyptusTransaction.amount)).filter(
+        EucalyptusTransaction.user_id == user.user_id,
+        EucalyptusTransaction.amount > 0,
+        EucalyptusTransaction.created_at >= today_start
+    ).scalar() or 0
+
+    if today_total + reward > 300:
+        raise HTTPException(status_code=400, detail="오늘은 최대 300 유칼립투스까지만 획득할 수 있습니다.")
+
+    # ✅ 유칼립투스 지급
     user.eucalyptus_balance += reward
+
+    db.add(EucalyptusTransaction(
+        user_id=user.user_id,
+        amount=reward,
+        action=action.value,
+        created_at=datetime.now()
+    ))
+
     db.commit()
     return reward
 
 
 # 🌿 화폐 사용 (차감)
-def use_eucalyptus_by_action(user: User, action: ActionType, db: Session) -> int:
+def use_eucalyptus_by_action(user: User, action: UseActionType, db: Session) -> int:
     cost_table = {
-        ActionType.quiz_correct: 5,
-        ActionType.coding_test_passed: 10,
-        ActionType.daily_login: 3,
-        ActionType.team_project_complete: 20,
-        ActionType.change_profile_image: 30,
+        UseActionType.change_profile_image: 30,
     }
 
     cost = cost_table.get(action)
@@ -65,9 +82,17 @@ def use_eucalyptus_by_action(user: User, action: ActionType, db: Session) -> int
         raise HTTPException(status_code=400, detail="유칼립투스 잔액이 부족합니다.")
 
     user.eucalyptus_balance -= cost
-    db.commit()
-    return -cost  # 사용은 음수로 반환
 
+    # ✅ 트랜잭션 기록 추가 (음수로 저장)
+    db.add(EucalyptusTransaction(
+        user_id=user.user_id,
+        amount=-cost,
+        action=action.value,
+        created_at=datetime.now()
+    ))
+
+    db.commit()
+    return -cost  # 음수 반환
 
 def update_profile_image(user: User, image_url: str, db: Session):
     user.profile_image_url = image_url

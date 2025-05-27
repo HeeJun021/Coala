@@ -11,8 +11,10 @@ from app.models import (
     study_materials,
     study_example,
     question,
-    language
+    language,
 )
+
+from app.models.eucalyptus_transaction import EucalyptusTransaction
 
 # ✅ 라우터 불러오기
 from app.routers import (

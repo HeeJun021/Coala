@@ -5,6 +5,8 @@ from app.schemas.quiz import QuizResponse
 from app.schemas.question import QuestionResponse
 from app.models.question import Question
 from app.utils.quiz import check_answer 
+from app.services.user import reward_user_by_action
+from app.schemas.eucalyptus_schema import RewardActionType
 
 def get_all_quizzes(db: Session):
     return db.query(Quiz).all()
@@ -94,22 +96,3 @@ def create_quiz(db: Session, title: str, quiz_type: str, settings: list):
 
     return new_quiz
 
-# app/services/quiz.py
- # 정답 체크 함수 가져오기
-
-def submit_quiz(db, submission_data):
-    # 사용자의 제출 데이터 처리
-    for answer in submission_data["answers"]:
-        # DB에서 해당 question_id에 대한 문제 가져오기
-        question = db.query(Questions).filter(Questions.question_id == answer["question_id"]).first()
-
-        # 정답 체크 함수 적용
-        is_correct = check_answer(question, answer["user_answer"])
-
-        submission_detail = QuizSubmissionDetails(
-            submission_id=submission_id,
-            question_id=answer["question_id"],
-            user_answer=answer["user_answer"],
-            is_correct=is_correct  # ✅ 정답 체크 함수 결과 반영
-        )
-        db.add(submission_detail)

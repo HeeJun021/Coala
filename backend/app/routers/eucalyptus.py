@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User
+from app.models.eucalyptus_transaction import EucalyptusTransaction
 from app.utils.auth import get_current_user_object
 from app.schemas.eucalyptus_schema import (
     EucalyptusRewardRequest,
