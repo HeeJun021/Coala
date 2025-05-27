@@ -26,6 +26,8 @@ const ErdTableBox = ({
   onDragMove,
   erdId,
   onSnapshotRequest,
+  zoom,
+  panOffset,
 }) => {
   // 🧱 테이블 기본 정보 (로컬)
   const [localName, setLocalName] = useState(tableName || "");
@@ -109,14 +111,21 @@ const ErdTableBox = ({
 
     if (!canvasRect) return;
 
-    const pos = {
-      left: tableRect.left - canvasRect.left,
-      right: tableRect.right - canvasRect.left,
-      y: colRect.top - canvasRect.top + colRect.height / 2,
-    };
+    // ✅ transform 보정 적용
+    const adjustedLeft =
+      (tableRect.left - canvasRect.left - panOffset.x) / zoom;
+    const adjustedRight =
+      (tableRect.right - canvasRect.left - panOffset.x) / zoom;
+    const adjustedY =
+      (colRect.top - canvasRect.top - panOffset.y + colRect.height / 2) / zoom;
 
-    columnPositionsRef.current[colId] = pos;
+    columnPositionsRef.current[colId] = {
+      left: adjustedLeft,
+      right: adjustedRight,
+      y: adjustedY,
+    };
   };
+
   const handleTogglePK = (targetId) => {
     setLocalColumns((prev) =>
       prev.map((col) =>
@@ -170,89 +179,101 @@ const ErdTableBox = ({
     );
   };
   useEffect(() => {
-  const handleMouseMove = (e) => {
-    if (!draggingRef.current) return;
+    const handleMouseMove = (e) => {
+      if (!draggingRef.current) return;
 
-    const parentRect = tableRef.current.parentElement.getBoundingClientRect();
-    const newX = e.clientX - parentRect.left - offsetRef.current.x;
-    const newY = e.clientY - parentRect.top - offsetRef.current.y;
+      const parentRect = tableRef.current.parentElement.getBoundingClientRect();
+      const newX = e.clientX - parentRect.left - offsetRef.current.x;
+      const newY = e.clientY - parentRect.top - offsetRef.current.y;
 
-    // ✅ 실시간 컬럼 위치 재계산 + 즉시 전송
-    if (tableRef.current) {
-      const canvasRect = document
-        .getElementById("erd-canvas")
-        ?.getBoundingClientRect();
-      const tableRect = tableRef.current.getBoundingClientRect();
-      const columnElements = tableRef.current.querySelectorAll("[data-column-id]");
+      // ✅ 실시간 컬럼 위치 재계산 + 즉시 전송
+      if (tableRef.current) {
+        const canvasRect = document
+          .getElementById("erd-canvas")
+          ?.getBoundingClientRect();
+        const tableRect = tableRef.current.getBoundingClientRect();
+        const columnElements =
+          tableRef.current.querySelectorAll("[data-column-id]");
 
-      columnElements.forEach((el) => {
-        const colId = el.getAttribute("data-column-id");
-        const rect = el.getBoundingClientRect();
-        if (!canvasRect) return;
+        columnElements.forEach((el) => {
+          const colId = el.getAttribute("data-column-id");
+          const rect = el.getBoundingClientRect();
+          if (!canvasRect) return;
 
-        columnPositionsRef.current[colId] = {
-          left: tableRect.left - canvasRect.left,
-          right: tableRect.right - canvasRect.left,
-          y: rect.top - canvasRect.top + rect.height / 2,
-        };
-      });
+          // ✅ transform 보정
+          const adjustedLeft =
+            (tableRect.left - canvasRect.left - panOffset.x) / zoom;
+          const adjustedRight =
+            (tableRect.right - canvasRect.left - panOffset.x) / zoom;
+          const adjustedY =
+            (rect.top - canvasRect.top - panOffset.y + rect.height / 2) / zoom;
 
-      if (onColumnPositionUpdate) {
-        onColumnPositionUpdate(id, { ...columnPositionsRef.current });
+          columnPositionsRef.current[colId] = {
+            left: adjustedLeft,
+            right: adjustedRight,
+            y: adjustedY,
+          };
+        });
+
+        if (onColumnPositionUpdate) {
+          onColumnPositionUpdate(id, { ...columnPositionsRef.current });
+        }
       }
-    }
 
-    // ✅ 위치 갱신
-    if (isSelected && onDragMove) {
-      const mouseX = e.clientX - parentRect.left;
-      const mouseY = e.clientY - parentRect.top;
-      onDragMove(mouseX, mouseY);
-    } else {
-      onUpdate({
-        id,
-        x: newX,
-        y: newY,
-        tableName: localName,
-        description: localDesc,
-        columns: localColumns,
-      });
-    }
-  };
-
-  const handleMouseUp = () => {
-    draggingRef.current = false;
-
-    if (isSelected && x !== undefined && y !== undefined) {
-      patchTable(erdId, id, { pos_x: x, pos_y: y }).catch((err) => {
-        console.error("🛑 테이블 위치 저장 실패:", err);
-      });
-
-      if (onSnapshotRequest) {
-        onSnapshotRequest();
+      // ✅ 위치 갱신
+      if (isSelected && onDragMove) {
+        const mouseX = e.clientX - parentRect.left;
+        const mouseY = e.clientY - parentRect.top;
+        onDragMove(mouseX, mouseY);
+      } else {
+        onUpdate({
+          id,
+          x: newX,
+          y: newY,
+          tableName: localName,
+          description: localDesc,
+          columns: localColumns,
+        });
       }
-    }
-  };
+    };
 
-  window.addEventListener("mousemove", handleMouseMove);
-  window.addEventListener("mouseup", handleMouseUp);
-  return () => {
-    window.removeEventListener("mousemove", handleMouseMove);
-    window.removeEventListener("mouseup", handleMouseUp);
-  };
-}, [
-  id,
-  x,
-  y,
-  localName,
-  localDesc,
-  localColumns,
-  onUpdate,
-  isSelected,
-  erdId,
-  onColumnPositionUpdate,
-  onDragMove,
-  onSnapshotRequest,
-]);
+    const handleMouseUp = () => {
+      draggingRef.current = false;
+
+      if (isSelected && x !== undefined && y !== undefined) {
+        patchTable(erdId, id, { pos_x: x, pos_y: y }).catch((err) => {
+          console.error("🛑 테이블 위치 저장 실패:", err);
+        });
+
+        if (onSnapshotRequest) {
+          onSnapshotRequest();
+        }
+      }
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [
+    id,
+    x,
+    y,
+    localName,
+    localDesc,
+    localColumns,
+    onUpdate,
+    isSelected,
+    erdId,
+    onColumnPositionUpdate,
+    onDragMove,
+    onSnapshotRequest,
+    zoom,
+    panOffset.x,
+    panOffset.y,
+  ]);
 
   const handleAddColumn = async () => {
     try {

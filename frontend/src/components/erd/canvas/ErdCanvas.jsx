@@ -24,6 +24,7 @@ const ErdCanvas = ({
   tables,
   setTables,
   zoomLevel,
+  setZoomLevel,
   erdId,
   relations,
   setRelations,
@@ -701,6 +702,8 @@ const ErdCanvas = ({
             onSnapshotRequest={() =>
               handleSnapshotSaveWithColumns(tables, relations)
             }
+            zoom={zoom}
+            panOffset={panOffset}
           />
         ))}
 
