@@ -52,3 +52,11 @@ export const redoErdByLog = async (erdId) => {
   const response = await apiClient.post(`/erds/${erdId}/__log_redo`);
   return response.data;
 };
+
+// ERD 이름 변경
+export const updateErdName = async (erdId, newName) => {
+  const response = await apiClient.patch(`/erds/${erdId}/name`, {
+    name: newName,
+  });
+  return response.data;
+};

@@ -55,7 +55,7 @@ const ErdCanvas = ({
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const panStartRef = useRef({ x: 0, y: 0 });
 
-  const [zoom, setZoom] = useState(zoomLevel ?? 1); // 내부 줌 상태 관리
+  // const [zoom, setZoom] = useState(zoomLevel ?? 1); // 내부 줌 상태 관리
 
   // 🧱 도구 툴 드래그 여부
   const [isToolDragging, setIsToolDragging] = useState(false);
@@ -590,13 +590,13 @@ const ErdCanvas = ({
       e.preventDefault();
 
       const delta = e.deltaY > 0 ? -0.1 : 0.1;
-      const newZoom = Math.min(Math.max(zoom + delta, 0.2), 3);
+      const newZoom = Math.min(Math.max(zoomLevel + delta, 0.2), 3);
 
       const rect = canvasRef.current.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
 
-      const zoomFactor = newZoom / zoom;
+      const zoomFactor = newZoom / zoomLevel;
 
       // 마우스 위치 기준으로 panOffset 보정
       setPanOffset((prev) => ({
@@ -604,7 +604,7 @@ const ErdCanvas = ({
         y: mouseY - (mouseY - prev.y) * zoomFactor,
       }));
 
-      setZoom(newZoom);
+      setZoomLevel(newZoom);
     };
 
     const canvas = canvasRef.current;
@@ -617,7 +617,7 @@ const ErdCanvas = ({
         canvas.removeEventListener("wheel", handleWheel);
       }
     };
-  }, [zoom]);
+  }, [zoomLevel, setZoomLevel]);
 
   return (
     <div
@@ -641,7 +641,7 @@ const ErdCanvas = ({
       <div
         className="absolute top-0 left-0 origin-top-left"
         style={{
-          transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoom})`,
+          transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoomLevel})`,
           transformOrigin: "0 0",
         }}
       >
@@ -702,7 +702,7 @@ const ErdCanvas = ({
             onSnapshotRequest={() =>
               handleSnapshotSaveWithColumns(tables, relations)
             }
-            zoom={zoom}
+            zoom={zoomLevel}
             panOffset={panOffset}
           />
         ))}

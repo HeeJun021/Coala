@@ -93,7 +93,7 @@ const FloatingToolButton = ({
     >
       <div
         ref={containerRef}
-        className="z-50 fixed"
+        className="z-30 fixed"
         onMouseDown={(e) => e.stopPropagation()}
         onMouseMove={(e) => e.stopPropagation()}
         onMouseUp={(e) => e.stopPropagation()}

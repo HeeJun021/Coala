@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.database import get_db
 from app.models.user import User
+from app.models.project_models import Project
+
 from app.models.erd import (
     Erds,
     ErdTables,
@@ -28,6 +30,7 @@ from app.schemas.erd import (
     ErdBulkDeleteRequest,
     ErdSyncRequest,
     SetPrimaryKeyRequest,
+    ErdNameUpdate
 )
 
 router = APIRouter(prefix="/erds", tags=["ERD Detail"])
@@ -502,3 +505,23 @@ def set_primary_key(
     column.is_primary = req.is_primary
     db.commit()
     return {"message": f"컬럼의 PK 상태가 {req.is_primary}로 설정되었습니다."}
+
+# ERD 이름 수정
+@router.patch("/{erd_id}/name", status_code=200)
+def update_erd_name(erd_id: int, req: ErdNameUpdate, db: Session = Depends(get_db)):
+    erd = db.query(Erds).filter(Erds.erd_id == erd_id).first()
+    if not erd:
+        raise HTTPException(status_code=404, detail="해당 ERD를 찾을 수 없습니다.")
+
+    erd.name = req.name
+    db.commit()
+    db.refresh(erd)
+    return {"erd_id": erd.erd_id, "name": erd.name}
+
+# 프로젝트 이름 get
+@router.get("/projects/{project_id}/name", response_model=str)
+def get_project_name(project_id: int, db: Session = Depends(get_db)):
+    project = db.query(Project).filter_by(project_id=project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="해당 프로젝트가 없습니다.")
+    return project.name

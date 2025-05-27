@@ -28,10 +28,17 @@ const ErdPage = () => {
   const [language, setLanguage] = useState("Python");
   const [convertType, setConvertType] = useState("class");
 
+   // ✅ ERD 이름 상태
+  const [erdName, setErdName] = useState("");
+
+
   // 📦 ERD 상세 조회 함수
   const fetchErdDetail = useCallback(async () => {
     try {
       const data = await getErdDetail(erdId);
+
+      setErdName(data.name ?? "이름 없음");
+
       console.log("📦 ERD 상세 데이터", data);
 
       // ✅ 테이블 + 컬럼 구조 파싱
@@ -94,9 +101,9 @@ CREATE TABLE users (
       {/* 상단 헤더 */}
       <div className="shrink-0">
         <ProjectHeader
-          projectName="ERD 샘플 프로젝트"
+          projectName={erdName}
           erdId={erdId}
-          onEditName={() => {}}
+          onEditName={(newName) => setErdName(newName)}
           onOpenLog={() => {}}
           onOpenSidebar={() => setIsSidebarOpen(true)}
           zoomLevel={zoomLevel}
@@ -116,10 +123,8 @@ CREATE TABLE users (
       <div className="flex flex-1 overflow-hidden relative">
         {/* 사이드바 */}
         {isSidebarOpen && (
-          <div className="w-64 shrink-0">
-            <ErdListSidebar onClose={() => setIsSidebarOpen(false)} />
-          </div>
-        )}
+  <ErdListSidebar onClose={() => setIsSidebarOpen(false)} />
+)}
 
         {/* 메인 영역 */}
         <div className="flex-1 relative min-w-0 min-h-0">
@@ -136,6 +141,7 @@ CREATE TABLE users (
               relations={relations}
               setRelations={setRelations}
               zoomLevel={zoomLevel}
+              setZoomLevel={setZoomLevel}
             />
           ) : (
             <CodeGeneratorPanel sqlQuery={sqlQuery} setSqlQuery={setSqlQuery} />

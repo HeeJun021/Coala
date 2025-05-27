@@ -1,19 +1,42 @@
-import React, { useState } from "react";
-import CreateErdModal from "./CreateErdModal"; // ← 추가
+import React, { useState, useEffect, useCallback } from "react";
+import CreateErdModal from "./CreateErdModal";
+import { createErd, getErds } from "../../../api/erd/erdApi"; // ✅ API 임포트
+import { useParams, useNavigate } from "react-router-dom";
 
 const ErdListSidebar = ({ onClose }) => {
   const [showModal, setShowModal] = useState(false);
+  const [erdList, setErdList] = useState([]); // ✅ 동적 목록 상태
 
-  const handleCreateErd = (newErd) => {
+  const { projectId } = useParams(); // ✅ URL 파라미터로 projectId 사용
+  const navigate = useNavigate();
+
+  const fetchErdList = useCallback(async () => {
+  try {
+    const data = await getErds(projectId);
+    setErdList(data);
+  } catch (err) {
+    console.error("ERD 목록 불러오기 실패:", err);
+  }
+}, [projectId]);
+
+
+  useEffect(() => {
+  fetchErdList();
+}, [fetchErdList]);
+
+
+  const handleCreateErd = async (erdData) => {
+  try {
+    const newErd = await createErd(projectId, erdData); // ✅ 실제 생성
     console.log("🆕 새 ERD 생성됨:", newErd);
-    // TODO: DB에 저장하거나 상태 업데이트
-  };
+    setShowModal(false); // 모달 닫기
+    fetchErdList(); // 목록 갱신
+  } catch (err) {
+    console.error("ERD 생성 실패:", err);
+    alert("ERD 생성 중 오류가 발생했습니다.");
+  }
+};
 
-  const erdList = [
-    { id: 1, name: "온라인 쇼핑몰 ERD" },
-    { id: 2, name: "커뮤니티 시스템 ERD" },
-    { id: 3, name: "회원 인증 시스템 ERD" },
-  ];
 
   return (
     <>
@@ -21,15 +44,19 @@ const ErdListSidebar = ({ onClose }) => {
         {/* 헤더 */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700">
           <span className="text-lg font-bold">🧭 ERD 목록</span>
-          <button onClick={onClose} className="text-sm text-gray-400 hover:text-white">✖</button>
+          <button onClick={onClose} className="text-sm text-gray-400 hover:text-white">
+            ✖
+          </button>
         </div>
 
         {/* 리스트 */}
         <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2">
           {erdList.map((erd) => (
             <div
-              key={erd.id}
+              key={erd.erd_id}
               className="cursor-pointer px-3 py-2 bg-[#2a2a3c] rounded hover:bg-[#3a3a4c]"
+              onClick={() => navigate(`/team-project/${projectId}/erd/${erd.erd_id}`)}
+
             >
               📄 {erd.name}
             </div>

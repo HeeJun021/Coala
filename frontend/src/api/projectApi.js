@@ -54,3 +54,9 @@ export const addProjectActivity = async (projectId, action) => {
   const response = await apiClient.post(`/projects/${projectId}/activity`, { action });
   return response.data;
 };
+
+// 프로젝트 이름 get
+export const fetchProjectNameByErd = async (erdId) => {
+  const response = await apiClient.get(`/erds/${erdId}/project-name`);
+  return response.data;
+};

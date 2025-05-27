@@ -204,6 +204,11 @@ class ErdSnapshotCreate(BaseModel):
     state_json: Any  # 전체 ERD 구조를 JSON 형태로 받음
 
 
-# pk 설정
+# PK 설정
 class SetPrimaryKeyRequest(BaseModel):
     is_primary: bool
+
+
+# ERD 이름 수정
+class ErdNameUpdate(BaseModel):
+    name: str
