@@ -23,3 +23,10 @@ export async function verifyEmail(email, token) {
     const response = await apiClient.post("/auth/email/verify", { email, token });
     return response.data;
 }
+
+export const updateProfileImage = async ({ profile_image_url, action }) => {
+  return await apiClient.patch("/users/profile-image", {
+    image_url: profile_image_url,
+    action,
+  });
+};

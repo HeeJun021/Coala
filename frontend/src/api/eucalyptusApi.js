@@ -8,7 +8,7 @@ export const rewardEucalyptus = async (action) => {
 };
 
 // 🌿 유칼립투스 사용 (차감)
-export const useEucalyptus = async (action) => {
+export const payEucalyptus = async (action) => {
   const response = await apiClient.post("/eucalyptus/use", { action });
   return response.data; // { current_balance, changed_amount }
 };

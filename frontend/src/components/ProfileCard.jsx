@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { updateUserInfo } from '../api/userApi';
 import RatingProgressBar from './RatingProgressBar';
+import SelectProfileModal from './SelectProfileModal'; // ✅ 이미지 선택 모달 추가
 
 const ProfileCard = ({ userData, setUserData }) => {
     const [isEditing, setIsEditing] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false); // ✅ 모달 상태
+
     const [formData, setFormData] = useState({
         nickname: userData.nickname,
         tier_name: userData.tier_name,
@@ -51,6 +54,14 @@ const ProfileCard = ({ userData, setUserData }) => {
         }
     };
 
+    const handleImageSelect = (newUrl) => {
+        setUserData((prev) => ({
+            ...prev,
+            profile_image_url: newUrl,
+        }));
+        setIsModalOpen(false);
+    };
+
     const getRange = (rating) => {
         if (rating <= 500) return { min: 0, max: 500 };
         if (rating <= 1000) return { min: 501, max: 1000 };
@@ -64,18 +75,17 @@ const ProfileCard = ({ userData, setUserData }) => {
             {isEditing ? (
                 <>
                     <h2 className="text-lg font-bold mb-1">사용자 정보</h2>
-                    {userData.profile_image_url && (
-                        <div className="flex items-center gap-4">
-                            <img
-                                src={userData.profile_image_url}
-                                alt="Profile"
-                                className="w-16 h-16 rounded-md"
-                            />
-                            <button className="bg-accent text-white px-4 py-1 rounded-lg hover:bg-[#6b8d63]">
-                                변경
-                            </button>
-                        </div>
-                    )}
+                    <div className="flex items-center gap-4">
+                        <img
+                            src={userData.profile_image_url}
+                            alt="Profile"
+                            className="w-16 h-16 rounded-md cursor-pointer transition duration-200 hover:brightness-75"
+                            onClick={() => setIsModalOpen(true)} // ✅ 클릭 시 모달 열기
+                        />
+                        <button className="bg-accent text-white px-4 py-1 rounded-lg hover:bg-[#6b8d63]">
+                            변경
+                        </button>
+                    </div>
                     <div>
                         <label className="flex items-center justify-between pt-1">
                             <h2 className='font-bold'>닉네임</h2>
@@ -128,9 +138,10 @@ const ProfileCard = ({ userData, setUserData }) => {
                     <h2 className="text-lg font-bold mb-1">사용자 정보</h2>
                     {userData.profile_image_url && (
                         <img
-                            src={userData?.profile_image_url}
+                            src={userData.profile_image_url}
                             alt="Profile"
-                            className="w-16 h-16 rounded-md"
+                            className="w-16 h-16 rounded-md cursor-pointer"
+                            onClick={() => setIsModalOpen(true)} // ✅ 보기 모드에서도 클릭 가능
                         />
                     )}
                     <div className="flex flex-col gap-2">
@@ -159,12 +170,22 @@ const ProfileCard = ({ userData, setUserData }) => {
                         )}
                     </div>
                     <button
-                        className="absolute bottom-0 text-white right-0 bg-accent px-4 py-1 rounded-lg hover:bg-[#6b8d63] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent"
-                        onClick={toggleEditMode} 
+                        className="absolute bottom-0 text-white right-0 bg-accent px-4 py-1 rounded-lg hover:bg-[#6b8d63]"
+                        onClick={toggleEditMode}
                     >
                         수정
                     </button>
                 </>
+            )}
+
+            {/* ✅ 모달 컴포넌트 렌더링 */}
+            {isModalOpen && (
+                <SelectProfileModal
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    onSelectImage={handleImageSelect}
+                    currentImageUrl={userData.profile_image_url}
+                />
             )}
         </div>
     );
