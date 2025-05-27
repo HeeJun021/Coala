@@ -68,8 +68,8 @@ const ErdCanvas = ({
     if (e.button !== 0 || isToolDragging) return;
 
     const rect = canvasRef.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / zoomLevel;
-    const y = (e.clientY - rect.top) / zoomLevel;
+    const x = (e.clientX - rect.left - panOffset.x) / zoomLevel;
+    const y = (e.clientY - rect.top - panOffset.y) / zoomLevel;
 
     dragStartRef.current = { x, y };
     dragOriginRef.current = { x, y };
@@ -88,8 +88,8 @@ const ErdCanvas = ({
     if (!dragStartRef.current || isToolDragging) return;
 
     const rect = canvasRef.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / zoomLevel;
-    const y = (e.clientY - rect.top) / zoomLevel;
+    const x = (e.clientX - rect.left - panOffset.x) / zoomLevel;
+    const y = (e.clientY - rect.top - panOffset.y) / zoomLevel;
 
     const startX = dragStartRef.current.x;
     const startY = dragStartRef.current.y;
