@@ -98,9 +98,12 @@ const ErdRelationLine = ({
 
   return (
     <svg
-      className="absolute top-0 left-0 w-full h-full z-10"
-      style={{ pointerEvents: "none" }}
-    >
+  className="absolute top-0 left-0"
+  width="2000"
+  height="2000"
+  style={{ pointerEvents: "none", zIndex: 100 }}
+>
+
       {/* 클릭 가능한 선들 */}
       <line
         x1={from.x}
