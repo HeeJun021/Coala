@@ -28,9 +28,8 @@ const ErdPage = () => {
   const [language, setLanguage] = useState("Python");
   const [convertType, setConvertType] = useState("class");
 
-   // ✅ ERD 이름 상태
+  // ✅ ERD 이름 상태
   const [erdName, setErdName] = useState("");
-
 
   // 📦 ERD 상세 조회 함수
   const fetchErdDetail = useCallback(async () => {
@@ -116,6 +115,8 @@ CREATE TABLE users (
           setConvertType={setConvertType}
           onFetch={handleFetchAutoSql}
           onRefresh={fetchErdDetail}
+          setTables={setTables}
+          setRelations={setRelations}
         />
       </div>
 
@@ -123,8 +124,8 @@ CREATE TABLE users (
       <div className="flex flex-1 overflow-hidden relative">
         {/* 사이드바 */}
         {isSidebarOpen && (
-  <ErdListSidebar onClose={() => setIsSidebarOpen(false)} />
-)}
+          <ErdListSidebar onClose={() => setIsSidebarOpen(false)} />
+        )}
 
         {/* 메인 영역 */}
         <div className="flex-1 relative min-w-0 min-h-0">

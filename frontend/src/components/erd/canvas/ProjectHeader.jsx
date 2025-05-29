@@ -16,8 +16,8 @@ import EditErdNameModal from "../modal/EditErdNameModal";
 import CodeConvertHeaderPanel from "../CodeConvertHeaderPanel";
 import {
   commitErd,
-  undoErdChange,
-  redoErdChange,
+  undoErdSnapshot,
+  redoErdSnapshot,
   updateErdName,
 } from "../../../api/erd/erdDetailApi";
 
@@ -37,6 +37,8 @@ const ProjectHeader = ({
   setConvertType,
   onFetch,
   onRefresh,
+  setTables,
+  setRelations,
 }) => {
   const [toastMessage, setToastMessage] = useState("");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -68,31 +70,89 @@ const ProjectHeader = ({
 
   const handleUndo = async () => {
     try {
-      const res = await undoErdChange(erdId);
-
-      console.log("🪄 Undo 결과 state_json", res.state_json); // ✅ 이 줄 추가
+      const res = await undoErdSnapshot(erdId);
       if (res?.state_json) {
-        onRefresh?.();
-        onFetch?.(res.state_json);
+        const parsedTables = (res.state_json.tables || []).map((t) => ({
+          id: t.table_id,
+          x: t.pos_x,
+          y: t.pos_y,
+          tableName: t.name ?? "",
+          description: t.description ?? "",
+          columns: (t.columns || []).map((c) => ({
+            ...c,
+            id: c.column_id,
+            name: c.name ?? "",
+            dataType: c.data_type ?? "",
+            isNullable: !c.is_not_null,
+            isPrimaryKey: c.is_primary,
+            isForeignKey: c.is_foreign,
+            defaultValue: c.default_value ?? "",
+            comment: c.description ?? "",
+          })),
+        }));
+
+        const parsedRelations = (res.state_json.relations || []).map((r) => ({
+          relationId: r.relation_id,
+          fromColumnId: r.source_column_id,
+          toColumnId: r.target_column_id,
+          participation_left: r.participation_left,
+          relation_left: r.relation_left,
+          relation_right: r.relation_right,
+          participation_right: r.participation_right,
+          relationType: `${r.participation_left}|${r.participation_right}`,
+        }));
+
+        setTables?.(parsedTables);
+        setRelations?.(parsedRelations);
         showToast("🪄 마지막 상태로 되돌렸습니다.");
       }
     } catch (err) {
       console.error("Undo 실패:", err);
-      showToast("⛔ 되돌리기 실패");
+      showToast("📌 처음 상태입니다.");
     }
   };
 
   const handleRedo = async () => {
     try {
-      const res = await redoErdChange(erdId);
+      const res = await redoErdSnapshot(erdId);
       if (res?.state_json) {
-        onRefresh?.();
-        onFetch?.(res.state_json);
+        const parsedTables = (res.state_json.tables || []).map((t) => ({
+          id: t.table_id,
+          x: t.pos_x,
+          y: t.pos_y,
+          tableName: t.name ?? "",
+          description: t.description ?? "",
+          columns: (t.columns || []).map((c) => ({
+            ...c,
+            id: c.column_id,
+            name: c.name ?? "",
+            dataType: c.data_type ?? "",
+            isNullable: !c.is_not_null,
+            isPrimaryKey: c.is_primary,
+            isForeignKey: c.is_foreign,
+            defaultValue: c.default_value ?? "",
+            comment: c.description ?? "",
+          })),
+        }));
+
+        const parsedRelations = (res.state_json.relations || []).map((r) => ({
+          relationId: r.relation_id,
+          fromColumnId: r.source_column_id,
+          toColumnId: r.target_column_id,
+          participation_left: r.participation_left,
+          relation_left: r.relation_left,
+          relation_right: r.relation_right,
+          participation_right: r.participation_right,
+          relationType: `${r.participation_left}|${r.participation_right}`,
+        }));
+
+        setTables?.(parsedTables);
+        setRelations?.(parsedRelations);
         showToast("🔁 다음 상태로 되돌렸습니다.");
       }
     } catch (err) {
       console.error("Redo 실패:", err);
-      showToast("⛔ 다시 실행 실패");
+      showToast("📌이미 최신 상태 입니다.");
     }
   };
 

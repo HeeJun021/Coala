@@ -1,7 +1,5 @@
 import apiClient from "../apiClient";
 
-// 상세조회만 가능 나머지 연동해야됨
-
 // ✅ ERD 상세 조회
 export const getErdDetail = async (erdId) => {
   const response = await apiClient.get(`/erds/${erdId}`);
@@ -20,23 +18,20 @@ export const commitErd = async (erdId, data) => {
   return response.data;
 };
 
-// 스냅샷 
-export const saveErdSnapshot = async (erdId, stateJson) => {
-  const response = await apiClient.post(`/erds/${erdId}/snapshots`, {
-    state_json: stateJson,
-  });
+// ✅ 스냅샷 저장
+export const saveErdSnapshot = async (erdId) => {
+  const response = await apiClient.post(`/erds/${erdId}/snapshots`);
   return response.data;
 };
 
-
-// ✅ ERD 상태 복원 (Undo)
-export const undoErdChange = async (erdId) => {
+// ✅ Undo (이전 스냅샷으로 되돌리기)
+export const undoErdSnapshot = async (erdId) => {
   const response = await apiClient.post(`/erds/${erdId}/undo`);
   return response.data;
 };
 
-// ✅ ERD 상태 복원 (Redo)
-export const redoErdChange = async (erdId) => {
+// ✅ Redo (다음 스냅샷으로 되돌리기)
+export const redoErdSnapshot = async (erdId) => {
   const response = await apiClient.post(`/erds/${erdId}/redo`);
   return response.data;
 };
