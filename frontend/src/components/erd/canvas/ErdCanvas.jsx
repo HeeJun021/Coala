@@ -55,7 +55,8 @@ const ErdCanvas = ({
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const panStartRef = useRef({ x: 0, y: 0 });
 
-  // const [zoom, setZoom] = useState(zoomLevel ?? 1); // 내부 줌 상태 관리
+  // 컬럼 호버 하이라이트
+  const [hoveredColumnId, setHoveredColumnId] = useState(null);
 
   // 🧱 도구 툴 드래그 여부
   const [isToolDragging, setIsToolDragging] = useState(false);
@@ -682,6 +683,8 @@ const ErdCanvas = ({
             onUpdate={handleUpdateTable}
             onDelete={() => handleDeleteTable(table.id)}
             isAddingRelation={isAddingRelation}
+            hoveredColumnId={hoveredColumnId}
+            setHoveredColumnId={setHoveredColumnId}
             selectedColumnId={pendingFromColumnId}
             onColumnClick={handleColumnClick}
             onColumnPositionUpdate={handleColumnPositionUpdate}

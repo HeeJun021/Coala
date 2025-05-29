@@ -16,6 +16,9 @@ const ErdColumnRow = ({
   isHovering,
   onPositionUpdate,
   onClick,
+  isRelationMode,
+  isRelationHover,
+  setHoveredColumnId,
 }) => {
   const [showDelete, setShowDelete] = useState(false);
   const [showPkMenu, setShowPkMenu] = useState(false);
@@ -89,7 +92,10 @@ const ErdColumnRow = ({
       <div
         ref={ref}
         data-column-id={column.id}
-        className="relative group flex items-center px-2 py-1 pr-8 rounded-sm select-none space-x-2"
+        className={`relative group flex items-center px-2 py-1 pr-8 rounded-sm select-none space-x-2
+  ${isRelationHover ? "bg-blue-500/30 ring-2 ring-blue-300" : ""}
+  ${isDragging ? "opacity-50" : ""}
+  cursor-grab transition duration-150`}
         draggable
         onDragStart={onDragStart}
         onDragOver={(e) => {
@@ -98,8 +104,14 @@ const ErdColumnRow = ({
         }}
         onDrop={onDrop}
         onDragEnd={onDragEnd}
-        onMouseEnter={() => setShowDelete(true)}
-        onMouseLeave={() => setShowDelete(false)}
+        onMouseEnter={() => {
+          setShowDelete(true);
+          if (isRelationMode) setHoveredColumnId?.(column.id);
+        }}
+        onMouseLeave={() => {
+          setShowDelete(false);
+          if (isRelationMode) setHoveredColumnId?.(null);
+        }}
         onContextMenu={handleRightClick}
         style={{
           backgroundColor: isHovering ? "#3a3a4d" : "transparent",

@@ -28,6 +28,9 @@ const ErdTableBox = ({
   onSnapshotRequest,
   zoom,
   panOffset,
+  isAddingRelation,
+  hoveredColumnId,
+  setHoveredColumnId,
 }) => {
   // 🧱 테이블 기본 정보 (로컬)
   const [localName, setLocalName] = useState(tableName || "");
@@ -401,6 +404,9 @@ const ErdTableBox = ({
             onClick={() => {
               onColumnClick?.(col.id);
             }}
+            isRelationMode={isAddingRelation}
+            isRelationHover={isAddingRelation && hoveredColumnId === col.id}
+            setHoveredColumnId={setHoveredColumnId}
           />
         ))}
       </div>
