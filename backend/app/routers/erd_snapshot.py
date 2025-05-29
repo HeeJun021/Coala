@@ -93,28 +93,32 @@ def apply_snapshot_to_db(snapshot_data, erd_id, db: Session):
     # ✅ 3. 관계 재삽입
     db.query(ErdRelations).filter_by(erd_id=erd_id).delete()
     for r in snapshot_data["relations"]:
+        # relation_type 키 제거 (안 쓰는 필드니까 안전하게 제외)
+        cleaned_r = {k: v for k, v in r.items() if k != "relation_type"}
+
         db.execute(
             text("""
                 INSERT INTO "erdrelations" (
                     relation_id, erd_id, source_table_id, source_column_id,
                     target_table_id, target_column_id,
-                    relation_type, participation_left, participation_right,
+                    participation_left, participation_right,
                     relation_left, relation_right
                 )
                 OVERRIDING SYSTEM VALUE
                 VALUES (
                     :relation_id, :erd_id, :source_table_id, :source_column_id,
                     :target_table_id, :target_column_id,
-                    :relation_type, :participation_left, :participation_right,
+                    :participation_left, :participation_right,
                     :relation_left, :relation_right
                 )
             """),
             {
-                **r,
+                **cleaned_r,
                 "erd_id": erd_id
             }
         )
     db.commit()
+
 
 
 # ✅ 스냅샷 저장
