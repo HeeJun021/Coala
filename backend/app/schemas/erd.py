@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import List, Optional, Literal, Any
+from pydantic import BaseModel, Field
+from typing import List, Optional, Literal, Any, Dict
 
 
 class ErdCreate(BaseModel):
@@ -202,6 +202,10 @@ class ErdSyncRequest(BaseModel):
 # 스냅샷
 class ErdSnapshotCreate(BaseModel):
     state_json: Any  # 전체 ERD 구조를 JSON 형태로 받음
+    
+# 스냅샷 구조 검증
+class ErdSnapshotCreate(BaseModel):
+    state_json: Dict[str, Any] = Field(..., description="전체 ERD 상태 JSON (tables, columns, relations 포함)")
 
 
 # PK 설정

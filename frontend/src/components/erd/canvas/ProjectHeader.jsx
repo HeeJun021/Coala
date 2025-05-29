@@ -69,6 +69,8 @@ const ProjectHeader = ({
   const handleUndo = async () => {
     try {
       const res = await undoErdChange(erdId);
+
+      console.log("🪄 Undo 결과 state_json", res.state_json); // ✅ 이 줄 추가
       if (res?.state_json) {
         onRefresh?.();
         onFetch?.(res.state_json);
