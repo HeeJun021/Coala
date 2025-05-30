@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from typing import List
 from sqlalchemy import text
 from app.database import get_db
-from app.models.erd import Erds, ErdSnapshot, ErdTables, ErdColumns, ErdRelations
+from app.models.erd import Erds, ErdSnapshot, ErdTables, ErdColumns, ErdRelations, ErdActivityLogs
+from app.schemas.erd import SnapshotResponse  # ✅ 응답 스키마 추가
 from app.routers.erd_detail import get_erd_detail
 from app.dependencies.auth import get_current_user
 from app.models.user import User
@@ -30,11 +32,13 @@ def apply_snapshot_to_db(snapshot_data, erd_id, db: Session):
         if not t:
             # 💥 강제 ID 삽입
             db.execute(
-                text("""
+                text(
+                    """
                     INSERT INTO "erdtables" (table_id, erd_id, name, description, pos_x, pos_y)
                     OVERRIDING SYSTEM VALUE
                     VALUES (:table_id, :erd_id, :name, :description, :pos_x, :pos_y)
-                """),
+                    """
+                ),
                 {
                     "table_id": t_data["table_id"],
                     "erd_id": erd_id,
@@ -42,7 +46,7 @@ def apply_snapshot_to_db(snapshot_data, erd_id, db: Session):
                     "description": t_data["description"],
                     "pos_x": t_data["pos_x"],
                     "pos_y": t_data["pos_y"],
-                }
+                },
             )
         else:
             t.name = t_data["name"]
@@ -51,20 +55,22 @@ def apply_snapshot_to_db(snapshot_data, erd_id, db: Session):
             t.pos_y = t_data["pos_y"]
         db.commit()
 
-        # 컬럼 처리
+        # 🔧 'columns' 키가 없는 경우 대비
+        columns = t_data.get("columns", [])
         existing_columns = db.query(ErdColumns).filter_by(table_id=t_data["table_id"]).all()
         existing_column_ids = {c.column_id for c in existing_columns}
-        snapshot_column_ids = {c["column_id"] for c in t_data["columns"]}
+        snapshot_column_ids = {c["column_id"] for c in columns}
 
         for c in existing_columns:
             if c.column_id not in snapshot_column_ids:
                 db.delete(c)
 
-        for c_data in t_data["columns"]:
+        for c_data in columns:
             c = db.query(ErdColumns).filter_by(column_id=c_data["column_id"]).first()
             if not c:
                 db.execute(
-                    text("""
+                    text(
+                        """
                         INSERT INTO "erdcolumns" (
                             column_id, table_id, name, data_type,
                             is_primary, is_foreign, is_not_null,
@@ -76,16 +82,23 @@ def apply_snapshot_to_db(snapshot_data, erd_id, db: Session):
                             :is_primary, :is_foreign, :is_not_null,
                             :default_value, :column_order, :description
                         )
-                    """),
+                        """
+                    ),
                     {
                         **c_data,
                         "table_id": t_data["table_id"],
-                    }
+                    },
                 )
             else:
                 for field in [
-                    "name", "data_type", "is_primary", "is_foreign",
-                    "is_not_null", "default_value", "column_order", "description"
+                    "name",
+                    "data_type",
+                    "is_primary",
+                    "is_foreign",
+                    "is_not_null",
+                    "default_value",
+                    "column_order",
+                    "description",
                 ]:
                     setattr(c, field, c_data[field])
         db.commit()
@@ -97,7 +110,8 @@ def apply_snapshot_to_db(snapshot_data, erd_id, db: Session):
         cleaned_r = {k: v for k, v in r.items() if k != "relation_type"}
 
         db.execute(
-            text("""
+            text(
+                """
                 INSERT INTO "erdrelations" (
                     relation_id, erd_id, source_table_id, source_column_id,
                     target_table_id, target_column_id,
@@ -111,14 +125,40 @@ def apply_snapshot_to_db(snapshot_data, erd_id, db: Session):
                     :participation_left, :participation_right,
                     :relation_left, :relation_right
                 )
-            """),
-            {
-                **cleaned_r,
-                "erd_id": erd_id
-            }
+                """
+            ),
+            {**cleaned_r, "erd_id": erd_id},
         )
     db.commit()
 
+
+    # ✅ 3. 관계 재삽입
+    db.query(ErdRelations).filter_by(erd_id=erd_id).delete()
+    for r in snapshot_data["relations"]:
+        # relation_type 키 제거 (안 쓰는 필드니까 안전하게 제외)
+        cleaned_r = {k: v for k, v in r.items() if k != "relation_type"}
+
+        db.execute(
+            text(
+                """
+                INSERT INTO "erdrelations" (
+                    relation_id, erd_id, source_table_id, source_column_id,
+                    target_table_id, target_column_id,
+                    participation_left, participation_right,
+                    relation_left, relation_right
+                )
+                OVERRIDING SYSTEM VALUE
+                VALUES (
+                    :relation_id, :erd_id, :source_table_id, :source_column_id,
+                    :target_table_id, :target_column_id,
+                    :participation_left, :participation_right,
+                    :relation_left, :relation_right
+                )
+            """
+            ),
+            {**cleaned_r, "erd_id": erd_id},
+        )
+    db.commit()
 
 
 # ✅ 스냅샷 저장
@@ -135,25 +175,30 @@ def create_erd_snapshot(
     current = db.query(ErdSnapshot).filter_by(erd_id=erd_id, is_active=True).first()
     if current:
         # ✅ 현재 snapshot만 비활성화
-        db.query(ErdSnapshot).filter_by(erd_id=erd_id, is_active=True).update({"is_active": False})
-
+        db.query(ErdSnapshot).filter_by(erd_id=erd_id, is_active=True).update(
+            {"is_active": False}
+        )
+        db.commit()
 
     erd_detail_data = get_erd_detail(erd_id=erd_id, db=db)
 
     snapshot = ErdSnapshot(
         erd_id=erd_id,
         state_json=erd_detail_data,
-        is_active=True
+        is_active=True,
+        log_id=None,  # ✅ 자동 저장은 로그 없음
+        source="auto",  # ✅ 명확하게 자동 저장임을 표시
     )
     db.add(snapshot)
     db.commit()
 
     snapshots = (
         db.query(ErdSnapshot)
-        .filter_by(erd_id=erd_id)
+        .filter(ErdSnapshot.erd_id == erd_id, ErdSnapshot.source == "commit")
         .order_by(ErdSnapshot.created_at.desc())
         .all()
     )
+
     if len(snapshots) > 50:
         for s in snapshots[50:]:
             db.delete(s)
@@ -175,7 +220,9 @@ def undo_erd_snapshot(
 
     previous = (
         db.query(ErdSnapshot)
-        .filter(ErdSnapshot.erd_id == erd_id, ErdSnapshot.created_at < current.created_at)
+        .filter(
+            ErdSnapshot.erd_id == erd_id, ErdSnapshot.created_at < current.created_at
+        )
         .order_by(ErdSnapshot.created_at.desc())
         .first()
     )
@@ -208,7 +255,9 @@ def redo_erd_snapshot(
 
     next_snapshot = (
         db.query(ErdSnapshot)
-        .filter(ErdSnapshot.erd_id == erd_id, ErdSnapshot.created_at > current.created_at)
+        .filter(
+            ErdSnapshot.erd_id == erd_id, ErdSnapshot.created_at > current.created_at
+        )
         .order_by(ErdSnapshot.created_at.asc())
         .first()
     )
@@ -226,3 +275,74 @@ def redo_erd_snapshot(
         "snapshot_id": next_snapshot.snapshot_id,
         "state_json": next_snapshot.state_json,
     }
+
+
+# 해당 스냅샷으로 체크아웃
+@router.put("/{erd_id}/checkout/{snapshot_id}")
+def checkout_snapshot(
+    erd_id: int,
+    snapshot_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    # 1. 대상 스냅샷 조회
+    snapshot = (
+        db.query(ErdSnapshot).filter_by(erd_id=erd_id, snapshot_id=snapshot_id).first()
+    )
+    if not snapshot:
+        raise HTTPException(status_code=404, detail="해당 스냅샷을 찾을 수 없습니다.")
+
+    # 2. 현재 active snapshot 비활성화
+    db.query(ErdSnapshot).filter_by(erd_id=erd_id, is_active=True).update(
+        {"is_active": False}
+    )
+    snapshot.is_active = True
+    db.commit()
+
+    # 3. DB 상태 반영 (테이블, 컬럼, 관계 복원)
+    apply_snapshot_to_db(snapshot.state_json, erd_id, db)
+
+    return {
+        "message": "스냅샷이 성공적으로 적용되었습니다.",
+        "snapshot_id": snapshot_id,
+        "state_json": snapshot.state_json,
+    }
+
+
+# 커밋된 스냅샷 목록 조회
+@router.get("/{erd_id}/snapshots", response_model=List[SnapshotResponse], summary="커밋된 스냅샷 목록 조회")
+def get_committed_snapshots(
+    erd_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    # ERD 존재 여부 확인
+    erd = db.query(Erds).filter_by(erd_id=erd_id).first()
+    if not erd:
+        raise HTTPException(status_code=404, detail="ERD가 존재하지 않습니다.")
+
+    # ✅ 커밋된 스냅샷 + 로그 + 유저 join
+    results = (
+        db.query(ErdSnapshot, ErdActivityLogs, User)
+        .join(ErdActivityLogs, ErdSnapshot.log_id == ErdActivityLogs.log_id)
+        .join(User, ErdActivityLogs.user_id == User.user_id)
+        .filter(ErdSnapshot.erd_id == erd_id, ErdSnapshot.source == "commit")
+        .order_by(ErdSnapshot.created_at.desc())
+        .all()
+    )
+
+    return [
+        SnapshotResponse(
+            snapshot_id=s.snapshot_id,
+            created_at=s.created_at,
+            log_id=s.log_id,
+            is_active=s.is_active,
+            user_name=(
+                u.nickname.strip()
+                if u.nickname and u.nickname.strip()
+                else u.email if u.email
+                else f"유저 {u.user_id}"
+            ),
+        )
+        for s, l, u in results
+    ]

@@ -28,6 +28,8 @@ const ErdCanvas = ({
   erdId,
   relations,
   setRelations,
+  fetchErdDetail,
+  showToast
 }) => {
   const canvasRef = useRef(null);
 
@@ -726,6 +728,8 @@ const ErdCanvas = ({
 
       {/* 고정 FloatingToolButton */}
       <FloatingToolButton
+        erdId={erdId}
+        fetchErdDetail={fetchErdDetail} // ✅ 이 줄 추가
         onAddTable={() => setIsPlacing(true)}
         onAddRelation={(type) => {
           setIsAddingRelation(true);
@@ -734,6 +738,7 @@ const ErdCanvas = ({
         }}
         onStartDragging={() => setIsToolDragging(true)}
         onStopDragging={() => setIsToolDragging(false)}
+        showToast={showToast}
       />
     </div>
   );

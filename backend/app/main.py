@@ -51,7 +51,8 @@ from app.routers import (
     erd,
     erd_detail,
     erd_log_action,
-    erd_snapshot
+    erd_snapshot,
+    erd_commit
 )
 
 from app.schemas.user import UserUpdateSchema
@@ -124,6 +125,7 @@ app.include_router(erd.router)
 app.include_router(erd_detail.router)
 app.include_router(erd_log_action.router)
 app.include_router(erd_snapshot.router)
+app.include_router(erd_commit.router)
 
 # 기본 라우트
 @app.get("/", tags=["Root"])

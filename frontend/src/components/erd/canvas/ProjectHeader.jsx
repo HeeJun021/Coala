@@ -11,7 +11,7 @@ import {
   History,
 } from "lucide-react";
 
-import Toast from "../../Toast";
+
 import EditErdNameModal from "../modal/EditErdNameModal";
 import CodeConvertHeaderPanel from "../CodeConvertHeaderPanel";
 import {
@@ -39,14 +39,9 @@ const ProjectHeader = ({
   onRefresh,
   setTables,
   setRelations,
+  showToast
 }) => {
-  const [toastMessage, setToastMessage] = useState("");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
-  const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(""), 2500);
-  };
 
   const handleZoom = (direction) => {
     setZoomLevel((prev) =>
@@ -61,10 +56,10 @@ const ProjectHeader = ({
         updated_columns: [],
         updated_relations: [],
       });
-      showToast("📝 ERD 로그 기록 완료!");
+      showToast("📝 ERD 히스토리 기록 완료!");
     } catch (err) {
-      console.error("로그 기록 실패:", err);
-      showToast("❌ 로그 기록 중 오류 발생");
+      console.error("히스토리 기록 실패:", err);
+      showToast("❌ 히스토리 기록 중 오류 발생");
     }
   };
 
@@ -159,10 +154,6 @@ const ProjectHeader = ({
   return (
     <>
       <div className="w-full bg-[#252836] text-white shadow-md border-b border-gray-700 py-4">
-        {toastMessage && (
-          <Toast message={toastMessage} onClose={() => setToastMessage("")} />
-        )}
-
         {/* 💡 전체 헤더 컨테이너 */}
         <div className="max-w-7xl mx-auto px-4 flex flex-col gap-3">
           {/* 🔤 프로젝트 이름 + 수정 버튼 */}
@@ -201,7 +192,7 @@ const ProjectHeader = ({
                 onClick={handleCommit}
                 className="btn-header flex items-center gap-1"
               >
-                <History size={16} className="text-pink-400" /> 로그 기록
+                <History size={16} className="text-pink-400" /> 히스토리 기록
               </button>
               <button
                 onClick={() => showToast("📦 내보내기 기능은 추후 구현 예정")}

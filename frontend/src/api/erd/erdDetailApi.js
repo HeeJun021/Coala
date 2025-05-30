@@ -36,15 +36,15 @@ export const redoErdSnapshot = async (erdId) => {
   return response.data;
 };
 
-// 🗃️ (보관용) 로그 기반 Undo
-export const undoErdByLog = async (erdId) => {
-  const response = await apiClient.post(`/erds/${erdId}/__log_undo`);
+// ✅ 커밋된 스냅샷 목록 조회
+export const fetchCommittedSnapshots = async (erdId) => {
+  const response = await apiClient.get(`/erds/${erdId}/snapshots`);
   return response.data;
 };
 
-// 🗃️ (보관용) 로그 기반 Redo
-export const redoErdByLog = async (erdId) => {
-  const response = await apiClient.post(`/erds/${erdId}/__log_redo`);
+// ✅ 스냅샷 체크아웃
+export const checkoutSnapshot = async (erdId, snapshotId) => {
+  const response = await apiClient.put(`/erds/${erdId}/checkout/${snapshotId}`);
   return response.data;
 };
 

@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional, Literal, Any, Dict
+from typing import List, Optional, Literal
+from datetime import datetime
 
 
 class ErdCreate(BaseModel):
@@ -206,3 +207,10 @@ class SetPrimaryKeyRequest(BaseModel):
 # ERD 이름 수정
 class ErdNameUpdate(BaseModel):
     name: str
+    
+class SnapshotResponse(BaseModel):
+    snapshot_id: int
+    created_at: datetime
+    log_id: int
+    is_active: bool
+    user_name: str

@@ -5,6 +5,7 @@ import ProjectHeader from "../components/erd/canvas/ProjectHeader";
 import ErdListSidebar from "../components/erd/canvas/ErdListSidebar";
 import ErdCanvas from "../components/erd/canvas/ErdCanvas";
 import CodeGeneratorPanel from "../components/erd/CodeGeneratorPanel";
+import Toast from "../components/Toast";
 
 const ErdPage = () => {
   const { erdId } = useParams();
@@ -30,6 +31,12 @@ const ErdPage = () => {
 
   // ✅ ERD 이름 상태
   const [erdName, setErdName] = useState("");
+
+  const [toastMessage, setToastMessage] = useState("");
+
+  const showToast = (msg) => {
+    setToastMessage(msg); // 시간 제어는 Toast 안에서
+  };
 
   // 📦 ERD 상세 조회 함수
   const fetchErdDetail = useCallback(async () => {
@@ -96,6 +103,7 @@ CREATE TABLE users (
   };
 
   return (
+  <>
     <div className="w-full h-screen bg-[#1E1E2F] text-white flex flex-col overflow-hidden">
       {/* 상단 헤더 */}
       <div className="shrink-0">
@@ -117,6 +125,7 @@ CREATE TABLE users (
           onRefresh={fetchErdDetail}
           setTables={setTables}
           setRelations={setRelations}
+          showToast={showToast}
         />
       </div>
 
@@ -143,14 +152,26 @@ CREATE TABLE users (
               setRelations={setRelations}
               zoomLevel={zoomLevel}
               setZoomLevel={setZoomLevel}
+              fetchErdDetail={fetchErdDetail}
+              showToast={showToast}
             />
           ) : (
-            <CodeGeneratorPanel sqlQuery={sqlQuery} setSqlQuery={setSqlQuery} />
+            <CodeGeneratorPanel
+              sqlQuery={sqlQuery}
+              setSqlQuery={setSqlQuery}
+            />
           )}
         </div>
       </div>
     </div>
-  );
+
+    {/* ✅ Toast 메시지 최상단에 표시 (레이아웃 바깥에 위치) */}
+    {toastMessage && (
+      <Toast message={toastMessage} onClose={() => setToastMessage("")} />
+    )}
+  </>
+);
+
 };
 
 export default ErdPage;

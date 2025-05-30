@@ -89,12 +89,15 @@ class ErdSnapshot(Base):
 
     snapshot_id = Column(Integer, primary_key=True, autoincrement=True)  # PostgreSQL IDENTITY 호환
     erd_id = Column(Integer, ForeignKey("erds.erd_id", ondelete="CASCADE"), nullable=False)
+    log_id = Column(Integer, ForeignKey("erdactivitylogs.log_id", ondelete="SET NULL"), nullable=True)  # ✅ 추가됨
     state_json = Column(JSON, nullable=False)
     is_active = Column(Boolean, default=False)
+    source = Column(String(20), default="auto")  # ✅ 추가된 필드
     created_at = Column(DateTime, server_default=func.now())
 
     # 관계 설정 (역참조: 필요 시 사용 가능)
     erd = relationship("Erds", back_populates="snapshots", lazy="joined")
+    log = relationship("ErdActivityLogs", backref="snapshot", lazy="joined")  # ← 필요 없으면 생략 가능
 
 class ErdActivityLogs(Base):
     __tablename__ = "erdactivitylogs"
