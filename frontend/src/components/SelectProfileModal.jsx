@@ -5,6 +5,7 @@ import { EucalyptusActions } from "../constants/eucalyptusActions";
 const profileImages = [
   "/assets/koala.jpg",
   "/assets/koala1.png",
+  "/assets/koala2.webp",
 ];
 
 const SelectProfileModal = ({ isOpen, onClose, onSelectImage, currentImageUrl }) => {

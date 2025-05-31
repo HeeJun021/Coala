@@ -4,5 +4,5 @@ export const EucalyptusActions = {
   CODING_TEST_PASSED: "coding_test_passed",
   DAILY_LOGIN: "daily_login",
   TEAM_PROJECT_COMPLETE: "team_project_complete",
-  CHANGE_PROFILE_IMAGE: "change_profile_image", // ✅ 이게 중요!
+  CHANGE_PROFILE_IMAGE: "change_profile_image", 
 };

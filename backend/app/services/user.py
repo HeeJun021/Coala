@@ -6,7 +6,7 @@ from app.schemas.user import UserUpdateSchema
 from app.schemas.eucalyptus_schema import RewardActionType, UseActionType
 from fastapi import HTTPException
 from datetime import datetime
-
+from enum import Enum  # 꼭 추가되어 있어야 함
 
 def get_user_by_id(db: Session, user_id: str):
     return (
@@ -68,6 +68,7 @@ def reward_user_by_action(user: User, action: RewardActionType, db: Session) -> 
     return reward
 
 
+
 # 🌿 화폐 사용 (차감)
 def use_eucalyptus_by_action(user: User, action: UseActionType, db: Session) -> int:
     cost_table = {
@@ -83,16 +84,19 @@ def use_eucalyptus_by_action(user: User, action: UseActionType, db: Session) -> 
 
     user.eucalyptus_balance -= cost
 
-    # ✅ 트랜잭션 기록 추가 (음수로 저장)
+    # ✅ enum이든 str이든 안전하게 처리
+    action_str = action.value if isinstance(action, Enum) else str(action)
+
     db.add(EucalyptusTransaction(
         user_id=user.user_id,
         amount=-cost,
-        action=action.value,
+        action=action_str,
         created_at=datetime.now()
     ))
 
     db.commit()
-    return -cost  # 음수 반환
+    return -cost
+
 
 def update_profile_image(user: User, image_url: str, db: Session):
     user.profile_image_url = image_url
