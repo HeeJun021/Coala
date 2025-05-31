@@ -55,3 +55,11 @@ export const updateErdName = async (erdId, newName) => {
   });
   return response.data;
 };
+
+// ✅ ERD SQL 내보내기
+export const fetchExportedSql = async (erdId, dbms) => {
+  const response = await apiClient.get(`/erds/${erdId}/export-sql`, {
+    params: { dbms },
+  });
+  return response.data.sql;
+};

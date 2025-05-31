@@ -257,10 +257,10 @@ def create_erd_relation(
 
         new_relation = ErdRelations(
             erd_id=erd_id,
-            source_table_id=relation.source_table_id,
-            source_column_id=relation.source_column_id,
-            target_table_id=relation.target_table_id,
-            target_column_id=relation.target_column_id,
+            source_table_id=relation.target_table_id,  # ✅ FK가 있는 테이블
+            source_column_id=relation.target_column_id,  # ✅ FK 컬럼
+            target_table_id=relation.source_table_id,  # ✅ 참조 대상
+            target_column_id=relation.source_column_id,  # ✅ 참조 대상 컬럼
             participation_left=relation.participation_left,
             relation_left=relation.relation_left,
             relation_right=relation.relation_right,
