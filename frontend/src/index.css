@@ -388,3 +388,26 @@ code {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+
+/* 다크모드 전용 셀렉트 박스(ERD 속성 데이터 타입 박스) */
+.select-dark {
+  background-color: #1e1e2e;
+  color: #ffffff;
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 14px;
+  text-align: center;
+  text-align-last: center;
+
+}
+
+
+/* 셀렉트 옵션 스타일 (브라우저 지원 제한 있음) */
+.select-dark option {
+  background-color: #2c3544;
+  color: #ffffff;
+  font-size: 14px;
+  padding: 8px;
+  text-align: center;
+}

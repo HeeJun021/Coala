@@ -1,5 +1,7 @@
 import React, { useState } from "react";
+import html2canvas from "html2canvas";
 import {
+  Camera,
   Folder,
   Edit,
   Undo2,
@@ -10,8 +12,7 @@ import {
   Blocks,
   History,
 } from "lucide-react";
-
-
+import ExportSqlModal from "../modal/ExportSqlModal";
 import EditErdNameModal from "../modal/EditErdNameModal";
 import CodeConvertHeaderPanel from "../CodeConvertHeaderPanel";
 import {
@@ -21,7 +22,7 @@ import {
   updateErdName,
 } from "../../../api/erd/erdDetailApi";
 
-const ProjectHeader = ({
+const ErdHeader = ({
   projectName,
   erdId,
   onEditName,
@@ -39,9 +40,10 @@ const ProjectHeader = ({
   onRefresh,
   setTables,
   setRelations,
-  showToast
+  showToast,
 }) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   const handleZoom = (direction) => {
     setZoomLevel((prev) =>
@@ -151,6 +153,70 @@ const ProjectHeader = ({
     }
   };
 
+  const handleImageDownload = async () => {
+    const canvasElement = document.getElementById("erd-canvas");
+    if (!canvasElement) {
+      alert("❌ 캔버스를 찾을 수 없습니다.");
+      return;
+    }
+
+    const transformedRoot = canvasElement.querySelector(".origin-top-left");
+    if (!transformedRoot) {
+      alert("❌ 캡처 대상이 없습니다.");
+      return;
+    }
+
+    const tableEls = transformedRoot.querySelectorAll(".erd-table-box");
+    if (!tableEls.length) {
+      alert("📭 테이블이 없습니다.");
+      return;
+    }
+
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity;
+
+    tableEls.forEach((el) => {
+      const x = el.offsetLeft;
+      const y = el.offsetTop;
+      const w = el.offsetWidth;
+      const h = el.offsetHeight;
+
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x + w);
+      maxY = Math.max(maxY, y + h);
+    });
+
+    const width = maxX - minX;
+    const height = maxY - minY;
+
+    try {
+      const canvas = await html2canvas(transformedRoot, {
+        backgroundColor: null,
+        useCORS: true,
+        scale: 2,
+        x: minX,
+        y: minY,
+        width,
+        height,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: transformedRoot.scrollWidth,
+        windowHeight: transformedRoot.scrollHeight,
+      });
+
+      const link = document.createElement("a");
+      link.href = canvas.toDataURL("image/png");
+      link.download = "erd_capture.png";
+      link.click();
+    } catch (err) {
+      console.error("❌ 이미지 저장 오류:", err);
+      alert("이미지 저장 중 오류가 발생했습니다.");
+    }
+  };
+
   return (
     <>
       <div className="w-full bg-[#252836] text-white shadow-md border-b border-gray-700 py-4">
@@ -195,12 +261,21 @@ const ProjectHeader = ({
                 <History size={16} className="text-pink-400" /> 히스토리 기록
               </button>
               <button
-                onClick={() => showToast("📦 내보내기 기능은 추후 구현 예정")}
+                onClick={() => setIsExportModalOpen(true)}
                 className="btn-header flex items-center gap-1"
               >
                 <FileUp size={16} className="text-gray-400" />
-                내보내기
+                SQL 내보내기
               </button>
+
+              <button
+                onClick={handleImageDownload}
+                className="btn-header flex items-center gap-1"
+              >
+                <Camera size={16} className="text-green-400" />
+                이미지 내보내기
+              </button>
+
               <button
                 onClick={() => setMode("codegen")}
                 className="btn-header flex items-center gap-1"
@@ -263,9 +338,16 @@ const ProjectHeader = ({
             }}
           />
         )}
+        {isExportModalOpen && (
+          <ExportSqlModal
+            erdId={erdId}
+            onClose={() => setIsExportModalOpen(false)} // 패널 내에서 닫기 버튼 연결
+            erdCanvasId="erd-canvas" // ← 캔버스 div에 id 지정해줘야 함
+          />
+        )}
       </div>
     </>
   );
 };
 
-export default ProjectHeader;
+export default ErdHeader;

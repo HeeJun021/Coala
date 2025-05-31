@@ -93,9 +93,15 @@ const ErdColumnRow = ({
         ref={ref}
         data-column-id={column.id}
         className={`relative group flex items-center px-2 py-1 pr-8 rounded-sm select-none space-x-2
-  ${isRelationHover ? "bg-blue-500/30 ring-2 ring-blue-300" : ""}
-  ${isDragging ? "opacity-50" : ""}
-  cursor-grab transition duration-150`}
+    ${isRelationHover ? "bg-blue-500/30 ring-2 ring-blue-300" : ""}
+    ${isDragging ? "opacity-50" : ""}
+    cursor-grab transition duration-150`}
+        style={{
+          backgroundColor: isHovering ? "#3a3a4d" : "transparent",
+          opacity: isDragging ? 0.5 : 1,
+          cursor: "grab",
+          lineHeight: "24px", // ✅ 추가
+        }}
         draggable
         onDragStart={onDragStart}
         onDragOver={(e) => {
@@ -113,49 +119,105 @@ const ErdColumnRow = ({
           if (isRelationMode) setHoveredColumnId?.(null);
         }}
         onContextMenu={handleRightClick}
-        style={{
-          backgroundColor: isHovering ? "#3a3a4d" : "transparent",
-          opacity: isDragging ? 0.5 : 1,
-          cursor: "grab",
-        }}
         onClick={(e) => {
           e.stopPropagation();
           onClick?.(column.id);
         }}
       >
-        <div className="w-[20px] flex justify-center items-center">
+        <div
+          className="w-[20px] flex justify-center items-center"
+          style={{ height: "24px" }}
+        >
           {isPK && <FaKey className="text-yellow-300 mr-1" size={12} />}
           {isFK && <FaKey className="text-red-400" size={12} />}
         </div>
 
-        <div className="flex items-center space-x-1 flex-grow">
+        <div className="flex items-center space-x-2 flex-grow">
           <input
-            className="bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 w-[70px] text-sm text-white placeholder:text-gray-500"
+            className="bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 text-sm text-white placeholder:text-gray-500 pl-2"
+            style={{
+              width: "70px",
+              height: "24px",
+              lineHeight: "22px",
+              padding: "0",
+              margin: "0",
+              verticalAlign: "middle",
+            }}
             placeholder="column"
             value={column.name ?? ""}
             onChange={(e) => handleInputChange("name", e.target.value)}
           />
-          <input
-            className="bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 w-[70px] text-sm text-white placeholder:text-gray-500"
-            placeholder="type"
+
+          <select
+            className="select-dark bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 text-sm text-white pl-2"
+            style={{
+              width: "100px", // ✅ TIMESTAMP 길이에 맞춰 고정
+              height: "24px",
+              lineHeight: "22px",
+              padding: "0",
+              margin: "0",
+              verticalAlign: "middle",
+              textAlign: "center",
+              textAlignLast: "center", // ✅ 선택된 항목도 가운데 정렬
+            }}
             value={column.dataType ?? ""}
             onChange={(e) => handleInputChange("dataType", e.target.value)}
-          />
+          >
+            <option value="" disabled className="text-gray-400">
+              type
+            </option>
+            {[
+              "INT",
+              "BIGINT",
+              "VARCHAR",
+              "TEXT",
+              "BOOLEAN",
+              "DATE",
+              "TIMESTAMP",
+              "DECIMAL",
+              "FLOAT",
+              "CHAR",
+            ].map((type) => (
+              <option key={type} value={type} className="text-black">
+                {type}
+              </option>
+            ))}
+          </select>
+
           <div
             className="cursor-pointer text-xs w-[50px] text-center text-gray-300 hover:text-white"
             onClick={() => handleInputChange("isNullable", !column.isNullable)}
+            style={{ lineHeight: "22px", height: "24px" }}
           >
             {column.isNullable ? "NULL" : "N-N"}
           </div>
+
           <input
-            className="bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 w-[70px] text-sm text-white placeholder:text-gray-500"
+            className="bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 text-sm text-white placeholder:text-gray-500 pl-2"
+            style={{
+              width: "70px",
+              height: "24px",
+              lineHeight: "22px",
+              padding: "0",
+              margin: "0",
+              verticalAlign: "middle",
+            }}
             placeholder="default"
             value={column.defaultValue ?? ""}
             onChange={(e) => handleInputChange("defaultValue", e.target.value)}
           />
+
           <input
-            className="bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 w-[70px] text-sm text-white placeholder:text-gray-500"
-            placeholder="desc"
+            className="bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 text-sm text-white placeholder:text-gray-500 pl-2"
+            style={{
+              width: "90px",
+              height: "24px",
+              lineHeight: "22px",
+              padding: "0",
+              margin: "0",
+              verticalAlign: "middle",
+            }}
+            placeholder="description"
             value={column.comment ?? ""}
             onChange={(e) => handleInputChange("comment", e.target.value)}
           />

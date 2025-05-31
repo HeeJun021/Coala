@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { getErdDetail } from "../api/erd/erdDetailApi";
-import ProjectHeader from "../components/erd/canvas/ProjectHeader";
+import ErdHeader from "../components/erd/canvas/ErdHeader";
 import ErdListSidebar from "../components/erd/canvas/ErdListSidebar";
 import ErdCanvas from "../components/erd/canvas/ErdCanvas";
 import CodeGeneratorPanel from "../components/erd/CodeGeneratorPanel";
@@ -107,7 +107,7 @@ CREATE TABLE users (
     <div className="w-full h-screen bg-[#1E1E2F] text-white flex flex-col overflow-hidden">
       {/* 상단 헤더 */}
       <div className="shrink-0">
-        <ProjectHeader
+        <ErdHeader
           projectName={erdName}
           erdId={erdId}
           onEditName={(newName) => setErdName(newName)}

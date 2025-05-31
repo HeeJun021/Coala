@@ -329,7 +329,7 @@ const ErdTableBox = ({
   return (
     <div
       ref={tableRef}
-      className={`absolute bg-[#1e1e2e] text-white border border-blue-400 rounded-md shadow-md w-[440px] px-3 py-2 select-none ${
+      className={`erd-table-box absolute bg-[#1e1e2e] text-white border border-blue-400 rounded-md shadow-md w-[480px] px-3 py-2 select-none ${
         isSelected ? "ring-2 ring-yellow-300" : ""
       }`}
       style={{ top: y, left: x }}
@@ -360,9 +360,10 @@ const ErdTableBox = ({
           <FaTimes size={12} />
         </button>
       </div>
-      <div className="flex items-center justify-start gap-3">
+      <div className="flex items-center h-[28px] gap-0">
         <input
-          className="bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 text-sm font-medium placeholder:text-gray-400 w-[180px]"
+          className="bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 text-sm font-medium placeholder:text-gray-400 h-full leading-[1.4] pl-2"
+          style={{ width: "30%" }}
           placeholder="table"
           value={localName}
           onChange={(e) => {
@@ -372,8 +373,9 @@ const ErdTableBox = ({
           }}
         />
         <input
-          className="bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 text-sm placeholder:text-gray-500 w-[180px]"
-          placeholder="comment"
+          className="bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 text-sm placeholder:text-gray-500 h-full leading-[1.4] pl-2"
+          style={{ width: "30%" }}
+          placeholder="description"
           value={localDesc}
           onChange={(e) => {
             const newDesc = e.target.value;
@@ -382,6 +384,7 @@ const ErdTableBox = ({
           }}
         />
       </div>
+
       <div className="mt-2">
         {localColumns.map((col, index) => (
           <ErdColumnRow
