@@ -6,6 +6,7 @@ class UserSummary(BaseModel):
     user_id: int
     nickname: str
     email: str
+    profile_image_url: Optional[str]
     created_at: datetime
     post_count: int
     comment_count: int
@@ -48,6 +49,7 @@ class UserTierBase(BaseModel):
 class UserDetailResponse(BaseModel):
     user_id: int
     nickname: str
+    profile_image_url: Optional[str]
     email: str
     created_at: datetime
     tier: Optional[UserTierBase]

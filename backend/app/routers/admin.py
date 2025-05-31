@@ -46,6 +46,7 @@ def get_user_detail(user_id: int, db: Session = Depends(get_db)):
         "user_id": user.user_id,
         "nickname": user.nickname,
         "email": user.email,
+        "profile_image_url": user.profile_image_url,
         "created_at": user.created_at,
         "tier": user.tier,
         "report_count": data["report_count"],

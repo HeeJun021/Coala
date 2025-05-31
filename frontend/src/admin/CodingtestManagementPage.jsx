@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCodingTestList } from "../api/codingTestApi";
 import { deleteAdminCodingTest } from "../api/adminCodingtestApi";
@@ -14,7 +14,7 @@ const CodingtestManagementPage = () => {
   const pageSize = 20;
   const navigate = useNavigate();
 
-  const fetchTests = async () => {
+  const fetchTests = useCallback(async () => {
     try {
       const res = await getCodingTestList({ page, sort: sortOrder, level: difficultyFilter });
       setTests(res.problems);
@@ -22,7 +22,11 @@ const CodingtestManagementPage = () => {
     } catch (err) {
       console.error("문제 목록 조회 실패:", err);
     }
-  };
+  }, [page, sortOrder, difficultyFilter]);
+
+  useEffect(() => {
+    fetchTests();
+  }, [fetchTests]);
 
   const handleDelete = async (test_id) => {
     const confirmed = window.confirm("정말로 이 문제를 삭제하시겠습니까?");
@@ -40,10 +44,6 @@ const CodingtestManagementPage = () => {
   const toggleSortOrder = () => {
     setSortOrder((prev) => (prev === "desc" ? "asc" : "desc"));
   };
-
-  useEffect(() => {
-    fetchTests();
-  }, [page, sortOrder, difficultyFilter]);
 
   const totalPages = Math.ceil(total / pageSize);
 
@@ -73,7 +73,7 @@ const CodingtestManagementPage = () => {
 
       <div className="bg-white rounded shadow overflow-hidden">
         <table className="w-full table-auto text-left">
-          <thead className="bg-navbar">
+          <thead className="bg-navbar text-white">
             <tr>
               <th className="px-4 py-3">제목</th>
               <th className="px-4 py-3">난이도</th>
@@ -96,7 +96,7 @@ const CodingtestManagementPage = () => {
               >
                 <td className="px-4 py-3">{test.title}</td>
                 <td className="px-4 py-3">Lv.{test.level}</td>
-                <td className="px-4 py-3">{test.category || '-'}</td>
+                <td className="px-4 py-3">{test.category || "-"}</td>
                 <td className="px-4 py-3">{test.correct_rate?.toFixed(2)}%</td>
                 <td className="px-4 py-3 text-center relative">
                   <button
@@ -128,7 +128,7 @@ const CodingtestManagementPage = () => {
         </table>
       </div>
 
-      {/* 숫자 페이지네이션 */}
+      {/* 페이지네이션 */}
       <div className="flex justify-center items-center gap-1 mt-8">
         {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
           <button

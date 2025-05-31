@@ -210,7 +210,7 @@ useEffect(() => {
     setFolders(treeCopy);
   };
   updateTreeIfOpen();
-}, []);
+}, [folders, setFolders]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -616,7 +616,7 @@ if (contextMenu.targetId?.startsWith("code-")) {
             {node.children.map((child) => renderFolderNode(child, depth + 1))}
 
             {node.codes.map((file) => {
-              const [nameOnly, ext] = file.title.split(/\.(?=[^.]+$)/);
+              const [nameOnly, ext] = file.title.split(/\.(?=[^.]+$)/); //nameOnly 지우면 큰일 나더라
               const isRenaming = renamingItem?.path === `code-${file.code_id}`;
               return (
                 <div

@@ -151,6 +151,7 @@ def get_all_users_with_stats(db: Session):
             "user_id": user.user_id,
             "nickname": user.nickname,
             "email": user.email,
+            "profile_image_url": user.profile_image_url,
             "created_at": user.created_at,
             "post_count": post_count,
             "comment_count": comment_count,
@@ -212,6 +213,7 @@ def get_user_detail_by_id(db: Session, user_id: int):
 
     return {
         "user":         user,
+        "profile_image_url": user.profile_image_url,
         "posts":        posts,
         "comments":     comment_list,
         "report_count": total_reports,

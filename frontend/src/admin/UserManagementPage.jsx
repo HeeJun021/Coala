@@ -40,6 +40,7 @@ const UserManagementPage = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {users.map((user) => (
+          
           <div
             key={user.user_id}
             onClick={() => setSelectedUserId(user.user_id)}
@@ -47,7 +48,7 @@ const UserManagementPage = () => {
           >
             <div className="flex items-center gap-3 mb-4">
               <img
-                src={user.profile_image_url || "assets/koala.jpg"}
+                src={user.profile_image_url || "/assets/koala.jpg"}
                 alt="profile"
                 className="w-12 h-12 rounded-full object-cover border"
               />

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { fetchAdminTestSubmissions } from "../api/adminCodingtestApi";
 
@@ -7,18 +7,18 @@ const AdminCodingTestDetailPage = () => {
   const [submissions, setSubmissions] = useState([]);
   const [filter, setFilter] = useState("all"); // all, correct, wrong
 
-  const fetchSubmissions = async () => {
+  const fetchSubmissions = useCallback(async () => {
     try {
       const res = await fetchAdminTestSubmissions(testId);
       setSubmissions(res);
     } catch (err) {
       console.error("제출 목록 조회 실패:", err);
     }
-  };
+  }, [testId]);
 
   useEffect(() => {
     fetchSubmissions();
-  }, [testId]);
+  }, [fetchSubmissions]);
 
   const filtered = submissions.filter((s) => {
     if (filter === "correct") return s.is_correct;
@@ -32,24 +32,15 @@ const AdminCodingTestDetailPage = () => {
 
       {/* 필터 탭 */}
       <div className="flex gap-4 mb-4">
-        <button
-          onClick={() => setFilter("all")}
-          className={`px-3 py-1 rounded ${filter === "all" ? "bg-green-600 text-white" : "bg-gray-200"}`}
-        >
-          전체
-        </button>
-        <button
-          onClick={() => setFilter("correct")}
-          className={`px-3 py-1 rounded ${filter === "correct" ? "bg-green-600 text-white" : "bg-gray-200"}`}
-        >
-          맞은 풀이
-        </button>
-        <button
-          onClick={() => setFilter("wrong")}
-          className={`px-3 py-1 rounded ${filter === "wrong" ? "bg-green-600 text-white" : "bg-gray-200"}`}
-        >
-          틀린 풀이
-        </button>
+        {["all", "correct", "wrong"].map((type) => (
+          <button
+            key={type}
+            onClick={() => setFilter(type)}
+            className={`px-3 py-1 rounded ${filter === type ? "bg-green-600 text-white" : "bg-gray-200"}`}
+          >
+            {type === "all" ? "전체" : type === "correct" ? "맞은 풀이" : "틀린 풀이"}
+          </button>
+        ))}
       </div>
 
       {/* 제출 테이블 */}

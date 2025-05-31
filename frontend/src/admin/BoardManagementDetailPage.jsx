@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getBoardDetail } from "../api/boardApi";
 import { getComments } from "../api/commentApi";
@@ -11,7 +11,7 @@ const BoardManagementDetailPage = () => {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const postData = await getBoardDetail(postId);
@@ -23,11 +23,11 @@ const BoardManagementDetailPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [postId]);
 
   useEffect(() => {
     loadData();
-  }, [postId]);
+  }, [loadData]);
 
   const handleDeleteComment = async (commentId) => {
     if (window.confirm("이 댓글을 삭제하시겠습니까?")) {
@@ -75,9 +75,12 @@ const BoardManagementDetailPage = () => {
       <div className="bg-white shadow p-6 rounded mb-6">
         <h2 className="text-xl font-semibold mb-2 text-gray-800">{post.title}</h2>
         <p className="text-sm text-gray-500 mb-4">
-          작성자: {post.author_nickname} | 게시판: {post.board_type} | 작성일: {new Date(post.created_at).toLocaleString()}
+          작성자: {post.author_nickname} | 게시판: {post.board_type} | 작성일:{" "}
+          {new Date(post.created_at).toLocaleString()}
         </p>
-        <p className="whitespace-pre-line text-gray-700 leading-relaxed">{post.content}</p>
+        <p className="whitespace-pre-line text-gray-700 leading-relaxed">
+          {post.content}
+        </p>
       </div>
 
       <div className="bg-white shadow p-6 rounded">
@@ -96,7 +99,8 @@ const BoardManagementDetailPage = () => {
                     {comment.content}
                   </p>
                   <p className="text-xs text-gray-500 mt-2">
-                    작성자: {comment.user?.nickname || "알 수 없음"} | 작성일: {new Date(comment.created_at).toLocaleString()}
+                    작성자: {comment.user?.nickname || "알 수 없음"} | 작성일:{" "}
+                    {new Date(comment.created_at).toLocaleString()}
                   </p>
                 </div>
                 {comment.content !== "삭제된 댓글입니다." && (
@@ -117,3 +121,4 @@ const BoardManagementDetailPage = () => {
 };
 
 export default BoardManagementDetailPage;
+ 
