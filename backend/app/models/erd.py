@@ -57,7 +57,6 @@ class ErdColumns(Base):
     source_relations = relationship("ErdRelations", foreign_keys="[ErdRelations.source_column_id]", back_populates="source_column")
     target_relations = relationship("ErdRelations", foreign_keys="[ErdRelations.target_column_id]", back_populates="target_column")
 
-
 class ErdRelations(Base):
     __tablename__ = "erdrelations"
 
@@ -68,11 +67,10 @@ class ErdRelations(Base):
     target_table_id = Column(Integer, ForeignKey("erdtables.table_id", ondelete="CASCADE"), nullable=False)
     target_column_id = Column(Integer, ForeignKey("erdcolumns.column_id", ondelete="CASCADE"), nullable=True)
 
-    # ✅ 분리된 4개 속성
-    participation_left = Column(String(10), nullable=False)
-    relation_left = Column(String(10), nullable=False)
-    relation_right = Column(String(10), nullable=False)
-    participation_right = Column(String(10), nullable=False)
+    # ✅ 변경된 필드
+    participation_source = Column(String(10), nullable=False)
+    relation_type = Column(String(5), nullable=False)
+    participation_target = Column(String(10), nullable=False)
 
     auto_create_fk = Column(Boolean, default=True)
     cascade_delete = Column(Boolean, default=False)
@@ -83,6 +81,7 @@ class ErdRelations(Base):
     target_table = relationship("ErdTables", foreign_keys=[target_table_id], back_populates="target_relations")
     source_column = relationship("ErdColumns", foreign_keys=[source_column_id], back_populates="source_relations")
     target_column = relationship("ErdColumns", foreign_keys=[target_column_id], back_populates="target_relations")
+
 
 class ErdSnapshot(Base):
     __tablename__ = "erdsnapshots"  # PascalCase로 테이블 이름 유지

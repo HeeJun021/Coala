@@ -157,21 +157,29 @@ const ErdRelationLine = ({
         }}
       />
 
-      {/* 기호 렌더링 */}
-      {getRelationSymbol(
-        relation_left,
-        from.x + (isLeftToRight ? 10 : -10),
-        from.y,
-        true
-      )}
-      {getParticipationSymbol(
-        participation_left,
-        from.x + (isLeftToRight ? 13 : -20),
-        from.y
-      )}
+{getRelationSymbol(
+  relation_left,
+  from.x + (from.x < to.x ? 10 : -10), // 논리 방향 기준 위치 보정
+  from.y,
+  from.x < to.x // 방향 감안
+)}
 
-      {getParticipationSymbol(participation_right, to.x - 20, to.y)}
-      {getRelationSymbol(relation_right, to.x - 10, to.y, false)}
+{getParticipationSymbol(
+  participation_left,
+  from.x + (from.x < to.x ? 13 : -20),
+  from.y
+)}
+{getParticipationSymbol(
+  participation_right,
+  to.x + (to.x < from.x ? 13 : -20), // 반대 방향 보정
+  to.y
+)}
+{getRelationSymbol(
+  relation_right,
+  to.x + (to.x < from.x ? 10 : -10),
+  to.y,
+  to.x < from.x
+)}
     </svg>
   );
 };

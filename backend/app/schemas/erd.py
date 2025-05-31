@@ -62,10 +62,9 @@ class ErdRelationOut(BaseModel):
     target_table_id: int
     target_column_id: Optional[int]
 
-    participation_left: Literal["required", "optional"]
-    relation_left: Literal["bar", "crow"]
-    relation_right: Literal["bar", "crow"]
-    participation_right: Literal["required", "optional"]
+    participation_source: Literal["required", "optional"]
+    relation_type: Literal["1:1", "1:N"]  # ✅ 논리적 관계로 변경
+    participation_target: Literal["required", "optional"]
 
     auto_create_fk: bool
     cascade_delete: bool
@@ -73,6 +72,8 @@ class ErdRelationOut(BaseModel):
     fk_column: Optional[ErdForeignKeyColumnOut] = None
 
     model_config = {"from_attributes": True}
+
+
 
 class ErdDetailOut(BaseModel):
     erd_id: int
@@ -143,13 +144,13 @@ class ErdRelationCreate(BaseModel):
     target_table_id: int
     target_column_id: Optional[int] = None
 
-    participation_left: Literal["required", "optional"]
-    relation_left: Literal["bar", "crow"]
-    relation_right: Literal["bar", "crow"]
-    participation_right: Literal["required", "optional"]
+    participation_source: Literal["required", "optional"]
+    relation_type: Literal["1:1", "1:N"]
+    participation_target: Literal["required", "optional"]
 
     auto_create_fk: Optional[bool] = True
     cascade_delete: Optional[bool] = False
+
 
 
 # 다중 삭제
@@ -182,14 +183,13 @@ class ErdColumnUpdate(BaseModel):
 # ✅ 관계 수정용
 class ErdRelationUpdate(BaseModel):
     relation_id: int
-
-    participation_left: Optional[Literal["required", "optional"]] = None
-    relation_left: Optional[Literal["bar", "crow"]] = None
-    relation_right: Optional[Literal["bar", "crow"]] = None
-    participation_right: Optional[Literal["required", "optional"]] = None
-
+    participation_source: Optional[Literal["required", "optional"]] = None
+    relation_type: Optional[Literal["1:1", "1:N"]] = None  # ✅ 논리적 관계 타입
+    participation_target: Optional[Literal["required", "optional"]] = None
     auto_create_fk: Optional[bool] = None
     cascade_delete: Optional[bool] = None
+
+
 
 
 

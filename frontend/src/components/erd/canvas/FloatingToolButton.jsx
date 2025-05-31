@@ -6,49 +6,45 @@ const relationOptions = [
   {
     label: "1:1 (필수 - 필수)",
     value: {
-      participation_left: "required",
-      relation_left: "bar",
-      relation_right: "bar",
-      participation_right: "required",
+      relation_type: "1:1",
+      participation_source: "required",
+      participation_target: "required",
     },
   },
   {
     label: "1:1 (필수 - 선택)",
     value: {
-      participation_left: "required",
-      relation_left: "bar",
-      relation_right: "bar",
-      participation_right: "optional",
+      relation_type: "1:1",
+      participation_source: "required",
+      participation_target: "optional",
     },
   },
   {
     label: "1:N (필수 - 필수)",
     value: {
-      participation_left: "required",
-      relation_left: "bar",
-      relation_right: "crow",
-      participation_right: "required",
+      relation_type: "1:N",
+      participation_source: "required",
+      participation_target: "required",
     },
   },
   {
     label: "1:N (필수 - 선택)",
     value: {
-      participation_left: "required",
-      relation_left: "bar",
-      relation_right: "crow",
-      participation_right: "optional",
+      relation_type: "1:N",
+      participation_source: "required",
+      participation_target: "optional",
     },
   },
   {
     label: "1:N (선택 - 선택)",
     value: {
-      participation_left: "optional",
-      relation_left: "bar",
-      relation_right: "crow",
-      participation_right: "optional",
+      relation_type: "1:N",
+      participation_source: "optional",
+      participation_target: "optional",
     },
   },
 ];
+
 
 const FloatingToolButton = ({
   erdId,

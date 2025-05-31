@@ -72,11 +72,11 @@ const ErdPage = () => {
         relationId: r.relation_id,
         fromColumnId: r.source_column_id,
         toColumnId: r.target_column_id,
-        participation_left: r.participation_left,
-        relation_left: r.relation_left,
-        relation_right: r.relation_right,
-        participation_right: r.participation_right,
-        relationType: `${r.participation_left}|${r.participation_right}`, // UI 표시용 라벨
+        participation_left: r.participation_source, // 좌측 참여도
+        relation_left: "bar", // 왼쪽 기호 (항상 bar)
+        relation_right: r.relation_type === "1:N" ? "crow" : "bar",
+        participation_right: r.participation_target,
+        relationType: `${r.relation_type}|${r.participation_source}|${r.participation_target}`, // UI에 필요 시
       }));
 
       // ✅ 상태 세팅
@@ -103,75 +103,74 @@ CREATE TABLE users (
   };
 
   return (
-  <>
-    <div className="w-full h-screen bg-[#1E1E2F] text-white flex flex-col overflow-hidden">
-      {/* 상단 헤더 */}
-      <div className="shrink-0">
-        <ErdHeader
-          projectName={erdName}
-          erdId={erdId}
-          onEditName={(newName) => setErdName(newName)}
-          onOpenLog={() => {}}
-          onOpenSidebar={() => setIsSidebarOpen(true)}
-          zoomLevel={zoomLevel}
-          setZoomLevel={setZoomLevel}
-          mode={mode}
-          setMode={setMode}
-          language={language}
-          setLanguage={setLanguage}
-          convertType={convertType}
-          setConvertType={setConvertType}
-          onFetch={handleFetchAutoSql}
-          onRefresh={fetchErdDetail}
-          setTables={setTables}
-          setRelations={setRelations}
-          showToast={showToast}
-        />
-      </div>
+    <>
+      <div className="w-full h-screen bg-[#1E1E2F] text-white flex flex-col overflow-hidden">
+        {/* 상단 헤더 */}
+        <div className="shrink-0">
+          <ErdHeader
+            projectName={erdName}
+            erdId={erdId}
+            onEditName={(newName) => setErdName(newName)}
+            onOpenLog={() => {}}
+            onOpenSidebar={() => setIsSidebarOpen(true)}
+            zoomLevel={zoomLevel}
+            setZoomLevel={setZoomLevel}
+            mode={mode}
+            setMode={setMode}
+            language={language}
+            setLanguage={setLanguage}
+            convertType={convertType}
+            setConvertType={setConvertType}
+            onFetch={handleFetchAutoSql}
+            onRefresh={fetchErdDetail}
+            setTables={setTables}
+            setRelations={setRelations}
+            showToast={showToast}
+          />
+        </div>
 
-      {/* 본문 */}
-      <div className="flex flex-1 overflow-hidden relative">
-        {/* 사이드바 */}
-        {isSidebarOpen && (
-          <ErdListSidebar onClose={() => setIsSidebarOpen(false)} />
-        )}
-
-        {/* 메인 영역 */}
-        <div className="flex-1 relative min-w-0 min-h-0">
-          {mode === "default" ? (
-            <ErdCanvas
-              erdId={parseInt(erdId)}
-              isPlacing={isPlacing}
-              setIsPlacing={setIsPlacing}
-              tempTable={tempTable}
-              setTempTable={setTempTable}
-              tables={tables}
-              setTables={setTables}
-              columns={columns}
-              relations={relations}
-              setRelations={setRelations}
-              zoomLevel={zoomLevel}
-              setZoomLevel={setZoomLevel}
-              fetchErdDetail={fetchErdDetail}
-              showToast={showToast}
-            />
-          ) : (
-            <CodeGeneratorPanel
-              sqlQuery={sqlQuery}
-              setSqlQuery={setSqlQuery}
-            />
+        {/* 본문 */}
+        <div className="flex flex-1 overflow-hidden relative">
+          {/* 사이드바 */}
+          {isSidebarOpen && (
+            <ErdListSidebar onClose={() => setIsSidebarOpen(false)} />
           )}
+
+          {/* 메인 영역 */}
+          <div className="flex-1 relative min-w-0 min-h-0">
+            {mode === "default" ? (
+              <ErdCanvas
+                erdId={parseInt(erdId)}
+                isPlacing={isPlacing}
+                setIsPlacing={setIsPlacing}
+                tempTable={tempTable}
+                setTempTable={setTempTable}
+                tables={tables}
+                setTables={setTables}
+                columns={columns}
+                relations={relations}
+                setRelations={setRelations}
+                zoomLevel={zoomLevel}
+                setZoomLevel={setZoomLevel}
+                fetchErdDetail={fetchErdDetail}
+                showToast={showToast}
+              />
+            ) : (
+              <CodeGeneratorPanel
+                sqlQuery={sqlQuery}
+                setSqlQuery={setSqlQuery}
+              />
+            )}
+          </div>
         </div>
       </div>
-    </div>
 
-    {/* ✅ Toast 메시지 최상단에 표시 (레이아웃 바깥에 위치) */}
-    {toastMessage && (
-      <Toast message={toastMessage} onClose={() => setToastMessage("")} />
-    )}
-  </>
-);
-
+      {/* ✅ Toast 메시지 최상단에 표시 (레이아웃 바깥에 위치) */}
+      {toastMessage && (
+        <Toast message={toastMessage} onClose={() => setToastMessage("")} />
+      )}
+    </>
+  );
 };
 
 export default ErdPage;
