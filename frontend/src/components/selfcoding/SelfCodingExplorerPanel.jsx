@@ -59,7 +59,7 @@ const SelfCodingExplorerPanel = ({
   const templateIdFromNav = location.state?.templateId;
   const hasInsertedTemplateRef = useRef(false);
 
-  const loadRoot = async () => {
+  const loadRoot = useCallback(async () => {
     try {
       const root = await getRootCodeFolder();
       setFolderTree({
@@ -79,7 +79,7 @@ const SelfCodingExplorerPanel = ({
     } catch (err) {
       console.error("루트 폴더 불러오기 실패", err);
     }
-  };
+  }, [setFolders]);
 
   const insertTemplateToDB = useCallback(async (templateId, rootFolderId) => {
     const structure = templateFiles[templateId];
@@ -122,13 +122,13 @@ const SelfCodingExplorerPanel = ({
 
     await createRecursively(structure, templateFolder.folder_id);
     await loadRoot();
-  }, []);
+  }, [loadRoot]);
 
   useEffect(() => {
     loadRoot();
     window.addEventListener("refreshDirectory", loadRoot);
     return () => window.removeEventListener("refreshDirectory", loadRoot);
-  }, []);
+  }, [loadRoot]);
 
   useEffect(() => {
     const applyTemplate = async () => {
@@ -177,95 +177,40 @@ const SelfCodingExplorerPanel = ({
       }
     };
     applyTemplate();
-  }, [folderTree, templateIdFromNav, insertTemplateToDB]);
+  }, [folderTree, templateIdFromNav, insertTemplateToDB, loadRoot, setFolders]);
 
-  useEffect(() => {
-    const refreshOpenedNodes = async (node) => {
-      if (node.expanded) {
-        const [children, codes] = await Promise.all([
-          getChildFolders(node.folder_id),
-          getCodesInFolder(node.folder_id),
-        ]);
-        node.children = children.map((child) => ({
-          ...child,
-          children: [],
-          codes: [],
-          expanded: false,
-          loaded: false,
-        }));
-        node.codes = codes;
-        node.loaded = true;
+useEffect(() => {
+  const refreshOpenedNodes = async (node) => {
+    if (node.expanded && !node.loaded) {
+      const [children, codes] = await Promise.all([
+        getChildFolders(node.folder_id),
+        getCodesInFolder(node.folder_id),
+      ]);
+      node.children = children.map((child) => ({
+        ...child,
+        children: [],
+        codes: [],
+        expanded: false,
+        loaded: false,
+      }));
+      node.codes = codes;
+      node.loaded = true;
 
-        for (const child of node.children) {
-          await refreshOpenedNodes(child);
-        }
+      for (const child of node.children) {
+        await refreshOpenedNodes(child);
       }
-    };
+    }
+  };
 
     const updateTreeIfOpen = async () => {
-      if (folders) {
-        const treeCopy = structuredClone(folders);
-        await refreshOpenedNodes(treeCopy);
-        setFolderTree(treeCopy);
-        setFolders(treeCopy);
-      }
-    };
-
-    updateTreeIfOpen();
-  }, [folders]);
-
-  const handleFolderToggle = async (node) => {
-    if (!node.loaded) {
-      try {
-        const [children, codes] = await Promise.all([
-          getChildFolders(node.folder_id),
-          getCodesInFolder(node.folder_id),
-        ]);
-
-        node.children = children.map((child) => ({
-          ...child,
-          children: [],
-          codes: [],
-          expanded: false,
-          loaded: false,
-        }));
-        node.codes = codes;
-        node.loaded = true;
-
-        if (node.children.length === 0 && node.codes.length === 0) {
-          return;
-        }
-      } catch (err) {
-        console.error("하위 항목 불러오기 실패", err);
-      }
-    }
-
-    node.expanded = !node.expanded;
-    setFolderTree({ ...folderTree });
-    setFolders({ ...folderTree });
+    if (!folders || !folders.expanded) return;
+    const treeCopy = { ...folders };
+    await refreshOpenedNodes(treeCopy);
+    setFolderTree(treeCopy);
+    setFolders(treeCopy);
   };
-
-  const handleFileClick = async (file) => {
-    try {
-      const full = await getCodeById(file.code_id);
-      const tabId = `code-${full.code_id}`;
-      setSelectedFilename(full.title);
-      setSelectedFileContent(full.content);
-
-      if (!tabs.find((tab) => tab.tabId === tabId)) {
-        setTabs((prev) => [...prev, {
-          tabId,
-          filename: full.title,
-          content: full.content,
-        }]);
-      }
-
-      setActiveTabId(tabId);
-    } catch (err) {
-      console.error("파일 내용 조회 실패", err);
-      alert("파일을 불러올 수 없습니다.");
-    }
-  };
+  updateTreeIfOpen();
+}, [folders, setFolders]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -342,234 +287,280 @@ const SelfCodingExplorerPanel = ({
             type: "file",
             parentPath: contextMenu.targetId,
           });
-        setNewItemName("");
-      };
-
-      if (openNode) {
-        if (!openNode.expanded) {
-          await handleFolderToggle(openNode);
-        }
-        showInput();
-      } else {
-        showInput();
-      }
-      setMenuVisible(false);
-      return;
-    }
-
-    if (label === "새 폴더") {
-      const folderIdStr = contextMenu.targetId?.replace("folder-", "");
-      const folderId = parseInt(folderIdStr);
-      const openNode = findFolderNode(folderTree, folderId);
-      const showInput = () => {
-        setCreatingItem({
-          type: "folder",
-          parentPath: contextMenu.targetId,
-        });
-        setNewItemName("");
-      };
-
-      if (openNode) {
-        if (!openNode.expanded) {
-          await handleFolderToggle(openNode);
-        }
-        showInput();
-      } else {
-        showInput();
-      }
-      setMenuVisible(false);
-      return;
-    }
-
-    if (label === "공유" && submenuItem === "코드공유게시글 작성") {
-      if (contextMenu.targetId?.startsWith("code-")) {
-        const codeIdStr = contextMenu.targetId.replace("code-", "");
-        const codeId = parseInt(codeIdStr);
-
-        try {
-          const file = await getCodeById(codeId);
-          navigate("/board/code/write", {
-            state: {
-              codeContent: file.content,
-              codeTitle: file.title,
-            },
-          });
-        } catch (err) {
-          console.error("파일 내용 조회 실패", err);
-          alert("파일을 불러올 수 없습니다.");
-        }
-      }
-      setMenuVisible(false);
-      await loadRoot();
-      return;
-    }
-
-    if (label === "이름 바꾸기") {
-      if (contextMenu.targetId?.startsWith("folder-")) {
-        const folderIdStr = contextMenu.targetId.replace("folder-", "");
-        const folderId = parseInt(folderIdStr);
-        const targetNode = findFolderNode(folderTree, folderId);
-        if (targetNode) {
-          targetNode.expanded = true;
-          setFolderTree({ ...folderTree });
-          setFolders({ ...folderTree });
-          setRenamingItem({ path: `folder-${folderId}`, name: targetNode.folder_name });
-        }
-      }
-
-      if (contextMenu.targetId?.startsWith("code-")) {
-        const codeIdStr = contextMenu.targetId.replace("code-", "");
-        const codeId = parseInt(codeIdStr);
-
-        const searchFile = (node) => {
-          const found = node.codes.find((c) => c.code_id === codeId);
-          if (found) return found;
-          for (const child of node.children || []) {
-            const res = searchFile(child);
-            if (res) return res;
-          }
-          return null;
+          setNewItemName("");
         };
 
-        const foundFile = searchFile(folderTree);
-        if (foundFile) {
-          const [nameOnly] = foundFile.title.split(/\.(?=[^.]+$)/);
-          setRenamingItem({ path: `code-${codeId}`, name: nameOnly });
+        if (openNode) {
+          if (!openNode.expanded) {
+            await handleFolderToggle(openNode);
+          }
+          showInput();
+        } else {
+          showInput();
         }
+        setMenuVisible(false);
+        return;
       }
-      setMenuVisible(false);
-      return;
-    }
 
-    if (label === "경로 복사") {
-      if (navigator.clipboard && contextMenu?.targetId) {
-        navigator.clipboard
-          .writeText(contextMenu.targetId)
-          .then(() => alert("경로가 클립보드에 복사되었습니다."))
-          .catch(() => alert("클립보드 복사에 실패했습니다."));
-      }
-      setMenuVisible(false);
-      return;
-    }
+      if (label === "새 폴더") {
+        const folderIdStr = contextMenu.targetId?.replace("folder-", "");
+        const folderId = parseInt(folderIdStr);
+        const openNode = findFolderNode(folderTree, folderId);
+        const showInput = () => {
+          setCreatingItem({
+            type: "folder",
+            parentPath: contextMenu.targetId,
+          });
+          setNewItemName("");
+        };
 
-    if (label === "삭제") {
-      const confirmDelete = window.confirm(
-        contextMenu.targetId.startsWith("folder-")
-          ? "폴더의 하위 폴더 및 파일도 모두 삭제됩니다. 정말로 삭제하시겠습니까?"
-          : "정말로 삭제하시겠습니까?"
-      );
-      if (!confirmDelete) return;
-
-      const newTree = JSON.parse(JSON.stringify(folderTree));
-
-      if (contextMenu.targetId.startsWith("folder-")) {
-        const folderId = parseInt(contextMenu.targetId.replace("folder-", ""));
-        try {
-          await deleteFolder(folderId);
-
-          const deleteNode = (tree, id) => {
-            for (let i = 0; i < tree.length; i++) {
-              if (tree[i].folder_id === id) {
-                tree.splice(i, 1);
-                return true;
-              }
-              if (tree[i].children && deleteNode(tree[i].children, id)) {
-                return true;
-              }
-            }
-            return false;
-          };
-
-          deleteNode([newTree], folderId);
-          setFolderTree({ ...newTree });
-          setFolders({ ...newTree });
-        } catch (err) {
-          console.error("폴더 삭제 실패", err);
-          alert("폴더 삭제에 실패했습니다.");
+        if (openNode) {
+          if (!openNode.expanded) {
+            await handleFolderToggle(openNode);
+          }
+          showInput();
+        } else {
+          showInput();
         }
-      } else if (contextMenu.targetId.startsWith("code-")) {
-        const codeId = parseInt(contextMenu.targetId.replace("code-", ""));
-        try {
-          await deleteCodeFile(codeId);
-
-          const deleteCode = (tree) => {
-            for (let node of tree) {
-              const idx = node.codes.findIndex((c) => c.code_id === codeId);
-              if (idx !== -1) {
-                node.codes.splice(idx, 1);
-                return true;
-              }
-              if (node.children && deleteCode(node.children)) {
-                return true;
-              }
-            }
-            return false;
-          };
-
-          deleteCode([newTree]);
-          setFolderTree({ ...newTree });
-          setFolders({ ...newTree });
-        } catch (err) {
-          console.error("코드 삭제 실패", err);
-          alert("파일 삭제에 실패했습니다.");
-        }
+        setMenuVisible(false);
+        return;
       }
-      setMenuVisible(false);
-      return;
+
+      if (label === "공유" && submenuItem === "코드공유게시글 작성") {
+        if (contextMenu.targetId?.startsWith("code-")) {
+          const codeIdStr = contextMenu.targetId.replace("code-", "");
+          const codeId = parseInt(codeIdStr);
+
+          try {
+            const file = await getCodeById(codeId);
+            navigate("/board/code/write", {
+              state: {
+                codeContent: file.content,
+                codeTitle: file.title,
+              },
+            });
+          } catch (err) {
+            console.error("파일 내용 조회 실패", err);
+            alert("파일을 불러올 수 없습니다.");
+          }
+        }
+        setMenuVisible(false);
+        await loadRoot();
+        return;
+      }
+
+      if (label === "이름 바꾸기") {
+        if (contextMenu.targetId?.startsWith("folder-")) {
+          const folderIdStr = contextMenu.targetId.replace("folder-", "");
+          const folderId = parseInt(folderIdStr);
+          const targetNode = findFolderNode(folderTree, folderId);
+          if (targetNode) {
+            targetNode.expanded = true;
+            setFolderTree({ ...folderTree });
+            setFolders({ ...folderTree });
+            setRenamingItem({ path: `folder-${folderId}`, name: targetNode.folder_name });
+          }
+        }
+
+if (contextMenu.targetId?.startsWith("code-")) {
+  const codeIdStr = contextMenu.targetId.replace("code-", "");
+  const codeId = parseInt(codeIdStr);
+
+  const searchFile = (node) => {
+    const found = node.codes.find((c) => c.code_id === codeId);
+    if (found) return found;
+    for (const child of node.children || []) {
+      const res = searchFile(child);
+      if (res) return res;
     }
+    return null;
   };
 
-  const isFile = contextMenu.targetId?.startsWith("code-");
-  const menuItems = [
-    { label: "새 파일", show: true },
-    { label: "새 폴더", show: true },
-    { label: "공유", show: isFile, submenu: [{ label: "코드공유게시글 작성" }] },
-    { label: "복사 (준비중)", show: false },
-    { label: "경로 복사", show: true },
-    { label: "이름 바꾸기", show: true },
-    { label: "삭제", show: true },
-  ].filter((item) => item.show);
+  const foundFile = searchFile(folderTree);
+  if (foundFile) {
+    setRenamingItem({ path: `code-${codeId}`, name: foundFile.title.split(/\.(?=[^.]+$)/)[0] });
+  }
+}
+        setMenuVisible(false);
+        return;
+      }
 
-  return (
-    <ul
-      id="context-menu"
-      className="fixed z-50 w-40 bg-white text-gray-800 border border-gray-200 rounded shadow-lg py-1 text-sm"
-      style={{ top: position.y, left: position.x }}
-    >
-      {menuItems.map((item) => (
-        <li
-          key={item.label}
-          className={`relative ${item.submenu ? "group" : ""}`}
-        >
-          <div
-            className={`px-4 py-2 hover:bg-gray-100 cursor-pointer flex justify-between items-center ${
-              item.label === "삭제" ? "text-red-600 hover:text-red-700" : ""
-            }`}
-            onClick={() => !item.submenu && handleClick(item.label)}
+      if (label === "경로 복사") {
+        if (navigator.clipboard && contextMenu?.targetId) {
+          navigator.clipboard
+            .writeText(contextMenu.targetId)
+            .then(() => alert("경로가 클립보드에 복사되었습니다."))
+            .catch(() => alert("클립보드 복사에 실패했습니다."));
+        }
+        setMenuVisible(false);
+        return;
+      }
+
+      if (label === "삭제") {
+        const confirmDelete = window.confirm(
+          contextMenu.targetId.startsWith("folder-")
+            ? "폴더의 하위 폴더 및 파일도 모두 삭제됩니다. 정말로 삭제하시겠습니까?"
+            : "정말로 삭제하시겠습니까?"
+        );
+        if (!confirmDelete) return;
+
+        const newTree = JSON.parse(JSON.stringify(folderTree));
+
+        if (contextMenu.targetId.startsWith("folder-")) {
+          const folderId = parseInt(contextMenu.targetId.replace("folder-", ""));
+          try {
+            await deleteFolder(folderId);
+
+            const deleteNode = (tree, id) => {
+              for (let i = 0; i < tree.length; i++) {
+                if (tree[i].folder_id === id) {
+                  tree.splice(i, 1);
+                  return true;
+                }
+                if (tree[i].children && deleteNode(tree[i].children, id)) {
+                  return true;
+                }
+              }
+              return false;
+            };
+
+            deleteNode([newTree], folderId);
+            setFolderTree({ ...newTree });
+            setFolders({ ...newTree });
+          } catch (err) {
+            console.error("폴더 삭제 실패", err);
+            alert("폴더 삭제에 실패했습니다.");
+          }
+        } else if (contextMenu.targetId.startsWith("code-")) {
+          const codeId = parseInt(contextMenu.targetId.replace("code-", ""));
+          try {
+            await deleteCodeFile(codeId);
+
+            const deleteCode = (tree) => {
+              for (let node of tree) {
+                const idx = node.codes.findIndex((c) => c.code_id === codeId);
+                if (idx !== -1) {
+                  node.codes.splice(idx, 1);
+                  return true;
+                }
+                if (node.children && deleteCode(node.children)) {
+                  return true;
+                }
+              }
+              return false;
+            };
+
+            deleteCode([newTree]);
+            setFolderTree({ ...newTree });
+            setFolders({ ...newTree });
+          } catch (err) {
+            console.error("코드 삭제 실패", err);
+            alert("파일 삭제에 실패했습니다.");
+          }
+        }
+        setMenuVisible(false);
+        return;
+      }
+    };
+
+    const isFile = contextMenu.targetId?.startsWith("code-");
+    const menuItems = [
+      { label: "새 파일", show: true },
+      { label: "새 폴더", show: true },
+      { label: "공유", show: isFile, submenu: [{ label: "코드공유게시글 작성" }] },
+      { label: "복사 (준비중)", show: false },
+      { label: "경로 복사", show: true },
+      { label: "이름 바꾸기", show: true },
+      { label: "삭제", show: true },
+    ].filter((item) => item.show);
+
+    return (
+      <ul
+        id="context-menu"
+        className="fixed z-50 w-40 bg-white text-gray-800 border border-gray-200 rounded shadow-lg py-1 text-sm"
+        style={{ top: position.y, left: position.x }}
+      >
+        {menuItems.map((item) => (
+          <li
+            key={item.label}
+            className={`relative ${item.submenu ? "group" : ""}`}
           >
-            {item.label}
-            {item.submenu && <FaChevronRight className="text-gray-400" />}
-          </div>
-          {item.submenu && (
-            <ul
-              className="absolute left-full top-0 w-48 bg-white border border-gray-200 rounded shadow-lg py-1 text-sm hidden group-hover:block"
+            <div
+              className={`px-4 py-2 hover:bg-gray-100 cursor-pointer flex justify-between items-center ${
+                item.label === "삭제" ? "text-red-600 hover:text-red-700" : ""
+              }`}
+              onClick={() => !item.submenu && handleClick(item.label)}
             >
-              {item.submenu.map((subItem) => (
-                <li
-                  key={subItem.label}
-                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                  onClick={() => handleClick(item.label, subItem.label)}
-                >
-                  {subItem.label}
-                </li>
-              ))}
-            </ul>
-          )}
-        </li>
-      ))}
-    </ul>
-  );
-};
+              {item.label}
+              {item.submenu && <FaChevronRight className="text-gray-400" />}
+            </div>
+            {item.submenu && (
+              <ul
+                className="absolute left-full top-0 w-48 bg-white border border-gray-200 rounded shadow-lg py-1 text-sm hidden group-hover:block"
+              >
+                {item.submenu.map((subItem) => (
+                  <li
+                    key={subItem.label}
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                    onClick={() => handleClick(item.label, subItem.label)}
+                  >
+                    {subItem.label}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </li>
+        ))}
+      </ul>
+    );
+  };
+
+  const handleFolderToggle = async (node) => {
+    if (!node.loaded) {
+      try {
+        const [children, codes] = await Promise.all([
+          getChildFolders(node.folder_id),
+          getCodesInFolder(node.folder_id),
+        ]);
+        node.children = children.map((child) => ({
+          ...child,
+          children: [],
+          codes: [],
+          expanded: false,
+          loaded: false,
+        }));
+        node.codes = codes;
+        node.loaded = true;
+      } catch (err) {
+        console.error("하위 항목 불러오기 실패", err);
+      }
+    }
+    node.expanded = !node.expanded;
+    setFolderTree({ ...folderTree });
+    setFolders({ ...folderTree });
+  };
+
+  const handleFileClick = async (file) => {
+    try {
+      const full = await getCodeById(file.code_id);
+      const tabId = `code-${full.code_id}`;
+      setSelectedFilename(full.title);
+      setSelectedFileContent(full.content);
+
+      if (!tabs.find((tab) => tab.tabId === tabId)) {
+        setTabs((prev) => [...prev, {
+          tabId,
+          filename: full.title,
+          content: full.content,
+        }]);
+      }
+
+      setActiveTabId(tabId);
+    } catch (err) {
+      console.error("파일 내용 조회 실패", err);
+      alert("파일을 불러올 수 없습니다.");
+    }
+  };
 
   const renderFolderNode = (node, depth = 0) => {
     const paddingLeft = depth * 12;
@@ -625,7 +616,7 @@ const SelfCodingExplorerPanel = ({
             {node.children.map((child) => renderFolderNode(child, depth + 1))}
 
             {node.codes.map((file) => {
-              const [nameOnly, ext] = file.title.split(/\.(?=[^.]+$)/);
+              const [nameOnly, ext] = file.title.split(/\.(?=[^.]+$)/); //nameOnly 지우면 큰일 나더라
               const isRenaming = renamingItem?.path === `code-${file.code_id}`;
               return (
                 <div

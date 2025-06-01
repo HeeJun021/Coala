@@ -2,7 +2,9 @@ from sqlalchemy import Column, Integer, String, Boolean, Date, ForeignKey, TIMES
 from sqlalchemy.orm import relationship, Session
 from app.database import Base
 from app.models.user_tier import UserTier
+from app.models.eucalyptus_transaction import EucalyptusTransaction
 from sqlalchemy.sql import func  # ✅ TIMESTAMP 기본값을 위한 `func.now()` 추가
+from app.schemas.eucalyptus_schema import ActionType
 
 class User(Base):
     __tablename__ = "users"
@@ -14,11 +16,13 @@ class User(Base):
     profile_image_url = Column(Text, default=None)
     bio = Column(Text, default=None)
     birth_date = Column(Date, default=None)
+    is_admin = Column(Boolean, default=False, nullable=False)
     rating = Column(Integer, default=1000)
     tier_id = Column(Integer, ForeignKey("user_tiers.tier_id"), default=1)  
     dailycheck = Column(Boolean, default=False)
     email_verified = Column(Boolean, default=False)
     github_access_token = Column(String, nullable=True)  # GitHub 액세스 토큰 추가
+    eucalyptus_balance = Column(Integer, nullable=False, default=100)
     
     created_at = Column(TIMESTAMP, server_default=func.now())  # ✅ `CURRENT_TIMESTAMP` → `func.now()`로 변경
     updated_at = Column(TIMESTAMP, default=func.now(), onupdate=func.now())  # ✅ 수정된 시간 자동 업데이트
@@ -28,6 +32,12 @@ class User(Base):
     social_logins = relationship("SocialLogin", back_populates="user", cascade="all, delete")
     posts = relationship("Post", back_populates="user", cascade="all, delete")
     comments = relationship("Comment", back_populates="user", cascade="all, delete")
+    
+    eucalyptus_transactions = relationship(
+    "EucalyptusTransaction",
+    back_populates="user",
+    cascade="all, delete"
+    )
     
 class UserFollow(Base):
     __tablename__ = "userfollows"

@@ -9,13 +9,24 @@ import {
 
 import { AuthProvider } from "./context/AuthContext";
 import { getCurrentUser } from "./api/authApi";
-import koala from "./assets/koala.jpg";
 
-// 레이아웃 & 기본
+// 레이아웃
 import MainLayout from "./Layout/MainLayout";
+import AdminLayout from "./Layout/AdminLayout";
 import Home from "./pages/Home";
 
-// 채팅 구조변경
+// 관리자 페이지
+import AdminDashboardPage from "./admin/AdminDashboardPage";
+import StudymaterialManagementPage from "./admin/StudymaterialManagementPage";
+import QuizManagementPage from "./admin/QuizManagementPage";
+import CodingtestManagementPage from "./admin/CodingtestManagementPage";
+import AdminCodingTestDetailPage from "./admin/AdminCodingtestDetailPage";
+import BoardManagementPage from "./admin/BoardManagementPage";
+import UserManagementPage from "./admin/UserManagementPage";
+import ProjectManagementPage from "./admin/ProjectManagementPage";
+import BoardManagementDetailPage from "./admin/BoardManagementDetailPage";
+
+// 채팅
 import { ChatSocketProvider } from "./context/ChatSocketContext";
 
 // 학습자료
@@ -38,6 +49,7 @@ import MyPageModify from "./pages/MyPageModify";
 import MyPageSetting from "./pages/MyPageSetting";
 import MyPageQuizHistory from "./pages/MyPageQuizHistory";
 import MyPageUserQuizHistory from "./pages/MyPageUserQuizHistory";
+import MyPageCTHistory from "./pages/MyPageCTHistory";
 
 // 인증
 import Signup from "./pages/Signup";
@@ -56,13 +68,13 @@ import BoardPage from "./pages/BoardPage";
 import BoardDetailPage from "./pages/BoardDetailPage";
 import BoardWritePage from "./pages/BoardWritePage";
 import BoardEditPage from "./pages/BoardEditPage";
-import ProjectApplicantsPage from "./pages/ProjectApplicantsPage"; // ✅ 지원자 목록 페이지
+import ProjectApplicantsPage from "./pages/ProjectApplicantsPage";
 
 // 자율학습
 import SelfCodingPage from "./pages/SelfCodingPage";
 import SelfCodingTemplatePage from "./pages/SelfCodingTemplatePage";
 
-//팀프로젝트
+// 팀프로젝트
 import TeamProjectPage from "./pages/TeamProjectPage";
 
 // ERD UI
@@ -77,22 +89,16 @@ window.addEventListener("error", (e) => {
 
 const BodyClassManager = () => {
   const location = useLocation();
-
   useEffect(() => {
     const path = location.pathname;
-
     const isFullscreenRoute =
       (path.startsWith("/codingtest/") && path !== "/codingtest") ||
       path.startsWith("/codingtest/correct/") ||
       (path.startsWith("/team-project/") && path.includes("/erd/")); // ✅ ERD 상세 페이지 포함
 
-    if (path === "/") {
-      document.body.className = "white-body"; // ✅ 홈 화면 전용 (흰색 배경)
-    } else if (isFullscreenRoute) {
-      document.body.className = "fullscreen-body"; // ✅ 코딩테스트 전용
-    } else {
-      document.body.className = "default-body"; // ✅ 나머지
-    }
+    if (path === "/") document.body.className = "white-body";
+    else if (isFullscreenRoute) document.body.className = "fullscreen-body";
+    else document.body.className = "default-body";
   }, [location.pathname]);
 
   return null;
@@ -105,11 +111,12 @@ const App = () => {
     const fetchUserData = async () => {
       try {
         const user = await getCurrentUser();
+        console.log("🔍 user:", user);
         setUserData({
           user_id: user.user_id,
           email: user.email,
           nickname: user.nickname || "사용자",
-          profile_image_url: user.profile_image_url || koala,
+          profile_image_url: user.profile_image_url || "assets/koala.jpg",
           bio: user.bio || "",
           rating: user.rating || 1000,
           tier_id: user.tier_id || 1,
@@ -118,14 +125,14 @@ const App = () => {
           created_at: user.created_at,
           updated_at: user.updated_at,
           tier_name: user.tier?.tier_name || "초급",
+          is_admin: user.is_admin || false,
+           eucalyptus_balance: user.eucalyptus_balance ?? 0,
         });
-        console.log("✅ 로그인된 사용자:", user);
       } catch (error) {
         console.error("⚠️ 사용자 데이터를 가져오는 중 오류 발생:", error);
         setUserData(null);
       }
     };
-
     fetchUserData();
   }, []);
 
@@ -135,14 +142,26 @@ const App = () => {
         <ChatSocketProvider>
           <BodyClassManager />
           <Routes>
-            {/* 자율코딩 */}
-            <Route path="/self-coding" element={<SelfCodingPage />} />
-            <Route
-              path="/self-coding/templates"
-              element={<SelfCodingTemplatePage />}
-            />
+            {userData?.is_admin && (
+              <>
+                <Route path="/" element={<Navigate to="/admin" replace />} />
+                <Route path="/admin" element={<AdminLayout userData={userData} setUser={setUserData}/>}>
+                  <Route index element={<AdminDashboardPage />} />
+                  <Route path="materials" element={<StudymaterialManagementPage />} />
+                  <Route path="projects" element={<ProjectManagementPage />} />
+                  <Route path="quizzes" element={<QuizManagementPage />} />
+                  <Route path="codingtest" element={<CodingtestManagementPage />} />
+                  <Route path="codingtest/:testId" element={<AdminCodingTestDetailPage />} /> {/* ✅ 이 줄 추가 */}
+                  <Route path="board" element={<BoardManagementPage />} />
+                  <Route path="users" element={<UserManagementPage />} />
+                  <Route path="posts/:postId" element={<BoardManagementDetailPage />} />
+                </Route>
+              </>
+            )}
 
-            {/* 코딩 테스트 전체화면 전용 */}
+            {/* 전체화면 페이지 */}
+            <Route path="/self-coding" element={<SelfCodingPage />} />
+            <Route path="/self-coding/templates" element={<SelfCodingTemplatePage />} />
             <Route path="/codingtest/:id" element={<CodingTestDetailPage />} />
             <Route
               path="/codingtest/correct/:testId"
@@ -154,135 +173,54 @@ const App = () => {
               path="/team-project/:projectId/erd/:erdId"
               element={<ErdPage />}
             />
+            <Route path="/erd" element={<ErdPage />} />
 
             {/* 공통 레이아웃 포함 */}
-            <Route
-              path="/*"
-              element={
-                <MainLayout>
-                  <Routes>
-                    <Route path="/" element={<Home />} />
+            <Route path="/*" element={
+              <MainLayout>
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/StudyMaterialsPage" element={<StudyMaterialsPage />} />
+                  <Route path="/StudyMaterialsPage/materials/:language/:id" element={<StudyMaterialsPageDetails />} />
+                  <Route path="/StudyMaterialsPage/examples/:language/:id" element={<StudyMaterialsPageDetails />} />
+                  <Route path="/materials/:language/:id" element={<StudyMaterialsPageDetails />} />
+                  <Route path="/materials" element={<StudyMaterialsPage />} />
 
-                    {/* 학습자료 */}
-                    <Route
-                      path="/StudyMaterialsPage"
-                      element={<StudyMaterialsPage />}
-                    />
-                    <Route
-                      path="/StudyMaterialsPage/materials/:language/:id"
-                      element={<StudyMaterialsPageDetails />}
-                    />
-                    <Route
-                      path="/StudyMaterialsPage/examples/:language/:id"
-                      element={<StudyMaterialsPageDetails />}
-                    />
-                    <Route
-                      path="/materials/:language/:id"
-                      element={<StudyMaterialsPageDetails />}
-                    />
-                    <Route path="/materials" element={<StudyMaterialsPage />} />
+                  <Route path="/quizpage" element={<QuizPage userData={userData} />} />
+                  <Route path="/quizsolve/:quizId" element={<QuizSolvePage userData={userData} />} />
+                  <Route path="/quiz-result/:quizId" element={<QuizResultPage userData={userData} />} />
+                  <Route path="/user-quiz/create" element={<CreateUserQuiz userData={userData} />} />
+                  <Route path="/user-quiz-solve/:quizId" element={<UserQuizSolvePage userData={userData} />} />
+                  <Route path="/user-quiz-result/:uq_submission_id" element={<UserQuizResultPage userData={userData} />} />
 
-                    {/* 퀴즈 */}
-                    <Route
-                      path="/quizpage"
-                      element={<QuizPage userData={userData} />}
-                    />
-                    <Route
-                      path="/quizsolve/:quizId"
-                      element={<QuizSolvePage userData={userData} />}
-                    />
-                    <Route
-                      path="/quiz-result/:quizId"
-                      element={<QuizResultPage userData={userData} />}
-                    />
-                    <Route
-                      path="/user-quiz/create"
-                      element={<CreateUserQuiz userData={userData} />}
-                    />
-                    <Route
-                      path="/user-quiz-solve/:quizId"
-                      element={<UserQuizSolvePage userData={userData} />}
-                    />
-                    <Route
-                      path="/user-quiz-result/:uq_submission_id"
-                      element={<UserQuizResultPage userData={userData} />}
-                    />
+                  <Route path="/codingtest" element={<CodingTestPage />} />
+                  <Route path="/codetest" element={<CodeTestPage />} />
+                  <Route path="/terminal" element={<CodeTestTerminalPage />} />
 
-                    {/* 코딩 테스트 목록 */}
-                    <Route path="/codingtest" element={<CodingTestPage />} />
+                  <Route path="/signup" element={<Signup />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
 
-                    {/* 실습 터미널 */}
-                    <Route path="/codetest" element={<CodeTestPage />} />
-                    <Route
-                      path="/terminal"
-                      element={<CodeTestTerminalPage />}
-                    />
+                  <Route path="mypage" element={<MyPage userData={userData} setUserData={setUserData} />}>
+                    <Route path="modify" element={<MyPageModify />} />
+                    <Route path="setting" element={<MyPageSetting />} />
+                    <Route path="quiz-history" element={<MyPageQuizHistory />} />
+                    <Route path="userquiz-history" element={<MyPageUserQuizHistory />} />
+                    <Route path="codingtest" element={<MyPageCTHistory />} />
+                  </Route>
 
-                    {/* 인증 */}
-                    <Route path="/signup" element={<Signup />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route
-                      path="/forgot-password"
-                      element={<ForgotPassword />}
-                    />
-                    <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/team-project" element={<TeamProjectPage />} />
 
-                    {/* 마이페이지 */}
-                    <Route
-                      path="/mypage/*"
-                      element={<MyPage userData={userData} />}
-                    />
-                    <Route
-                      path="/mypage/modify"
-                      element={
-                        <MyPageModify
-                          userData={userData}
-                          setUserData={setUserData}
-                        />
-                      }
-                    />
-                    <Route
-                      path="/mypage/setting"
-                      element={<MyPageSetting userData={userData} />}
-                    />
-                    <Route
-                      path="/mypage/quiz-history"
-                      element={<MyPageQuizHistory userData={userData} />}
-                    />
-                    <Route
-                      path="/mypage/userquiz-history"
-                      element={<MyPageUserQuizHistory userData={userData} />}
-                    />
-
-                    {/* 팀프로젝트 */}
-                    <Route path="/team-project" element={<TeamProjectPage />} />
-
-                    {/* 게시판 */}
-                    <Route path="/board/:boardType" element={<BoardPage />} />
-                    <Route
-                      path="/board/:boardType/write"
-                      element={<BoardWritePage />}
-                    />
-                    <Route
-                      path="/board/:boardType/:postId"
-                      element={<BoardDetailPage />}
-                    />
-                    <Route
-                      path="/board/:boardType/edit/:postId"
-                      element={<BoardEditPage />}
-                    />
-                    <Route
-                      path="/board/:boardType/applicants/:postId"
-                      element={<ProjectApplicantsPage />}
-                    />
-                    <Route
-                      path="/board"
-                      element={<Navigate to="/board/free" />}
-                    />
-                  </Routes>
-                </MainLayout>
-              }
-            />
+                  <Route path="/board/:boardType" element={<BoardPage />} />
+                  <Route path="/board/:boardType/write" element={<BoardWritePage />} />
+                  <Route path="/board/:boardType/:postId" element={<BoardDetailPage />} />
+                  <Route path="/board/:boardType/edit/:postId" element={<BoardEditPage />} />
+                  <Route path="/board/:boardType/applicants/:postId" element={<ProjectApplicantsPage />} />
+                  <Route path="/board" element={<Navigate to="/board/free" />} />
+                </Routes>
+              </MainLayout>
+            } />
           </Routes>
         </ChatSocketProvider>
       </AuthProvider>

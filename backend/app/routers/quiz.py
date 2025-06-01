@@ -10,6 +10,8 @@ from app.schemas.quiz import QuizCreate, QuizResponse, QuizResultResponse, QuizS
 from app.schemas.question import QuestionResult
 from app.utils.quiz import check_answer 
 from app.models.user import User
+from app.schemas.eucalyptus_schema import RewardActionType
+from app.services.user import reward_user_by_action
 
 router = APIRouter(
     prefix="/quizzes",
@@ -113,6 +115,14 @@ def submit_quiz(quiz_id: int, submission_data: QuizSubmissionRequest, db: Sessio
         db.commit()
         db.refresh(user)
         db.refresh(submission)
+
+    if mode == "test":
+        try:
+            user = db.query(User).filter(User.user_id == user_id).first()
+            reward_user_by_action(user, RewardActionType.quiz_correct, db)
+            print("✅ 유칼립투스 보상 지급 완료 (테스트 모드)")
+        except HTTPException as e:
+            print(f"❌ 유칼립투스 보상 실패: {e.detail}")
 
     return {
         "message": "퀴즈 제출 완료",

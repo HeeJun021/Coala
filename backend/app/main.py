@@ -15,8 +15,10 @@ from app.models import (
     study_materials,
     study_example,
     question,
-    language
+    language,
 )
+
+from app.models.eucalyptus_transaction import EucalyptusTransaction
 
 # ✅ 라우터 불러오기
 from app.routers import (
@@ -47,13 +49,16 @@ from app.routers import (
     chat_upload,
     chat_download,
     gpt,
+    admin,
     project,
     erd,
     erd_detail,
     erd_log_action,
     erd_snapshot,
     erd_commit,
-    erd_sql_export
+    erd_sql_export,
+    admin_codingtest_router,
+    eucalyptus,
 )
 
 from app.schemas.user import UserUpdateSchema
@@ -119,7 +124,10 @@ app.mount("/static", StaticFiles(directory="uploaded_files"), name="static")
 # gpt
 app.include_router(gpt.router, prefix="/gpt", tags=["gpt"])
 
+#내가 관리자다.
+app.include_router(admin.router)
 app.include_router(project.router)
+app.include_router(admin_codingtest_router.router)
 
 # 프로젝트의 erd
 app.include_router(erd.router)
@@ -128,6 +136,8 @@ app.include_router(erd_log_action.router)
 app.include_router(erd_snapshot.router)
 app.include_router(erd_commit.router)
 app.include_router(erd_sql_export.router)
+
+app.include_router(eucalyptus.router)
 
 # 기본 라우트
 @app.get("/", tags=["Root"])

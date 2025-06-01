@@ -41,7 +41,6 @@ const UserQuiz = ({ userData }) => {
   // ✅ 체크박스 토글 처리
   const handleToggleMyOnly = async () => {
     const next = !myOnly;
-    console.log("🟨 체크박스 클릭됨, 다음 상태:", next);
     setMyOnly(next);
     if (next) {
       await fetchMyQuizzes();

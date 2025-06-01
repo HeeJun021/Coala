@@ -110,7 +110,9 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
             "bio": user.bio,
             "created_at": user.created_at,
             "updated_at": user.updated_at,
+            "is_admin": user.is_admin,
             "tier": {"tier_name": user.tier.tier_name} if user.tier else None,
+            "eucalyptus_balance": user.eucalyptus_balance,
         }
     
     except jwt.ExpiredSignatureError:

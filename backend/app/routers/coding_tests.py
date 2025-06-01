@@ -14,10 +14,12 @@ from app.models.coding_tests import (
     CorrectSubmissionStats,
 )
 from app.models.user import User
+from app.utils.auth import get_current_user_object 
 from app.routers.coding_test_submission import update_correct_stats
 from app.schemas.coding_tests import CodingTestSubmissionCreate
 from app.services.coding_test_case_service import get_testcases
 from app.services.code_executor import run_code_against_testcases
+from app.services.user import reward_user_by_action
 
 router = APIRouter(prefix="/codingtest", tags=["Coding Test"])
 
@@ -165,6 +167,7 @@ async def submit_coding_test(
     submission: CodingTestSubmissionCreate,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_user_object), 
 ):
     problem = db.query(CodingTests).filter(CodingTests.test_id == submission.test_id).first()
     if not problem:
@@ -175,16 +178,13 @@ async def submit_coding_test(
     passed_count = sum(1 for r in results if r["passed"])
     total_count = len(results)
     is_correct = passed_count == total_count
-    
-    # ✅ 자동 제목 지정
-    # 🔍 title 자동 생성 처리
+
+    # 🔤 자동 제출 제목 생성
     submission_count = db.query(CodingTestSubmissions).filter(
         CodingTestSubmissions.user_id == submission.user_id,
         CodingTestSubmissions.test_id == submission.test_id
     ).count()
-
     title = submission.title or f"제출 {submission_count + 1}"
-
 
     new_submission = CodingTestSubmissions(
         user_id=submission.user_id,
@@ -201,6 +201,14 @@ async def submit_coding_test(
     db.commit()
     db.refresh(new_submission)
 
+    # ✅ 정답일 경우 → 레이팅 증가만 처리
+    if is_correct:
+        user = db.query(User).filter(User.user_id == submission.user_id).first()
+        user.rating += 50  # 🎯 고정된 레이팅 증가
+        db.commit()
+        db.refresh(user)
+
+    # 📊 통계 업데이트 비동기 처리
     background_tasks.add_task(update_correct_stats, db=db, test_id=submission.test_id, is_correct=is_correct)
 
     return {
@@ -210,6 +218,7 @@ async def submit_coding_test(
         "passed_test_cases": passed_count,
         "total_test_cases": total_count,
         "all_cases": results,
+        "rating_change": 50 if is_correct else 0,
     }
 
 
@@ -273,3 +282,33 @@ def get_solved_submissions_for_test(
         })
 
     return result
+
+@router.get("/submissions/user/{user_id}")
+def get_all_coding_test_submissions_by_user(
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+    submissions = (
+        db.query(CodingTestSubmissions)
+        .filter(CodingTestSubmissions.user_id == user_id)
+        .order_by(CodingTestSubmissions.submitted_at.desc())
+        .all()
+    )
+
+    result = []
+    for sub in submissions:
+        result.append({
+            "submission_id": sub.ct_submission_id,
+            "test_id": sub.test_id,
+            "submitted_at": sub.submitted_at.strftime("%Y-%m-%d %H:%M"),
+            "language": sub.language,
+            "is_correct": sub.is_correct,
+            "memory": f"{len(sub.code.encode('utf-8'))}B",
+            "passed_test_cases": sub.passed_test_cases,
+            "total_test_cases": sub.total_test_cases,
+            "title": sub.title or "",
+            "code": sub.code,
+            "execution_result": sub.execution_result or [],
+        })
+
+    return {"submissions": result}

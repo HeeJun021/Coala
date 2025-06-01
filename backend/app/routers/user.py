@@ -3,8 +3,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User
-from app.schemas.user import UserCreate, UserResponse, UserUpdateSchema
-from app.services.user import get_user_by_id, update_user_info
+from app.schemas.user import UserCreate, UserResponse, UserUpdateSchema, ProfileImageUpdateRequest
+from app.services.user import get_user_by_id, update_user_info, update_profile_image
+from app.routers.eucalyptus import use_eucalyptus_by_action
+from app.utils.auth import get_current_user_object
 from app.utils.security import hash_password
 
 
@@ -61,3 +63,20 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": "계정이 성공적으로 삭제되었습니다."}
+
+@router.patch("/profile-image")
+def change_profile_image(
+    req: ProfileImageUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_object),
+):
+    # ✅ 화폐 사용 처리
+    use_eucalyptus_by_action(current_user, req.action, db)
+
+    # ✅ 이미지 변경 처리
+    updated_user = update_profile_image(current_user, req.image_url, db)
+
+    return {
+        "message": "프로필 이미지가 변경되었습니다.",
+        "profile_image_url": updated_user.profile_image_url
+    }
