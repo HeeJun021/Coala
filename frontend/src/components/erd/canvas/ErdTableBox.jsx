@@ -62,12 +62,25 @@ const ErdTableBox = ({
   };
 
   const handleTableFieldChange = (key, value) => {
+    // 로컬 상태만 반영
+    if (key === "tableName") setLocalName(value);
+    if (key === "description") setLocalDesc(value);
+  };
+  const handleTableFieldBlur = (key) => {
+    const value = key === "tableName" ? localName : localDesc;
+
     const updateData = generateTableUpdateData(key, value);
 
-    patchTable(erdId, id, updateData).catch((err) => {
-      console.error("테이블 수정 실패", err);
-    });
+    patchTable(erdId, id, updateData)
+      .then(() => {
+        // ✅ 스냅샷 저장
+        onSnapshotRequest?.();
+      })
+      .catch((err) => {
+        console.error("테이블 수정 실패", err);
+      });
 
+    // 업데이트된 값을 상위에도 반영
     onUpdate({
       id,
       x,
@@ -77,6 +90,7 @@ const ErdTableBox = ({
       columns: localColumns,
     });
   };
+
   const handleReorderColumns = async (from, to) => {
     if (from === to || from == null || to == null) return;
 
@@ -407,6 +421,7 @@ const ErdTableBox = ({
             setLocalName(newName);
             handleTableFieldChange("tableName", newName);
           }}
+          onBlur={() => handleTableFieldBlur("tableName")}
         />
         <input
           className="bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 text-sm placeholder:text-gray-500 h-full leading-[1.4] pl-2"
@@ -418,6 +433,7 @@ const ErdTableBox = ({
             setLocalDesc(newDesc);
             handleTableFieldChange("description", newDesc);
           }}
+          onBlur={() => handleTableFieldBlur("tableName")}
         />
       </div>
 
@@ -446,6 +462,7 @@ const ErdTableBox = ({
             isRelationMode={isAddingRelation}
             isRelationHover={isAddingRelation && hoveredColumnId === col.id}
             setHoveredColumnId={setHoveredColumnId}
+            onSnapshotRequest={onSnapshotRequest}
           />
         ))}
       </div>

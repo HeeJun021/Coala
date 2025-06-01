@@ -491,6 +491,7 @@ const ErdCanvas = ({
       ...colPosMap,
     }));
   };
+
   const handleSnapshotSaveWithColumns = useCallback(
     async (newTables, newRelations) => {
       const allColumns = newTables.flatMap((table) =>

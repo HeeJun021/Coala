@@ -19,6 +19,7 @@ const ErdColumnRow = ({
   isRelationMode,
   isRelationHover,
   setHoveredColumnId,
+  onSnapshotRequest,
 }) => {
   const [showDelete, setShowDelete] = useState(false);
   const [showPkMenu, setShowPkMenu] = useState(false);
@@ -44,16 +45,22 @@ const ErdColumnRow = ({
   };
 
   const handleInputChange = (key, value) => {
-    onChange(index, key, value);
-
+    onChange(index, key, value); // 👉 column 상태만 변경 (로컬)
+  };
+  const handleInputBlur = (key) => {
     if (!column.column_id) return;
 
-    const updateData = generateUpdateData(key, value);
+    const updateData = generateUpdateData(key, column[key]);
     if (!updateData || Object.keys(updateData).length === 0) return;
 
-    patchColumn(column.column_id, updateData).catch((err) => {
-      console.error("PATCH 실패:", err.response?.data || err);
-    });
+    patchColumn(column.column_id, updateData)
+      .then(() => {
+        // ✅ 컬럼 변경 성공 시 스냅샷 저장 요청
+        onSnapshotRequest?.();
+      })
+      .catch((err) => {
+        console.error("PATCH 실패:", err.response?.data || err);
+      });
   };
 
   const handleRightClick = (e) => {
@@ -146,6 +153,7 @@ const ErdColumnRow = ({
             placeholder="column"
             value={column.name ?? ""}
             onChange={(e) => handleInputChange("name", e.target.value)}
+            onBlur={() => handleInputBlur("name")}
           />
 
           <select
@@ -162,6 +170,7 @@ const ErdColumnRow = ({
             }}
             value={column.dataType ?? ""}
             onChange={(e) => handleInputChange("dataType", e.target.value)}
+            onBlur={() => handleInputBlur("dataType")}
           >
             <option value="" disabled className="text-gray-400">
               type
@@ -205,6 +214,7 @@ const ErdColumnRow = ({
             placeholder="default"
             value={column.defaultValue ?? ""}
             onChange={(e) => handleInputChange("defaultValue", e.target.value)}
+            onBlur={() => handleInputBlur("defaultValue")}
           />
 
           <input
@@ -220,6 +230,7 @@ const ErdColumnRow = ({
             placeholder="description"
             value={column.comment ?? ""}
             onChange={(e) => handleInputChange("comment", e.target.value)}
+            onBlur={() => handleInputBlur("comment")}
           />
         </div>
 
