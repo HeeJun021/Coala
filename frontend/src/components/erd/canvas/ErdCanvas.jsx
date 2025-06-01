@@ -319,19 +319,6 @@ const handleColumnClick = async (columnId) => {
       participation_target,
     } = selectedRelationType;
 
-    // 🧠 컬럼 좌표 기준으로 방향 반전
-    const fromX = columnPositions[source_column_id]?.left ?? 0;
-    const toX = columnPositions[target_column_id]?.left ?? 0;
-
-    if (fromX > toX) {
-      // ❗ 컬럼 좌우 위치 바뀐 경우 → FK/PK 반전
-      [source_column_id, target_column_id] = [target_column_id, source_column_id];
-      [source_table_id, target_table_id] = [target_table_id, source_table_id];
-      [participation_source, participation_target] = [
-        participation_target,
-        participation_source,
-      ];
-    }
 
     if (!source_table_id || !target_table_id) {
       alert("테이블 ID를 찾을 수 없습니다.");

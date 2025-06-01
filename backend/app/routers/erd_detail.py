@@ -265,8 +265,17 @@ def create_erd_relation(
 
         fk_col = None
         if relation.auto_create_fk:
-            target_col.is_foreign = True
-            fk_col = target_col
+            if relation.relation_type == "1:N":
+                # FK는 무조건 target 쪽에 설정
+                target_col.is_foreign = True
+                fk_col = target_col
+            else:
+                # 1:1 관계도 관행적으로 target 쪽에 FK 설정
+                target_col.is_foreign = True
+                fk_col = target_col
+
+
+
 
         db.add(new_relation)
         db.commit()
