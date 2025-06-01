@@ -7,6 +7,7 @@ import {
   createTable,
   deleteTable,
   deleteMultipleTables,
+  patchTable,
 } from "../../../api/erd/tableApi";
 import {
   createRelation,
@@ -162,7 +163,6 @@ const ErdCanvas = ({
             t.y <= y + height
         )
         .map((t) => t.id);
-
       setSelectedTableIds(selected);
 
       const getTableIdByColumnId = (columnId) => {
@@ -182,12 +182,13 @@ const ErdCanvas = ({
           return tableIdSet.has(fromTableId) && tableIdSet.has(toTableId);
         })
         .map((rel) => rel.relationId);
-
       setSelectedRelationIds(relatedRelationIds);
     }
 
-    // ✅ ✅ 테이블 이동 감지 후 스냅샷 저장
+    // ✅ 위치가 바뀐 테이블만 골라내기
     let moved = false;
+    const movedTables = [];
+
     const updatedTables = tables.map((t) => {
       const original = tablePositionsRef.current[t.id];
       if (!original) return t;
@@ -197,15 +198,29 @@ const ErdCanvas = ({
 
       if (dx !== 0 || dy !== 0) {
         moved = true;
+        movedTables.push(t); // ✅ 위치가 실제로 바뀐 테이블만 모음
       }
 
       return t;
     });
 
     if (moved) {
+      // ✅ movedTables만 patch
+      const updatePromises = movedTables.map((t) =>
+        patchTable(erdId, t.id, {
+          pos_x: Math.round(t.x),
+          pos_y: Math.round(t.y),
+        })
+      );
+      Promise.all(updatePromises).catch((err) =>
+        console.error("🛑 테이블 위치 업데이트 실패:", err)
+      );
+
+      // ✅ 전체 상태로 스냅샷 저장
       handleSnapshotSaveWithColumns(updatedTables, relations);
     }
 
+    // 초기화
     setSelectionBox(null);
     setIsDraggingSelectionBox(false);
     dragStartRef.current = null;
@@ -215,6 +230,7 @@ const ErdCanvas = ({
     setWasDraggingSelectionBox(isDraggingSelectionBox);
     setTimeout(() => setWasDraggingSelectionBox(false), 0);
   };
+
   const handleCanvasClick = async (e) => {
     if (wasDraggingSelectionBox) return;
 
