@@ -1,5 +1,6 @@
 import React from "react";
 import CommentEditor from "../components/CommentEditor";
+import UserNameWithProfile from "../components/UserNameWithProfile";
 
 const BoardDetailTemplate = ({
   boardName,
@@ -45,10 +46,15 @@ const BoardDetailTemplate = ({
 
   return (
     <div className="max-w-4xl mx-auto p-8 bg-white min-h-screen">
-      {/* 작성자 정보 */}  
-      <div className="flex items-center gap-2 mb-4 text-gray-600 text-sm">  
-        <span>작성자:</span>  
-        <span className="font-semibold">{post.author_nickname}</span>  
+      {/* 작성자 정보 */}
+      <div className="flex items-center gap-2 mb-4 text-gray-600 text-sm">
+        <span>작성자:</span>
+        {post?.author_id && (
+          <UserNameWithProfile
+            userId={post.author_id}
+            nickname={post.nickname || "작성자"}
+          />
+        )}
       </div>
 
       {/* 제목 */}
@@ -70,7 +76,6 @@ const BoardDetailTemplate = ({
           신고
         </button>
       </div>
-
 
       {/* 수정/삭제 버튼 */}
       {isAuthor && (
@@ -130,9 +135,13 @@ const BoardDetailTemplate = ({
           <ul className="space-y-4 mt-4">
             {parentComments.map((c) => (
               <li key={c.comment_id} className="border p-2 rounded-md">
-                {/* 댓글 본문 */}
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
+                    <div className="text-xs text-gray-500 mb-1">
+                      {c?.user_id && c?.nickname && (
+                        <UserNameWithProfile userId={c.user_id} nickname={c.nickname} />
+                      )}
+                    </div>
                     {editingId === c.comment_id ? (
                       <input
                         type="text"
@@ -238,6 +247,11 @@ const BoardDetailTemplate = ({
                   .filter((r) => r.parent_comment_id === c.comment_id)
                   .map((r) => (
                     <div key={r.comment_id} className="ml-6 mt-2 pl-2 border-l text-sm">
+                      <div className="text-xs text-gray-500 mb-1">
+                        {r?.user_id && r?.nickname && (
+                          <UserNameWithProfile userId={r.user_id} nickname={r.nickname} />
+                        )}
+                      </div>
                       <div className="flex justify-between">
                         {editingId === r.comment_id ? (
                           <>

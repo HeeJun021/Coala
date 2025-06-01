@@ -23,3 +23,14 @@ export async function verifyEmail(email, token) {
     const response = await apiClient.post("/auth/email/verify", { email, token });
     return response.data;
 }
+
+// ✅ 사용자 정보 조회 (닉네임, 자기소개, 등급 등)
+export const fetchUserProfile = async (userId) => {
+  try {
+    const response = await apiClient.get(`/users/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch user profile:", error);
+    throw error;
+  }
+};

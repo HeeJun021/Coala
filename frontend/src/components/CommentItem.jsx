@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import CommentForm from "./CommentForm";
+import UserNameWithProfile from "../UserNameWithProfile"; // ✅ 경로는 실제 위치에 맞게 조정하세요
 
 const CommentItem = ({ comment, onReply, onEdit, onDelete, onReport }) => {
   const [isReplying, setIsReplying] = useState(false);
@@ -11,7 +12,10 @@ const CommentItem = ({ comment, onReply, onEdit, onDelete, onReport }) => {
       {!isEditing ? (
         <div className="flex justify-between items-center bg-white p-2 rounded-md">
           <div>
-            <span className="font-medium mr-2">{comment.writer}</span>
+            <UserNameWithProfile
+              userId={comment.user_id}
+              nickname={comment.nickname || "작성자"} // ✅ 댓글 작성자 표시
+            />
             {comment.content}
           </div>
           <div className="space-x-2 text-sm text-gray-500">

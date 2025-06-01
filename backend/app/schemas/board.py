@@ -43,6 +43,7 @@ class CommentResponse(CommentBase):
     like_count: int
     created_at: datetime
     updated_at: datetime
+    nickname: Optional[str] = None  # ✅ 댓글 작성자 닉네임 추가
 
     model_config = {
         "from_attributes": True

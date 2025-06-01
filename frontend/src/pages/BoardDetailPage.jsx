@@ -7,6 +7,7 @@ import { reportBoard, reportComment } from "../api/reportApi";
 import { useAuth } from "../context/AuthContext";
 import { deleteComment } from "../api/commentApi";
 
+
 import CommonBoardDetail from "./CommonBoardDetail";
 import CodeBoardDetail from "./CodeBoardDetail";
 import ProjectBoardDetail from "./ProjectBoardDetail";
@@ -34,6 +35,7 @@ const BoardDetailPage = () => {
     const fetchPost = async () => {
       try {
         const data = await getBoardDetail(postId);
+        console.log("🟩 게시글 데이터:", data);  // ✅ 이 줄 추가
         setPost(data);
       } catch (err) {
         console.error("게시글 조회 실패:", err);

@@ -33,9 +33,12 @@ def get_posts(
     return board_service.get_posts(board_type, page, page_size, sort_order, db)
 
 # ✅ 게시글 단건 조회
-@router.get("/post/{post_id}", response_model=PostResponse)
+@router.get("/post/{post_id}")
 def get_post(post_id: int, db: Session = Depends(get_db)):
-    return board_service.get_post(post_id, db)
+    post = board_service.get_post(post_id, db)
+    if not post:
+        raise HTTPException(status_code=404, detail="게시글을 찾을 수 없습니다.")
+    return post
 
 # ✅ 게시글 수정
 @router.put("/post/{post_id}", response_model=PostResponse)
