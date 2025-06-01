@@ -67,15 +67,17 @@ const ErdCanvas = ({
   const dragStartRef = useRef(null);
   const dragOriginRef = useRef(null);
   const tablePositionsRef = useRef({});
+
+  // 🧱 1. 드래그 시작
   const handleMouseDown = (e) => {
     if (e.button !== 0 || isToolDragging) return;
 
     const rect = canvasRef.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left - panOffset.x) / zoomLevel;
-    const y = (e.clientY - rect.top - panOffset.y) / zoomLevel;
+    const mouseX = (e.clientX - rect.left - panOffset.x) / zoomLevel;
+    const mouseY = (e.clientY - rect.top - panOffset.y) / zoomLevel;
 
-    dragStartRef.current = { x, y };
-    dragOriginRef.current = { x, y };
+    dragStartRef.current = { x: mouseX, y: mouseY };
+    dragOriginRef.current = { x: mouseX, y: mouseY };
 
     tablePositionsRef.current = {};
     selectedTableIds.forEach((id) => {
@@ -85,8 +87,9 @@ const ErdCanvas = ({
       }
     });
 
-    setSelectionBox({ x, y, width: 0, height: 0 });
+    setSelectionBox({ x: mouseX, y: mouseY, width: 0, height: 0 });
   };
+
   const handleMouseMove = (e) => {
     if (!dragStartRef.current || isToolDragging) return;
 
@@ -261,132 +264,129 @@ const ErdCanvas = ({
   const handlePanMouseUp = () => {
     setIsPanning(false);
   };
-const handleColumnClick = async (columnId) => {
-  if (!isAddingRelation || !selectedRelationType) return;
+  const handleColumnClick = async (columnId) => {
+    if (!isAddingRelation || !selectedRelationType) return;
 
-  if (!pendingFromColumnId) {
-    setPendingFromColumnId(columnId);
-    return;
-  }
-
-  // 🔍 첫 번째 클릭한 컬럼이 PK가 아닐 경우 자동 설정
-  const fromTable = tables.find((table) =>
-    table.columns.some((col) => col.column_id === pendingFromColumnId)
-  );
-  const fromColumn = fromTable?.columns.find(
-    (col) => col.column_id === pendingFromColumnId
-  );
-
-  if (fromColumn && !fromColumn.isPrimaryKey) {
-    try {
-      await setColumnPrimaryKey(pendingFromColumnId, true);
-      setTables((prev) =>
-        prev.map((table) => {
-          if (table.id !== fromTable.id) return table;
-          return {
-            ...table,
-            columns: table.columns.map((col) =>
-              col.column_id === pendingFromColumnId
-                ? { ...col, isPrimaryKey: true }
-                : col
-            ),
-          };
-        })
-      );
-    } catch (err) {
-      console.error("PK 자동 설정 실패:", err);
-    }
-  }
-
-  try {
-    const getTableIdByColumnId = (colId) => {
-      for (const table of tables) {
-        if (table.columns.some((col) => col.column_id === colId)) {
-          return table.id;
-        }
-      }
-      return null;
-    };
-
-    let source_column_id = pendingFromColumnId;
-    let target_column_id = columnId;
-    let source_table_id = getTableIdByColumnId(source_column_id);
-    let target_table_id = getTableIdByColumnId(target_column_id);
-
-    let {
-      relation_type,
-      participation_source,
-      participation_target,
-    } = selectedRelationType;
-
-
-    if (!source_table_id || !target_table_id) {
-      alert("테이블 ID를 찾을 수 없습니다.");
+    if (!pendingFromColumnId) {
+      setPendingFromColumnId(columnId);
       return;
     }
 
-    // ✅ 백엔드 명세에 맞게 구성
-    const relationData = {
-      source_table_id,
-      source_column_id,
-      target_table_id,
-      target_column_id,
-      relation_type, // "1:1" or "1:N"
-      participation_source,
-      participation_target,
-      auto_create_fk: true,
-      cascade_delete: false,
-    };
+    // 🔍 첫 번째 클릭한 컬럼이 PK가 아닐 경우 자동 설정
+    const fromTable = tables.find((table) =>
+      table.columns.some((col) => col.column_id === pendingFromColumnId)
+    );
+    const fromColumn = fromTable?.columns.find(
+      (col) => col.column_id === pendingFromColumnId
+    );
 
-    const created = await createRelation(erdId, relationData);
-
-    if (created.fk_column) {
-      const fk = created.fk_column;
-      setTables((prev) =>
-        prev.map((table) => {
-          if (table.id !== fk.table_id) return table;
-          return {
-            ...table,
-            columns: table.columns.map((col) =>
-              col.column_id === fk.column_id
-                ? { ...col, isForeignKey: true }
-                : col
-            ),
-          };
-        })
-      );
+    if (fromColumn && !fromColumn.isPrimaryKey) {
+      try {
+        await setColumnPrimaryKey(pendingFromColumnId, true);
+        setTables((prev) =>
+          prev.map((table) => {
+            if (table.id !== fromTable.id) return table;
+            return {
+              ...table,
+              columns: table.columns.map((col) =>
+                col.column_id === pendingFromColumnId
+                  ? { ...col, isPrimaryKey: true }
+                  : col
+              ),
+            };
+          })
+        );
+      } catch (err) {
+        console.error("PK 자동 설정 실패:", err);
+      }
     }
 
-    // 🧠 렌더링용 변환
-    const relationVisual = relation_type === "1:N"
-      ? { relation_left: "bar", relation_right: "crow" }
-      : { relation_left: "bar", relation_right: "bar" };
+    try {
+      const getTableIdByColumnId = (colId) => {
+        for (const table of tables) {
+          if (table.columns.some((col) => col.column_id === colId)) {
+            return table.id;
+          }
+        }
+        return null;
+      };
 
-    const newRelation = {
-      relationId: created.relation_id,
-      fromColumnId: created.source_column_id,
-      toColumnId: created.target_column_id,
-      participation_left: created.participation_source,
-      relation_left: relationVisual.relation_left,
-      relation_right: relationVisual.relation_right,
-      participation_right: created.participation_target,
-    };
+      let source_column_id = pendingFromColumnId;
+      let target_column_id = columnId;
+      let source_table_id = getTableIdByColumnId(source_column_id);
+      let target_table_id = getTableIdByColumnId(target_column_id);
 
-    const updatedRelations = [...relations, newRelation];
-    setRelations(updatedRelations);
+      let { relation_type, participation_source, participation_target } =
+        selectedRelationType;
 
-    await handleSnapshotSaveWithColumns(tables, updatedRelations);
-  } catch (err) {
-    console.error("❌ 관계 생성 실패:", err.response?.data || err);
-    alert("관계 생성 중 오류가 발생했습니다.");
-  }
+      if (!source_table_id || !target_table_id) {
+        alert("테이블 ID를 찾을 수 없습니다.");
+        return;
+      }
 
-  setIsAddingRelation(false);
-  setSelectedRelationType(null);
-  setPendingFromColumnId(null);
-};
+      // ✅ 백엔드 명세에 맞게 구성
+      const relationData = {
+        source_table_id,
+        source_column_id,
+        target_table_id,
+        target_column_id,
+        relation_type, // "1:1" or "1:N"
+        participation_source,
+        participation_target,
+        auto_create_fk: true,
+        cascade_delete: false,
+      };
 
+      const created = await createRelation(erdId, relationData);
 
+      if (created.fk_column) {
+        const fk = created.fk_column;
+        setTables((prev) =>
+          prev.map((table) => {
+            if (table.id !== fk.table_id) return table;
+            return {
+              ...table,
+              columns: table.columns.map((col) =>
+                col.column_id === fk.column_id
+                  ? { ...col, isForeignKey: true }
+                  : col
+              ),
+            };
+          })
+        );
+      }
+
+      // 🧠 렌더링용 변환
+      const relationVisual =
+        relation_type === "1:N"
+          ? { relation_left: "bar", relation_right: "crow" }
+          : { relation_left: "bar", relation_right: "bar" };
+
+      const newRelation = {
+        relationId: created.relation_id,
+        fromColumnId: created.source_column_id,
+        toColumnId: created.target_column_id,
+        participation_left: created.participation_source,
+        relation_left: relationVisual.relation_left,
+        relation_right: relationVisual.relation_right,
+        participation_right: created.participation_target,
+      };
+
+      const updatedRelations = [...relations, newRelation];
+      setRelations(updatedRelations);
+
+      await handleSnapshotSaveWithColumns(tables, updatedRelations);
+    } catch (err) {
+      console.error("❌ 관계 생성 실패:", err.response?.data || err);
+      alert("관계 생성 중 오류가 발생했습니다.");
+    }
+
+    setIsAddingRelation(false);
+    setSelectedRelationType(null);
+    setPendingFromColumnId(null);
+  };
+
+  // 🧱 2. 선택된 테이블 일괄 이동
   const handleBatchUpdateTablePosition = (movedTableId, mouseX, mouseY) => {
     if (!dragOriginRef.current || !tablePositionsRef.current) return;
 
@@ -396,18 +396,16 @@ const handleColumnClick = async (columnId) => {
     setTables((prevTables) =>
       prevTables.map((t) => {
         if (selectedTableIds.includes(t.id)) {
-          const original = tablePositionsRef.current[t.id];
-          if (!original) return t;
-          return {
-            ...t,
-            x: original.x + deltaX,
-            y: original.y + deltaY,
-          };
+          const origin = tablePositionsRef.current[t.id];
+          return origin
+            ? { ...t, x: origin.x + deltaX, y: origin.y + deltaY }
+            : t;
         }
         return t;
       })
     );
   };
+
   const handleDeleteTable = useCallback(
     async (id) => {
       try {
@@ -549,10 +547,10 @@ const handleColumnClick = async (columnId) => {
     const handleUpdateOrigin = (e) => {
       const { mouseX, mouseY } = e.detail;
       const rect = canvasRef.current.getBoundingClientRect();
-      const x = mouseX - rect.left;
-      const y = mouseY - rect.top;
-
-      dragOriginRef.current = { x, y };
+      dragOriginRef.current = {
+        x: (mouseX - rect.left - panOffset.x) / zoomLevel,
+        y: (mouseY - rect.top - panOffset.y) / zoomLevel,
+      };
 
       tablePositionsRef.current = {};
       selectedTableIds.forEach((id) => {
@@ -567,7 +565,8 @@ const handleColumnClick = async (columnId) => {
     return () => {
       window.removeEventListener("update-drag-origin", handleUpdateOrigin);
     };
-  }, [tables, selectedTableIds]);
+  }, [tables, selectedTableIds, panOffset.x, panOffset.y, zoomLevel]);
+
   useEffect(() => {
     window.addEventListener("mouseup", handlePanMouseUp);
     return () => window.removeEventListener("mouseup", handlePanMouseUp);

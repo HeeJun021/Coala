@@ -148,13 +148,14 @@ const ErdTableBox = ({
   }, [id, x, y, localName, localDesc, localColumns, onUpdate]);
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (onColumnPositionUpdate) {
-        onColumnPositionUpdate(id, { ...columnPositionsRef.current });
-      }
-    }, 100);
-    return () => clearTimeout(timeout);
-  }, [id, onColumnPositionUpdate]);
+  const timeout = setTimeout(() => {
+    if (onColumnPositionUpdate) {
+      onColumnPositionUpdate(id, { ...columnPositionsRef.current });
+    }
+  }, 100);
+  return () => clearTimeout(timeout);
+}, [id, onColumnPositionUpdate, panOffset.x, panOffset.y, zoom]);
+
   const handleMouseDown = (e) => {
     if (!e.ctrlKey && !isSelected) {
       window.dispatchEvent(
@@ -185,15 +186,16 @@ const ErdTableBox = ({
     const handleMouseMove = (e) => {
       if (!draggingRef.current) return;
 
-      const parentRect = tableRef.current.parentElement.getBoundingClientRect();
-      const newX = e.clientX - parentRect.left - offsetRef.current.x;
-      const newY = e.clientY - parentRect.top - offsetRef.current.y;
+      const canvasRect = document
+        .getElementById("erd-canvas")
+        ?.getBoundingClientRect();
+      if (!canvasRect) return;
 
-      // ✅ 실시간 컬럼 위치 재계산 + 즉시 전송
+      const adjustedX = (e.clientX - canvasRect.left - panOffset.x) / zoom;
+      const adjustedY = (e.clientY - canvasRect.top - panOffset.y) / zoom;
+
+      // ✅ 실시간 컬럼 좌표 계산 유지
       if (tableRef.current) {
-        const canvasRect = document
-          .getElementById("erd-canvas")
-          ?.getBoundingClientRect();
         const tableRect = tableRef.current.getBoundingClientRect();
         const columnElements =
           tableRef.current.querySelectorAll("[data-column-id]");
@@ -201,9 +203,7 @@ const ErdTableBox = ({
         columnElements.forEach((el) => {
           const colId = el.getAttribute("data-column-id");
           const rect = el.getBoundingClientRect();
-          if (!canvasRect) return;
 
-          // ✅ transform 보정
           const adjustedLeft =
             (tableRect.left - canvasRect.left - panOffset.x) / zoom;
           const adjustedRight =
@@ -223,12 +223,17 @@ const ErdTableBox = ({
         }
       }
 
-      // ✅ 위치 갱신
+      // ✅ 선택된 경우 보정된 좌표 전달
+      // ✅ 선택된 테이블은 직접 움직이지 않음
       if (isSelected && onDragMove) {
-        const mouseX = e.clientX - parentRect.left;
-        const mouseY = e.clientY - parentRect.top;
-        onDragMove(mouseX, mouseY);
+        onDragMove(adjustedX, adjustedY);
       } else {
+        // 선택되지 않은 테이블만 독립적으로 이동
+        const parentRect =
+          tableRef.current.parentElement.getBoundingClientRect();
+        const newX = e.clientX - parentRect.left - offsetRef.current.x;
+        const newY = e.clientY - parentRect.top - offsetRef.current.y;
+
         onUpdate({
           id,
           x: newX,

@@ -22,25 +22,32 @@ const ErdRelationLine = ({
   const strokeWidth = isSelected ? 2.5 : 1.5;
   const circleStrokeWidth = isSelected ? 2.5 : 1.5;
 
-  const isLeftToRight = fromColumn.left < toColumn.left;
-  const stubLength = 40;
+  // 항상 화면상 좌 → 우로 선을 보이도록 강제 렌더링 보정
+const isLeftToRightVisual = fromColumn.left < toColumn.left;
 
-  const fromStubEndX = isLeftToRight
-    ? fromColumn.right + stubLength
-    : fromColumn.left - stubLength;
+const visualFrom = isLeftToRightVisual ? fromColumn : toColumn;
+const visualTo = isLeftToRightVisual ? toColumn : fromColumn;
 
-  const toStubEndX = isLeftToRight
-    ? toColumn.left - stubLength
-    : toColumn.right + stubLength;
+const from = {
+  x: visualFrom.right,
+  y: visualFrom.y,
+};
+const to = {
+  x: visualTo.left,
+  y: visualTo.y,
+};
 
-  const from = {
-    x: isLeftToRight ? fromColumn.right : fromColumn.left,
-    y: fromColumn.y,
-  };
-  const to = {
-    x: isLeftToRight ? toColumn.left : toColumn.right,
-    y: toColumn.y,
-  };
+const stubLength = 40;
+const fromStubEndX = from.x + stubLength;
+const toStubEndX = to.x - stubLength;
+
+// 렌더링용 참여도/기호 방향도 정렬
+const participationLeft = isLeftToRightVisual ? participation_left : participation_right;
+const participationRight = isLeftToRightVisual ? participation_right : participation_left;
+
+const relationLeft = isLeftToRightVisual ? relation_left : relation_right;
+const relationRight = isLeftToRightVisual ? relation_right : relation_left;
+
 
   const getRelationSymbol = (type, x, y, isLeft) => {
     if (type === "bar") {
@@ -158,28 +165,28 @@ const ErdRelationLine = ({
       />
 
 {getRelationSymbol(
-  relation_left,
-  from.x + (from.x < to.x ? 10 : -10), // 논리 방향 기준 위치 보정
+  relationLeft,
+  from.x + 10,
   from.y,
-  from.x < to.x // 방향 감안
+  true
 )}
-
 {getParticipationSymbol(
-  participation_left,
-  from.x + (from.x < to.x ? 13 : -20),
+  participationLeft,
+  from.x + 15,
   from.y
 )}
 {getParticipationSymbol(
-  participation_right,
-  to.x + (to.x < from.x ? 13 : -20), // 반대 방향 보정
+  participationRight,
+  to.x - 22,
   to.y
 )}
 {getRelationSymbol(
-  relation_right,
-  to.x + (to.x < from.x ? 10 : -10),
+  relationRight,
+  to.x - 10,
   to.y,
-  to.x < from.x
+  false
 )}
+
     </svg>
   );
 };
