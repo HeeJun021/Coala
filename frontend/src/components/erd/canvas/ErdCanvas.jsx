@@ -393,17 +393,59 @@ const ErdCanvas = ({
     const deltaX = mouseX - dragOriginRef.current.x;
     const deltaY = mouseY - dragOriginRef.current.y;
 
-    setTables((prevTables) =>
-      prevTables.map((t) => {
-        if (selectedTableIds.includes(t.id)) {
-          const origin = tablePositionsRef.current[t.id];
-          return origin
-            ? { ...t, x: origin.x + deltaX, y: origin.y + deltaY }
-            : t;
-        }
-        return t;
-      })
-    );
+    const updatedTables = tables.map((t) => {
+      if (selectedTableIds.includes(t.id)) {
+        const origin = tablePositionsRef.current[t.id];
+        return origin
+          ? { ...t, x: origin.x + deltaX, y: origin.y + deltaY }
+          : t;
+      }
+      return t;
+    });
+
+    setTables(updatedTables);
+
+    // ✅ 💡 여기서 컬럼 좌표도 직접 강제로 갱신
+    setTimeout(() => {
+      const canvasRect = canvasRef.current?.getBoundingClientRect();
+      if (!canvasRect) return;
+
+      const updatedPositions = {};
+
+      updatedTables.forEach((table) => {
+        if (!selectedTableIds.includes(table.id)) return;
+        const tableBox = document.querySelector(
+          `.erd-table-box[data-id='${table.id}']`
+        );
+        if (!tableBox) return;
+
+        const columnEls = tableBox.querySelectorAll("[data-column-id]");
+        const tableRect = tableBox.getBoundingClientRect();
+
+        columnEls.forEach((el) => {
+          const colId = el.getAttribute("data-column-id");
+          const colRect = el.getBoundingClientRect();
+          const adjustedLeft =
+            (tableRect.left - canvasRect.left - panOffset.x) / zoomLevel;
+          const adjustedRight =
+            (tableRect.right - canvasRect.left - panOffset.x) / zoomLevel;
+          const adjustedY =
+            (colRect.top - canvasRect.top - panOffset.y + colRect.height / 2) /
+            zoomLevel;
+
+          updatedPositions[colId] = {
+            left: adjustedLeft,
+            right: adjustedRight,
+            y: adjustedY,
+          };
+        });
+      });
+
+      setColumnPositions((prev) => ({
+        ...prev,
+        ...updatedPositions,
+      }));
+    }, 0);
   };
 
   const handleDeleteTable = useCallback(

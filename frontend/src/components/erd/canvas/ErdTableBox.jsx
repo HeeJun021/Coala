@@ -249,9 +249,12 @@ const ErdTableBox = ({
       draggingRef.current = false;
 
       if (isSelected && x !== undefined && y !== undefined) {
-        patchTable(erdId, id, { pos_x: x, pos_y: y }).catch((err) => {
-          console.error("🛑 테이블 위치 저장 실패:", err);
-        });
+  patchTable(erdId, id, {
+    pos_x: Math.round(x),
+    pos_y: Math.round(y),
+  }).catch((err) => {
+    console.error("🛑 테이블 위치 저장 실패:", err);
+  });
 
         if (onSnapshotRequest) {
           onSnapshotRequest();
@@ -337,6 +340,7 @@ const ErdTableBox = ({
       className={`erd-table-box absolute bg-[#1e1e2e] text-white border border-blue-400 rounded-md shadow-md w-[480px] px-3 py-2 select-none ${
         isSelected ? "ring-2 ring-yellow-300" : ""
       }`}
+      data-id={id}
       style={{ top: y, left: x }}
       onClick={(e) => {
         e.stopPropagation();
