@@ -186,6 +186,26 @@ const ErdCanvas = ({
       setSelectedRelationIds(relatedRelationIds);
     }
 
+    // ✅ ✅ 테이블 이동 감지 후 스냅샷 저장
+    let moved = false;
+    const updatedTables = tables.map((t) => {
+      const original = tablePositionsRef.current[t.id];
+      if (!original) return t;
+
+      const dx = Math.round(t.x) - Math.round(original.x);
+      const dy = Math.round(t.y) - Math.round(original.y);
+
+      if (dx !== 0 || dy !== 0) {
+        moved = true;
+      }
+
+      return t;
+    });
+
+    if (moved) {
+      handleSnapshotSaveWithColumns(updatedTables, relations);
+    }
+
     setSelectionBox(null);
     setIsDraggingSelectionBox(false);
     dragStartRef.current = null;
@@ -509,7 +529,8 @@ const ErdCanvas = ({
           updatedTables = tables.filter(
             (t) => !selectedTableIds.includes(t.id)
           );
-          setTables(updatedTables);
+
+          // ❌ 여기서 setTables 하지 말고 아래에서 한 번만
           setSelectedTableIds([]);
           changed = true;
         } catch (err) {
@@ -529,18 +550,18 @@ const ErdCanvas = ({
           try {
             await deleteMultipleRelations(erdId, serverRelationIds);
 
-            // ✅ FK 해제 처리
-            serverRelationIds.forEach((relationId) => {
+            // ✅ FK 해제 처리 (수정된 부분)
+            for (const relationId of serverRelationIds) {
               const deleted = relations.find(
                 (r) => r.relationId === relationId
               );
               if (deleted?.toColumnId) {
-                // 1) 서버에 isForeignKey false 요청
-                unsetForeignKey(deleted.toColumnId).catch((err) =>
-                  console.error("❌ FK 해제 실패:", err)
-                );
+                try {
+                  await unsetForeignKey(deleted.toColumnId); // ✅ FK 해제 대기
+                } catch (err) {
+                  console.error("❌ FK 해제 실패:", err);
+                }
 
-                // 2) 프론트 테이블 상태도 수정
                 updatedTables = updatedTables.map((table) => ({
                   ...table,
                   columns: table.columns.map((col) =>
@@ -550,15 +571,14 @@ const ErdCanvas = ({
                   ),
                 }));
               }
-            });
+            }
 
             updatedRelations = relations.filter(
               (r) => !selectedRelationIds.includes(r.relationId)
             );
-            setRelations(updatedRelations);
+
             setSelectedRelationIds([]);
             setSelectedRelationId(null);
-            setTables(updatedTables); // FK 반영된 테이블 상태 반영
             changed = true;
           } catch (err) {
             console.error("관계 삭제 실패:", err);
@@ -567,8 +587,12 @@ const ErdCanvas = ({
         }
       }
 
+      // ✅ 상태 변경된 경우에만 스냅샷 먼저 저장한 후 상태 반영
       if (changed) {
+        console.log("📸 스냅샷 저장 시작");
         handleSnapshotSaveWithColumns(updatedTables, updatedRelations);
+        setTables(updatedTables);
+        setRelations(updatedRelations);
       }
     };
 
@@ -590,8 +614,8 @@ const ErdCanvas = ({
       const { mouseX, mouseY } = e.detail;
       const rect = canvasRef.current.getBoundingClientRect();
       dragOriginRef.current = {
-        x: (mouseX - rect.left - panOffset.x) / zoomLevel,
-        y: (mouseY - rect.top - panOffset.y) / zoomLevel,
+        x: Math.round((mouseX - rect.left - panOffset.x) / zoomLevel),
+        y: Math.round((mouseY - rect.top - panOffset.y) / zoomLevel),
       };
 
       tablePositionsRef.current = {};
@@ -736,6 +760,7 @@ const ErdCanvas = ({
             }
             zoom={zoomLevel}
             panOffset={panOffset}
+            tablePositionsRef={tablePositionsRef}
           />
         ))}
 

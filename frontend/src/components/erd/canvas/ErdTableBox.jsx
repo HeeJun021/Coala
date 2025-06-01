@@ -31,6 +31,7 @@ const ErdTableBox = ({
   isAddingRelation,
   hoveredColumnId,
   setHoveredColumnId,
+  tablePositionsRef,
 }) => {
   // 🧱 테이블 기본 정보 (로컬)
   const [localName, setLocalName] = useState(tableName || "");
@@ -148,13 +149,13 @@ const ErdTableBox = ({
   }, [id, x, y, localName, localDesc, localColumns, onUpdate]);
 
   useEffect(() => {
-  const timeout = setTimeout(() => {
-    if (onColumnPositionUpdate) {
-      onColumnPositionUpdate(id, { ...columnPositionsRef.current });
-    }
-  }, 100);
-  return () => clearTimeout(timeout);
-}, [id, onColumnPositionUpdate, panOffset.x, panOffset.y, zoom]);
+    const timeout = setTimeout(() => {
+      if (onColumnPositionUpdate) {
+        onColumnPositionUpdate(id, { ...columnPositionsRef.current });
+      }
+    }, 100);
+    return () => clearTimeout(timeout);
+  }, [id, onColumnPositionUpdate, panOffset.x, panOffset.y, zoom]);
 
   const handleMouseDown = (e) => {
     if (!e.ctrlKey && !isSelected) {
@@ -248,17 +249,25 @@ const ErdTableBox = ({
     const handleMouseUp = () => {
       draggingRef.current = false;
 
-      if (isSelected && x !== undefined && y !== undefined) {
-  patchTable(erdId, id, {
-    pos_x: Math.round(x),
-    pos_y: Math.round(y),
-  }).catch((err) => {
-    console.error("🛑 테이블 위치 저장 실패:", err);
-  });
+      const prev = tablePositionsRef?.current?.[id];
+      const hasMoved =
+        prev &&
+        (Math.round(prev.x) !== Math.round(x) ||
+          Math.round(prev.y) !== Math.round(y));
+
+      if (isSelected && hasMoved) {
+        patchTable(erdId, id, {
+          pos_x: Math.round(x),
+          pos_y: Math.round(y),
+        }).catch((err) => {
+          console.error("🛑 테이블 위치 저장 실패:", err);
+        });
 
         if (onSnapshotRequest) {
           onSnapshotRequest();
         }
+
+        // ✅ 이동 후 좌표 업데이트까지는 중앙(ErdCanvas)에서 따로 처리됨
       }
     };
 
@@ -284,30 +293,38 @@ const ErdTableBox = ({
     zoom,
     panOffset.x,
     panOffset.y,
+    tablePositionsRef,
   ]);
 
   const handleAddColumn = async () => {
     try {
       const newColumn = await createColumn(id); // id = 테이블 ID
 
-      setLocalColumns((prev) => [
-        ...prev,
-        {
-          ...newColumn,
-          id: newColumn.column_id ?? `temp-${Date.now()}`, // fallback ID
-          name: newColumn.name || "",
-          dataType: newColumn.data_type || "",
-          isNullable: !newColumn.is_not_null,
-          isPrimaryKey: newColumn.is_primary,
-          defaultValue: newColumn.default_value || "",
-          comment: newColumn.description || "",
-        },
-      ]);
+      setLocalColumns((prev) => {
+        const updated = [
+          ...prev,
+          {
+            ...newColumn,
+            id: newColumn.column_id ?? `temp-${Date.now()}`, // fallback ID
+            name: newColumn.name || "",
+            dataType: newColumn.data_type || "",
+            isNullable: !newColumn.is_not_null,
+            isPrimaryKey: newColumn.is_primary,
+            defaultValue: newColumn.default_value || "",
+            comment: newColumn.description || "",
+          },
+        ];
+
+        // ✅ 스냅샷 저장
+        onSnapshotRequest?.();
+        return updated;
+      });
     } catch (err) {
       console.error("컬럼 생성 실패:", err);
       alert("컬럼 생성 중 오류가 발생했습니다.");
     }
   };
+
   const handleColumnChange = (index, key, value) => {
     const updated = [...localColumns];
     updated[index][key] = value;
@@ -328,12 +345,19 @@ const ErdTableBox = ({
 
     try {
       await deleteColumn(columnId);
-      setLocalColumns((prev) => prev.filter((_, i) => i !== index));
+      setLocalColumns((prev) => {
+        const updated = prev.filter((_, i) => i !== index);
+
+        // ✅ 스냅샷 저장
+        onSnapshotRequest?.();
+        return updated;
+      });
     } catch (err) {
       console.error("컬럼 삭제 실패:", err);
       alert("컬럼 삭제 중 오류가 발생했습니다.");
     }
   };
+
   return (
     <div
       ref={tableRef}
@@ -363,7 +387,10 @@ const ErdTableBox = ({
           <FaPlus size={12} />
         </button>
         <button
-          onClick={onDelete}
+          onClick={async () => {
+            await onDelete?.(); // ❗ 삭제 완료 대기
+            onSnapshotRequest?.(); // ✅ 삭제된 이후 스냅샷 저장
+          }}
           className="text-white hover:text-red-400 text-sm"
         >
           <FaTimes size={12} />
