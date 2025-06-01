@@ -57,3 +57,8 @@ export const getCorrectSolutions = async (testId) => {
   const res = await apiClient.get(`/codingtest/solutions/${testId}`);
   return res.data;
 };
+
+export const getAllSubmissionsByUser = async (userId) => {
+  const res = await apiClient.get(`/codingtest/submissions/user/${userId}`);
+  return res.data;
+};

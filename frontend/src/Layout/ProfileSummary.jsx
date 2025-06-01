@@ -1,7 +1,6 @@
 import React from 'react';
 
 const ProfileSummary = ({ profile_image_url, nickname, eucalyptus_balance }) => {
-    console.log("🔍 ProfileSummary Props:", { profile_image_url, nickname, eucalyptus_balance });
 
     return (
         <div className="bg-white p-4 rounded-md shadow-md flex flex-col items-center space-y-2">

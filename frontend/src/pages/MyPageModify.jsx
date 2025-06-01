@@ -10,8 +10,6 @@ const MyPageModify = () => {
     const { userData, setUserData } = useOutletContext();
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
 
-    console.log("MyPageModify.js → userData:", userData);
-
     const handleDeleteAccount = async () => {
         if (!window.confirm("정말로 계정을 삭제하시겠습니까?")) {
             return;

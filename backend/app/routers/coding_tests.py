@@ -282,3 +282,33 @@ def get_solved_submissions_for_test(
         })
 
     return result
+
+@router.get("/submissions/user/{user_id}")
+def get_all_coding_test_submissions_by_user(
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+    submissions = (
+        db.query(CodingTestSubmissions)
+        .filter(CodingTestSubmissions.user_id == user_id)
+        .order_by(CodingTestSubmissions.submitted_at.desc())
+        .all()
+    )
+
+    result = []
+    for sub in submissions:
+        result.append({
+            "submission_id": sub.ct_submission_id,
+            "test_id": sub.test_id,
+            "submitted_at": sub.submitted_at.strftime("%Y-%m-%d %H:%M"),
+            "language": sub.language,
+            "is_correct": sub.is_correct,
+            "memory": f"{len(sub.code.encode('utf-8'))}B",
+            "passed_test_cases": sub.passed_test_cases,
+            "total_test_cases": sub.total_test_cases,
+            "title": sub.title or "",
+            "code": sub.code,
+            "execution_result": sub.execution_result or [],
+        })
+
+    return {"submissions": result}

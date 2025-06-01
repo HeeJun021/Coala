@@ -49,6 +49,7 @@ import MyPageModify from "./pages/MyPageModify";
 import MyPageSetting from "./pages/MyPageSetting";
 import MyPageQuizHistory from "./pages/MyPageQuizHistory";
 import MyPageUserQuizHistory from "./pages/MyPageUserQuizHistory";
+import MyPageCTHistory from "./pages/MyPageCTHistory";
 
 // 인증
 import Signup from "./pages/Signup";
@@ -197,6 +198,7 @@ const App = () => {
                     <Route path="setting" element={<MyPageSetting />} />
                     <Route path="quiz-history" element={<MyPageQuizHistory />} />
                     <Route path="userquiz-history" element={<MyPageUserQuizHistory />} />
+                    <Route path="codingtest" element={<MyPageCTHistory />} />
                   </Route>
 
                   <Route path="/team-project" element={<TeamProjectPage />} />
