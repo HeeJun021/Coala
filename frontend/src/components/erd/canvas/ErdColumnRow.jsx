@@ -20,6 +20,8 @@ const ErdColumnRow = ({
   isRelationHover,
   setHoveredColumnId,
   onSnapshotRequest,
+  isAddingRelation,
+  originalColumn
 }) => {
   const [showDelete, setShowDelete] = useState(false);
   const [showPkMenu, setShowPkMenu] = useState(false);
@@ -48,20 +50,34 @@ const ErdColumnRow = ({
     onChange(index, key, value); // 👉 column 상태만 변경 (로컬)
   };
   const handleInputBlur = (key) => {
-    if (!column.column_id) return;
+  if (isAddingRelation) {
+    console.log("⛔ 관계 생성 중: 스냅샷 저장 생략");
+    return;
+  }
 
-    const updateData = generateUpdateData(key, column[key]);
-    if (!updateData || Object.keys(updateData).length === 0) return;
+  if (!column.column_id) return;
 
-    patchColumn(column.column_id, updateData)
-      .then(() => {
-        // ✅ 컬럼 변경 성공 시 스냅샷 저장 요청
-        onSnapshotRequest?.();
-      })
-      .catch((err) => {
-        console.error("PATCH 실패:", err.response?.data || err);
-      });
-  };
+  // ✅ 원래 값과 비교하여 변경 없으면 요청 생략
+  const currentValue = column[key];
+  const originalValue = originalColumn?.[key];
+
+  if (currentValue === originalValue) {
+    console.log("⚠️ 변경 없음: PATCH 생략");
+    return;
+  }
+
+  const updateData = generateUpdateData(key, currentValue);
+  if (!updateData || Object.keys(updateData).length === 0) return;
+
+  patchColumn(column.column_id, updateData)
+    .then(() => {
+      onSnapshotRequest?.();
+    })
+    .catch((err) => {
+      console.error("PATCH 실패:", err.response?.data || err);
+    });
+};
+
 
   const handleRightClick = (e) => {
     e.preventDefault();

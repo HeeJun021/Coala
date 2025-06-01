@@ -37,6 +37,17 @@ const ErdTableBox = ({
   const [localName, setLocalName] = useState(tableName || "");
   const [localDesc, setLocalDesc] = useState(description || "");
   const [localColumns, setLocalColumns] = useState(() => columns || []);
+  const [originalColumns] = useState(() => columns || []); // ✅ 스냅샷 기준값
+
+  // ✅ 여기에 추가
+  useEffect(() => {
+    setLocalName(tableName || "");
+  }, [tableName]);
+
+  useEffect(() => {
+    setLocalDesc(description || "");
+  }, [description]);
+
   useEffect(() => {
     setLocalColumns(columns || []);
   }, [columns]);
@@ -433,7 +444,7 @@ const ErdTableBox = ({
             setLocalDesc(newDesc);
             handleTableFieldChange("description", newDesc);
           }}
-          onBlur={() => handleTableFieldBlur("tableName")}
+          onBlur={() => handleTableFieldBlur("description")}
         />
       </div>
 
@@ -442,6 +453,7 @@ const ErdTableBox = ({
           <ErdColumnRow
             key={`col-${col.id ?? index}`}
             column={col}
+            originalColumn={originalColumns.find((c) => c.id === col.id)}
             index={index}
             onChange={handleColumnChange}
             onDelete={handleDeleteColumn}
@@ -463,6 +475,8 @@ const ErdTableBox = ({
             isRelationHover={isAddingRelation && hoveredColumnId === col.id}
             setHoveredColumnId={setHoveredColumnId}
             onSnapshotRequest={onSnapshotRequest}
+            isAddingRelation={isAddingRelation}
+
           />
         ))}
       </div>

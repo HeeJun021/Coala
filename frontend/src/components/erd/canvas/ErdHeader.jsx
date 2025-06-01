@@ -92,11 +92,11 @@ const ErdHeader = ({
           relationId: r.relation_id,
           fromColumnId: r.source_column_id,
           toColumnId: r.target_column_id,
-          participation_left: r.participation_left,
-          relation_left: r.relation_left,
-          relation_right: r.relation_right,
-          participation_right: r.participation_right,
-          relationType: `${r.participation_left}|${r.participation_right}`,
+          participation_left: r.participation_source,
+          participation_right: r.participation_target,
+          relation_left: "bar", // 항상 bar
+          relation_right: r.relation_type === "1:N" ? "crow" : "bar",
+          relationType: `${r.relation_type}|${r.participation_source}|${r.participation_target}`,
         }));
 
         setTables?.(parsedTables);
@@ -136,11 +136,11 @@ const ErdHeader = ({
           relationId: r.relation_id,
           fromColumnId: r.source_column_id,
           toColumnId: r.target_column_id,
-          participation_left: r.participation_left,
-          relation_left: r.relation_left,
-          relation_right: r.relation_right,
-          participation_right: r.participation_right,
-          relationType: `${r.participation_left}|${r.participation_right}`,
+          participation_left: r.participation_source,
+          relation_left: "bar", // 항상 bar
+          relation_right: r.relation_type === "1:N" ? "crow" : "bar",
+          participation_right: r.participation_target,
+          relationType: `${r.relation_type}|${r.participation_source}|${r.participation_target}`,
         }));
 
         setTables?.(parsedTables);

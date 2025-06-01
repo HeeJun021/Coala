@@ -3,7 +3,14 @@ from sqlalchemy.orm import Session
 from typing import List
 from sqlalchemy import text
 from app.database import get_db
-from app.models.erd import Erds, ErdSnapshot, ErdTables, ErdColumns, ErdRelations, ErdActivityLogs
+from app.models.erd import (
+    Erds,
+    ErdSnapshot,
+    ErdTables,
+    ErdColumns,
+    ErdRelations,
+    ErdActivityLogs,
+)
 from app.schemas.erd import SnapshotResponse  # ✅ 응답 스키마 추가
 from app.routers.erd_detail import get_erd_detail
 from app.dependencies.auth import get_current_user
@@ -57,7 +64,9 @@ def apply_snapshot_to_db(snapshot_data, erd_id, db: Session):
 
         # 🔧 'columns' 키가 없는 경우 대비
         columns = t_data.get("columns", [])
-        existing_columns = db.query(ErdColumns).filter_by(table_id=t_data["table_id"]).all()
+        existing_columns = (
+            db.query(ErdColumns).filter_by(table_id=t_data["table_id"]).all()
+        )
         existing_column_ids = {c.column_id for c in existing_columns}
         snapshot_column_ids = {c["column_id"] for c in columns}
 
@@ -106,58 +115,43 @@ def apply_snapshot_to_db(snapshot_data, erd_id, db: Session):
     # ✅ 3. 관계 재삽입
     db.query(ErdRelations).filter_by(erd_id=erd_id).delete()
     for r in snapshot_data["relations"]:
-        # relation_type 키 제거 (안 쓰는 필드니까 안전하게 제외)
-        cleaned_r = {k: v for k, v in r.items() if k != "relation_type"}
-
         db.execute(
             text(
                 """
                 INSERT INTO "erdrelations" (
-                    relation_id, erd_id, source_table_id, source_column_id,
+                    relation_id, erd_id,
+                    source_table_id, source_column_id,
                     target_table_id, target_column_id,
-                    participation_left, participation_right,
-                    relation_left, relation_right
+                    participation_source, participation_target,
+                    relation_type,
+                    auto_create_fk, cascade_delete
                 )
                 OVERRIDING SYSTEM VALUE
                 VALUES (
-                    :relation_id, :erd_id, :source_table_id, :source_column_id,
+                    :relation_id, :erd_id,
+                    :source_table_id, :source_column_id,
                     :target_table_id, :target_column_id,
-                    :participation_left, :participation_right,
-                    :relation_left, :relation_right
+                    :participation_source, :participation_target,
+                    :relation_type,
+                    :auto_create_fk, :cascade_delete
                 )
                 """
             ),
-            {**cleaned_r, "erd_id": erd_id},
+            {
+                "relation_id": r["relation_id"],
+                "erd_id": erd_id,
+                "source_table_id": r["source_table_id"],
+                "source_column_id": r["source_column_id"],
+                "target_table_id": r["target_table_id"],
+                "target_column_id": r["target_column_id"],
+                "participation_source": r.get("participation_source", "optional"),
+                "participation_target": r.get("participation_target", "optional"),
+                "relation_type": r.get("relation_type", "1:N"),
+                "auto_create_fk": r.get("auto_create_fk", True),
+                "cascade_delete": r.get("cascade_delete", False),
+            },
         )
-    db.commit()
 
-
-    # ✅ 3. 관계 재삽입
-    db.query(ErdRelations).filter_by(erd_id=erd_id).delete()
-    for r in snapshot_data["relations"]:
-        # relation_type 키 제거 (안 쓰는 필드니까 안전하게 제외)
-        cleaned_r = {k: v for k, v in r.items() if k != "relation_type"}
-
-        db.execute(
-            text(
-                """
-                INSERT INTO "erdrelations" (
-                    relation_id, erd_id, source_table_id, source_column_id,
-                    target_table_id, target_column_id,
-                    participation_left, participation_right,
-                    relation_left, relation_right
-                )
-                OVERRIDING SYSTEM VALUE
-                VALUES (
-                    :relation_id, :erd_id, :source_table_id, :source_column_id,
-                    :target_table_id, :target_column_id,
-                    :participation_left, :participation_right,
-                    :relation_left, :relation_right
-                )
-            """
-            ),
-            {**cleaned_r, "erd_id": erd_id},
-        )
     db.commit()
 
 
@@ -310,7 +304,11 @@ def checkout_snapshot(
 
 
 # 커밋된 스냅샷 목록 조회
-@router.get("/{erd_id}/snapshots", response_model=List[SnapshotResponse], summary="커밋된 스냅샷 목록 조회")
+@router.get(
+    "/{erd_id}/snapshots",
+    response_model=List[SnapshotResponse],
+    summary="커밋된 스냅샷 목록 조회",
+)
 def get_committed_snapshots(
     erd_id: int,
     db: Session = Depends(get_db),
@@ -340,8 +338,7 @@ def get_committed_snapshots(
             user_name=(
                 u.nickname.strip()
                 if u.nickname and u.nickname.strip()
-                else u.email if u.email
-                else f"유저 {u.user_id}"
+                else u.email if u.email else f"유저 {u.user_id}"
             ),
         )
         for s, l, u in results
