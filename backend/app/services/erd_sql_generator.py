@@ -1,35 +1,35 @@
 import re
 
-# ✅ generate_sql 함수 (ERD 테이블 생성 시 FK 포함)
 def generate_sql(tables, columns, relations, dbms):
     sql_statements = []
 
-    # 테이블별 컬럼 정리
+    # 1. 컬럼 정리: 테이블 ID → 컬럼 리스트
     columns_by_table = {}
     for col in columns:
         columns_by_table.setdefault(col.table_id, []).append(col)
 
-    # 테이블별 관계 정리 (source_table_id 기준으로 묶기)
+    # 2. 관계 정리: ✅ FK는 target 테이블에 생긴다고 가정
     fk_by_table = {}
     for rel in relations:
         if not rel.auto_create_fk:
             continue
-        fk_by_table.setdefault(rel.source_table_id, []).append(rel)
+        fk_by_table.setdefault(rel.target_table_id, []).append(rel)  # ✅ target이 FK 갖는 쪽
 
-    # 테이블 ID → 테이블 객체 빠르게 찾기용
+    # 3. 테이블 ID → 테이블 객체
     table_lookup = {table.table_id: table for table in tables}
 
-    # 테이블을 참조 순서대로 정렬 (참조되는 테이블 먼저)
+    # 4. 테이블 정렬: source(PK 대상)로 참조당하는 횟수 기준
     def table_order_key(t):
-        return sum(1 for rel in relations if rel.source_table_id == t.table_id)
+        return -sum(1 for rel in relations if rel.source_table_id == t.table_id)
     tables_sorted = sorted(tables, key=table_order_key)
 
-    # 🔁 테이블 생성문
+    # 5. 테이블별 CREATE TABLE 생성
     for table in tables_sorted:
         table_columns = columns_by_table.get(table.table_id, [])
         table_relations = fk_by_table.get(table.table_id, [])
         lines = []
 
+        # 컬럼 정의
         for col in sorted(table_columns, key=lambda x: x.column_order):
             data_type = map_data_type(col.data_type, dbms)
             line = f"  `{col.name}` {data_type}"
@@ -47,30 +47,37 @@ def generate_sql(tables, columns, relations, dbms):
 
             lines.append(line)
 
-        # PK 설정
+        # PK 정의
         pk_cols = [col.name for col in table_columns if col.is_primary]
         if pk_cols:
             lines.append(f"  PRIMARY KEY ({', '.join(f'`{pk}`' for pk in pk_cols)})")
 
-        # FK 제약조건 추가
+        # FK 정의 (✅ target이 FK 가진 쪽임)
         for rel in table_relations:
-            if not rel.source_column or not rel.target_column:
-                continue
+            if not rel.target_column or not rel.source_column:
+                continue  # 필수 정보 빠졌으면 건너뜀
+
+            fk_column_name = rel.target_column.name
+            fk_table_name = table.name
+            ref_table_name = rel.source_table.name
+            ref_column_name = rel.source_column.name
+
             fk_line = (
-                f"  CONSTRAINT `fk_{rel.relation_id}` FOREIGN KEY (`{rel.source_column.name}`) "
-                f"REFERENCES `{rel.target_table.name}`(`{rel.target_column.name}`)"
+                f"  CONSTRAINT `fk_{rel.relation_id}` FOREIGN KEY (`{fk_column_name}`) "
+                f"REFERENCES `{ref_table_name}`(`{ref_column_name}`)"
             )
             if rel.cascade_delete:
                 fk_line += " ON DELETE CASCADE"
+
             lines.append(fk_line)
 
+        # CREATE TABLE 조립
         table_sql = f"CREATE TABLE `{table.name}` (\n" + ",\n".join(lines) + "\n);"
         sql_statements.append(table_sql)
 
     return "\n\n".join(sql_statements)
 
-
-# ✅ 데이터 타입 매핑 함수
+# ✅ DBMS별 데이터 타입 매핑 함수는 그대로 사용
 def map_data_type(data_type: str, dbms: str) -> str:
     type_map = {
         "postgres": {

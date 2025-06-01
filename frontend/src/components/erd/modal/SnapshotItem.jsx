@@ -1,19 +1,19 @@
 import React from "react";
+import { User2 } from "lucide-react";
 
 const SnapshotItem = ({ snapshot, onSelect, index, isLast }) => {
   const { snapshot_id, created_at, is_active, user_name } = snapshot;
   const formattedTime = new Date(created_at).toLocaleString();
 
   return (
-    <div className="flex items-start">
+    <div className="flex items-start text-sm">
       {/* 좌측: 시간 */}
-      <div className="flex-1 text-right pr-4 text-sm text-gray-200 pt-2">
+      <div className="flex-1 text-right pr-4 text-gray-300 pt-2">
         {formattedTime}
       </div>
 
-      {/* 중앙: 버튼 + 아래 여백 */}
+      {/* 중앙: 버튼 + 아래 선 */}
       <div className="flex flex-col items-center relative">
-        {/* 버튼 */}
         <button
           onClick={() => onSelect(snapshot_id)}
           className={`w-9 h-9 rounded-full border-2 flex items-center justify-center text-sm font-semibold transition
@@ -26,16 +26,13 @@ const SnapshotItem = ({ snapshot, onSelect, index, isLast }) => {
           {index}
         </button>
 
-        {/* 아래 선 */}
-        {!isLast && (
-          <div className="w-px h-[32px] bg-gray-400 mt-1" />
-        )}
+        {!isLast && <div className="w-px h-[32px] bg-gray-500 mt-1" />}
       </div>
 
-      {/* 우측: 유저 */}
-      <div className="flex-1 pl-4 text-sm text-gray-200 pt-2 flex items-center gap-1">
-        <span className="text-purple-400">👤</span>
-        {user_name || "알 수 없음"}
+      {/* 우측: 사용자 정보 */}
+      <div className="flex-1 pl-4 text-gray-300 pt-2 flex items-center gap-2">
+        <User2 size={16} className="text-purple-400" />
+        <span className="truncate">{user_name || "알 수 없음"}</span>
       </div>
     </div>
   );

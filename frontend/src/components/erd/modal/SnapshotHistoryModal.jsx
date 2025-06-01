@@ -4,6 +4,7 @@ import {
   checkoutSnapshot,
 } from "../../../api/erd/erdDetailApi";
 import SnapshotItem from "./SnapshotItem";
+import { X, ScrollText } from "lucide-react";
 
 const SnapshotHistoryModal = ({
   erdId,
@@ -25,11 +26,7 @@ const SnapshotHistoryModal = ({
     try {
       await checkoutSnapshot(erdId, snapshotId);
       showToast("✅ 해당 스냅샷으로 이동했습니다.");
-
-      // ✅ ERD 상세 재조회
       await fetchErdDetail(erdId);
-
-      // ✅ 모달 닫기
       onClose();
     } catch (error) {
       showToast("❌ 스냅샷 체크아웃 실패");
@@ -39,22 +36,29 @@ const SnapshotHistoryModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* ✅ 드래그/클릭 완전 차단용 오버레이 */}
+      {/* 오버레이 */}
       <div
         className="fixed inset-0 z-40 bg-black bg-opacity-40"
         style={{ pointerEvents: "auto", touchAction: "none" }}
       />
 
-      {/* ✅ 모달 박스 */}
+      {/* 모달 */}
       <div className="relative z-50 bg-[#1e1e2e] text-white w-[480px] max-h-[80vh] overflow-y-auto rounded-xl shadow-xl p-6 border border-gray-700">
-        <h2 className="text-xl font-semibold mb-4">📜 스냅샷 히스토리</h2>
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-5 text-gray-400 hover:text-white text-xl"
-        >
-          ✖
-        </button>
+        {/* 제목 */}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <ScrollText size={20} className="text-yellow-400" />
+            스냅샷 히스토리
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-white transition-colors"
+          >
+            <X size={22} />
+          </button>
+        </div>
 
+        {/* 스냅샷 목록 */}
         {snapshots.length === 0 ? (
           <p className="text-sm text-gray-400">저장된 커밋이 없습니다.</p>
         ) : (

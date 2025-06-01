@@ -1,10 +1,15 @@
-import { useEffect, useState } from "react";
-import { fetchExportedSql } from "../../../api/erd/erdDetailApi"; // 경로는 프로젝트 구조에 맞게 조정
+import { useEffect, useLayoutEffect, useState, useRef } from "react";
+import { fetchExportedSql } from "../../../api/erd/erdDetailApi";
+import { FileUp } from "lucide-react";
+import Prism from "prismjs";
+import "prismjs/components/prism-sql";
+import "prismjs/themes/prism-tomorrow.css";
 
 const ExportSqlModal = ({ onClose, erdId }) => {
   const [dbms, setDbms] = useState("postgres");
   const [sql, setSql] = useState("-- SQL을 불러오는 중입니다...");
   const [loading, setLoading] = useState(true);
+  const codeRef = useRef(null);
 
   useEffect(() => {
     const handleKey = (e) => {
@@ -31,6 +36,15 @@ const ExportSqlModal = ({ onClose, erdId }) => {
     fetchSql();
   }, [erdId, dbms]);
 
+  // ✅ DOM 반영 이후 정확하게 Prism 적용
+  useLayoutEffect(() => {
+    if (codeRef.current) {
+      setTimeout(() => {
+        Prism.highlightElement(codeRef.current);
+      }, 0);
+    }
+  }, [sql]);
+
   const handleSqlDownload = () => {
     const blob = new Blob([sql], { type: "text/sql" });
     const link = document.createElement("a");
@@ -41,24 +55,24 @@ const ExportSqlModal = ({ onClose, erdId }) => {
   };
 
   return (
-    <div
-      id="export-sql-modal"
-      className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center"
-    >
-      <div className="bg-[#1f1f2b] text-white rounded-xl shadow-xl p-6 relative w-[420px] max-w-full border border-gray-700">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center">
+      <div className="bg-[#1e1e2e] text-white rounded-2xl shadow-2xl p-6 relative w-[680px] max-w-full border border-gray-700">
         <button
           onClick={onClose}
-          className="absolute top-2 right-3 text-gray-400 hover:text-white text-xl"
+          className="absolute top-3 right-4 text-gray-400 hover:text-white text-2xl"
         >
           ×
         </button>
 
-        <h2 className="text-xl font-semibold mb-4">📦 내보내기</h2>
+        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+          <FileUp size={25} className="text-gray-400" />
+          SQL 내보내기
+        </h2>
 
-        <div className="space-y-2 mb-3">
+        <div className="space-y-3 mb-4">
           <label className="text-sm font-medium">DBMS 선택</label>
           <select
-            className="w-full border border-gray-600 bg-[#2a2d3a] text-white px-3 py-2 rounded"
+            className="w-full border border-gray-600 bg-[#2a2e3a] text-white px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={dbms}
             onChange={(e) => setDbms(e.target.value)}
           >
@@ -68,14 +82,26 @@ const ExportSqlModal = ({ onClose, erdId }) => {
           </select>
         </div>
 
-        <pre className="bg-[#2a2d3a] text-gray-200 text-xs p-3 rounded h-[120px] overflow-auto border border-gray-600 whitespace-pre-wrap">
-          {loading ? "-- SQL을 불러오는 중입니다..." : sql}
+        <pre className="rounded-lg overflow-auto bg-[#282c34] text-[#d4d4d4] border border-gray-600 p-4 h-[260px] leading-relaxed text-sm sql-scrollbar">
+          <code
+  ref={codeRef}
+  className="language-sql"
+  style={{
+    backgroundColor: "transparent",
+    fontSize: "13px",
+    fontFamily: "'JetBrains Mono', monospace",
+  }}
+  dangerouslySetInnerHTML={{
+    __html: loading ? "-- SQL을 불러오는 중입니다..." : sql,
+  }}
+></code>
+
         </pre>
 
-        <div className="mt-4 flex flex-col gap-2">
+        <div className="mt-6 flex justify-end">
           <button
             onClick={handleSqlDownload}
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+            className="bg-blue-600 hover:bg-blue-700 transition-colors text-white px-6 py-2 rounded-md font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={loading}
           >
             SQL 다운로드

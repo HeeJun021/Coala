@@ -268,10 +268,12 @@ def create_erd_relation(
             if relation.relation_type == "1:N":
                 # FK는 무조건 target 쪽에 설정
                 target_col.is_foreign = True
+                db.add(target_col)  # ✅ 세션 반영 보장
                 fk_col = target_col
             else:
                 # 1:1 관계도 관행적으로 target 쪽에 FK 설정
                 target_col.is_foreign = True
+                db.add(target_col)  # ✅ 세션 반영 보장
                 fk_col = target_col
 
 

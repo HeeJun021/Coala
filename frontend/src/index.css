@@ -411,3 +411,21 @@ code {
   padding: 8px;
   text-align: center;
 }
+
+/* sql 스크롤바 스타일 */
+.sql-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.sql-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #3b4252;
+  border-radius: 6px;
+  border: 2px solid #282c34;
+}
+
+.sql-scrollbar::-webkit-scrollbar-track {
+  background-color: #282c34;
+  border-radius: 6px;
+}
+

@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import ErdCard from "./ErdCard";
-import ErdAddCard from "./ErdAddCard";
 import CreateErdModal from "./CreateErdModal";
 import { createErd } from "../../../api/erd/erdApi";
+import { FolderPlus } from "lucide-react";
 
 const ErdListPanel = ({ erds, onSelect, onRefresh, project }) => {
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const safeErds = erds || [];
+  const safeErds = [...(erds || [])].reverse(); // 최신 순 정렬
   const projectId = project?.project_id;
 
   const handleCreate = async (data) => {
@@ -35,7 +35,13 @@ const ErdListPanel = ({ erds, onSelect, onRefresh, project }) => {
             <br />
             새로운 ERD를 추가해보세요!
           </p>
-          <ErdAddCard onClick={() => setShowCreateModal(true)} fullCenter />
+          <div
+            onClick={() => setShowCreateModal(true)}
+            className="w-[340px] h-[200px] border border-dashed border-gray-400 rounded-2xl flex flex-col justify-center items-center text-blue-500 hover:border-blue-500 hover:bg-blue-50 cursor-pointer transition"
+          >
+            <FolderPlus className="w-8 h-8 mb-2" />
+            <span className="text-sm font-medium">새 ERD 만들기</span>
+          </div>
         </div>
 
         {showCreateModal && (
@@ -61,7 +67,15 @@ const ErdListPanel = ({ erds, onSelect, onRefresh, project }) => {
               project={project}
             />
           ))}
-          <ErdAddCard onClick={() => setShowCreateModal(true)} />
+
+          {/* 크기 통일된 추가 카드 */}
+          <div
+            onClick={() => setShowCreateModal(true)}
+            className="w-[340px] h-[200px] border border-dashed border-gray-400 rounded-2xl flex flex-col justify-center items-center text-blue-500 hover:border-blue-500 hover:bg-blue-50 cursor-pointer transition"
+          >
+            <FolderPlus className="w-8 h-8 mb-2" />
+            <span className="text-sm font-medium">새 ERD 만들기</span>
+          </div>
         </div>
       </div>
 
