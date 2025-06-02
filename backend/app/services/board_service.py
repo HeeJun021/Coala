@@ -77,17 +77,14 @@ def get_posts(board_type: str, page: int, page_size: int, sort_order: str, db: S
     return {"posts": result, "total": total}
 
 def get_post(post_id: int, db: Session):
-    like_subq = db.query(
-        PostLike.post_id, func.count(PostLike.user_id).label("like_count")
-    ).group_by(PostLike.post_id).subquery()
+    like_subq = db.query(PostLike.post_id, func.count(PostLike.user_id).label("like_count"))\
+        .group_by(PostLike.post_id).subquery()
 
-    comment_subq = db.query(
-        Comment.post_id, func.count(Comment.comment_id).label("comment_count")
-    ).group_by(Comment.post_id).subquery()
+    comment_subq = db.query(Comment.post_id, func.count(Comment.comment_id).label("comment_count"))\
+        .group_by(Comment.post_id).subquery()
 
-    accepted_subq = db.query(
-        ProjectApplicant.post_id, func.count().label("accepted_count")
-    ).filter(ProjectApplicant.status == "수락").group_by(ProjectApplicant.post_id).subquery()
+    accepted_subq = db.query(ProjectApplicant.post_id, func.count().label("accepted_count"))\
+        .filter(ProjectApplicant.status == "수락").group_by(ProjectApplicant.post_id).subquery()
 
     post_query = db.query(
         Post,
@@ -95,10 +92,10 @@ def get_post(post_id: int, db: Session):
         func.coalesce(like_subq.c.like_count, 0),
         func.coalesce(comment_subq.c.comment_count, 0),
         func.coalesce(accepted_subq.c.accepted_count, 1),
-    ).join(User, Post.user_id == User.user_id) \
-     .outerjoin(like_subq, Post.post_id == like_subq.c.post_id) \
-     .outerjoin(comment_subq, Post.post_id == comment_subq.c.post_id) \
-     .outerjoin(accepted_subq, Post.post_id == accepted_subq.c.post_id) \
+    ).join(User, Post.user_id == User.user_id)\
+     .outerjoin(like_subq, Post.post_id == like_subq.c.post_id)\
+     .outerjoin(comment_subq, Post.post_id == comment_subq.c.post_id)\
+     .outerjoin(accepted_subq, Post.post_id == accepted_subq.c.post_id)\
      .filter(Post.post_id == post_id).first()
 
     if not post_query:
@@ -106,7 +103,8 @@ def get_post(post_id: int, db: Session):
 
     post, nickname, like_count, comment_count, accepted_count = post_query
     result = PostResponse.model_validate(post).model_dump()
-    result["author_nickname"] = nickname
+    result["author_id"] = post.user_id           # ✅ 추가됨
+    result["nickname"] = nickname                # ✅ 추가됨
     result["like_count"] = like_count
     result["comment_count"] = comment_count
     result["accepted_count"] = accepted_count + 1
@@ -165,7 +163,39 @@ def delete_comment(comment_id: int, db: Session):
     db.commit()
 
 def get_comments(post_id: int, db: Session):
-    return db.query(Comment).filter(Comment.post_id == post_id).order_by(Comment.created_at).all()
+    # 🧩 댓글 좋아요 수 서브쿼리
+    like_subq = db.query(
+        CommentLike.comment_id,
+        func.count(CommentLike.user_id).label("like_count")
+    ).group_by(CommentLike.comment_id).subquery()
+
+    results = (
+        db.query(
+            Comment,
+            User.nickname,
+            func.coalesce(like_subq.c.like_count, 0)
+        )
+        .join(User, Comment.user_id == User.user_id)
+        .outerjoin(like_subq, Comment.comment_id == like_subq.c.comment_id)
+        .filter(Comment.post_id == post_id)
+        .order_by(Comment.created_at)
+        .all()
+    )
+
+    return [
+        CommentResponse(
+            comment_id=comment.comment_id,
+            post_id=comment.post_id,
+            user_id=comment.user_id,
+            nickname=nickname,
+            content=comment.content,
+            parent_comment_id=comment.parent_comment_id,
+            created_at=comment.created_at,
+            updated_at=comment.updated_at,
+            like_count=like_count,  # ✅ 추가
+        )
+        for comment, nickname, like_count in results
+    ]
 
 def like_post(payload: PostLikeCreate, db: Session):
     existing = db.query(PostLike).filter_by(post_id=payload.post_id, user_id=payload.user_id).first()

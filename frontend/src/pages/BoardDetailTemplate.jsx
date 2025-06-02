@@ -4,6 +4,7 @@ import { dracula } from "react-syntax-highlighter/dist/esm/styles/prism";
 import CommentEditor from "../components/CommentEditor";
 import apiClient from "../api/apiClient";
 import { useAuth } from "../context/AuthContext";
+import UserNameWithProfile from "../components/UserNameWithProfile";
 
 const BoardDetailTemplate = ({
   boardName,
@@ -74,7 +75,14 @@ const BoardDetailTemplate = ({
       {/* 작성자 정보 */}
       <div className="flex items-center gap-2 mb-4 text-gray-600 text-sm">
         <span>작성자:</span>
-        <span className="font-semibold">{post.author_nickname}</span>
+          {post?.author_id ? (
+            <UserNameWithProfile
+              userId={post.author_id}
+              nickname={post.nickname || post.author_nickname || "작성자"}
+            />
+          ) : (
+            <span className="font-semibold">{post.author_nickname}</span>
+          )}    
       </div>
 
       {/* 제목 */}
@@ -183,6 +191,11 @@ const BoardDetailTemplate = ({
               <li key={c.comment_id} className="border p-2 rounded-md">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
+                    <div className="text-xs text-gray-500 mb-1">
+                      {c?.user_id && c?.nickname && (
+                        <UserNameWithProfile userId={c.user_id} nickname={c.nickname} />
+                      )}
+                    </div>
                     {editingId === c.comment_id ? (
                       <input
                         type="text"
@@ -286,6 +299,11 @@ const BoardDetailTemplate = ({
                   .filter((r) => r.parent_comment_id === c.comment_id)
                   .map((r) => (
                     <div key={r.comment_id} className="ml-6 mt-2 pl-2 border-l text-sm">
+                      <div className="text-xs text-gray-500 mb-1">
+                        {r?.user_id && r?.nickname && (
+                          <UserNameWithProfile userId={r.user_id} nickname={r.nickname} />
+                        )}
+                      </div>
                       <div className="flex justify-between">
                         {editingId === r.comment_id ? (
                           <>
