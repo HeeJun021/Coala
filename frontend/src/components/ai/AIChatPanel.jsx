@@ -4,6 +4,16 @@ import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
 import { prism } from "react-syntax-highlighter/dist/esm/styles/prism"; // 🌈 밝은 Prism 스타일
 import "react-resizable/css/styles.css"; // 필수!
 import { ResizableBox } from "react-resizable"; // 상단에 추가했을 것
+import {
+  ScrollText,
+  Bot,
+  X,
+  Copy,
+  Check,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
 import {
   createGptSession,
@@ -79,11 +89,13 @@ const AIChatPanel = ({ onClose }) => {
             message: input,
           });
 
+      // 세션 새로 만들었을 경우 → 세션 ID 세팅
       if (!activeSessionId) {
         await loadSessions();
-        await loadSessionMessages(response.session_id);
+        setActiveSessionId(response.session_id);
       }
 
+      // ✅ 스트리밍 처리 공통 적용
       const content = response.response;
       let i = 0;
       const interval = setInterval(() => {
@@ -186,7 +198,17 @@ const AIChatPanel = ({ onClose }) => {
               className="text-xs bg-[#edf2f7] text-gray-800 px-3 py-1 rounded hover:bg-[#e2e8f0] shadow-sm transition"
               style={{ cursor: "pointer" }}
             >
-              {copiedStates[index] ? "✅ 복사됨" : "📋 복사"}
+              {copiedStates[index] ? (
+                <span className="flex items-center gap-1 text-green-600">
+                  <Check className="w-4 h-4" />
+                  복사됨
+                </span>
+              ) : (
+                <span className="flex items-center gap-1 text-gray-700">
+                  <Copy className="w-4 h-4" />
+                  복사
+                </span>
+              )}
             </button>
           </div>
 
@@ -243,17 +265,18 @@ const AIChatPanel = ({ onClose }) => {
       className="bg-white shadow-2xl rounded-xl overflow-hidden flex"
     >
       {/* 👇 3단계: 펼치기 버튼은 이곳에 위치 */}
+      {/* 열기 버튼 (좌측 고정 위치) */}
       {!sidebarVisible && (
         <div className="absolute left-0 top-1/2 transform -translate-y-1/2 z-40">
           <button
             onMouseEnter={() => setHoveringEdge(true)}
             onMouseLeave={() => setHoveringEdge(false)}
             onClick={() => setSidebarVisible(true)}
-            className={`transition-opacity duration-200 bg-white border px-2 py-1 rounded-r shadow ${
+            className={`transition-opacity duration-200 bg-white border px-1.5 py-1 rounded-r shadow ${
               hoveringEdge ? "opacity-100" : "opacity-0"
             }`}
           >
-            ◀
+            <ChevronLeft className="w-5 h-5 text-gray-700" />
           </button>
         </div>
       )}
@@ -264,39 +287,45 @@ const AIChatPanel = ({ onClose }) => {
           {/* 숨기기 버튼 */}
           <button
             onClick={() => setSidebarVisible(false)}
-            className="absolute top-2 right-2 text-xs text-gray-500 hover:text-black z-10"
+            className="absolute top-2 right-2 text-gray-500 hover:text-black z-10"
           >
-            ▶
+            <ChevronRight className="w-4 h-4" />
           </button>
 
-          <div className="font-semibold text-lg mb-3 px-2">📜 대화 목록</div>
+          <div className="font-semibold text-lg mb-3 px-2 flex items-center gap-2">
+            <ScrollText className="w-5 h-5 text-indigo-600" />
+            대화 목록
+          </div>
+
           {Object.entries(grouped).map(([label, sessionList]) => (
-            <div key={label} className="mb-3">
+            <div key={label} className="mb-1">
               <div className="text-xs font-semibold text-gray-500 mb-1 px-2">
                 {label}
               </div>
-              {sessionList.map((s) => (
-                <GptSessionItem
-                  key={s.session_id}
-                  session={s}
-                  isActive={s.session_id === activeSessionId}
-                  onSelect={() => loadSessionMessages(s.session_id)}
-                  onRename={(newTitle) =>
-                    updateGptSessionTitle(s.session_id, newTitle).then(
-                      loadSessions
-                    )
-                  }
-                  onDelete={() =>
-                    deleteGptSession(s.session_id).then(() => {
-                      if (activeSessionId === s.session_id) {
-                        setActiveSessionId(null);
-                        setMessages([]);
-                      }
-                      loadSessions();
-                    })
-                  }
-                />
-              ))}
+              <div className="flex flex-col space-y-[2px]">
+                {sessionList.map((s) => (
+                  <GptSessionItem
+                    key={s.session_id}
+                    session={s}
+                    isActive={s.session_id === activeSessionId}
+                    onSelect={() => loadSessionMessages(s.session_id)}
+                    onRename={(newTitle) =>
+                      updateGptSessionTitle(s.session_id, newTitle).then(
+                        loadSessions
+                      )
+                    }
+                    onDelete={() =>
+                      deleteGptSession(s.session_id).then(() => {
+                        if (activeSessionId === s.session_id) {
+                          setActiveSessionId(null);
+                          setMessages([]);
+                        }
+                        loadSessions();
+                      })
+                    }
+                  />
+                ))}
+              </div>
             </div>
           ))}
         </div>
@@ -317,10 +346,14 @@ const AIChatPanel = ({ onClose }) => {
             onClick={onClose}
             className="absolute top-2 right-2 text-gray-500 hover:text-black z-10"
           >
-            ✖
+            <X className="w-4 h-4" />
           </button>
 
-          <div className="font-semibold text-lg mb-2">🤖 코딩 챗봇</div>
+          <div className="font-semibold text-lg mb-2 flex items-center gap-2">
+            <Bot className="w-5 h-5 text-blue-600" />
+            코딩 챗봇
+          </div>
+
           <div className="flex-1 overflow-y-auto border rounded p-2 mb-2 bg-gray-50">
             {messages.length === 0 ? (
               <div className="h-full flex items-center justify-center text-black text-sm text-center px-4">
@@ -375,12 +408,10 @@ const AIChatPanel = ({ onClose }) => {
             <button
               onClick={handleSend}
               disabled={loading}
-              className="bg-blue-500 text-white px-4 py-2 rounded disabled:opacity-50 flex items-center justify-center gap-2"
+              className="bg-blue-500 text-white px-4 py-2 rounded flex items-center justify-center gap-2"
             >
               {loading ? (
-                <>
-                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                </>
+                <Loader2 className="w-4 h-4 animate-spin text-white" />
               ) : (
                 "전송"
               )}
