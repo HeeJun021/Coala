@@ -420,3 +420,17 @@ def record_solution_view(
     db.add(new_view)
     db.commit()
     return {"message": "기록 완료"}
+
+# 문제를 풀었는지 안 풀었는지 확인하는 함수
+@router.get("/{test_id}/has-solved")
+def has_solved_coding_test(
+    test_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_object)
+):
+    solved = (
+        db.query(CodingTestSubmissions)
+        .filter_by(test_id=test_id, user_id=current_user.user_id, is_correct=True)
+        .first()
+    )
+    return {"hasSolved": bool(solved)}

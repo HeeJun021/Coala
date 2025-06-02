@@ -4,8 +4,11 @@ import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
 import { python } from "@codemirror/lang-python";
 import { java } from "@codemirror/lang-java";
+import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { cleanStderr } from "../../utils/cleanStderr";
-import { oneDark } from "@codemirror/theme-one-dark";
+import { githubLight } from "@uiw/codemirror-theme-github";
+
+console.log("🐛 githubLight theme:", githubLight);
 
 const CodingTestEditorPanel = ({
   code,
@@ -16,29 +19,30 @@ const CodingTestEditorPanel = ({
   isSubmitResult,
   isRunning,
 }) => {
-  // 언어 확장
   const getLanguageExtension = () => {
     if (language === "python") return python();
     if (language === "java") return java();
     if (language === "javascript") return javascript();
     return [];
   };
+  console.log("🐛 githubLight theme:", githubLight)
+
 
   return (
-    <div className="w-[60%] flex flex-col border-l border-gray-600">
+    <div className="w-[60%] flex flex-col border-l border-gray-200 bg-white">
       {/* 코드 에디터 */}
-      <div className="flex-1 overflow-auto p-4 bg-[#30435D] editor-scrollbar">
+      <div className="flex-1 overflow-auto bg-white editor-scrollbar">
         <CodeMirror
           value={code}
-          height="510px"
-          extensions={[getLanguageExtension(), oneDark]}
+          height="650px"
+          extensions={[getLanguageExtension(), githubLight]}  // ✅ 작동
           onChange={(value) => setCode(value)}
         />
       </div>
 
       {/* 실행 결과 */}
       <ResizableBox
-        width={"100%"}
+        width={1043.83}
         height={350}
         minConstraints={[100, 100]}
         maxConstraints={[Infinity, 500]}
@@ -63,57 +67,65 @@ const CodingTestEditorPanel = ({
           </span>
         }
       >
-        <div className="border-t border-gray-600 p-4 text-sm overflow-auto bg-[#30435d] h-full result-scrollbar">
-          <h3 className="text-white font-semibold mb-2">
+        <div className="border-t border-gray-200 p-4 text-sm overflow-auto bg-gray-100 h-full result-scrollbar">
+          <h3 className="text-gray-700 font-semibold mb-2">
             {isSubmitResult ? "제출 실행 결과" : "실행 결과"}
           </h3>
 
           {isRunning ? (
-            <div className="text-gray-300 text-sm mt-3 animate-pulse">
-              ⏳{" "}
+            <div className="text-sm mt-3 flex items-center gap-2 text-teal-600">
+              <Loader2 className="w-4 h-4 animate-spin text-teal-500" />
               {isSubmitResult
                 ? "제출 실행 중입니다..."
                 : "테스트케이스 실행 중입니다..."}
             </div>
           ) : executionResults.length === 0 ? (
-            <div className="text-gray-300 text-sm mt-3">
+            <div className="text-gray-500 text-sm mt-3">
               코드 실행 결과가 여기에 표시됩니다.
             </div>
           ) : (
             <>
-              <table className="w-full text-left border border-gray-500">
+              <table className="w-full text-left border border-gray-300 table-auto">
                 <thead>
-                  <tr className="bg-[#2c3544] text-white">
-                    <th className="p-2 border-r border-gray-500">입력값</th>
-                    <th className="p-2 border-r border-gray-500">기댓값</th>
-                    <th className="p-2 border-r border-gray-500">실행 결과</th>
-                    <th className="p-2">출력</th>
+                  <tr className="bg-blue-100 text-gray-700 text-sm">
+                    <th className="px-3 py-2 border-r border-gray-300">
+                      입력값
+                    </th>
+                    <th className="px-3 py-2 border-r border-gray-300">
+                      기댓값
+                    </th>
+                    <th className="px-3 py-2 border-r border-gray-300">
+                      실행 결과
+                    </th>
+                    <th className="px-3 py-2">출력</th>
                   </tr>
                 </thead>
                 <tbody>
                   {executionResults.map((result, idx) => (
                     <tr
                       key={idx}
-                      className="border-t border-gray-500 text-white"
+                      className="border-t border-gray-300 text-gray-800 text-sm leading-relaxed"
                     >
-                      <td className="p-2 border-r border-gray-500 whitespace-pre-line">
+                      <td className="px-3 py-2 border-r border-gray-300 whitespace-pre-line">
                         {result.input.replace(/\\n/g, "\n")}
                       </td>
-                      <td className="p-2 border-r border-gray-500">
+                      <td className="px-3 py-2 border-r border-gray-300">
                         {result.expected_output}
                       </td>
-                      <td className="p-2 border-r border-gray-500">
+                      <td className="px-3 py-2 border-r border-gray-300">
                         {result.passed ? (
-                          <span className="text-blue-400">
-                            테스트를 통과하였습니다.
-                          </span>
+                          <div className="flex items-center gap-1 text-teal-600 font-medium">
+                            <CheckCircle size={16} strokeWidth={2.2} />
+                            테스트 통과
+                          </div>
                         ) : (
-                          <span className="text-red-400">
-                            테스트를 통과하지 못했습니다.
-                          </span>
+                          <div className="flex items-center gap-1 text-rose-500 font-medium">
+                            <XCircle size={16} strokeWidth={2.2} />
+                            테스트 실패
+                          </div>
                         )}
                       </td>
-                      <td className="p-2">
+                      <td className="px-3 py-2">
                         {result.actual_output !== undefined &&
                         result.actual_output !== ""
                           ? result.actual_output
@@ -125,8 +137,8 @@ const CodingTestEditorPanel = ({
               </table>
 
               {!isRunning && executionResults.some((r) => r.stderr) && (
-                <div className="bg-[#2b2f38] border border-red-400 rounded-md p-4 mt-4 text-sm text-red-200 whitespace-pre-wrap">
-                  <pre className="leading-relaxed text-red-200 font-mono">
+                <div className="bg-red-50 border border-red-300 rounded-md p-4 mt-4 text-sm text-red-700 whitespace-pre-wrap">
+                  <pre className="leading-relaxed font-mono">
                     {cleanStderr(
                       executionResults
                         .map((r) => r.stderr)

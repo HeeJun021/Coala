@@ -21,6 +21,7 @@ import {
   getSubmissionList,
   runCodeWithTestcases,
   submitCode,
+  checkHasSolved,
 } from "../api/codingTestApi";
 
 // 🧩 컴포넌트
@@ -56,6 +57,7 @@ const CodingTestDetailPage = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [isSubmitResult, setIsSubmitResult] = useState(false);
   const [showCopyMessage, setShowCopyMessage] = useState(false);
+  const [hasSolvedBefore, setHasSolvedBefore] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -99,6 +101,27 @@ const CodingTestDetailPage = () => {
       setShowRefreshMessage(false);
     }, 3000);
   };
+
+  useEffect(() => {
+    const fetchHasSolved = async () => {
+      try {
+        if (user?.user_id && id) {
+          const result = await checkHasSolved(id);
+          if (result?.data && typeof result.data.hasSolved === "boolean") {
+            setHasSolvedBefore(result.data.hasSolved); // ✅ 여기서 추출
+          } else {
+            console.error("⚠️ 응답에 hasSolved 필드가 없습니다:", result);
+            setHasSolvedBefore(false);
+          }
+        }
+      } catch (err) {
+        console.error("풀이 여부 확인 실패:", err);
+        setHasSolvedBefore(false);
+      }
+    };
+
+    fetchHasSolved();
+  }, [user, id]);
 
   // 실행 버튼 핸들러
   const handleRunCode = async () => {
@@ -246,7 +269,7 @@ const CodingTestDetailPage = () => {
   };
 
   if (!problem)
-    return <div className="text-white p-10">문제 불러오는 중...</div>;
+    return <div className="text-gray-600 p-10">문제 불러오는 중...</div>;
 
   return (
     <>
@@ -258,7 +281,7 @@ const CodingTestDetailPage = () => {
               animate={{ y: 0, opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.5, ease: "easeOut" }}
-              className="bg-blue-500 text-white text-sm px-6 py-3 rounded shadow"
+              className="bg-teal-500 text-white text-sm px-6 py-3 rounded-md shadow-md"
             >
               새로고침 되었습니다.
             </motion.div>
@@ -272,7 +295,7 @@ const CodingTestDetailPage = () => {
               animate={{ y: 0, opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.5, ease: "easeOut" }}
-              className="bg-blue-500 text-white text-sm px-6 py-3 rounded shadow"
+              className="bg-teal-500 text-white text-sm px-6 py-3 rounded-md shadow-md"
             >
               복사 완료!
             </motion.div>
@@ -280,7 +303,7 @@ const CodingTestDetailPage = () => {
         )}
       </AnimatePresence>
 
-      <div className="codingtest-detail w-screen h-screen bg-[#30435d] text-white flex flex-col">
+      <div className="codingtest-detail w-screen h-screen bg-[#f9fafb] text-gray-800 flex flex-col">
         {/* 상단 헤더 */}
         <CodingTestHeader title={problem.title} />
 
@@ -297,8 +320,9 @@ const CodingTestDetailPage = () => {
           {/* 좌측 영역 */}
           <div
             className={`${
-              activeTab === "notes" ? "w-[100%]" : "w-1/2"
-            } p-6 overflow-y-auto problem-info-scrollbar`}
+              activeTab === "notes" ? "w-full" : "w-1/2"
+            } p-6 overflow-y-auto problem-info-scrollbar 
+     bg-white border-r border-gray-200 shadow-inner rounded-tr-xl`}
           >
             {activeTab === "info" && (
               <CodingTestProblemInfo
@@ -330,7 +354,7 @@ const CodingTestDetailPage = () => {
                   key={activeTab}
                 />
               ) : (
-                <div className="text-white text-center mt-10">
+                <div className="text-gray-500 text-center mt-10">
                   오답노트는 로그인 후 이용할 수 있습니다. 😎
                 </div>
               ))}
@@ -359,6 +383,7 @@ const CodingTestDetailPage = () => {
           handleRunCode={handleRunCode}
           handleSubmitCode={handleSubmitCode}
           isSubmitting={isSubmitting}
+          hasSolvedBefore={hasSolvedBefore}
         />
       </div>
       {showResultModal && resultData && (

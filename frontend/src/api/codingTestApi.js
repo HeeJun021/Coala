@@ -69,3 +69,7 @@ export const markViewedOthers = async (testId) => {
     test_id: testId,
   });
 };
+
+export const checkHasSolved = async (testId) => {
+  return await apiClient.get(`codingtest/${testId}/has-solved`);
+};

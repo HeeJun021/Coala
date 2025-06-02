@@ -8,7 +8,7 @@ const CodingTestTabMenu = ({
   handleLanguageChange,
 }) => {
   return (
-    <div className="flex gap-4 border-b border-gray-600 px-6">
+    <div className="flex gap-4 items-center border-b border-gray-200 bg-gray-50 px-6">
       {["info", "submissions", "notes"].map((tab) => (
         <button
           key={tab}
@@ -18,8 +18,10 @@ const CodingTestTabMenu = ({
               fetchSubmissions();
             }
           }}
-          className={`py-3 ${
-            activeTab === tab ? "border-b-2 border-white font-semibold" : ""
+          className={`py-3 text-sm transition-all ${
+            activeTab === tab
+              ? "border-b-2 border-teal-500 text-teal-600 font-semibold"
+              : "text-gray-500 hover:text-gray-700"
           }`}
         >
           {tab === "info"
@@ -29,10 +31,11 @@ const CodingTestTabMenu = ({
             : "오답노트"}
         </button>
       ))}
+
       {activeTab !== "notes" && (
-        <div className="text-sm flex items-center gap-2 ml-auto">
+        <div className="text-sm flex items-center gap-2 ml-auto py-3">
           <select
-            className="bg-[#4b5b6e] text-sm px-2 py-1 rounded text-white"
+            className="border border-gray-300 rounded px-2 py-1 text-sm text-gray-700 bg-white hover:border-gray-400 transition"
             value={language}
             onChange={handleLanguageChange}
           >

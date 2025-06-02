@@ -1,18 +1,18 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { HiChevronLeft } from "react-icons/hi";
+import { ChevronLeft } from "lucide-react";
 
 const CodingTestHeader = ({ title }) => {
   return (
-    <header className="flex items-center justify-between bg-[#2c3544] px-6 py-3">
+    <header className="flex items-center justify-between bg-gray-100 border-b border-gray-300 px-6 py-3">
       <div className="flex items-center gap-3">
         <Link
           to="/codingtest"
-          className="text-white text-2xl hover:text-gray-300 transition"
+          className="text-gray-500 hover:text-gray-700 transition"
         >
-          <HiChevronLeft size={28} />
+          <ChevronLeft className="w-6 h-6" />
         </Link>
-        <h1 className="text-xl font-bold">{title}</h1>
+        <h1 className="text-xl font-bold text-gray-800">{title}</h1>
       </div>
     </header>
   );

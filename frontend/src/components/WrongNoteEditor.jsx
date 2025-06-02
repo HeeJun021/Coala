@@ -147,7 +147,9 @@ const WrongNoteEditor = ({
   return (
     <div className="flex h-full">
       <div className="w-[35%] p-4 border-r border-gray-500">
-        <h2 className="text-xl font-bold text-white mb-4">❌ 제출 오답 내역</h2>
+        <h2 className="text-xl font-bold text-gray-800 mb-4">
+          ❌ 제출 오답 내역
+        </h2>
         <div className="space-y-2">
           {failedSubmissions.map((s) => (
             <div key={s.submission_id}>
@@ -160,7 +162,7 @@ const WrongNoteEditor = ({
                     setSelectedSubmission(s);
                   }
                 }}
-                className="flex items-center w-full text-left px-3 py-2 border rounded bg-[#2c3544] text-white hover:bg-[#3a4b5c]"
+                className="flex items-center w-full text-left px-3 py-2 border rounded bg-gray-100 text-gray-800 hover:bg-gray-200"
               >
                 📄 {s.title || "제출 제목 없음"} - {s.submitted_at}
               </button>
@@ -225,7 +227,7 @@ const WrongNoteEditor = ({
                           const failedCases = parsed.filter((r) => !r.passed);
                           if (failedCases.length === 0) {
                             return (
-                              <div className="text-gray-400">
+                              <div className="text-gray-500">
                                 ❗실패한 테스트케이스 없음
                               </div>
                             );
@@ -234,7 +236,7 @@ const WrongNoteEditor = ({
                           return (
                             <div className="text-sm space-y-4 pl-6 mt-1">
                               {failedCases.slice(0, 2).map((r, idx) => (
-                                <div key={idx} className="text-white">
+                                <div key={idx} className="text-gray-800">
                                   <p className="text-base font-semibold">
                                     #{idx + 1}
                                   </p>
@@ -242,7 +244,7 @@ const WrongNoteEditor = ({
                                   <p>기대값 : {r.expected_output}</p>
                                   <p>
                                     출력값 : {r.actual_output}{" "}
-                                    <span className="text-red-400 font-bold">
+                                    <span className="text-red-600 font-bold">
                                       ❗오답
                                     </span>
                                   </p>
@@ -290,7 +292,7 @@ const WrongNoteEditor = ({
                       onKeyDown={async (e) => {
                         if (e.key === "Enter") await handleTitleSave();
                       }}
-                      className="bg-[#2c3544] border border-gray-600 rounded px-2 py-1 text-white text-sm"
+                      className="bg-white border border-gray-300 rounded px-2 py-1 text-gray-800 text-sm"
                     />
                   ) : (
                     <>
@@ -311,7 +313,6 @@ const WrongNoteEditor = ({
                       if (editorRef.current) {
                         const editorInstance = editorRef.current.getInstance();
                         const formattedCode = `제출 코드:\n\n${codeSnapshot}\n`;
-
 
                         editorInstance.insertText(formattedCode);
                       }
@@ -334,7 +335,7 @@ const WrongNoteEditor = ({
                       initialEditType="wysiwyg" // ✅ 처음부터 WYSIWYG 모드!
                       hideModeSwitch={true} // ✅ 하단 탭 스위치 숨김
                       height="600px"
-                      theme="dark"
+                      theme="light"
                       usageStatistics={false}
                       toolbarItems={[
                         ["bold", "italic", "strike"],
@@ -362,7 +363,7 @@ const WrongNoteEditor = ({
                   </>
                 ) : (
                   <>
-                    <div className="rounded border border-gray-700 bg-transparent overflow-hidden">
+                    <div className="rounded border border-gray-300 bg-white overflow-hidden">
                       {/* ✅ 뷰어 모드: 읽기 전용 Markdown Preview */}
                       <Editor
                         key="viewer"
@@ -371,7 +372,7 @@ const WrongNoteEditor = ({
                         initialEditType="markdown" // ✅ Markdown 기반 (탭 구조니까)
                         hideModeSwitch={true} // ✅ 하단 스위치 숨김
                         height="600px"
-                        theme="dark"
+                        theme="light"
                         usageStatistics={false}
                         toolbarItems={[]} // ✅ 툴바 없음
                         ref={editorRef}
@@ -400,7 +401,7 @@ const WrongNoteEditor = ({
                     previewStyle="tab"
                     hideModeSwitch={true}
                     height="600px"
-                    theme="dark"
+                    theme="light"
                     usageStatistics={false}
                     toolbarItems={[
                       ["bold", "italic", "strike"],

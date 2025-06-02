@@ -4,12 +4,21 @@ import { useSearchParams, Link } from "react-router-dom";
 import { getCodingTestList } from "../api/codingTestApi";
 import { useAuth } from "../context/AuthContext";
 
-const levelColors = {
-  1: "text-blue-500",
-  2: "text-green-500",
-  3: "text-yellow-500",
-  4: "text-orange-500",
-  5: "text-red-500",
+const getLevelClass = (level) => {
+  switch (level) {
+    case 1:
+      return "bg-green-200 text-green-800";
+    case 2:
+      return "bg-lime-200 text-lime-800";
+    case 3:
+      return "bg-yellow-200 text-yellow-800";
+    case 4:
+      return "bg-orange-200 text-orange-800";
+    case 5:
+      return "bg-rose-200 text-rose-800";
+    default:
+      return "bg-gray-200 text-gray-600";
+  }
 };
 
 const CodingTestPage = () => {
@@ -97,12 +106,11 @@ const CodingTestPage = () => {
       <div className="max-w-6xl mx-auto bg-white shadow-xl rounded-2xl border border-gray-300 p-7">
         {/* 페이지 타이틀 */}
         <div className="mb-8">
-        <h1 className="text-4xl font-extrabold text-gray-800 mb-4 tracking-wide">
-        <span className="text-teal-600">CODING</span>
+          <h1 className="text-4xl font-extrabold text-gray-800 mb-4 tracking-wide">
+            <span className="text-teal-600">CODING</span>
 
-  <span className="text-black">TEST</span>
-</h1>
-
+            <span className="text-black">TEST</span>
+          </h1>
 
           <p className="text-gray-500 text-sm">
             다양한 문제를 풀며{" "}
@@ -264,12 +272,14 @@ const CodingTestPage = () => {
                       {problem.title}
                     </Link>
                   </td>
-                  <td
-                    className={`p-3 font-semibold w-[100px] text-center ${
-                      levelColors[problem.level]
-                    }`}
-                  >
-                    Lv.{problem.level}
+                  <td className="p-3 w-[100px] text-center">
+                    <span
+                      className={`text-xs px-2 py-1 rounded font-semibold inline-block ${getLevelClass(
+                        problem.level
+                      )}`}
+                    >
+                      Lv.{problem.level}
+                    </span>
                   </td>
                   <td className="p-3 w-[160px] text-center">
                     {problem.category || "-"}
