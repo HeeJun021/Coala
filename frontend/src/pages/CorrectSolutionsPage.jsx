@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { FaUserCircle } from "react-icons/fa";
+import { Eye, RotateCw } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useParams, useNavigate } from "react-router-dom";
 import { getCorrectSolutions, getCodingTestDetail } from "../api/codingTestApi";
@@ -8,7 +9,6 @@ import Prism from "prismjs";
 import "prismjs/components/prism-javascript";
 import "prismjs/components/prism-python";
 import "prismjs/components/prism-java";
-
 
 const getPrismLang = (lang) => {
   if (lang.toLowerCase() === "python") return "python";
@@ -53,13 +53,10 @@ const CorrectSolutionsPage = () => {
     const matchesLanguage =
       selectedLang === "전체" ||
       sol.language.toLowerCase() === selectedLang.toLowerCase();
-  
     const matchesTab =
       activeTab === "all" || sol.user_id === user?.user_id;
-  
     return matchesLanguage && matchesTab;
   });
-  
 
   const totalPages = Math.ceil(filteredSolutions.length / itemsPerPage);
   const currentItems = filteredSolutions.slice(
@@ -68,44 +65,46 @@ const CorrectSolutionsPage = () => {
   );
 
   return (
-    <div className="codingtest-detail w-full min-h-screen bg-[#0f172a] text-white flex flex-col">
-      {/* ✅ 상단 헤더 (문제 제목 + 버튼) */}
-      <header className="flex items-center justify-between bg-[#2c3544] px-6 py-3">
+    <div className="w-full min-h-screen bg-white text-gray-900 flex flex-col">
+      {/* ✅ 상단 헤더 */}
+      <header className="flex items-center justify-between bg-gray-100 px-6 py-4 border-b">
         <h1 className="text-xl font-bold">{problemTitle}</h1>
         <div className="flex gap-2">
           <button
-            className="bg-slate-600 hover:bg-slate-700 px-3 py-1 text-xs rounded"
+            className="flex items-center gap-1 bg-blue-500 text-white hover:bg-blue-600 px-3 py-1 text-sm rounded"
             onClick={() => navigate(`/codingtest/${testId}`)}
           >
+            <Eye className="w-4 h-4" />
             문제 보기
           </button>
           <button
-            className="bg-slate-600 hover:bg-slate-700 px-3 py-1 text-xs rounded"
+            className="flex items-center gap-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1 text-sm rounded"
             onClick={() => navigate(`/codingtest/${testId}`)}
           >
+            <RotateCw className="w-4 h-4" />
             다시 풀기
           </button>
         </div>
       </header>
 
-      {/* ✅ 중간 필터 영역 */}
+      {/* ✅ 중간 필터 */}
       <div className="flex flex-col items-center w-full max-w-4xl mx-auto">
-        <div className="flex gap-2 mb-2 self-start mt-10">
+        <div className="flex gap-2 mt-10 mb-2 self-start">
           <button
             className={`px-4 py-2 rounded text-sm font-semibold ${
               activeTab === "all"
                 ? "bg-blue-600 text-white"
-                : "bg-gray-200 text-black"
+                : "bg-gray-200 text-gray-800"
             }`}
             onClick={() => setActiveTab("all")}
           >
             모든 풀이
           </button>
           <button
-            className={`px-4 py-1 rounded text-sm font-semibold ${
+            className={`px-4 py-2 rounded text-sm font-semibold ${
               activeTab === "mine"
                 ? "bg-blue-600 text-white"
-                : "bg-gray-200 text-black"
+                : "bg-gray-200 text-gray-800"
             }`}
             onClick={() => setActiveTab("mine")}
           >
@@ -113,8 +112,8 @@ const CorrectSolutionsPage = () => {
           </button>
         </div>
 
-        <p className="text-gray-300 text-sm mb-4 self-start">
-          정답으로 처리 된 문제들만 표시됩니다.
+        <p className="text-gray-500 text-sm mb-4 self-start">
+          정답으로 처리된 문제들만 표시됩니다.
         </p>
 
         <div className="flex justify-end w-full mb-6">
@@ -122,7 +121,7 @@ const CorrectSolutionsPage = () => {
             value={selectedLang}
             onChange={(e) => {
               setSelectedLang(e.target.value);
-              setCurrentPage(1); // ✅ 페이지 리셋
+              setCurrentPage(1);
             }}
             className="bg-white text-black px-3 py-1.5 rounded border text-sm"
           >
@@ -138,16 +137,15 @@ const CorrectSolutionsPage = () => {
 
       {/* ✅ 풀이 목록 */}
       {loading ? (
-        <p className="text-gray-400 text-center">불러오는 중...</p>
+        <p className="text-gray-500 text-center">불러오는 중...</p>
       ) : currentItems.length === 0 ? (
-        <p className="text-gray-400 text-center">조회된 코드가 없습니다.</p>
+        <p className="text-gray-500 text-center">조회된 코드가 없습니다.</p>
       ) : (
         <>
           <div className="flex flex-col gap-10 mb-10">
             {currentItems.map((sol, index) => (
               <div key={index} className="max-w-4xl mx-auto w-full">
-                {/* ✅ 닉네임 상단으로 분리 */}
-                <div className="text-sm text-gray-300 mb-4 flex items-center">
+                <div className="text-sm text-gray-600 mb-2 flex items-center">
                   {sol.profile_image_url ? (
                     <img
                       src={sol.profile_image_url}
@@ -160,8 +158,7 @@ const CorrectSolutionsPage = () => {
                   <span>{sol.nickname}</span>
                 </div>
 
-                {/* ✅ 코드 박스는 아래 */}
-                <div className="bg-[#1e293b] rounded-md p-4">
+                <div className="bg-gray-100 rounded-md p-4">
                   <Editor
                     value={sol.code}
                     onValueChange={() => {}}
@@ -189,13 +186,12 @@ const CorrectSolutionsPage = () => {
                 key={i}
                 onClick={() => {
                   setCurrentPage(i + 1);
-                  window.scrollTo({ top: 0});
-                //   window.scrollTo({ top: 0, behavior: "smooth" }); // ✅ 상단으로 부드럽게 스크롤
+                  window.scrollTo({ top: 0 });
                 }}
-                className={`px-3 py-1 rounded border ${
+                className={`px-3 py-1 rounded border text-sm ${
                   currentPage === i + 1
                     ? "bg-blue-500 text-white"
-                    : "bg-white text-black hover:bg-gray-200"
+                    : "bg-white text-gray-800 hover:bg-gray-200"
                 }`}
               >
                 {i + 1}

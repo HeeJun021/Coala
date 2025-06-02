@@ -67,7 +67,7 @@ const CodingTestEditorPanel = ({
           </span>
         }
       >
-        <div className="border-t border-gray-200 p-4 text-sm overflow-auto bg-gray-100 h-full result-scrollbar">
+        <div className="border-t border-gray-300 shadow-sm p-4 text-sm overflow-auto bg-gray-100 h-full result-scrollbar">
           <h3 className="text-gray-700 font-semibold mb-2">
             {isSubmitResult ? "제출 실행 결과" : "실행 결과"}
           </h3>

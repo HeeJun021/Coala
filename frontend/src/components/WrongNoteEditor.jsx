@@ -1,5 +1,17 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  FileText,
+  Pencil,
+  Save,
+  Download,
+  StickyNote,
+  XCircle,
+  Ban,
+  ClipboardList,
+  AlertCircle,
+} from "lucide-react";
+
 import "@toast-ui/editor/dist/toastui-editor.css";
 import "@toast-ui/editor/dist/theme/toastui-editor-dark.css";
 import { Editor } from "@toast-ui/react-editor";
@@ -146,10 +158,28 @@ const WrongNoteEditor = ({
 
   return (
     <div className="flex h-full">
-      <div className="w-[35%] p-4 border-r border-gray-500">
-        <h2 className="text-xl font-bold text-gray-800 mb-4">
-          ❌ 제출 오답 내역
-        </h2>
+      <div
+        className={`w-[35%] p-4 ${
+          showNoteEditor ? "border-r border-gray-500" : ""
+        }`}
+      >
+        {failedSubmissions.length > 0 && (
+          <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <Ban className="w-5 h-5 text-[#e11d48]" />
+            제출 오답 내역
+          </h2>
+        )}
+
+        {failedSubmissions.length === 0 ? (
+          <div className="text-left px-4 text-gray-600 text-base font-medium italic">
+            틀린 문제가 없습니다.
+          </div>
+        ) : (
+          failedSubmissions.map((s) => (
+            <div key={s.submission_id}>{/* 제출 카드 */}</div>
+          ))
+        )}
+
         <div className="space-y-2">
           {failedSubmissions.map((s) => (
             <div key={s.submission_id}>
@@ -164,7 +194,11 @@ const WrongNoteEditor = ({
                 }}
                 className="flex items-center w-full text-left px-3 py-2 border rounded bg-gray-100 text-gray-800 hover:bg-gray-200"
               >
-                📄 {s.title || "제출 제목 없음"} - {s.submitted_at}
+                <FileText
+                  className="w-4 h-4 mr-2"
+                  style={{ color: "#1d4ed8" }}
+                />
+                {s.title || "제출 제목 없음"} - {s.submitted_at}
               </button>
               <AnimatePresence mode="wait">
                 {selectedSubmission?.submission_id === s.submission_id && (
@@ -179,7 +213,11 @@ const WrongNoteEditor = ({
                     <div className="ml-6 mt-2">
                       <div className="flex justify-between items-center mb-2">
                         <h4 className="text-sm font-semibold">
-                          📑 실패한 테스트케이스 목록
+                          <ClipboardList
+                            className="w-4 h-4 inline-block mr-1"
+                            style={{ color: "#1d4ed8" }}
+                          />
+                          실패한 테스트케이스 목록
                         </h4>
                         {existingNoteMap[s.submission_id] === null && (
                           <button
@@ -206,9 +244,10 @@ const WrongNoteEditor = ({
                                 alert("오답노트 생성 중 오류 발생");
                               }
                             }}
-                            className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded"
+                            className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded flex items-center"
                           >
-                            ✍️ 오답노트 작성
+                            <StickyNote className="w-3.5 h-4 mr-1" />
+                            오답노트 작성
                           </button>
                         )}
                       </div>
@@ -228,7 +267,11 @@ const WrongNoteEditor = ({
                           if (failedCases.length === 0) {
                             return (
                               <div className="text-gray-500">
-                                ❗실패한 테스트케이스 없음
+                                <XCircle
+                                  className="w-4 h-4 mr-1 inline-block"
+                                  style={{ color: "#e11d48" }}
+                                />
+                                실패한 테스트케이스 없음
                               </div>
                             );
                           }
@@ -245,7 +288,11 @@ const WrongNoteEditor = ({
                                   <p>
                                     출력값 : {r.actual_output}{" "}
                                     <span className="text-red-600 font-bold">
-                                      ❗오답
+                                      <AlertCircle
+                                        className="w-[14px] h-[14px] inline align-text-bottom relative -top-[1px]"
+                                        style={{ color: "#e11d48" }}
+                                      />{" "}
+                                      오답
                                     </span>
                                   </p>
                                 </div>
@@ -282,7 +329,7 @@ const WrongNoteEditor = ({
             >
               <div className="flex justify-between items-center mb-4 flex-wrap gap-y-2">
                 <div className="flex items-center gap-2">
-                  📄
+                  <FileText className="w-4 h-4 inline-block text-[#0f52ba]" />
                   {editingTitle ? (
                     <input
                       type="text"
@@ -303,7 +350,8 @@ const WrongNoteEditor = ({
                     onClick={() => setEditingTitle(true)}
                     className="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
                   >
-                    ✏️ 제출 이름 변경
+                    <Pencil className="w-3 h-3 mr-1 inline-block" />
+                    제출 이름 변경
                   </button>
                 </div>
                 {(!existingNoteMap[selectedSubmission.submission_id]?.note ||
@@ -319,7 +367,11 @@ const WrongNoteEditor = ({
                     }}
                     className="text-xs bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
                   >
-                    📥 제출 코드 불러오기
+                    <Download
+                      className="w-4 h-4 mr-1 inline-block"
+                      style={{ color: "#ffffff" }}
+                    />
+                    제출 코드 불러오기
                   </button>
                 )}
               </div>
@@ -357,7 +409,8 @@ const WrongNoteEditor = ({
                         onClick={handleSave}
                         className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
                       >
-                        💾 오답노트 저장
+                        <Save className="w-4 h-4 mr-1 inline-block text-white" />
+                        오답노트 저장
                       </button>
                     </div>
                   </>
@@ -388,7 +441,8 @@ const WrongNoteEditor = ({
                         }}
                         className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
                       >
-                        ✏️ 오답노트 수정하기
+                        <Pencil className="w-4 h-4 mr-1 inline-block text-white" />
+                        오답노트 수정하기
                       </button>
                     </div>
                   </>
@@ -421,7 +475,8 @@ const WrongNoteEditor = ({
                       onClick={handleSave}
                       className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
                     >
-                      💾 오답노트 저장
+                      <Save className="w-4 h-4 mr-1 inline-block text-white" />
+                      오답노트 저장
                     </button>
                   </div>
                 </>
