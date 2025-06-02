@@ -62,3 +62,10 @@ export const getAllSubmissionsByUser = async (userId) => {
   const res = await apiClient.get(`/codingtest/submissions/user/${userId}`);
   return res.data;
 };
+
+// ✅ 다른 사람 풀이 보기 기록
+export const markViewedOthers = async (testId) => {
+  return await apiClient.post("/codingtest/solution-view", {
+    test_id: testId,
+  });
+};

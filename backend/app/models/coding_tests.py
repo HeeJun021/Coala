@@ -84,6 +84,17 @@ class CorrectSubmissionStats(Base):
     correct_submissions = Column(Integer, default=0)
     correct_rate = Column(Float, default=0.0)
 
+class CodingTestSolutionViews(Base):
+    __tablename__ = "codingtestsolutionviews"
+
+    view_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    test_id = Column(Integer, ForeignKey("codingtests.test_id", ondelete="CASCADE"))
+    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"))
+    viewed_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (UniqueConstraint("test_id", "user_id", name="uix_test_user_view"),)
+
+
 
 class WrongNote(Base):
     __tablename__ = "wrongnote"

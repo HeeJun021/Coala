@@ -4,7 +4,6 @@ import "@toast-ui/editor/dist/toastui-editor.css";
 import "@toast-ui/editor/dist/theme/toastui-editor-dark.css";
 import { Editor } from "@toast-ui/react-editor";
 
-
 import {
   createWrongNote,
   getWrongNoteBySubmissionId,
@@ -311,7 +310,9 @@ const WrongNoteEditor = ({
                     onClick={() => {
                       if (editorRef.current) {
                         const editorInstance = editorRef.current.getInstance();
-                        const formattedCode = `\`\`\`python\n${codeSnapshot}\n\`\`\`\n`;
+                        const formattedCode = `제출 코드:\n\n${codeSnapshot}\n`;
+
+
                         editorInstance.insertText(formattedCode);
                       }
                     }}

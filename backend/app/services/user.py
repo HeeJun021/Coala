@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
+from typing import Optional
 from app.models.user import User
 from app.models.eucalyptus_transaction import EucalyptusTransaction
 from app.schemas.user import UserUpdateSchema
@@ -30,8 +31,12 @@ def update_user_info(db: Session, user_id: int, user_update: UserUpdateSchema):
     db.commit()
     db.refresh(user)
     return user
-
-def reward_user_by_action(user: User, action: RewardActionType, db: Session) -> int:
+def reward_user_by_action(
+    user: User,
+    action: RewardActionType,
+    db: Session,
+    amount: Optional[int] = None  # ✅ 선택적으로 외부에서 주입 가능
+) -> int:
     reward_table = {
         RewardActionType.quiz_correct: 10,
         RewardActionType.coding_test_passed: 30,
@@ -39,7 +44,7 @@ def reward_user_by_action(user: User, action: RewardActionType, db: Session) -> 
         RewardActionType.team_project_complete: 50,
     }
 
-    reward = reward_table.get(action)
+    reward = amount if amount is not None else reward_table.get(action)
     if reward is None:
         raise HTTPException(status_code=400, detail="유효하지 않은 보상 타입입니다.")
 
@@ -66,7 +71,6 @@ def reward_user_by_action(user: User, action: RewardActionType, db: Session) -> 
 
     db.commit()
     return reward
-
 
 
 # 🌿 화폐 사용 (차감)

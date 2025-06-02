@@ -73,3 +73,8 @@ class SubmissionTitleUpdate(BaseModel):
     model_config = {
         "from_attributes": True
     }
+    
+    
+
+class SolutionViewRequest(BaseModel):
+    test_id: int

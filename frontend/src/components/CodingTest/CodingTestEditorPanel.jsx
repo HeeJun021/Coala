@@ -70,7 +70,10 @@ const CodingTestEditorPanel = ({
 
           {isRunning ? (
             <div className="text-gray-300 text-sm mt-3 animate-pulse">
-              ⏳ 제출 실행 중입니다...
+              ⏳{" "}
+              {isSubmitResult
+                ? "제출 실행 중입니다..."
+                : "테스트케이스 실행 중입니다..."}
             </div>
           ) : executionResults.length === 0 ? (
             <div className="text-gray-300 text-sm mt-3">
@@ -89,7 +92,10 @@ const CodingTestEditorPanel = ({
                 </thead>
                 <tbody>
                   {executionResults.map((result, idx) => (
-                    <tr key={idx} className="border-t border-gray-500 text-white">
+                    <tr
+                      key={idx}
+                      className="border-t border-gray-500 text-white"
+                    >
                       <td className="p-2 border-r border-gray-500 whitespace-pre-line">
                         {result.input.replace(/\\n/g, "\n")}
                       </td>
@@ -98,13 +104,18 @@ const CodingTestEditorPanel = ({
                       </td>
                       <td className="p-2 border-r border-gray-500">
                         {result.passed ? (
-                          <span className="text-blue-400">테스트를 통과하였습니다.</span>
+                          <span className="text-blue-400">
+                            테스트를 통과하였습니다.
+                          </span>
                         ) : (
-                          <span className="text-red-400">테스트를 통과하지 못했습니다.</span>
+                          <span className="text-red-400">
+                            테스트를 통과하지 못했습니다.
+                          </span>
                         )}
                       </td>
                       <td className="p-2">
-                        {result.actual_output !== undefined && result.actual_output !== ""
+                        {result.actual_output !== undefined &&
+                        result.actual_output !== ""
                           ? result.actual_output
                           : "-"}
                       </td>
@@ -117,7 +128,10 @@ const CodingTestEditorPanel = ({
                 <div className="bg-[#2b2f38] border border-red-400 rounded-md p-4 mt-4 text-sm text-red-200 whitespace-pre-wrap">
                   <pre className="leading-relaxed text-red-200 font-mono">
                     {cleanStderr(
-                      executionResults.map((r) => r.stderr).filter(Boolean).join("\n\n")
+                      executionResults
+                        .map((r) => r.stderr)
+                        .filter(Boolean)
+                        .join("\n\n")
                     )}
                   </pre>
                 </div>

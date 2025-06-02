@@ -24,7 +24,7 @@ import {
 } from "../api/codingTestApi";
 
 // 🧩 컴포넌트
-import ResultModal from "../components/ResultModal";
+import ResultModal from "../components/CodingTest/ResultModal";
 import WrongNoteEditor from "../components/WrongNoteEditor";
 
 // 🎨 스타일
@@ -104,7 +104,8 @@ const CodingTestDetailPage = () => {
   const handleRunCode = async () => {
     if (!problem) return;
 
-    setIsSubmitResult(false); // 실행 결과일 때는 제출 결과가 아님!
+    setIsSubmitResult(false); // 제출 실행 결과가 아님
+    setIsRunning(true); // ✅ 실행 중 상태 시작
 
     try {
       const res = await runCodeWithTestcases(problem.id, code, language);
@@ -128,6 +129,8 @@ const CodingTestDetailPage = () => {
           stderr: "코드 실행 중 에러 발생",
         },
       ]);
+    } finally {
+      setIsRunning(false); // ✅ 실행 중 상태 종료
     }
   };
 
@@ -143,6 +146,7 @@ const CodingTestDetailPage = () => {
 
   const handleSubmitCode = async () => {
     try {
+      setIsSubmitResult(true);
       setIsSubmitting(true);
       setIsRunning(true);
 
@@ -164,6 +168,10 @@ const CodingTestDetailPage = () => {
           isCorrect: res.is_correct,
           passed: res.passed_test_cases,
           total: res.total_test_cases,
+          rating: res.current_rating,
+          ratingDiff: res.rating_diff || 0,
+          isFirstCorrect: res.is_first_correct,
+          eucalyptusReward: res.eucalyptus_reward || 0,
         });
         setShowResultModal(true);
         setIsRunning(false); // 로딩 상태 종료
@@ -358,8 +366,12 @@ const CodingTestDetailPage = () => {
           isCorrect={resultData.isCorrect}
           passed={resultData.passed}
           total={resultData.total}
-          onClose={() => setShowResultModal(false)}
           testId={problem.id}
+          onClose={() => setShowResultModal(false)}
+          rating={resultData.rating}
+          ratingDiff={resultData.ratingDiff}
+          isFirstCorrect={resultData.isFirstCorrect}
+          eucalyptusReward={resultData.eucalyptusReward}
         />
       )}
     </>
