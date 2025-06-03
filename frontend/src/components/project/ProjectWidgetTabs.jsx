@@ -3,6 +3,8 @@ import ProjectDetailPanel from "./ProjectDetailPanel";
 import { updateProject, getMyProjects } from "../../api/projectApi";
 import { getErds } from "../../api/erd/erdApi";
 import ErdListPanel from "../erd/list/ErdListPanel";
+import DocsListPanel from "./DocsListPanel";      // ✅ 문서 목록 컴포넌트
+import DocEditorPanel from "./DocEditorPanel";    // ✅ 문서 에디터 컴포넌트
 
 const WIDGET_TABS = [
   { key: "overview", label: "개요" },
@@ -20,6 +22,7 @@ const ProjectWidgetTabs = ({ project }) => {
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [currentProject, setCurrentProject] = useState(project);
   const [erds, setErds] = useState([]);
+  const [selectedDocId, setSelectedDocId] = useState(null); // ✅ 문서 선택 상태
 
   useEffect(() => {
     const initialTabs = ["overview"];
@@ -104,17 +107,29 @@ const ProjectWidgetTabs = ({ project }) => {
         return (
           <ErdListPanel
             project={currentProject}
-            erds={erds} // ✅ ERD 목록 전달
-            onRefresh={loadErds} // ✅ 생성 후 목록 새로고침용
-            onSelect={() => {}} // ✅ 필요 시 선택 핸들러
+            erds={erds}
+            onRefresh={loadErds}
+            onSelect={() => {}}
+          />
+        );
+      case "docs":
+        return selectedDocId === null ? (
+          <DocsListPanel
+            projectId={currentProject.project_id}
+            onSelect={setSelectedDocId}
+          />
+        ) : (
+          <DocEditorPanel
+            projectId={currentProject.project_id}
+            docId={selectedDocId}
+            onBack={() => setSelectedDocId(null)}
           />
         );
       default:
         return (
           <div className="p-10 text-gray-500 text-sm">
             <p>
-              🚧 `{WIDGET_TABS.find((t) => t.key === activeTab)?.label}` 탭은
-              준비 중입니다.
+              🚧 `{WIDGET_TABS.find((t) => t.key === activeTab)?.label}` 탭은 준비 중입니다.
             </p>
           </div>
         );
@@ -130,7 +145,10 @@ const ProjectWidgetTabs = ({ project }) => {
             return (
               <button
                 key={tab}
-                onClick={() => setActiveTab(tab)}
+                onClick={() => {
+                  setActiveTab(tab);
+                  setSelectedDocId(null); // 문서 탭 초기화
+                }}
                 className={`mr-4 text-sm font-medium border-b-2 ${
                   activeTab === tab
                     ? "border-blue-600 text-blue-600"

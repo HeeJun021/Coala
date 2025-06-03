@@ -21,6 +21,14 @@ class Project(Base):
     widgets = relationship("ProjectWidgets", back_populates="project")
     erds = relationship("Erds", back_populates="project", cascade="all, delete-orphan")
 
+    # ✅ 문서와의 1:1 관계
+    # 기존 document (1:1) 제거 후 아래 추가:
+    documents = relationship(
+        "ProjectDocument",
+        back_populates="project",
+        cascade="all, delete-orphan"
+    )
+
 # ✅ 프로젝트 멤버 테이블
 class ProjectMembers(Base):
     __tablename__ = "projectmembers"
