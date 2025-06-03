@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import ProjectCreateModal from "./ProjectCreateModal";
 import { getMyProjects } from "../../api/projectApi";
 
-const ProjectSidebar = ({ setActiveTab, onProjectSelect, selectedProjectId, onUpdate }) => {
+const ProjectSidebar = ({ setActiveTab, onProjectSelect, selectedProjectId, onUpdate, onNameChange }) => {
   const [projects, setProjects] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -29,17 +29,13 @@ const ProjectSidebar = ({ setActiveTab, onProjectSelect, selectedProjectId, onUp
     onProjectSelect(projectId);
   };
 
-  const handleProjectCreated = async (newProject) => {
-    try {
-      await fetchProjects();
-      setIsModalOpen(false);
-      if (newProject?.project_id) {
-        onProjectSelect(newProject.project_id);
-      }
-      onUpdate();
-    } catch (err) {
-      console.error("프로젝트 목록 갱신 실패", err);
+  const handleProjectCreated = (newProject) => {
+    setProjects((prev) => [...prev, newProject]);
+    setIsModalOpen(false);
+    if (newProject?.project_id) {
+      onProjectSelect(newProject.project_id);
     }
+    onUpdate();
   };
 
   return (

@@ -11,7 +11,8 @@ from app.models import (
     study_materials,
     study_example,
     question,
-    language
+    language,
+    user, project_models, task_models
 )
 
 # ✅ 라우터 불러오기
@@ -44,7 +45,9 @@ from app.routers import (
     chat_download,
     gpt,
     project,
-    erd
+    erd,
+    task,
+    memo
 )
 
 from app.schemas.user import UserUpdateSchema
@@ -96,7 +99,8 @@ app.include_router(code_execution.router, prefix="/code")  # WebSocket용이면 
 app.include_router(code.router)
 app.include_router(preview.router)
 app.include_router(github.router)
-
+app.include_router(task.router)
+app.include_router(memo.router)
 # 채팅
 app.include_router(chat_ws.router)
 app.include_router(chat_rest.router)
