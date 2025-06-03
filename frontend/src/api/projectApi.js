@@ -1,4 +1,3 @@
-// src/api/projectApi.js
 import apiClient from "./apiClient";
 
 // ✅ 로그인된 사용자의 프로젝트 목록 가져오기

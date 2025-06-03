@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { getMyTasks, createTask, updateTask, deleteTask } from "../../api/taskApi";
 import TaskCalendarView from "./TaskCalendarView";
 import MemoTab from "./MemoTab";
-import { getMyProjects, getProjectMembers } from "../../api/projectApi";
+import { getProjectMembers } from "../../api/projectApi";
 
 const sections = [
   "최근 배정된 작업",
@@ -12,7 +12,7 @@ const sections = [
   "마감일 지남",
 ];
 
-const MyTasksTab = ({ projects: propProjects }) => {
+const ProjectTasksTab = ({ project }) => {
   const [tasks, setTasks] = useState([]);
   const [viewMode, setViewMode] = useState("list");
   const [selectedTask, setSelectedTask] = useState(null);
@@ -27,7 +27,6 @@ const MyTasksTab = ({ projects: propProjects }) => {
   const [expandedSections, setExpandedSections] = useState(
     sections.reduce((acc, section) => ({ ...acc, [section]: true }), {})
   );
-  const [projects, setProjects] = useState(propProjects || []);
   const [members, setMembers] = useState([]);
   const [isAddingCollaborator, setIsAddingCollaborator] = useState(false);
   const slideRef = useRef(null);
@@ -36,27 +35,17 @@ const MyTasksTab = ({ projects: propProjects }) => {
   useEffect(() => {
     const fetchTasks = async () => {
       try {
-        const res = await getMyTasks();
-        console.log("Fetched tasks:", res);
-        setTasks(res || []);
+        const allTasks = await getMyTasks();
+        const projectTasks = allTasks.filter(task => task.project_id === project?.project_id);
+        console.log("Fetched tasks:", projectTasks);
+        setTasks(projectTasks || []);
       } catch (err) {
         console.error("Failed to fetch tasks:", err);
         setTasks([]);
       }
     };
-    const fetchProjects = async () => {
-      try {
-        const res = await getMyProjects();
-        console.log("Fetched projects:", res);
-        setProjects(res || []);
-      } catch (err) {
-        console.error("Failed to fetch projects:", err);
-        setProjects([]);
-      }
-    };
     fetchTasks();
-    fetchProjects();
-  }, []);
+  }, [project]);
 
   useEffect(() => {
     const fetchMembers = async () => {
@@ -226,7 +215,7 @@ const MyTasksTab = ({ projects: propProjects }) => {
     <div className="flex max-w-[1400px] mx-auto px-6 py-8">
       <div className="flex-1">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold">내 작업</h1>
+          <h1 className="text-3xl font-bold">{project?.name} 작업</h1>
           <div className="flex gap-4 mt-4 border-b pb-2">
             {["list", "calendar", "memo"].map((tab) => (
               <button
@@ -327,7 +316,7 @@ const MyTasksTab = ({ projects: propProjects }) => {
 
         {viewMode === "calendar" && (
           <div className="mt-6">
-            <TaskCalendarView tasks={tasks} projects={projects} onTaskClick={handleTaskClick} />
+            <TaskCalendarView tasks={tasks} projects={[project]} onTaskClick={handleTaskClick} />
           </div>
         )}
 
@@ -395,7 +384,7 @@ const MyTasksTab = ({ projects: propProjects }) => {
                   className="border rounded px-3 py-1 text-sm"
                 >
                   <option value="">프로젝트 선택</option>
-                  {projects.map((proj) => (
+                  {[{ project_id: project?.project_id, name: project?.name }].map((proj) => (
                     <option key={proj.project_id} value={proj.project_id}>
                       {proj.name}
                     </option>
@@ -510,7 +499,7 @@ const MyTasksTab = ({ projects: propProjects }) => {
                 className="text-base font-medium border-none focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-2 py-1"
               >
                 <option value="">프로젝트 없음</option>
-                {projects.map((p) => (
+                {[{ project_id: project?.project_id, name: project?.name }].map((p) => (
                   <option key={p.project_id} value={p.project_id}>
                     {p.name}
                   </option>
@@ -595,4 +584,4 @@ const MyTasksTab = ({ projects: propProjects }) => {
   );
 };
 
-export default MyTasksTab;
+export default ProjectTasksTab;

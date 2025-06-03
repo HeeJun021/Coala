@@ -7,7 +7,7 @@ const dummyFriends = [
   { id: 3, nickname: "박프론트", email: "frontp@example.com" },
 ];
 
-const ProjectDetailPanel = ({ project, onUpdate }) => {
+const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
   const [members, setMembers] = useState([]);
   const [activityLogs, setActivityLogs] = useState([]);
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -19,6 +19,7 @@ const ProjectDetailPanel = ({ project, onUpdate }) => {
   const [resource, setResource] = useState("");
   const [editMode, setEditMode] = useState({ name: false, description: false });
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [showAllLogs, setShowAllLogs] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -35,6 +36,10 @@ const ProjectDetailPanel = ({ project, onUpdate }) => {
     };
     fetchData();
   }, [project.project_id]);
+
+  useEffect(() => {
+    setProjectName(project.name);
+  }, [project.name]);
 
   const handleAddMember = async () => {
     if (selectedFriend) {
@@ -102,12 +107,14 @@ const ProjectDetailPanel = ({ project, onUpdate }) => {
           chat: false,
           calendar: false,
           memo: false,
+          timeline: false,
         },
       };
       await updateProject(project.project_id, projectData);
       const activityRes = await getProjectActivity(project.project_id);
       setActivityLogs(activityRes);
       onUpdate();
+      onNameChange?.(project.project_id, projectName);
     } catch (err) {
       console.error("프로젝트 업데이트 실패", err);
       alert("프로젝트 업데이트에 실패했습니다.");
@@ -118,6 +125,8 @@ const ProjectDetailPanel = ({ project, onUpdate }) => {
     setOpenMenuId((prev) => (prev === userId ? null : userId));
   };
 
+  const displayedLogs = showAllLogs ? activityLogs : activityLogs.slice(0, 5);
+
   return (
     <div className="flex gap-8">
       <div className="flex-1 pl-4 pt-4 space-y-6">
@@ -126,7 +135,10 @@ const ProjectDetailPanel = ({ project, onUpdate }) => {
             <input
               type="text"
               value={projectName}
-              onChange={(e) => setProjectName(e.target.value)}
+              onChange={(e) => {
+                setProjectName(e.target.value);
+                onNameChange?.(project.project_id, e.target.value);
+              }}
               onBlur={() => {
                 setEditMode((prev) => ({ ...prev, name: false }));
                 handleUpdateProject();
@@ -266,13 +278,21 @@ const ProjectDetailPanel = ({ project, onUpdate }) => {
         <div className="bg-white border rounded p-4">
           <p className="text-sm font-semibold mb-3">📜 활동 기록</p>
           <ul className="text-xs text-gray-700 space-y-1">
-            {activityLogs.map((log) => (
+            {displayedLogs.map((log) => (
               <li key={log.id} className="flex justify-between">
                 <span>👤 {log.actor} - {log.text}</span>
                 <span className="text-gray-400">{log.date}</span>
               </li>
             ))}
           </ul>
+          {activityLogs.length > 5 && (
+            <button
+              onClick={() => setShowAllLogs((prev) => !prev)}
+              className="text-sm text-blue-600 hover:underline mt-2 block w-full text-left"
+            >
+              {showAllLogs ? "Show less" : `Show more (${activityLogs.length - 5})`}
+            </button>
+          )}
         </div>
       </div>
 

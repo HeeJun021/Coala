@@ -420,3 +420,28 @@ body {
 .cm-editor .cm-line {
   font-family: 'JetBrains Mono', 'Noto Sans KR', monospace !important;
 }
+.btn {
+  @apply px-2 py-1 border rounded text-sm hover:bg-gray-200;
+}
+
+/* ReactQuill 커스터마이징: 노션 스타일 */
+.memo-editor .ql-editor {
+  font-size: 15px;
+  line-height: 1.4; /* ✅ 줄 간격 최소화 */
+  padding: 12px 0;
+  font-family: inherit;
+}
+
+/* 코드 블록 스타일 */
+.memo-editor .ql-editor pre {
+  background-color: #f3f4f6;
+  font-size: 14px;
+  padding: 6px;
+  border-radius: 4px;
+  font-family: Menlo, monospace;
+}
+
+/* 불필요한 border 제거 */
+.memo-editor {
+  border: none;
+}
