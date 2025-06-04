@@ -10,22 +10,21 @@ import {
 
 const CodingTestProblemInfo = ({ problem, setShowCopyMessage }) => {
   const getLevelClass = (level) => {
-  switch (level) {
-    case 1:
-      return "bg-green-200 text-green-800";
-    case 2:
-      return "bg-lime-200 text-lime-800";
-    case 3:
-      return "bg-yellow-200 text-yellow-800";
-    case 4:
-      return "bg-orange-200 text-orange-800";
-    case 5:
-      return "bg-rose-200 text-rose-800";
-    default:
-      return "bg-gray-200 text-gray-600";
-  }
-};
-
+    switch (level) {
+      case 1:
+        return "bg-green-200 text-green-800";
+      case 2:
+        return "bg-lime-200 text-lime-800";
+      case 3:
+        return "bg-yellow-200 text-yellow-800";
+      case 4:
+        return "bg-orange-200 text-orange-800";
+      case 5:
+        return "bg-rose-200 text-rose-800";
+      default:
+        return "bg-gray-200 text-gray-600";
+    }
+  };
 
   return (
     <>
@@ -40,10 +39,7 @@ const CodingTestProblemInfo = ({ problem, setShowCopyMessage }) => {
           >
             LV.{problem.difficulty}
           </span>
-
-          <span className="text-xs text-gray-500">
-            | 카테고리 {problem.category}
-          </span>
+          <span className="text-xs text-gray-500">| 카테고리 {problem.category}</span>
         </div>
         <div className="text-xs text-gray-500">
           총 {problem.total_submissions || 0}번의 풀이 | 정답률{" "}
@@ -81,6 +77,25 @@ const CodingTestProblemInfo = ({ problem, setShowCopyMessage }) => {
           <p className="whitespace-pre-line">{problem.output_format}</p>
         </div>
 
+        {/* 제한 사항 */}
+        <div>
+          <hr className="border-gray-300 my-4" />
+          <h2 className="flex items-center gap-2 font-semibold mb-2 text-base text-gray-700">
+            <ShieldCheck size={16} className="text-indigo-500" />
+            제한 사항
+          </h2>
+          <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+            <li>
+              <span className="font-medium text-gray-800">타임리밋:</span>{" "}
+              {problem.time_limit}ms
+            </li>
+            <li>
+              <span className="font-medium text-gray-800">메모리리밋:</span>{" "}
+              {problem.memory_limit} bytes
+            </li>
+          </ul>
+        </div>
+
         {/* 제약조건 */}
         <div>
           <hr className="border-gray-300 my-4" />
@@ -116,9 +131,7 @@ const CodingTestProblemInfo = ({ problem, setShowCopyMessage }) => {
                 <span>{ex.input.replace(/\\n/g, "\n")}</span>
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(
-                      ex.input.replace(/\\n/g, "\n")
-                    );
+                    navigator.clipboard.writeText(ex.input.replace(/\\n/g, "\n"));
                     setShowCopyMessage(true);
                     setTimeout(() => setShowCopyMessage(false), 3000);
                   }}
@@ -135,9 +148,7 @@ const CodingTestProblemInfo = ({ problem, setShowCopyMessage }) => {
                 <span>{ex.output}</span>
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(
-                      ex.input.replace(/\\n/g, "\n")
-                    );
+                    navigator.clipboard.writeText(ex.output);
                     setShowCopyMessage(true);
                     setTimeout(() => setShowCopyMessage(false), 3000);
                   }}

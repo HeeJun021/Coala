@@ -74,6 +74,9 @@ class CodingTestSubmissions(Base):
     submitted_at = Column(DateTime(timezone=False), server_default=func.now())
     language = Column(String(20), default="python")
     viewed_others = Column(Boolean, default=False)
+    
+    execution_time = Column(Integer, nullable=True)  # 단위: ms
+    memory_used = Column(Integer, nullable=True)     # 단위: byte
 
 
 class CorrectSubmissionStats(Base):

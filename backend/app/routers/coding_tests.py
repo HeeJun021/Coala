@@ -112,6 +112,7 @@ def get_coding_test_list(
     }
 
 
+# 문제 조회
 @router.get("/{test_id}")
 def get_coding_test_detail(
     test_id: int, db: Session = Depends(get_db), user_id: int = None
@@ -190,7 +191,7 @@ def get_coding_test_detail(
     }
 
 
-# 제출
+# 채점
 @router.post("/submit")
 async def submit_coding_test(
     submission: CodingTestSubmissionCreate,
@@ -204,14 +205,31 @@ async def submit_coding_test(
     if not problem:
         raise HTTPException(status_code=404, detail="문제를 찾을 수 없습니다.")
 
+    # ✅ 전체 테스트케이스 실행
     testcases = get_testcases(db, submission.test_id, type="all")
     results = await run_code_against_testcases(
         submission.code, submission.language, testcases
     )
+
+    # ✅ ⏱ 실행 시간 중 최대값
+    max_execution_time = max(r["execution_time"] for r in results)
+    # ✅ 💾 코드 길이 기준 메모리 사용량
+    memory_used = len(submission.code.encode("utf-8"))
+
+    # ✅ 타임리밋 및 메모리리밋 초과 검사
+    time_limit_exceeded = max_execution_time > problem.time_limit
+    memory_limit_exceeded = memory_used > problem.memory_limit * 1024 * 1024  # MB → B
+
+    # ✅ 통과 여부 판정
     passed_count = sum(1 for r in results if r["passed"])
     total_count = len(results)
-    is_correct = passed_count == total_count
+    is_correct = (
+        passed_count == total_count
+        and not time_limit_exceeded
+        and not memory_limit_exceeded
+    )
 
+    # 제목 자동 생성
     submission_count = (
         db.query(CodingTestSubmissions)
         .filter(
@@ -220,9 +238,9 @@ async def submit_coding_test(
         )
         .count()
     )
-
     title = submission.title or f"제출 {submission_count + 1}"
 
+    # ✅ DB 저장
     new_submission = CodingTestSubmissions(
         user_id=submission.user_id,
         test_id=submission.test_id,
@@ -233,12 +251,14 @@ async def submit_coding_test(
         passed_test_cases=passed_count,
         total_test_cases=total_count,
         execution_result=results,
+        execution_time=max_execution_time,
+        memory_used=memory_used,
     )
     db.add(new_submission)
     db.commit()
     db.refresh(new_submission)
 
-    # ✅ 정답일 경우 → 점수 및 유칼립투스 계산
+    # ✅ 정답 보상 처리
     rating_diff = 0
     eucalyptus_reward = 0
 
@@ -260,7 +280,6 @@ async def submit_coding_test(
             .first()
         )
 
-        # ✅ 다른 사람 풀이 열람 여부 조회
         viewed_solution = (
             db.query(CodingTestSolutionViews)
             .filter_by(test_id=submission.test_id, user_id=submission.user_id)
@@ -268,20 +287,19 @@ async def submit_coding_test(
         )
 
         if is_first_correct and not viewed_solution:
-            # 👉 레이팅 및 유칼립투스 지급
             rating_diff = base_score
             user.rating += rating_diff
             eucalyptus_reward = reward_user_by_action(
                 user=user,
                 action=RewardActionType.coding_test_passed,
                 db=db,
-                amount=eucalyptus_base,  # ✅ 난이도 기반 외부 주입
+                amount=eucalyptus_base,
             )
 
         db.commit()
         db.refresh(user)
 
-    # 📊 통계 비동기 업데이트
+    # 📊 통계 업데이트 비동기 처리
     background_tasks.add_task(
         update_correct_stats, db=db, test_id=submission.test_id, is_correct=is_correct
     )
@@ -292,11 +310,15 @@ async def submit_coding_test(
         "submission_id": new_submission.ct_submission_id,
         "passed_test_cases": passed_count,
         "total_test_cases": total_count,
+        "execution_time": max_execution_time,
+        "memory_used": memory_used,
         "all_cases": results,
         "rating_diff": rating_diff,
         "current_rating": user.rating,
         "eucalyptus_reward": eucalyptus_reward,
         "is_first_correct": is_correct and is_first_correct and not viewed_solution,
+        "time_limit_exceeded": time_limit_exceeded,
+        "memory_limit_exceeded": memory_limit_exceeded,
     }
 
 
@@ -322,12 +344,13 @@ def get_coding_test_submissions(
                 "submitted_at": sub.submitted_at.strftime("%Y-%m-%d %H:%M"),
                 "language": sub.language,
                 "is_correct": sub.is_correct,
-                "memory": f"{len(sub.code.encode('utf-8'))}B",
+                "memory": f"{sub.memory_used}B",
+                "execution_time": sub.execution_time,
                 "passed_test_cases": sub.passed_test_cases,
                 "total_test_cases": sub.total_test_cases,
-                "title": sub.title if sub.title else "",  # ✅ 여기 수정!
+                "title": sub.title if sub.title else "",
                 "code": sub.code,
-                "execution_result": sub.execution_result or [],  # ✅ 바로 사용 가능
+                "execution_result": sub.execution_result or [],
             }
         )
 
@@ -421,12 +444,13 @@ def record_solution_view(
     db.commit()
     return {"message": "기록 완료"}
 
+
 # 문제를 풀었는지 안 풀었는지 확인하는 함수
 @router.get("/{test_id}/has-solved")
 def has_solved_coding_test(
     test_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user_object)
+    current_user: User = Depends(get_current_user_object),
 ):
     solved = (
         db.query(CodingTestSubmissions)
