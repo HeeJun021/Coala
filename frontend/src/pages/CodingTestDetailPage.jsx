@@ -195,6 +195,10 @@ const CodingTestDetailPage = () => {
           ratingDiff: res.rating_diff || 0,
           isFirstCorrect: res.is_first_correct,
           eucalyptusReward: res.eucalyptus_reward || 0,
+          executionTime: res.execution_time,
+          memoryUsed: res.memory_used,
+          timeLimitExceeded: res.time_limit_exceeded,
+          memoryLimitExceeded: res.memory_limit_exceeded,
         });
         setShowResultModal(true);
         setIsRunning(false); // 로딩 상태 종료
@@ -397,6 +401,10 @@ const CodingTestDetailPage = () => {
           ratingDiff={resultData.ratingDiff}
           isFirstCorrect={resultData.isFirstCorrect}
           eucalyptusReward={resultData.eucalyptusReward}
+          executionTime={resultData.executionTime}
+          memoryUsed={resultData.memoryUsed}
+          timeLimitExceeded={resultData.timeLimitExceeded}
+          memoryLimitExceeded={resultData.memoryLimitExceeded}
         />
       )}
     </>

@@ -2,7 +2,7 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Editor from "react-simple-code-editor";
 import Prism from "prismjs";
-import { RotateCcw, Copy, CheckCircle, XCircle } from "lucide-react"; // ✅ Lucide 아이콘 사용
+import { RotateCcw, Copy, CheckCircle, XCircle } from "lucide-react";
 
 const CodingTestSubmissionList = ({
   submissions,
@@ -35,6 +35,9 @@ const CodingTestSubmissionList = ({
               <th className="p-2 text-center border-r border-gray-200">결과</th>
               <th className="p-2 text-center border-r border-gray-200">
                 제출 메모리
+              </th>
+              <th className="p-2 text-center border-r border-gray-200">
+                실행 시간
               </th>
               <th className="p-2 text-center">테스트 케이스 통과 수</th>
             </tr>
@@ -69,13 +72,17 @@ const CodingTestSubmissionList = ({
                   </td>
                   <td className="p-2 text-center">{s.memory}</td>
                   <td className="p-2 text-center">
+                    {s.execution_time != null ? `${s.execution_time}ms` : "-"}
+                  </td>
+
+                  <td className="p-2 text-center">
                     {s.passed_test_cases}/{s.total_test_cases}
                   </td>
                 </tr>
 
                 {s.open && (
                   <tr className="border-b border-gray-200 bg-gray-100">
-                    <td colSpan="5" className="p-3 relative">
+                    <td colSpan="6" className="p-3 relative">
                       <button
                         onClick={() => {
                           navigator.clipboard.writeText(s.code);
