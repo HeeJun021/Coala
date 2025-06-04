@@ -74,7 +74,7 @@ const MyPageCTHistory = () => {
                   <th className="border px-4 py-2 text-center">채점 결과</th>
                   <th className="border px-4 py-2 text-center">테스트케이스</th>
                   <th className="border px-4 py-2 text-center">제출 시간</th>
-                  <th className="border px-4 py-2 text-center">코드 보기</th>
+                  <th className="border px-4 py-2 text-center">문제 보기</th>
                 </tr>
               </thead>
               <tbody>
