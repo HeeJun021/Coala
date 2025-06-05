@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import html2canvas from "html2canvas";
 import {
   Camera,
@@ -11,15 +11,14 @@ import {
   FileUp,
   Blocks,
   History,
+  HelpCircle,
+  Dot,
 } from "lucide-react";
+import ErdGuideModal from "../modal/ErdGuideModal";
 import ExportSqlModal from "../modal/ExportSqlModal";
 import EditErdNameModal from "../modal/EditErdNameModal";
 import CodeConvertHeaderPanel from "../CodeConvertHeaderPanel";
-import {
-  commitErd,
-
-  updateErdName,
-} from "../../../api/erd/erdDetailApi";
+import { commitErd, updateErdName } from "../../../api/erd/erdDetailApi";
 
 const ErdHeader = ({
   projectName,
@@ -41,10 +40,23 @@ const ErdHeader = ({
   setRelations,
   showToast,
   onUndo,
-  onRedo
+  onRedo,
 }) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [showDot, setShowDot] = useState(false);
+
+  useEffect(() => {
+    const seen = localStorage.getItem("erd_guide_seen");
+    setShowDot(seen !== "true");
+  }, []);
+
+  const handleOpenGuide = () => {
+    setIsGuideOpen(true);
+    setShowDot(false);
+    localStorage.setItem("erd_guide_seen", "true");
+  };
 
   const handleZoom = (direction) => {
     setZoomLevel((prev) =>
@@ -65,8 +77,6 @@ const ErdHeader = ({
       showToast("❌ 히스토리 기록 중 오류 발생");
     }
   };
-
-  
 
   const handleImageDownload = async () => {
     const canvasElement = document.getElementById("erd-canvas");
@@ -178,6 +188,23 @@ const ErdHeader = ({
               >
                 <Edit size={16} className="text-blue-400" />
               </button>
+              {/* 오른쪽: 가이드 보기 버튼 */}
+              <div className="ml-auto">
+                <button
+                  onClick={handleOpenGuide}
+                  className="relative text-sm text-gray-400 hover:text-white flex items-center gap-1"
+                >
+                  <HelpCircle size={16} className="text-blue-300" />
+                  <span>가이드 보기</span>
+
+                  {showDot && (
+                    <div
+                      className="absolute top-0.5 -right-2.5 w-[8px] h-[8px] bg-rose-600 rounded-full shadow-md"
+                      style={{ transform: "translateY(-50%)" }}
+                    />
+                  )}
+                </button>
+              </div>
             </div>
           )}
 
@@ -289,6 +316,13 @@ const ErdHeader = ({
             erdId={erdId}
             onClose={() => setIsExportModalOpen(false)} // 패널 내에서 닫기 버튼 연결
             erdCanvasId="erd-canvas" // ← 캔버스 div에 id 지정해줘야 함
+          />
+        )}
+        {/* ✅ 가이드 모달 */}
+        {isGuideOpen && (
+          <ErdGuideModal
+            isOpen={isGuideOpen}
+            onClose={() => setIsGuideOpen(false)}
           />
         )}
       </div>
