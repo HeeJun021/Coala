@@ -58,7 +58,11 @@ const Navbar = () => {
     <div className="relative z-50" onMouseLeave={() => setHoverIndex(null)}>
       <nav className="fixed top-0 left-0 w-full bg-white border-b shadow-sm h-[70px] flex items-center justify-between px-12 z-50">
         <Link to="/" className="flex items-center">
-          <img src="/coala.jpg" alt="Coala Logo" className="w-10 h-10 mr-2 rounded-full border" />
+          <img
+            src="/coala.jpg"
+            alt="Coala Logo"
+            className="w-10 h-10 mr-2 rounded-full border"
+          />
           <span className="text-2xl font-semibold text-green-700">Coala</span>
         </Link>
 
@@ -73,16 +77,23 @@ const Navbar = () => {
                 <span
                   onClick={async () => {
                     try {
-                      const res = await fetch("http://localhost:8000/languages");
+                      const res = await fetch(
+                        "http://localhost:8000/languages"
+                      );
                       const languages = await res.json();
                       if (languages.length > 0) {
                         const lang = languages[0].language;
-                        const mat = await fetch(`http://localhost:8000/api/materials/${lang}`, {
-                          credentials: "include",
-                        });
+                        const mat = await fetch(
+                          `http://localhost:8000/api/materials/${lang}`,
+                          {
+                            credentials: "include",
+                          }
+                        );
                         const list = await mat.json();
                         if (list.length > 0) {
-                          navigate(`/StudyMaterialsPage?category=${lang}&id=${list[0].material_id}`);
+                          navigate(
+                            `/StudyMaterialsPage?category=${lang}&id=${list[0].material_id}`
+                          );
                         }
                       }
                     } catch {
@@ -153,10 +164,12 @@ const Navbar = () => {
       {/* 드롭다운 메뉴 */}
       <div
         className={`fixed top-[70px] left-0 w-full bg-white border-b shadow-md z-40 overflow-hidden transition-all duration-300 ${
-          hoverIndex !== null ? "max-h-[250px] py-6 opacity-100" : "max-h-0 opacity-0"
+          hoverIndex !== null
+            ? "max-h-[250px] py-6 opacity-100"
+            : "max-h-0 opacity-0"
         }`}
       >
-        <div className="flex justify-center gap-12 w-full">
+        <div className="grid grid-cols-7 w-[1050px] ml-[407px] text-center">
           {menuItems.map((item, idx) => (
             <div key={idx} className="flex flex-col items-center gap-3">
               {item.children.map((child, i) => {
@@ -165,6 +178,20 @@ const Navbar = () => {
                     <Link
                       key={i}
                       to="/codingtest"
+                      className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
+                        hoverIndex === idx ? "" : "opacity-50"
+                      }`}
+                    >
+                      {child}
+                    </Link>
+                  );
+                }
+
+                if (item.label === "코딩테스트" && child === "내 제출") {
+                  return (
+                    <Link
+                      key={i}
+                      to="/mypage/codingtest"
                       className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
                         hoverIndex === idx ? "" : "opacity-50"
                       }`}
@@ -192,24 +219,24 @@ const Navbar = () => {
                 }
 
                 if (item.label === "프로젝트") {
-  let link = "/team-project";
-  let tab = "";
-  if (child === "대시보드") tab = "dashboard";
-  if (child === "내 작업") tab = "my-tasks";
-  if (child === "수신함") tab = "inbox";
+                  let link = "/team-project";
+                  let tab = "";
+                  if (child === "대시보드") tab = "dashboard";
+                  if (child === "내 작업") tab = "my-tasks";
+                  if (child === "수신함") tab = "inbox";
 
-  return (
-    <span
-      key={i}
-      onClick={() => navigate(link, { state: { tab } })}
-      className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
-        hoverIndex === idx ? "" : "opacity-50"
-      }`}
-    >
-      {child}
-    </span>
-  );
-}
+                  return (
+                    <span
+                      key={i}
+                      onClick={() => navigate(link, { state: { tab } })}
+                      className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
+                        hoverIndex === idx ? "" : "opacity-50"
+                      }`}
+                    >
+                      {child}
+                    </span>
+                  );
+                }
 
                 if (item.label === "마이페이지") {
                   let link = "";
