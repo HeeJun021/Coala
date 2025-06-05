@@ -10,18 +10,24 @@ class ProjectWidget(BaseModel):
     chat: bool = False
     calendar: bool = False
     memo: bool = False
+    tasks: bool = False
+    board: bool = False
+    timeline: bool = False
+    files: bool = False
 
 # ✅ 프로젝트 생성 요청
 class ProjectCreateRequest(BaseModel):
     name: str
     description: Optional[str] = None
     widgets: ProjectWidget
+    widget_order: Optional[List[str]] = ["overview"]
 
 # ✅ 프로젝트 수정 요청
 class ProjectUpdateRequest(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
-    widgets: ProjectWidget
+    widgets: Optional[ProjectWidget] = None
+    widget_order: Optional[List[str]] = None
 
 # ✅ 프로젝트 생성 응답
 class ProjectCreateResponse(BaseModel):
@@ -29,6 +35,7 @@ class ProjectCreateResponse(BaseModel):
     name: str
     description: Optional[str] = None
     widgets: ProjectWidget
+    widget_order: List[str]
     created_at: datetime
 
     class Config:
@@ -39,8 +46,9 @@ class ProjectItem(BaseModel):
     project_id: int
     name: str
     description: Optional[str] = None
-    progress: int
+    progress: float
     widgets: ProjectWidget
+    widget_order: List[str]
     created_at: datetime
 
     class Config:

@@ -1,10 +1,10 @@
-import React, { useState } from "react";
-import { createProject } from "../../api/projectApi";
+import React, { useState } from 'react';
+import { createProject } from '../../api/projectApi';
 
 const Modal = ({ onClose, title, children }) => {
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-30 flex items-center justify-center">
-      <div className="bg-white rounded-xl w-[500px] max-h-[90vh] overflow-y-auto shadow-xl p-6 relative">
+      <div className="bg-white rounded-xl w-[500px] max-h-[90vh] overflow-y-auto p-6 shadow-xl relative">
         <button
           onClick={onClose}
           className="absolute top-3 right-4 text-gray-500 hover:text-black text-xl"
@@ -25,10 +25,12 @@ const WIDGET_OPTIONS = [
   { key: "chat", label: "채팅" },
   { key: "calendar", label: "캘린더" },
   { key: "memo", label: "메모" },
+  { key: "tasks", label: "작업" },
+  { key: "timeline", label: "타임라인" },
 ];
 
 const ProjectCreateModal = ({ onClose, onCreated }) => {
-  const [projectName, setProjectName] = useState("");
+  const [projectName, setProjectName] = useState('');
   const [selectedWidgets, setSelectedWidgets] = useState([]);
 
   const toggleWidget = (key) => {
@@ -41,18 +43,19 @@ const ProjectCreateModal = ({ onClose, onCreated }) => {
     if (!projectName.trim()) return alert("프로젝트 이름을 입력하세요");
 
     try {
-      const widgetData = {
-        erd: selectedWidgets.includes("erd"),
-        git: selectedWidgets.includes("git"),
-        docs: selectedWidgets.includes("docs"),
-        chat: selectedWidgets.includes("chat"),
-        calendar: selectedWidgets.includes("calendar"),
-        memo: selectedWidgets.includes("memo"),
-      };
+      const widgetData = {};
+      const widgetOrder = ["overview"];
+      WIDGET_OPTIONS.forEach((opt) => {
+        const isSelected = selectedWidgets.includes(opt.key);
+        widgetData[opt.key] = isSelected;
+        if (isSelected) widgetOrder.push(opt.key);
+      });
+
       const res = await createProject({
         name: projectName,
         description: null,
         widgets: widgetData,
+        widget_order: widgetOrder,
       });
       onCreated?.(res);
       onClose();

@@ -1,4 +1,3 @@
-# backend/app/routers/project.py
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
@@ -39,6 +38,7 @@ def get_my_projects(db: Session = Depends(get_db), current_user: User = Depends(
                 widget.widget_type: True
                 for widget in db.query(ProjectWidgets).filter(ProjectWidgets.project_id == p.project_id).all()
             },
+            "widget_order": p.widget_order or ["overview"],
         }
         for p in projects
     ]
@@ -72,6 +72,7 @@ def create_project(
     new_project = Project(
         name=project_data.name,
         description=project_data.description,
+        widget_order=project_data.widget_order,
     )
     db.add(new_project)
     db.flush()
@@ -88,7 +89,7 @@ def create_project(
     for widget_type, enabled in project_data.widgets.dict().items():
         if enabled:
             db.add(ProjectWidgets(project_id=new_project.project_id, widget_type=widget_type))
-    
+
     # 활동 기록 추가
     db.add(ProjectActivityLog(
         project_id=new_project.project_id,
@@ -96,9 +97,16 @@ def create_project(
         action=f"{current_user.nickname}이(가) 프로젝트를 생성함",
         created_at=func.now()
     ))
-    
+
     db.commit()
-    return {"project_id": new_project.project_id}
+    return {
+        "project_id": new_project.project_id,
+        "name": new_project.name,
+        "description": new_project.description,
+        "widgets": project_data.widgets,
+        "widget_order": new_project.widget_order,
+        "created_at": new_project.created_at
+    }
 
 # ✅ 4. 프로젝트 수정
 @router.patch("/{project_id}")
@@ -126,12 +134,15 @@ def update_project(
         project.name = project_data.name
     if project_data.description is not None:
         project.description = project_data.description
+    if project_data.widget_order is not None:
+        project.widget_order = project_data.widget_order
 
-    # 위젯 업데이트 (기존 위젯 삭제 후 새로 추가)
-    db.query(ProjectWidgets).filter(ProjectWidgets.project_id == project_id).delete()
-    for widget_type, enabled in project_data.widgets.dict().items():
-        if enabled:
-            db.add(ProjectWidgets(project_id=project_id, widget_type=widget_type))
+    # 위젯 업데이트
+    if project_data.widgets is not None:
+        db.query(ProjectWidgets).filter(ProjectWidgets.project_id == project_id).delete()
+        for widget_type, enabled in project_data.widgets.dict().items():
+            if enabled:
+                db.add(ProjectWidgets(project_id=project_id, widget_type=widget_type))
 
     # 활동 기록 추가
     db.add(ProjectActivityLog(

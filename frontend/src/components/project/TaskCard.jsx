@@ -11,7 +11,7 @@ const TaskCard = ({ task, onClick }) => {
         <div className="text-xs text-gray-500">{task.project_name}</div>
       </div>
       <div className="text-xs text-gray-400 text-right whitespace-nowrap">
-        {task.due_date || "미정"}
+        {task.start_date && task.due_date ? `${task.start_date} ~ ${task.due_date}` : "미정"}
       </div>
     </div>
   );
