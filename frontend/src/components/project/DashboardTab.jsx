@@ -94,7 +94,7 @@ const DashboardTab = ({ project, onProjectSelect, setShowCreateProjectModal }) =
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center gap-2">
               <div className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center text-sm font-bold text-gray-600">🧑‍💻</div>
-              <h2 className="text-lg font-semibold">내 작업 🔒</h2>
+              <h2 className="text-lg font-semibold">내 작업 </h2>
             </div>
             <button
               onClick={() => navigate("/team-project", { state: { tab: "my-tasks" } })}
@@ -121,27 +121,36 @@ const DashboardTab = ({ project, onProjectSelect, setShowCreateProjectModal }) =
           </div>
 
           <ul className="space-y-2 text-sm">
-            {filteredTasks.length > 0 ? (
-              filteredTasks.map((task) => (
-                <li key={task.task_id} className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={task.status === "완료됨"}
-                      onChange={() => handleToggleComplete(task)}
-                      className="accent-blue-600"
-                    />
-                    <span>{task.title}</span>
-                  </div>
-                  <span className="text-gray-500 text-xs">{task.start_date && task.due_date ? `${task.start_date} ~ ${task.due_date}` : "미정"}</span>
-                </li>
-              ))
-            ) : (
-              <p className="text-gray-400">해당 작업이 없습니다.</p>
-            )}
-          </ul>
+  {filteredTasks.length > 0 ? (
+    filteredTasks.map((task) => (
+      <li key={task.task_id} className="flex justify-between items-center">
+        <div className="flex items-start gap-2">
+          <input
+            type="checkbox"
+            checked={task.status === "완료됨"}
+            onChange={() => handleToggleComplete(task)}
+            className="accent-blue-600 mt-1"
+          />
+          <div>
+            <div className="font-medium text-sm text-gray-800">{task.title}</div>
+            <div className="text-xs text-gray-500">
+              {task.project_name || "프로젝트 없음"} ·{" "}
+              {task.collaborators?.map((c) => c.nickname).join(", ") || "협업자 없음"}
+            </div>
+          </div>
+        </div>
+        <span className="text-gray-500 text-xs whitespace-nowrap">
+          {task.start_date && task.due_date
+            ? `${task.start_date} ~ ${task.due_date}`
+            : "미정"}
+        </span>
+      </li>
+    ))
+  ) : (
+    <p className="text-gray-400">해당 작업이 없습니다.</p>
+  )}
+</ul>
         </section>
-
         <section className="bg-white rounded-xl border p-6 shadow-sm">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">프로젝트</h2>
@@ -162,7 +171,7 @@ const DashboardTab = ({ project, onProjectSelect, setShowCreateProjectModal }) =
                   className="border rounded-lg p-4 hover:shadow-sm cursor-pointer transition"
                 >
                   <div className="flex items-center gap-2 mb-2 text-sm font-semibold">
-                    📅 {proj.name}
+                     {proj.name}
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2.5">
                     <div
@@ -180,7 +189,7 @@ const DashboardTab = ({ project, onProjectSelect, setShowCreateProjectModal }) =
         </section>
 
         <section className="bg-white rounded-xl border p-6 shadow-sm">
-          <h2 className="text-lg font-semibold mb-4">📖 위젯</h2>
+          <h2 className="text-lg font-semibold mb-4"> 위젯</h2>
           <p className="text-gray-500 text-sm">
             프로젝트 통계, 커밋 기록, 이슈 현황 등 위젯을 이곳에 추가할 수 있습니다.
           </p>

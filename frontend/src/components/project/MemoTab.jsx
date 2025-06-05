@@ -19,8 +19,8 @@ const MemoTab = ({ projectId = "1210447408078814" }) => {
         setMemos(response || []);
         if (response.length > 0) setActiveMemoId(response[0].memo_id);
       } catch (error) {
-        console.error("Failed to fetch memos:", error);
-        alert("Failed to load notes.");
+        console.error("메모를 불러오지 못했습니다:", error);
+        alert("메모를 불러오지 못했습니다.");
         setMemos([]);
       }
     };
@@ -57,8 +57,8 @@ const MemoTab = ({ projectId = "1210447408078814" }) => {
         )
       );
     } catch (error) {
-      console.error("Failed to update memo:", error);
-      alert("Failed to update note.");
+      console.error("메모를 업데이트하지 못했습니다:", error);
+      alert("메모를 업데이트하지 못했습니다.");
     }
   };
 
@@ -81,8 +81,33 @@ const MemoTab = ({ projectId = "1210447408078814" }) => {
         setSelectedBlockId(newId);
         setTimeout(() => blockRefs.current[newId]?.focus(), 0);
       } catch (error) {
-        console.error("Failed to update memo:", error);
-        alert("Failed to update note.");
+        console.error("메모를 업데이트하지 못했습니다:", error);
+        alert("메모를 업데이트하지 못했습니다.");
+      }
+    } else if (e.key === "Backspace" && blockRefs.current[blockId].value === "") {
+      e.preventDefault();
+      const blockIndex = activeMemo.blocks.findIndex((b) => b.id === blockId);
+      if (blockIndex > 0) {
+        const updatedBlocks = activeMemo.blocks.filter((b) => b.id !== blockId);
+        try {
+          const response = await updateMemo(activeMemo.memo_id, { blocks: updatedBlocks });
+          setMemos((prev) =>
+            prev.map((memo) =>
+              memo.memo_id === activeMemo.memo_id ? response : memo
+            )
+          );
+          const prevBlockId = activeMemo.blocks[blockIndex - 1].id;
+          setSelectedBlockId(prevBlockId);
+          setTimeout(() => {
+            const prevTextarea = blockRefs.current[prevBlockId];
+            prevTextarea.focus();
+            prevTextarea.selectionStart = prevTextarea.value.length;
+            prevTextarea.selectionEnd = prevTextarea.value.length;
+          }, 0);
+        } catch (error) {
+          console.error("메모를 업데이트하지 못했습니다:", error);
+          alert("메모를 업데이트하지 못했습니다.");
+        }
       }
     }
   };
@@ -124,8 +149,8 @@ const MemoTab = ({ projectId = "1210447408078814" }) => {
       setToolbarPosition(null);
       setSelectionRange(null);
     } catch (error) {
-      console.error("Failed to update memo:", error);
-      alert("Failed to update note.");
+      console.error("메모를 업데이트하지 못했습니다:", error);
+      alert("메모를 업데이트하지 못했습니다.");
     }
   };
 
@@ -160,7 +185,7 @@ const MemoTab = ({ projectId = "1210447408078814" }) => {
 
   const getMemoTitle = (blocks) => {
     const firstBlock = blocks.find((block) => block.type === "h1") || { text: "" };
-    const text = firstBlock.text || "Untitled";
+    const text = firstBlock.text || "제목 없음";
     return text.length > 20 ? text.slice(0, 20) + "..." : text;
   };
 
@@ -175,20 +200,20 @@ const MemoTab = ({ projectId = "1210447408078814" }) => {
       const response = await createMemo({
         project_id: projectId,
         blocks: [
-          { id: 1, type: "h1", text: "New Note", styles: { bold: true } },
+          { id: 1, type: "h1", text: "새 메모", styles: { bold: true } },
           { id: 2, type: "p", text: "", styles: {} },
         ],
       });
       setMemos((prev) => [...prev, response]);
       setActiveMemoId(response.memo_id);
     } catch (error) {
-      console.error("Failed to create memo:", error);
-      alert("Failed to create note.");
+      console.error("메모를 생성하지 못했습니다:", error);
+      alert("메모를 생성하지 못했습니다.");
     }
   };
 
   const handleDeleteMemo = async (memoId) => {
-    if (window.confirm("Are you sure you want to delete this note?")) {
+    if (window.confirm("이 메모를 정말 삭제하시겠습니까?")) {
       try {
         await deleteMemo(memoId);
         setMemos((prev) => prev.filter((memo) => memo.memo_id !== memoId));
@@ -196,8 +221,8 @@ const MemoTab = ({ projectId = "1210447408078814" }) => {
           setActiveMemoId(memos[0]?.memo_id || null);
         }
       } catch (error) {
-        console.error("Failed to delete memo:", error);
-        alert("Failed to delete note.");
+        console.error("메모를 삭제하지 못했습니다:", error);
+        alert("메모를 삭제하지 못했습니다.");
       }
     }
   };
@@ -205,9 +230,9 @@ const MemoTab = ({ projectId = "1210447408078814" }) => {
   return (
     <div className="flex w-full h-screen font-sans">
       <div className="w-[250px] bg-gray-100 border-r border-gray-200 p-4 overflow-y-auto">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">Notes</h2>
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">메모</h2>
         {memos.length === 0 ? (
-          <p className="text-sm text-gray-500">No notes available.</p>
+          <p className="text-sm text-gray-500">메모가 없습니다.</p>
         ) : (
           memos.map((memo) => (
             <div
@@ -225,7 +250,7 @@ const MemoTab = ({ projectId = "1210447408078814" }) => {
                     handleDeleteMemo(memo.memo_id);
                   }}
                   className="text-red-500 hover:text-red-600 text-xs"
-                  aria-label="Delete note"
+                  aria-label="메모 삭제"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -240,151 +265,244 @@ const MemoTab = ({ projectId = "1210447408078814" }) => {
           className="text-sm text-blue-600 mt-4 hover:text-blue-700 font-medium"
           onClick={handleAddMemo}
         >
-          + New Note
+          + 새 메모
         </button>
       </div>
-      <div className="flex-1 flex justify-center items-start p-6 bg-white">
-        {activeMemo && (
-          <div className="w-full max-w-[720px]">
-            {toolbarPosition && (
-              <div
-                ref={toolbarRef}
-                className="absolute z-50 flex gap-1 bg-white shadow-sm border border-gray-200 rounded px-2 py-1"
-                style={{
-                  top: `${toolbarPosition.top}px`,
-                  left: `${toolbarPosition.left}px`,
-                  transform: "translateX(-50%)",
-                }}
-                role="toolbar"
-                aria-label="Text formatting toolbar"
-              >
-                <button
-                  onClick={() => applyStyle("bold", true)}
-                  className="px-2 py-1 hover:bg-gray-100 rounded"
-                  aria-label="Bold"
-                >
-                  <span className="font-bold">B</span>
-                </button>
-                <button
-                  onClick={() => applyStyle("italic", true)}
-                  className="px-2 py-1 hover:bg-gray-100 rounded"
-                  aria-label="Italic"
-                >
-                  <span className="italic">I</span>
-                </button>
-                <button
-                  onClick={() => applyStyle("underline", true)}
-                  className="px-2 py-1 hover:bg-gray-100 rounded"
-                  aria-label="Underline"
-                >
-                  <span className="underline">U</span>
-                </button>
-                <button
-                  onClick={() => applyStyle("code", true)}
-                  className="px-2 py-1 hover:bg-gray-100 rounded font-mono text-xs"
-                  aria-label="Code"
-                >
-                  Code
-                </button>
-                <select
-                  onChange={(e) => applyStyle("fontSize", e.target.value)}
-                  className="text-sm border-gray-200 px-1 rounded"
-                  aria-label="Font size"
-                  defaultValue=""
-                >
-                  <option disabled value="">Size</option>
-                  <option value="10">10</option>
-                  <option value="12">12</option>
-                  <option value="14">14</option>
-                  <option value="16">16</option>
-                  <option value="18">18</option>
-                  <option value="20">20</option>
-                  <option value="24">24</option>
-                  <option value="28">28</option>
-                  <option value="32">32</option>
-                  <option value="36">36</option>
-                </select>
-                <select
-                  onChange={(e) => applyStyle("fontFamily", e.target.value)}
-                  className="text-sm border-gray-200 px-1 rounded"
-                  aria-label="Font family"
-                  defaultValue=""
-                >
-                  <option disabled value="">Font</option>
-                  <option value="Arial">Arial</option>
-                  <option value="Courier New">Courier New</option>
-                  <option value="Times New Roman">Times New Roman</option>
-                  <option value="Helvetica">Helvetica</option>
-                  <option value="Georgia">Georgia</option>
-                  <option value="Verdana">Verdana</option>
-                  <option value="Roboto Mono">Roboto Mono</option>
-                </select>
-                <select
-                  onChange={(e) => applyStyle("color", e.target.value)}
-                  className="text-sm border-gray-200 px-1 rounded"
-                  aria-label="Text color"
-                  defaultValue=""
-                >
-                  <option disabled value="">Color</option>
-                  <option value="#000000">Black</option>
-                  <option value="#FF0000">Red</option>
-                  <option value="#0000FF">Blue</option>
-                  <syslogoption value="#008000">Green</syslogoption>
-                  <option value="#FFFF00">Yellow</option>
-                  <option value="#800080">Purple</option>
-                </select>
-                <select
-                  onChange={(e) => applyStyle("backgroundColor", e.target.value)}
-                  className="text-sm border-gray-200 px-1 rounded"
-                  aria-label="Background color"
-                  defaultValue=""
-                >
-                  <option disabled value="">Background</option>
-                  <option value="transparent">None</option>
-                  <option value="#FFEEEE">Light Red</option>
-                  <option value="#E0E0FF">Light Blue</option>
-                  <option value="#EEFFEE">Light Green</option>
-                  <option value="#FFFFEE">Light Yellow</option>
-                  <option value="#FFE0FF">Light Purple</option>
-                </select>
-              </div>
-            )}
-            {activeMemo.blocks.map((block) => (
-              <div
-                key={block.id}
-                className={`mb-4 ${
-                  block.type === "h1" ? "text-2xl font-semibold text-gray-800" : "text-base text-gray-700"
-                }`}
-              >
-                <textarea
-                  ref={(el) => {
-                    blockRefs.current[block.id] = el;
-                    autoResizeTextarea(el);
-                  }}
-                  value={block.text}
-                  onChange={(e) => {
-                    handleBlockChange(block.id, e.target.value);
-                    autoResizeTextarea(blockRefs.current[block.id]);
-                  }}
-                  onInput={() => autoResizeTextarea(blockRefs.current[block.id])}
-                  onKeyDown={(e) => handleBlockKeyDown(e, block.id)}
-                  onSelect={() => handleSelection(block.id)}
-                  placeholder={block.type === "h1" ? "Note Title" : "Type something..."}
-                  className={`w-full bg-transparent outline-none resize-none break-words whitespace-pre-wrap ${
-                    block.type === "h1" ? "text-2xl font-semibold" : "text-base leading-relaxed"
-                  }`}
-                  aria-label={block.type === "h1" ? "Note title" : "Note content"}
-                />
+      <div className="flex-1 flex flex-col">
+        <div className="bg-white p-2 border-b flex justify-center items-center space-x-2">
+          <button
+            onClick={() => applyStyle("bold", true)}
+            className="px-2 py-1 hover:bg-gray-100 rounded"
+            aria-label="굵게"
+          >
+            <span className="font-bold">B</span>
+          </button>
+          <button
+            onClick={() => applyStyle("italic", true)}
+            className="px-2 py-1 hover:bg-gray-100 rounded"
+            aria-label="기울임"
+          >
+            <span className="italic">I</span>
+          </button>
+          <button
+            onClick={() => applyStyle("underline", true)}
+            className="px-2 py-1 hover:bg-gray-100 rounded"
+            aria-label="밑줄"
+          >
+            <span className="underline">U</span>
+          </button>
+          <button
+            onClick={() => applyStyle("code", true)}
+            className="px-2 py-1 hover:bg-gray-100 rounded font-mono text-xs"
+            aria-label="코드"
+          >
+            코드
+          </button>
+          <select
+            onChange={(e) => applyStyle("fontSize", e.target.value)}
+            className="text-sm border-gray-200 px-1 rounded"
+            aria-label="글꼴 크기"
+            defaultValue=""
+          >
+            <option disabled value="">크기</option>
+            <option value="10">10</option>
+            <option value="12">12</option>
+            <option value="14">14</option>
+            <option value="16">16</option>
+            <option value="18">18</option>
+            <option value="20">20</option>
+            <option value="24">24</option>
+            <option value="28">28</option>
+            <option value="32">32</option>
+            <option value="36">36</option>
+          </select>
+          <select
+            onChange={(e) => applyStyle("fontFamily", e.target.value)}
+            className="text-sm border-gray-200 px-1 rounded"
+            aria-label="글꼴"
+            defaultValue=""
+          >
+            <option disabled value="">글꼴</option>
+            <option value="Arial">Arial</option>
+            <option value="Courier New">Courier New</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Helvetica">Helvetica</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Verdana">Verdana</option>
+            <option value="Roboto Mono">Roboto Mono</option>
+          </select>
+          <select
+            onChange={(e) => applyStyle("color", e.target.value)}
+            className="text-sm border-gray-200 px-1 rounded"
+            aria-label="글자 색상"
+            defaultValue=""
+          >
+            <option disabled value="">색상</option>
+            <option value="#000000">검정</option>
+            <option value="#FF0000">빨강</option>
+            <option value="#0000FF">파랑</option>
+            <option value="#008000">초록</option>
+            <option value="#FFFF00">노랑</option>
+            <option value="#800080">보라</option>
+          </select>
+          <select
+            onChange={(e) => applyStyle("backgroundColor", e.target.value)}
+            className="text-sm border-gray-200 px-1 rounded"
+            aria-label="배경 색상"
+            defaultValue=""
+          >
+            <option disabled value="">배경</option>
+            <option value="transparent">없음</option>
+            <option value="#FFEEEE">연한 빨강</option>
+            <option value="#E0E0FF">연한 파랑</option>
+            <option value="#EEFFEE">연한 초록</option>
+            <option value="#FFFFEE">연한 노랑</option>
+            <option value="#FFE0FF">연한 보라</option>
+          </select>
+        </div>
+        <div className="flex-1 flex justify-center items-start p-4 bg-white">
+          {activeMemo && (
+            <div className="w-full max-w-[720px]">
+              {toolbarPosition && (
                 <div
-                  className="hidden"
-                  dangerouslySetInnerHTML={{
-                    __html: renderStyledText(block.text, block.styles),
+                  ref={toolbarRef}
+                  className="absolute z-50 flex gap-1 bg-white shadow-sm border border-gray-200 rounded px-2 py-1"
+                  style={{
+                    top: `${toolbarPosition.top}px`,
+                    left: `${toolbarPosition.left}px`,
+                    transform: "translateX(-50%)",
                   }}
-                />
-              </div>
-            ))}
-          </div>
-        )}
+                  role="toolbar"
+                  aria-label="텍스트 서식 툴바"
+                >
+                  <button
+                    onClick={() => applyStyle("bold", true)}
+                    className="px-2 py-1 hover:bg-gray-100 rounded"
+                    aria-label="굵게"
+                  >
+                    <span className="font-bold">B</span>
+                  </button>
+                  <button
+                    onClick={() => applyStyle("italic", true)}
+                    className="px-2 py-1 hover:bg-gray-100 rounded"
+                    aria-label="기울임"
+                  >
+                    <span className="italic">I</span>
+                  </button>
+                  <button
+                    onClick={() => applyStyle("underline", true)}
+                    className="px-2 py-1 hover:bg-gray-100 rounded"
+                    aria-label="밑줄"
+                  >
+                    <span className="underline">U</span>
+                  </button>
+                  <button
+                    onClick={() => applyStyle("code", true)}
+                    className="px-2 py-1 hover:bg-gray-100 rounded font-mono text-xs"
+                    aria-label="코드"
+                  >
+                    코드
+                  </button>
+                  <select
+                    onChange={(e) => applyStyle("fontSize", e.target.value)}
+                    className="text-sm border-gray-200 px-1 rounded"
+                    aria-label="글꼴 크기"
+                    defaultValue=""
+                  >
+                    <option disabled value="">크기</option>
+                    <option value="10">10</option>
+                    <option value="12">12</option>
+                    <option value="14">14</option>
+                    <option value="16">16</option>
+                    <option value="18">18</option>
+                    <option value="20">20</option>
+                    <option value="24">24</option>
+                    <option value="28">28</option>
+                    <option value="32">32</option>
+                    <option value="36">36</option>
+                  </select>
+                  <select
+                    onChange={(e) => applyStyle("fontFamily", e.target.value)}
+                    className="text-sm border-gray-200 px-1 rounded"
+                    aria-label="글꼴"
+                    defaultValue=""
+                  >
+                    <option disabled value="">글꼴</option>
+                    <option value="Arial">Arial</option>
+                    <option value="Courier New">Courier New</option>
+                    <option value="Times New Roman">Times New Roman</option>
+                    <option value="Helvetica">Helvetica</option>
+                    <option value="Georgia">Georgia</option>
+                    <option value="Verdana">Verdana</option>
+                    <option value="Roboto Mono">Roboto Mono</option>
+                  </select>
+                  <select
+                    onChange={(e) => applyStyle("color", e.target.value)}
+                    className="text-sm border-gray-200 px-1 rounded"
+                    aria-label="글자 색상"
+                    defaultValue=""
+                  >
+                    <option disabled value="">색상</option>
+                    <option value="#000000">검정</option>
+                    <option value="#FF0000">빨강</option>
+                    <option value="#0000FF">파랑</option>
+                    <option value="#008000">초록</option>
+                    <option value="#FFFF00">노랑</option>
+                    <option value="#800080">보라</option>
+                  </select>
+                  <select
+                    onChange={(e) => applyStyle("backgroundColor", e.target.value)}
+                    className="text-sm border-gray-200 px-1 rounded"
+                    aria-label="배경 색상"
+                    defaultValue=""
+                  >
+                    <option disabled value="">배경</option>
+                    <option value="transparent">없음</option>
+                    <option value="#FFEEEE">연한 빨강</option>
+                    <option value="#E0E0FF">연한 파랑</option>
+                    <option value="#EEFFEE">연한 초록</option>
+                    <option value="#FFFFEE">연한 노랑</option>
+                    <option value="#FFE0FF">연한 보라</option>
+                  </select>
+                </div>
+              )}
+              {activeMemo.blocks.map((block, index) => (
+                <div
+                  key={block.id}
+                  className={`mb-1 ${
+                    block.type === "h1" ? "text-2xl font-semibold text-gray-800" : "text-base text-gray-700"
+                  }`}
+                >
+                  <textarea
+                    ref={(el) => {
+                      blockRefs.current[block.id] = el;
+                      autoResizeTextarea(el);
+                    }}
+                    value={block.text}
+                    onChange={(e) => {
+                      handleBlockChange(block.id, e.target.value);
+                      autoResizeTextarea(blockRefs.current[block.id]);
+                    }}
+                    onInput={() => autoResizeTextarea(blockRefs.current[block.id])}
+                    onKeyDown={(e) => handleBlockKeyDown(e, block.id)}
+                    onSelect={() => handleSelection(block.id)}
+                    placeholder={index === activeMemo.blocks.length - 1 ? (block.type === "h1" ? "메모 제목" : "내용을 입력하세요...") : ""}
+                    className={`w-full bg-transparent outline-none resize-none break-words whitespace-pre-wrap leading-snug ${
+                      block.type === "h1" ? "text-2xl font-semibold" : "text-base"
+                    }`}
+                    aria-label={block.type === "h1" ? "메모 제목" : "메모 내용"}
+                  />
+                  <div
+                    className="hidden"
+                    dangerouslySetInnerHTML={{
+                      __html: renderStyledText(block.text, block.styles),
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
