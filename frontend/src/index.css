@@ -2,21 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 @font-face {
-  font-family: 'JetBrains Mono';
-  src: url('./fonts/JetBrainsMono-Regular.ttf') format('truetype');  /* ✅ src 기준 상대경로 */
+  font-family: "JetBrains Mono";
+  src: url("./fonts/JetBrainsMono-Regular.ttf") format("truetype"); /* ✅ src 기준 상대경로 */
   font-weight: normal;
   font-style: normal;
 }
-@import 'prismjs/themes/prism-tomorrow.css';  /* 🔥 다크 테마 (or prism.css) */
+@import "prismjs/themes/prism-tomorrow.css"; /* 🔥 다크 테마 (or prism.css) */
 
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono&family=Fira+Code&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono&family=Fira+Code&display=swap");
 
 /* 기본 바디 스타일 (대부분 페이지용) */
 body.default-body {
-  background-color: #F9FAFB;
+  background-color: #f9fafb;
   margin: 0;
   padding: 0;
-  font-family: 'Arial', sans-serif;
+  font-family: "Arial", sans-serif;
   padding-top: 70px;
 }
 
@@ -25,7 +25,7 @@ body.white-body {
   background-color: white;
   margin: 0;
   padding: 0;
-  font-family: 'Arial', sans-serif;
+  font-family: "Arial", sans-serif;
   padding-top: 70px;
 }
 
@@ -34,11 +34,13 @@ body.fullscreen-body {
   background-color: #ffffff; /* 어두운 배경 */
   margin: 0;
   padding: 0;
-  font-family: 'Arial', sans-serif;
+  font-family: "Arial", sans-serif;
 }
 
 /* 항상 전체 화면 */
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
 }
 
@@ -62,7 +64,7 @@ html, body, #root {
 .problem-info-scrollbar::-webkit-scrollbar-track,
 .editor-scrollbar::-webkit-scrollbar-track {
   background-color: #f1f5f9; /* gray-100 */
-  border-radius: 4px; 
+  border-radius: 4px;
 }
 
 /* 에디터 작성 영역(ProseMirror) + 뷰어(preview)에 적용 */
@@ -86,29 +88,15 @@ html, body, #root {
   background-color: #1e1e1e; /* 어두운 배경 */
 }
 
-
-.cm-scroller::-webkit-scrollbar {
-  width: 8px;                       /* ✅ 스크롤바 두께 */
-}
-
-.cm-scroller::-webkit-scrollbar-thumb {
-  background-color: #cbd5e1; /* gray-300 */        /* ✅ thumb 색상 */
-  border-radius: 4px;               /* ✅ 둥글기 */
-}
-
-.cm-scroller::-webkit-scrollbar-track {
-  background-color: #f1f5f9; /* gray-100 */        /* ✅ 트랙 색상 */
-  border-radius: 4px; 
-}
-
 /* CodeMirror v5 라이트모드용 스타일 */
 .CodeMirror {
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-family: "JetBrains Mono", "Fira Code", monospace !important;
+  font-weight: 200 !important;
   font-size: 15px;
   background-color: #ffffff;
-  color: #1e293b; /* slate-800 */
-  line-height: 1.6;
-  height: 100%;
+  color: #1e293b;
+  line-height: 1.6 !important;
+  height: 100% !important;
 }
 
 /* 스크롤바 */
@@ -128,28 +116,24 @@ html, body, #root {
   background-color: #f8fafc; /* gray-50 */
   border-radius: 4px;
 }
-
-/* 선택 영역 */
 .CodeMirror-selected {
-  background: rgba(147, 197, 253, 0.4); /* sky-300 약간 투명 */
+  background: rgba(59, 130, 246, 0.2); /* blue-500 */
 }
 
-/* 커서 */
 .CodeMirror-cursor {
-  border-left: 2px solid #1e293b; /* slate-800 */
+  border-left: 2px solid #1e293b;
 }
 
-/* 현재 라인 강조 */
 .CodeMirror-activeline-background {
-  background: #f1f5f9; /* gray-100 */
+  background: #f1f5f9;
 }
 
 /* Gutter (라인 넘버 영역) */
 .CodeMirror-gutters {
-  background-color: #f9fafb; /* gray-50 */
-  color: #94a3b8; /* slate-400 */
-  border-right: 1px solid #e5e7eb; /* gray-200 */
-  font-family: 'JetBrains Mono', monospace;
+  background-color: #f1f5f9;
+  color: #94a3b8;
+  border-right: 1px solid #e5e7eb;
+  font-family: "JetBrains Mono", monospace;
   font-size: 13px;
 }
 
@@ -157,79 +141,46 @@ html, body, #root {
 .CodeMirror-linenumber {
   padding: 0 4px;
 }
-
-/* 토큰 색상 (JS 기준 예시) */
-.cm-keyword { color: #7c3aed; }         /* violet-600 */
-.cm-string  { color: #059669; }         /* emerald-600 */
-.cm-number  { color: #e11d48; }         /* rose-600 */
-.cm-comment { color: #64748b; }         /* slate-500 */
-.cm-variable { color: #1d4ed8; }        /* blue-700 */
-.cm-def     { color: #0f766e; }         /* teal-700 */
-
-
-/* 코드 단축 및 도움 스타일 */
-.cm-tooltip-autocomplete {
-  background-color: #ffffff !important;
-  color: #1f2937 !important;
-  border: 1px solid #d1d5db !important; /* gray-300 */
-  font-family: 'JetBrains Mono', monospace !important;
+.CodeMirror-hints {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
   font-size: 14px !important;
+  min-width: 220px;
+  max-width: 320px;
+  background-color: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  padding: 4px 0;
+  z-index: 9999;
 }
 
-.cm-tooltip-autocomplete .cm-completionLabel {
-  color: #d4d4d4 !important;              /* ✅ 항목 기본 글씨색 */
+.CodeMirror-hint {
+  padding: 6px 16px;
+  line-height: 1.8;
+  color: #1f2937;
+  white-space: nowrap;
+  transition: background-color 0.2s ease;
 }
 
-.cm-tooltip-autocomplete .cm-completionMatchedText {
-  color: #f7768e !important;              /* ✅ 일치하는 텍스트 색상 */
-  font-weight: bold;
-}
-
-.cm-tooltip-autocomplete .cm-completionIcon {
-  color: #569cd6 !important;              /* ✅ 아이콘 색상 */
-}
-
-.cm-tooltip-autocomplete .cm-completionSelected {
-  background-color: #3d4d63 !important;   /* ✅ 선택된 항목 배경 */
+.CodeMirror-hint-active {
+  background-color: #2563eb !important;
   color: white !important;
 }
 
-.cm-tooltip-autocomplete .cm-completionLabel,
-.cm-tooltip-autocomplete .cm-completionMatchedText,
-.cm-tooltip-autocomplete .cm-completionIcon {
-  font-family: 'JetBrains Mono', 'Noto Sans KR', monospace !important;  /* ✅ 동일 폰트 */
-  font-size: 14px !important;                                           /* ✅ 폰트 크기 */
-}
-
-.cm-tooltip-autocomplete .cm-completionDetail {
-  font-style: normal !important;               /* ✅ 이탤릭 해제 */
-  color: #a0aec0 !important;                   /* ✅ 글씨 색상 (선택) */
-  font-size: 12px !important;                  /* ✅ 크기 조정 (선택) */
-  font-family: 'JetBrains Mono', 'Noto Sans KR', monospace !important;  /* ✅ 폰트 통일 */
-}
+/* 매치 안 먹어짐 */
+/* :root .CodeMirror-hint-match {
+  all: unset;
+  color: #3b82f6 !important;
+  font-weight: bold !important;
+} */
 
 
-.cm-tooltip-autocomplete ul::-webkit-scrollbar {
-  width: 8px;                            /* ✅ 폭 동일 */
-}
 
-.cm-tooltip-autocomplete ul::-webkit-scrollbar-thumb {
-  background-color: #5a6b85;              /* ✅ thumb 색상 동일 */
-  border-radius: 6px;
-  border: 2px solid #1e1e1e;              /* ✅ 테두리 동일 */
-}
-
-.cm-tooltip-autocomplete ul::-webkit-scrollbar-track {
-  background-color: #1e1e1e;              /* ✅ track 색상 동일 */
-}
 
 /* Write 탭 숨기기 (CSS) */
 .toastui-editor-tabs .tab-item[aria-label="Write"] {
   display: none !important;
 }
-
-
-
 
 /* Prism Syntax Highlight 색상 */
 .token.comment,
@@ -332,11 +283,6 @@ html, body, #root {
   color: #d16969;
 }
 
-
-
-
-
-
 @keyframes fadeIn {
   0% {
     opacity: 0;
@@ -377,11 +323,7 @@ html, body, #root {
   min-height: 0;
 }
 body {
-  font-family: 'Fira Code', monospace;
-}
-
-.cm-content {
-  font-family: 'Fira Code', Consolas, monospace !important;
+  font-family: "Fira Code", monospace;
 }
 
 .loader {
@@ -395,10 +337,13 @@ body {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
-
 
 /* 다크모드 전용 셀렉트 박스(ERD 속성 데이터 타입 박스) */
 .select-dark {
@@ -409,9 +354,7 @@ body {
   font-size: 14px;
   text-align: center;
   text-align-last: center;
-
 }
-
 
 /* 셀렉트 옵션 스타일 (브라우저 지원 제한 있음) */
 .select-dark option {
@@ -439,18 +382,8 @@ body {
   border-radius: 6px;
 }
 
-
 /* 텍스트 아레아 클릭 시 검정 테두리 제거*/
 .editor-textarea:focus {
   outline: none;
   box-shadow: none;
 }
-
-.cm-editor.cm-focused {
-  outline: none !important;
-  box-shadow: none !important;
-}
-.cm-editor .cm-line {
-  font-family: 'JetBrains Mono', 'Noto Sans KR', monospace !important;
-}
-

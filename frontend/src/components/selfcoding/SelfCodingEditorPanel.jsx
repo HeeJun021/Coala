@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { FaTimes } from "react-icons/fa";
 import { Controlled as CodeMirror } from "react-codemirror2";
 import { getCodeById, updateCodeFile } from "../../api/codeApi";
+import { registerCustomHints } from "../../utils/customHints"; // ✅ 추가
 import {
   runJsPreview,
   runHtmlPreview,
@@ -14,6 +15,7 @@ import "codemirror/mode/javascript/javascript";
 import "codemirror/mode/htmlmixed/htmlmixed";
 import "codemirror/mode/css/css";
 import "codemirror/mode/python/python";
+import "codemirror/mode/clike/clike";
 
 const SelfCodingEditorPanel = ({
   tabs,
@@ -46,6 +48,19 @@ const SelfCodingEditorPanel = ({
     return "text/plain";
   };
 
+  const getHintByLanguage = () => {
+    const mode = getLanguageMode(selectedFilename);
+    const hints = window.CodeMirror?.hint;
+    if (mode === "javascript") return hints?.javascript || hints?.anyword;
+    if (mode === "python") return hints?.["python-custom"] || hints?.anyword;
+    if (mode === "text/x-java") return hints?.["java-custom"] || hints?.anyword;
+    return hints?.anyword;
+  };
+  useEffect(() => {
+  registerCustomHints(); // ✅ custom hint 연결
+}, []);
+
+
   const handleSave = useCallback(async () => {
     const codeId = parseInt(activeTabId.replace("code-", ""));
     try {
@@ -59,13 +74,22 @@ const SelfCodingEditorPanel = ({
       console.error("코드 저장 실패:", err);
       alert("저장에 실패했습니다.");
     }
-  }, [activeTabId, selectedFileContent, languageId, setOriginalContent, setUnsaved]);
+  }, [
+    activeTabId,
+    selectedFileContent,
+    languageId,
+    setOriginalContent,
+    setUnsaved,
+  ]);
 
   const handleRunJs = async () => {
     try {
       const result = await runJsPreview(selectedFileContent);
-      console.log("🔥 runJs 결과:", result);  // ✅ 로그
-      const escapedCode = selectedFileContent.replace(/<\/script>/g, "<\\/script>");
+      console.log("🔥 runJs 결과:", result); // ✅ 로그
+      const escapedCode = selectedFileContent.replace(
+        /<\/script>/g,
+        "<\\/script>"
+      );
       const jsOutput = `
         <html>
           <body style="font-family:monospace; padding:20px;">
@@ -141,7 +165,13 @@ const SelfCodingEditorPanel = ({
       }
     };
     fetchContent();
-  }, [activeTabId, setSelectedFilename, setSelectedFileContent, setUnsaved, setLanguageId]);
+  }, [
+    activeTabId,
+    setSelectedFilename,
+    setSelectedFileContent,
+    setUnsaved,
+    setLanguageId,
+  ]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -222,7 +252,10 @@ const SelfCodingEditorPanel = ({
               onClick={() => setActiveTabId(tab.tabId)}
             >
               <span className="mr-2">{emoji}</span>
-              <span>{fileName}{isUnsaved && " ●"}</span>
+              <span>
+                {fileName}
+                {isUnsaved && " ●"}
+              </span>
               <FaTimes
                 className="ml-2 text-xs hover:text-red-500"
                 onClick={(e) => {
@@ -258,10 +291,23 @@ const SelfCodingEditorPanel = ({
             lineNumbers: true,
             tabSize: 2,
             lineWrapping: true,
+            extraKeys: {
+              "Ctrl-Space": "autocomplete", // ✅ 단축키
+            },
+            hintOptions: {
+              hint: getHintByLanguage(),
+              completeSingle: false,
+            },
           }}
           onBeforeChange={(editor, data, value) => {
             setSelectedFileContent(value);
             setUnsaved(value !== originalContent);
+          }}
+          onKeyUp={(editor, event) => {
+            const { key } = event;
+            if (!editor.state.completionActive && /^[\w.]$/.test(key)) {
+              editor.showHint(); // ✅ 자동 트리거
+            }
           }}
         />
       </div>
