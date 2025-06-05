@@ -139,6 +139,10 @@ const SelfCodingExplorerPanel = ({
         if (!folderTree) {
           await loadRoot();
         }
+        if (!folderTree?.folder_id) {
+          await loadRoot();
+          return;
+        }
         await insertTemplateToDB(templateIdFromNav, folderTree.folder_id);
         const [children, codes] = await Promise.all([
           getChildFolders(folderTree.folder_id),
@@ -179,39 +183,6 @@ const SelfCodingExplorerPanel = ({
     applyTemplate();
   }, [folderTree, templateIdFromNav, insertTemplateToDB, loadRoot, setFolders]);
 
-useEffect(() => {
-  const refreshOpenedNodes = async (node) => {
-    if (node.expanded && !node.loaded) {
-      const [children, codes] = await Promise.all([
-        getChildFolders(node.folder_id),
-        getCodesInFolder(node.folder_id),
-      ]);
-      node.children = children.map((child) => ({
-        ...child,
-        children: [],
-        codes: [],
-        expanded: false,
-        loaded: false,
-      }));
-      node.codes = codes;
-      node.loaded = true;
-
-      for (const child of node.children) {
-        await refreshOpenedNodes(child);
-      }
-    }
-  };
-
-    const updateTreeIfOpen = async () => {
-    if (!folders || !folders.expanded) return;
-    const treeCopy = { ...folders };
-    await refreshOpenedNodes(treeCopy);
-    setFolderTree(treeCopy);
-    setFolders(treeCopy);
-  };
-  updateTreeIfOpen();
-}, [folders, setFolders]);
-
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (creatingItem) {
@@ -228,16 +199,16 @@ useEffect(() => {
   }, [creatingItem]);
 
   useEffect(() => {
-    const handleOutsideClick = (e) => {
-      const menuEl = document.getElementById("context-menu");
-      if (menuVisible && menuEl && !menuEl.contains(e.target)) {
-        setMenuVisible(false);
-      }
-    };
+  const handleOutsideClick = (e) => {
+    const menuEl = document.getElementById("context-menu");
+    if (menuVisible && menuEl && !menuEl.contains(e.target)) {
+      setMenuVisible(false);
+    }
+  };
+  window.addEventListener("mousedown", handleOutsideClick, true); // ← 캡처 단계!
+  return () => window.removeEventListener("mousedown", handleOutsideClick, true);
+}, [menuVisible]);
 
-    window.addEventListener("mousedown", handleOutsideClick);
-    return () => window.removeEventListener("mousedown", handleOutsideClick);
-  }, [menuVisible]);
 
   useEffect(() => {
     const handleClickOutsideRename = (e) => {
@@ -250,17 +221,20 @@ useEffect(() => {
   }, [renamingItem]);
 
   const handleContextMenu = (e) => {
-    e.preventDefault();
-    const targetId = e.currentTarget?.dataset?.id;
-    if (!targetId) return;
-
-    setMenuVisible(false);
-    setTimeout(() => {
-      setMenuPosition({ x: e.pageX + 4, y: e.pageY + 6 });
-      setContextMenu({ targetId });
-      setMenuVisible(true);
-    }, 0);
-  };
+  e.preventDefault();
+  const target = e.target.closest("[data-id]");
+  const targetId = target?.dataset?.id;
+  if (!targetId) {
+    console.warn("❌ 우클릭된 요소에 data-id가 없음", e.target);
+    return;
+  }
+  setMenuVisible(false);  
+  setContextMenu({ targetId });
+  setMenuPosition({ x: e.pageX + 4, y: e.pageY + 6 });
+  setTimeout(() => {
+    setMenuVisible(true);
+  }, 0);
+};
 
   const findFolderNode = (node, folderId) => {
     if (node.folder_id === folderId) return node;
@@ -280,7 +254,8 @@ useEffect(() => {
 
       if (label === "새 파일") {
         const folderIdStr = contextMenu.targetId?.replace("folder-", "");
-        const folderId = parseInt(folderIdStr);
+        const folderId = Number(folderIdStr);
+        if (isNaN(folderId)) return;
         const openNode = findFolderNode(folderTree, folderId);
         const showInput = () => {
           setCreatingItem({
@@ -292,7 +267,11 @@ useEffect(() => {
 
         if (openNode) {
           if (!openNode.expanded) {
-            await handleFolderToggle(openNode);
+            if (openNode?.folder_id) {
+              await handleFolderToggle(openNode);
+            } else {
+              console.warn("❌ openNode가 유효하지 않음", openNode);
+            }
           }
           showInput();
         } else {
@@ -316,7 +295,11 @@ useEffect(() => {
 
         if (openNode) {
           if (!openNode.expanded) {
-            await handleFolderToggle(openNode);
+            if (openNode?.folder_id) {
+              await handleFolderToggle(openNode);
+            } else {
+              console.warn("❌ openNode가 유효하지 않음", openNode);
+            }
           }
           showInput();
         } else {
@@ -353,11 +336,12 @@ useEffect(() => {
         if (contextMenu.targetId?.startsWith("folder-")) {
           const folderIdStr = contextMenu.targetId.replace("folder-", "");
           const folderId = parseInt(folderIdStr);
-          const targetNode = findFolderNode(folderTree, folderId);
+          const updatedTree = structuredClone(folderTree); // ✅ 깊은 복사
+          const targetNode = findFolderNode(updatedTree, folderId);
           if (targetNode) {
             targetNode.expanded = true;
-            setFolderTree({ ...folderTree });
-            setFolders({ ...folderTree });
+            setFolderTree(updatedTree);
+            setFolders(updatedTree);
             setRenamingItem({ path: `folder-${folderId}`, name: targetNode.folder_name });
           }
         }
@@ -425,8 +409,8 @@ if (contextMenu.targetId?.startsWith("code-")) {
             };
 
             deleteNode([newTree], folderId);
-            setFolderTree({ ...newTree });
-            setFolders({ ...newTree });
+            setFolderTree(newTree);
+            setFolders(newTree);
           } catch (err) {
             console.error("폴더 삭제 실패", err);
             alert("폴더 삭제에 실패했습니다.");
@@ -479,6 +463,7 @@ if (contextMenu.targetId?.startsWith("code-")) {
         id="context-menu"
         className="fixed z-50 w-40 bg-white text-gray-800 border border-gray-200 rounded shadow-lg py-1 text-sm"
         style={{ top: position.y, left: position.x }}
+        onMouseDown={e => e.stopPropagation()}
       >
         {menuItems.map((item) => (
           <li
@@ -514,31 +499,39 @@ if (contextMenu.targetId?.startsWith("code-")) {
       </ul>
     );
   };
-
-  const handleFolderToggle = async (node) => {
-    if (!node.loaded) {
-      try {
-        const [children, codes] = await Promise.all([
-          getChildFolders(node.folder_id),
-          getCodesInFolder(node.folder_id),
-        ]);
-        node.children = children.map((child) => ({
-          ...child,
-          children: [],
-          codes: [],
-          expanded: false,
-          loaded: false,
-        }));
-        node.codes = codes;
-        node.loaded = true;
-      } catch (err) {
-        console.error("하위 항목 불러오기 실패", err);
-      }
+const handleFolderToggle = async (node) => {
+  if (!node?.folder_id) {
+    console.error("❌ 잘못된 폴더 node:", node);
+    alert("폴더 ID가 유효하지 않습니다.");
+    return;
+  }
+  // 오직 이 폴더만!
+  if (!node.loaded) {
+    try {
+      const [children, codes] = await Promise.all([
+        getChildFolders(node.folder_id),
+        getCodesInFolder(node.folder_id),
+      ]);
+      node.children = children.map((child) => ({
+        ...child,
+        children: [],
+        codes: [],
+        expanded: false,
+        loaded: false,
+      }));
+      node.codes = codes;
+      node.loaded = true;
+    } catch (err) {
+      console.error("하위 항목 불러오기 실패", err);
+      alert("하위 항목 불러오기 중 오류 발생");
     }
-    node.expanded = !node.expanded;
-    setFolderTree({ ...folderTree });
-    setFolders({ ...folderTree });
-  };
+  }
+
+  node.expanded = !node.expanded;
+  // 🟢 항상 새 객체로 만들어줘야 React가 변화 감지!
+  setFolderTree({ ...folderTree });
+  setFolders({ ...folderTree });
+};
 
   const handleFileClick = async (file) => {
     try {

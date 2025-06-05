@@ -21,6 +21,7 @@ export const getRootCodeFolder = async () => {
 // 특정 폴더의 하위 폴더 조회
 export const getChildFolders = async (parentFolderId) => {
   const res = await apiClient.get(`/freecode/folders/${parentFolderId}/children`);
+  console.log("요청됨");
   return res.data;
 };
 
