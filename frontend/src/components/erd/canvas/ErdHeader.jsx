@@ -172,6 +172,30 @@ const ErdHeader = ({
       return;
     }
 
+    // ✅ 캡처 전 transform 제거 + 위치 보정
+    const originalTransform = transformedRoot.style.transform;
+    transformedRoot.style.transform = "none";
+
+    const zoom = parseFloat(
+      originalTransform.match(/scale\((.*?)\)/)?.[1] || "1"
+    );
+
+    const adjustedTables = [];
+    tableEls.forEach((el) => {
+      const x = parseFloat(el.style.left || "0");
+      const y = parseFloat(el.style.top || "0");
+
+      adjustedTables.push({
+        el,
+        originalLeft: el.style.left,
+        originalTop: el.style.top,
+      });
+
+      el.style.left = `${x * zoom}px`;
+      el.style.top = `${y * zoom}px`;
+    });
+
+    // ✅ 캡처 범위 계산
     let minX = Infinity,
       minY = Infinity,
       maxX = -Infinity,
@@ -214,6 +238,13 @@ const ErdHeader = ({
     } catch (err) {
       console.error("❌ 이미지 저장 오류:", err);
       alert("이미지 저장 중 오류가 발생했습니다.");
+    } finally {
+      // ✅ 위치 원복
+      transformedRoot.style.transform = originalTransform;
+      adjustedTables.forEach(({ el, originalLeft, originalTop }) => {
+        el.style.left = originalLeft;
+        el.style.top = originalTop;
+      });
     }
   };
 

@@ -37,7 +37,7 @@ const ErdTableBox = ({
   const [localName, setLocalName] = useState(tableName || "");
   const [localDesc, setLocalDesc] = useState(description || "");
   const [localColumns, setLocalColumns] = useState(() => columns || []);
-  const [originalColumns] = useState(() => columns || []); // ✅ 스냅샷 기준값
+  const [originalColumns, setOriginalColumns] = useState(() => columns || []); // ✅ 스냅샷 기준값
 
   // ✅ 여기에 추가
   useEffect(() => {
@@ -50,6 +50,7 @@ const ErdTableBox = ({
 
   useEffect(() => {
     setLocalColumns(columns || []);
+    setOriginalColumns(columns || []);
   }, [columns]);
 
   // 🧱 DOM 참조 및 위치 계산용
@@ -451,9 +452,11 @@ const ErdTableBox = ({
       <div className="mt-2">
         {localColumns.map((col, index) => (
           <ErdColumnRow
-            key={`col-${col.id ?? index}`}
+            key={`col-${col.column_id ?? col.id ?? index}`}
             column={col}
-            originalColumn={originalColumns.find((c) => c.id === col.id)}
+            originalColumn={originalColumns.find(
+              (c) => c.column_id === col.column_id
+            )}
             index={index}
             onChange={handleColumnChange}
             onDelete={handleDeleteColumn}
@@ -469,14 +472,13 @@ const ErdTableBox = ({
             isHovering={hoverIndex === index}
             onPositionUpdate={(colId, el) => handleColumnPosUpdate(colId, el)}
             onClick={() => {
-              onColumnClick?.(col.id);
+              onColumnClick?.(col.column_id); // 이 부분도 col.id -> col.column_id로 바꾸는 게 안전함
             }}
             isRelationMode={isAddingRelation}
             isRelationHover={isAddingRelation && hoveredColumnId === col.id}
             setHoveredColumnId={setHoveredColumnId}
             onSnapshotRequest={onSnapshotRequest}
             isAddingRelation={isAddingRelation}
-
           />
         ))}
       </div>
