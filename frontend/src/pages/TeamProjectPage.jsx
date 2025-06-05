@@ -75,7 +75,7 @@ const TeamProjectPage = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#f8f6f3]">
+    <div className="flex min-h-screen bg-white">
       <ProjectSidebar
         setActiveTab={setActiveTab}
         onProjectSelect={handleProjectSelect}

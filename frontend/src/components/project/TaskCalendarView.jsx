@@ -156,7 +156,7 @@ const TaskCalendarView = ({ tasks = [], projects = [], onTaskClick }) => {
   }, [selectedTask]);
 
   return (
-    <div className="bg-white border rounded-2xl p-6 shadow-md w-full max-w-[1100px] mx-auto relative">
+     <div className="relative w-full h-full">
       {tasks.length === 0 && (
         <p className="text-gray-500">작업 데이터를 로드 중입니다...</p>
       )}
@@ -184,7 +184,7 @@ const TaskCalendarView = ({ tasks = [], projects = [], onTaskClick }) => {
         )}
       </div>
 
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">📅 내 작업 캘린더</h2>
+      <h2 className="text-2xl font-bold mb-4 text-gray-800 px-6">📅 내 작업 캘린더</h2>
 
       <FullCalendar
         plugins={[dayGridPlugin, interactionPlugin]}

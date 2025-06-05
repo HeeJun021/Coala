@@ -21,8 +21,10 @@ const MainLayout = ({ children }) => {
       )}
 
       <main
-        className={`content flex-1 min-h-screen ${isHome || isTeamProject ? "px-0" : "px-10 mx-auto"}`}
-      >
+  className={`content flex-1 min-h-screen ${
+    isHome || isTeamProject ? "px-0" : "px-0" // ← 기존 px-10 제거
+  }`}
+>
         {children}
       </main>
       <FloatingButton />
