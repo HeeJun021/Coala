@@ -45,27 +45,27 @@ const ErdColumnRow = ({
         return {};
     }
   };
-
+  // ✅ onChange에서는 상태만 변경
   const handleInputChange = (key, value) => {
-    // 1. 상태 반영
     onChange(index, key, value);
+  };
 
-    // 2. 서버에 즉시 반영 (무조건)
+  // ✅ onBlur에서만 PATCH 호출
+  const handleInputBlur = async (key, value) => {
     if (!column.column_id) return;
 
     const updateData = generateUpdateData(key, value);
+    console.log("📡 PATCH 전송:", updateData);
     if (!updateData || Object.keys(updateData).length === 0) return;
 
-    patchColumn(column.column_id, updateData)
-      .then(() => {
-        onSnapshotRequest?.();
-      })
-      .catch((err) => {
-        console.error("PATCH 실패:", err.response?.data || err);
-      });
+    try {
+      await patchColumn(column.column_id, updateData);
+      onChange(index, key, value); // PATCH 성공 후도 강제 반영
+      onSnapshotRequest?.();
+    } catch (err) {
+      console.error("PATCH 실패:", err.response?.data || err);
+    }
   };
-
-  const handleInputBlur = () => {};
 
   const handleRightClick = (e) => {
     e.preventDefault();
@@ -157,7 +157,7 @@ const ErdColumnRow = ({
             placeholder="column"
             value={column.name ?? ""}
             onChange={(e) => handleInputChange("name", e.target.value)}
-            onBlur={() => handleInputBlur("name")}
+            onBlur={(e) => handleInputBlur("name", e.target.value)}
           />
 
           <select
@@ -174,7 +174,7 @@ const ErdColumnRow = ({
             }}
             value={column.dataType ?? ""}
             onChange={(e) => handleInputChange("dataType", e.target.value)}
-            onBlur={() => handleInputBlur("dataType")}
+            onBlur={(e) => handleInputBlur("dataType", e.target.value)}
           >
             <option value="" disabled className="text-gray-400">
               type
@@ -202,6 +202,7 @@ const ErdColumnRow = ({
             onClick={() => {
               const newValue = !column.isNullable;
               handleInputChange("isNullable", newValue);
+              handleInputBlur("isNullable", newValue);
             }}
             style={{ lineHeight: "22px", height: "24px" }}
           >
@@ -221,7 +222,7 @@ const ErdColumnRow = ({
             placeholder="default"
             value={column.defaultValue ?? ""}
             onChange={(e) => handleInputChange("defaultValue", e.target.value)}
-            onBlur={() => handleInputBlur("defaultValue")}
+            onBlur={(e) => handleInputBlur("defaultValue", e.target.value)}
           />
 
           <input
@@ -237,7 +238,7 @@ const ErdColumnRow = ({
             placeholder="description"
             value={column.comment ?? ""}
             onChange={(e) => handleInputChange("comment", e.target.value)}
-            onBlur={() => handleInputBlur("comment")}
+            onBlur={(e) => handleInputBlur("comment", e.target.value)}
           />
         </div>
 
