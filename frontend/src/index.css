@@ -101,38 +101,71 @@ html, body, #root {
   border-radius: 4px; 
 }
 
-
-
-
-.cm-gutters {
-  background-color: #f3f4f6 !important; /* gray-100 */
-  color: #6b7280 !important;
-  border: none !important;
-  font-family: 'JetBrains Mono', 'Noto Sans KR', monospace !important;
-  font-size: 16px !important;
+/* CodeMirror v5 라이트모드용 스타일 */
+.CodeMirror {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 15px;
+  background-color: #ffffff;
+  color: #1e293b; /* slate-800 */
+  line-height: 1.6;
+  height: 100%;
 }
 
-.cm-selectionBackground {
-  background-color: rgba(180, 213, 255, 0.6) !important; /* 연한 하늘색 */
+/* 스크롤바 */
+.CodeMirror-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f8fafc;
 }
 
-.cm-cursor {
-  border-left: 2px solid #1f2937 !important;
+.CodeMirror-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.CodeMirror-scroll::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1; /* gray-300 */
+  border-radius: 4px;
+}
+.CodeMirror-scroll::-webkit-scrollbar-track {
+  background-color: #f8fafc; /* gray-50 */
+  border-radius: 4px;
 }
 
-
-.cm-activeLine {
-  background-color: rgba(0, 0, 0, 0.03) !important;
+/* 선택 영역 */
+.CodeMirror-selected {
+  background: rgba(147, 197, 253, 0.4); /* sky-300 약간 투명 */
 }
 
-.cm-activeLineGutter {
-  background-color: #ffffff0d !important;
+/* 커서 */
+.CodeMirror-cursor {
+  border-left: 2px solid #1e293b; /* slate-800 */
 }
 
-
-.cm-gutters span[title="Fold line"] {
-  display: none !important;  /* ✅ 접기 아이콘만 숨김 */
+/* 현재 라인 강조 */
+.CodeMirror-activeline-background {
+  background: #f1f5f9; /* gray-100 */
 }
+
+/* Gutter (라인 넘버 영역) */
+.CodeMirror-gutters {
+  background-color: #f9fafb; /* gray-50 */
+  color: #94a3b8; /* slate-400 */
+  border-right: 1px solid #e5e7eb; /* gray-200 */
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+}
+
+/* 라인 넘버 강조 (활성 라인) */
+.CodeMirror-linenumber {
+  padding: 0 4px;
+}
+
+/* 토큰 색상 (JS 기준 예시) */
+.cm-keyword { color: #7c3aed; }         /* violet-600 */
+.cm-string  { color: #059669; }         /* emerald-600 */
+.cm-number  { color: #e11d48; }         /* rose-600 */
+.cm-comment { color: #64748b; }         /* slate-500 */
+.cm-variable { color: #1d4ed8; }        /* blue-700 */
+.cm-def     { color: #0f766e; }         /* teal-700 */
+
 
 /* 코드 단축 및 도움 스타일 */
 .cm-tooltip-autocomplete {
@@ -420,3 +453,4 @@ body {
 .cm-editor .cm-line {
   font-family: 'JetBrains Mono', 'Noto Sans KR', monospace !important;
 }
+

@@ -2,10 +2,12 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import { Terminal } from "xterm";
 import "xterm/css/xterm.css";
-import CodeMirror from "@uiw/react-codemirror";
-import { javascript } from "@codemirror/lang-javascript";
-import { python } from "@codemirror/lang-python";
-import { dracula } from "@uiw/codemirror-theme-dracula";
+
+import { Controlled as CodeMirror } from "react-codemirror2";
+import "codemirror/lib/codemirror.css";
+import "codemirror/theme/dracula.css";
+import "codemirror/mode/javascript/javascript";
+import "codemirror/mode/python/python";
 
 const safeDecode = (text) => {
   try {
@@ -92,12 +94,11 @@ const CodeTestTerminalPage = () => {
   }, [connectWebSocket]);
 
   const handleRun = () => {
-    // 🟢 HTML 코드 포함되면 실행 막기
     if (code.includes("<html>") || code.includes("<body>")) {
       termInstance.current.writeln("❗️ HTML/DOM 관련 코드는 Node.js 환경에서 실행할 수 없습니다.");
       return;
     }
-  
+
     if (socketRef.current && socketRef.current.readyState === 1) {
       sendCode();
     } else {
@@ -107,6 +108,10 @@ const CodeTestTerminalPage = () => {
     }
   };
 
+  const getCodeMirrorMode = () => {
+    return codeLanguage === "javascript" ? "javascript" : "python";
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center p-8 bg-gray-100 text-black">
       <div className="w-full max-w-5xl bg-white shadow-lg rounded-xl p-8">
@@ -114,20 +119,21 @@ const CodeTestTerminalPage = () => {
 
         <div className="p-4 border rounded-md bg-gray-100 text-gray-800 mb-4">
           <h2 className="text-lg font-semibold">문제 설명</h2>
-          <p
-            className="text-base leading-7"
-            dangerouslySetInnerHTML={{ __html: decodedDescription }}
-          ></p>
+          <p className="text-base leading-7" dangerouslySetInnerHTML={{ __html: decodedDescription }} />
         </div>
 
         <div className="border rounded-md p-4 bg-gray-100 text-gray-800 mb-4">
           <h2 className="text-lg font-semibold">코드 입력</h2>
           <CodeMirror
             value={code}
-            height="200px"
-            theme={dracula}
-            extensions={codeLanguage === "javascript" ? [javascript()] : [python()]}
-            onChange={(value) => setCode(value)}
+            options={{
+              mode: getCodeMirrorMode(),
+              theme: "dracula",
+              lineNumbers: true,
+              tabSize: 2,
+              lineWrapping: true,
+            }}
+            onBeforeChange={(editor, data, value) => setCode(value)}
           />
         </div>
 
@@ -147,10 +153,7 @@ const CodeTestTerminalPage = () => {
           >
             초기화
           </button>
-          <button
-            className="px-4 py-2 bg-blue-500 text-white rounded"
-            onClick={handleRun}
-          >
+          <button className="px-4 py-2 bg-blue-500 text-white rounded" onClick={handleRun}>
             코드 실행
           </button>
         </div>

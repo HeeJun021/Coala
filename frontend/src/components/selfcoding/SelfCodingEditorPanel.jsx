@@ -1,8 +1,19 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { FaTimes } from "react-icons/fa";
-import CodeMirror from "@uiw/react-codemirror";
+import { Controlled as CodeMirror } from "react-codemirror2";
 import { getCodeById, updateCodeFile } from "../../api/codeApi";
-import { runJsPreview, runHtmlPreview, runPythonPreview } from "../../api/previewApi";
+import {
+  runJsPreview,
+  runHtmlPreview,
+  runPythonPreview,
+} from "../../api/previewApi";
+
+import "codemirror/lib/codemirror.css";
+import "codemirror/theme/eclipse.css";
+import "codemirror/mode/javascript/javascript";
+import "codemirror/mode/htmlmixed/htmlmixed";
+import "codemirror/mode/css/css";
+import "codemirror/mode/python/python";
 
 const SelfCodingEditorPanel = ({
   tabs,
@@ -15,40 +26,46 @@ const SelfCodingEditorPanel = ({
   setSelectedFileContent,
   templateId,
   templateDescriptions,
-  getLanguageExtension,
   setUnsaved,
   unsaved,
   languageId,
   setLanguageId,
   setPreviewSrcDoc,
-  setPreviewFilename, 
+  setPreviewFilename,
 }) => {
   const editorRef = useRef(null);
   const [originalContent, setOriginalContent] = useState("");
   const extension = selectedFilename?.split(".").pop();
 
+  const getLanguageMode = (filename) => {
+    const ext = filename?.split(".").pop();
+    if (ext === "js") return "javascript";
+    if (ext === "html") return "htmlmixed";
+    if (ext === "css") return "css";
+    if (ext === "py") return "python";
+    return "text/plain";
+  };
+
   const handleSave = useCallback(async () => {
-  const codeId = parseInt(activeTabId.replace("code-", ""));
-  try {
-    await updateCodeFile(codeId, {
-      content: selectedFileContent,
-      language_id: languageId,
-    });
-    setOriginalContent(selectedFileContent);
-    setUnsaved(false);
-  } catch (err) {
-    console.error("코드 저장 실패:", err);
-    alert("저장에 실패했습니다.");
-  }
-}, [activeTabId, selectedFileContent, languageId, setOriginalContent, setUnsaved]);
+    const codeId = parseInt(activeTabId.replace("code-", ""));
+    try {
+      await updateCodeFile(codeId, {
+        content: selectedFileContent,
+        language_id: languageId,
+      });
+      setOriginalContent(selectedFileContent);
+      setUnsaved(false);
+    } catch (err) {
+      console.error("코드 저장 실패:", err);
+      alert("저장에 실패했습니다.");
+    }
+  }, [activeTabId, selectedFileContent, languageId, setOriginalContent, setUnsaved]);
 
   const handleRunJs = async () => {
     try {
       const result = await runJsPreview(selectedFileContent);
-      console.log("🔥 runJs 결과:", result);
-
+      console.log("🔥 runJs 결과:", result);  // ✅ 로그
       const escapedCode = selectedFileContent.replace(/<\/script>/g, "<\\/script>");
-
       const jsOutput = `
         <html>
           <body style="font-family:monospace; padding:20px;">
@@ -73,9 +90,8 @@ const SelfCodingEditorPanel = ({
           </body>
         </html>
       `;
-
       setPreviewSrcDoc(jsOutput);
-      setPreviewFilename(selectedFilename); // ✅ 실행한 파일 이름 설정
+      setPreviewFilename(selectedFilename);
     } catch (err) {
       console.error("JS 실행 실패", err);
       alert("실행 중 오류가 발생했습니다.");
@@ -86,13 +102,11 @@ const SelfCodingEditorPanel = ({
     try {
       const codeId = parseInt(activeTabId?.replace("code-", ""));
       if (!codeId) throw new Error("올바른 코드 ID가 아닙니다.");
-
       const result = await runHtmlPreview(codeId);
-
       setPreviewSrcDoc(result.srcdoc);
-      setPreviewFilename(result.html_filename); // ✅ 실행한 파일 이름 설정
+      setPreviewFilename(result.html_filename);
     } catch (err) {
-      console.error("HTML 실행 실패 Error:", err.message);
+      console.error("HTML 실행 실패", err.message);
       alert("HTML 실행 중 오류: " + err.message);
     }
   };
@@ -101,12 +115,9 @@ const SelfCodingEditorPanel = ({
     try {
       const codeId = parseInt(activeTabId?.replace("code-", ""));
       if (!codeId) throw new Error("올바른 코드 ID가 아닙니다.");
-
       const result = await runPythonPreview(codeId);
-      console.log("🐍 runPython 결과:", result);
-
       setPreviewSrcDoc(result);
-      setPreviewFilename(selectedFilename); // ✅ 실행한 파일 이름 설정
+      setPreviewFilename(selectedFilename);
     } catch (err) {
       console.error("Python 실행 실패", err.message);
       alert("Python 실행 중 오류: " + err.message);
@@ -241,19 +252,16 @@ const SelfCodingEditorPanel = ({
         <CodeMirror
           ref={editorRef}
           value={selectedFileContent}
-          height="100%"
-          theme="light"
-          extensions={[getLanguageExtension(selectedFilename)]}
-          onChange={(value) => {
+          options={{
+            mode: getLanguageMode(selectedFilename),
+            theme: "eclipse",
+            lineNumbers: true,
+            tabSize: 2,
+            lineWrapping: true,
+          }}
+          onBeforeChange={(editor, data, value) => {
             setSelectedFileContent(value);
             setUnsaved(value !== originalContent);
-          }}
-          basicSetup={{ lineNumbers: true }}
-          style={{
-            fontFamily:
-              "'Fira Code', 'JetBrains Mono', Menlo, Monaco, Consolas, 'Courier New', monospace",
-            fontSize: "14px",
-            lineHeight: "1.5",
           }}
         />
       </div>
