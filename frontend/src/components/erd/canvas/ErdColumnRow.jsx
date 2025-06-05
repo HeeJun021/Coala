@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { patchColumn, setColumnPrimaryKey } from "../../../api/erd/columnApi";
 import { FaKey, FaTimes } from "react-icons/fa";
+import { Check } from "lucide-react";
 
 const ErdColumnRow = ({
   column,
@@ -256,20 +257,28 @@ const ErdColumnRow = ({
 
       {showPkMenu && (
         <div
-          className="absolute z-50 pk-menu bg-[#3a3a4d] border border-gray-600 text-sm rounded px-2 py-1 cursor-pointer shadow"
+          className="absolute z-50 min-w-[140px] bg-[#1f2233] border border-[#2b2e42] rounded-lg shadow-xl text-sm"
           style={{ top: pkMenuPos.y, left: pkMenuPos.x }}
-          onClick={async () => {
-            try {
-              await setColumnPrimaryKey(column.column_id, !isPK);
-              onTogglePrimaryKey(column.id);
-              setShowPkMenu(false);
-            } catch (error) {
-              console.error("PK 설정 실패:", error);
-              alert("PK 설정에 실패했습니다.");
-            }
-          }}
         >
-          🔑 PK 설정
+          <button
+            className="flex items-center justify-between gap-2 px-4 py-[6px] w-full hover:bg-[#2c2f45] text-gray-100 rounded-lg transition"
+            onClick={async () => {
+              try {
+                await setColumnPrimaryKey(column.column_id, !isPK);
+                onTogglePrimaryKey(column.id);
+                setShowPkMenu(false);
+              } catch (error) {
+                console.error("PK 설정 실패:", error);
+                alert("PK 설정에 실패했습니다.");
+              }
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <FaKey className="w-3.5 h-3.5 text-yellow-400" />
+              PK 설정
+            </div>
+            {isPK && <Check className="w-4 h-4 text-green-400" />}
+          </button>
         </div>
       )}
     </>
