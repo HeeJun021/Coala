@@ -39,7 +39,9 @@ const CodingTestProblemInfo = ({ problem, setShowCopyMessage }) => {
           >
             LV.{problem.difficulty}
           </span>
-          <span className="text-xs text-gray-500">| 카테고리 {problem.category}</span>
+          <span className="text-xs text-gray-500">
+            | 카테고리 {problem.category}
+          </span>
         </div>
         <div className="text-xs text-gray-500">
           총 {problem.total_submissions || 0}번의 풀이 | 정답률{" "}
@@ -131,7 +133,9 @@ const CodingTestProblemInfo = ({ problem, setShowCopyMessage }) => {
                 <span>{ex.input.replace(/\\n/g, "\n")}</span>
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(ex.input.replace(/\\n/g, "\n"));
+                    navigator.clipboard.writeText(
+                      ex.input.replace(/\\n/g, "\n")
+                    );
                     setShowCopyMessage(true);
                     setTimeout(() => setShowCopyMessage(false), 3000);
                   }}

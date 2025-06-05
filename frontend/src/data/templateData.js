@@ -1,14 +1,9 @@
-import { javascript } from "@codemirror/lang-javascript";
-import { html } from "@codemirror/lang-html";
-import { css } from "@codemirror/lang-css";
-import { python } from "@codemirror/lang-python";
-
-export const getLanguageExtension = (filename) => {
-  if (filename.endsWith(".js") || filename.endsWith(".jsx")) return javascript();
-  if (filename.endsWith(".html")) return html();
-  if (filename.endsWith(".css")) return css();
-  if (filename.endsWith(".py")) return python();
-  return [];
+export const getLanguageMode = (filename) => {
+  if (filename.endsWith(".js") || filename.endsWith(".jsx")) return "javascript";
+  if (filename.endsWith(".html")) return "htmlmixed";
+  if (filename.endsWith(".css")) return "css";
+  if (filename.endsWith(".py")) return "python";
+  return "text"; // 기본값
 };
 
 export const templateDescriptions = {
@@ -104,4 +99,11 @@ def hello():
     return "Hello Flask!"`,
     "requirements.txt": `flask`,
   },
+};
+export const getLanguageExtension = (filename) => {
+  if (filename.endsWith(".js") || filename.endsWith(".jsx")) return "javascript";
+  if (filename.endsWith(".html")) return "html";
+  if (filename.endsWith(".css")) return "css";
+  if (filename.endsWith(".py")) return "python";
+  return "";
 };
