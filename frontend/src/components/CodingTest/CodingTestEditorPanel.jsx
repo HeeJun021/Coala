@@ -34,17 +34,15 @@ const CodingTestEditorPanel = ({
     registerCustomHints();
   }, []);
 
-  const getLanguageMode = (filename) => {
-  const ext = filename?.split(".").pop();
-  if (ext === "js") return "javascript";
-  if (ext === "html") return "htmlmixed";
-  if (ext === "css") return "css";
-  if (ext === "py") return "python";
-  if (ext === "java") return "text/x-java";
-  if (ext === "c") return "text/x-csrc";
-  if (ext === "cpp" || ext === "cc" || ext === "cxx") return "text/x-c++src";
-  return "text/plain";
+  const getLanguageMode = (lang) => {
+  if (lang === "javascript") return "javascript";
+  if (lang === "python") return "python";
+  if (lang === "java") return "text/x-java";
+  if (lang === "c") return "text/x-csrc";
+  if (lang === "cpp") return "text/x-c++src";
+  return "plaintext";
 };
+
 
 
   const getHintByLanguage = () => {
@@ -65,7 +63,7 @@ const CodingTestEditorPanel = ({
         <CodeMirror
           value={code}
           options={{
-            mode: getLanguageMode(),
+            mode: getLanguageMode(language),
             theme: "eclipse",
             lineNumbers: true,
             lineWrapping: true,
