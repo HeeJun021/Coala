@@ -5,7 +5,6 @@ import DocCard from "./DocCard";
 const DocsListPanel = ({ projectId, onSelect }) => {
   const [docs, setDocs] = useState([]);
 
-  // ✅ useCallback으로 fetchDocs 정의 → useEffect 의존성 경고 제거
   const fetchDocs = useCallback(async () => {
     try {
       const res = await getDocuments(projectId);
@@ -19,13 +18,12 @@ const DocsListPanel = ({ projectId, onSelect }) => {
     try {
       const newDoc = await createDocument(projectId, { title: "새 문서", content: "" });
       await fetchDocs();
-      onSelect(newDoc.doc_id); // 생성 후 에디터로 이동
+      onSelect(newDoc.doc_id);
     } catch (err) {
       alert("문서 생성 실패");
     }
   };
 
-  // ✅ useEffect 의존성에 fetchDocs 포함
   useEffect(() => {
     fetchDocs();
   }, [fetchDocs]);

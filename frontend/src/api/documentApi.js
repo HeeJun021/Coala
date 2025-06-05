@@ -1,16 +1,31 @@
-import apiClient from "./apiClient";
+import apiClient from "./apiClient";  // ✅ 통일해서 이것만 사용하도록
 
-export const getDocuments = (projectId) =>
-  apiClient.get(`/projects/${projectId}/docs`).then((res) => res.data);
+// 전체 문서 목록 조회
+export const getDocuments = async (projectId) => {
+  const res = await apiClient.get(`/projects/${projectId}/docs`);
+  return res.data;
+};
 
-export const createDocument = (projectId, data) =>
-  apiClient.post(`/projects/${projectId}/docs`, data).then((res) => res.data);
+// 문서 생성
+export const createDocument = async (projectId, data) => {
+  const res = await apiClient.post(`/projects/${projectId}/docs`, data);
+  return res.data;
+};
 
-export const getDocument = (projectId, docId) =>
-  apiClient.get(`/projects/${projectId}/docs/${docId}`).then((res) => res.data);
+// 단일 문서 조회
+export const getDocument = async (projectId, docId) => {
+  const res = await apiClient.get(`/projects/${projectId}/docs/${docId}`);
+  return res.data;
+};
 
-export const updateDocument = (projectId, docId, data) =>
-  apiClient.put(`/projects/${projectId}/docs/${docId}`, data).then((res) => res.data);
+// 문서 수정
+export const updateDocument = async (projectId, docId, data) => {
+  const res = await apiClient.put(`/projects/${projectId}/docs/${docId}`, data);
+  return res.data;
+};
 
-export const deleteDocument = (projectId, docId) =>
-  apiClient.delete(`/projects/${projectId}/docs/${docId}`).then((res) => res.data);
+// 문서 삭제
+export const deleteDocument = async (projectId, docId) => {
+  const res = await apiClient.delete(`/projects/${projectId}/docs/${docId}`);
+  return res.data;
+};

@@ -34,8 +34,13 @@ def update_document(project_id: int, doc_id: int, doc_update: DocumentUpdate, db
     doc = db.query(ProjectDocument).filter(ProjectDocument.project_id == project_id, ProjectDocument.doc_id == doc_id).first()
     if not doc:
         raise HTTPException(status_code=404, detail="문서를 찾을 수 없습니다.")
-    doc.title = doc_update.title
-    doc.content = doc_update.content
+
+    # ✅ None이 아닐 때만 덮어쓰기
+    if doc_update.title is not None:
+        doc.title = doc_update.title
+    if doc_update.content is not None:
+        doc.content = doc_update.content
+
     db.commit()
     db.refresh(doc)
     return doc

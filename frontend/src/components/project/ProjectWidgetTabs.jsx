@@ -3,8 +3,9 @@ import ProjectDetailPanel from "./ProjectDetailPanel";
 import { updateProject, getMyProjects } from "../../api/projectApi";
 import { getErds } from "../../api/erd/erdApi";
 import ErdListPanel from "../erd/list/ErdListPanel";
-import DocsListPanel from "./DocsListPanel";      // ✅ 문서 목록 컴포넌트
-import DocEditorPanel from "./DocEditorPanel";    // ✅ 문서 에디터 컴포넌트
+import DocumentWrapperPage from "./DocumentWrapperPage"; // ✅ 문서 전환 관리용 컴포넌트
+
+console.log("🧪 타입 확인:", typeof DocumentWrapperPage);
 
 const WIDGET_TABS = [
   { key: "overview", label: "개요" },
@@ -22,7 +23,6 @@ const ProjectWidgetTabs = ({ project }) => {
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [currentProject, setCurrentProject] = useState(project);
   const [erds, setErds] = useState([]);
-  const [selectedDocId, setSelectedDocId] = useState(null); // ✅ 문서 선택 상태
 
   useEffect(() => {
     const initialTabs = ["overview"];
@@ -113,17 +113,8 @@ const ProjectWidgetTabs = ({ project }) => {
           />
         );
       case "docs":
-        return selectedDocId === null ? (
-          <DocsListPanel
-            projectId={currentProject.project_id}
-            onSelect={setSelectedDocId}
-          />
-        ) : (
-          <DocEditorPanel
-            projectId={currentProject.project_id}
-            docId={selectedDocId}
-            onBack={() => setSelectedDocId(null)}
-          />
+        return (
+          <DocumentWrapperPage projectId={currentProject.project_id} />
         );
       default:
         return (
@@ -147,7 +138,6 @@ const ProjectWidgetTabs = ({ project }) => {
                 key={tab}
                 onClick={() => {
                   setActiveTab(tab);
-                  setSelectedDocId(null); // 문서 탭 초기화
                 }}
                 className={`mr-4 text-sm font-medium border-b-2 ${
                   activeTab === tab

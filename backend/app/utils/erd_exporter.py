@@ -55,3 +55,4 @@ def export_erd_state_to_json(erd_id: int, db: Session) -> dict:
         "columns": result_columns,
         "relations": result_relations
     }
+    
