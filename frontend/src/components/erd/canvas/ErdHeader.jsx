@@ -17,8 +17,7 @@ import EditErdNameModal from "../modal/EditErdNameModal";
 import CodeConvertHeaderPanel from "../CodeConvertHeaderPanel";
 import {
   commitErd,
-  undoErdSnapshot,
-  redoErdSnapshot,
+
   updateErdName,
 } from "../../../api/erd/erdDetailApi";
 
@@ -41,6 +40,8 @@ const ErdHeader = ({
   setTables,
   setRelations,
   showToast,
+  onUndo,
+  onRedo
 }) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -65,93 +66,7 @@ const ErdHeader = ({
     }
   };
 
-  const handleUndo = async () => {
-    try {
-      const res = await undoErdSnapshot(erdId);
-      if (res?.state_json) {
-        const parsedTables = (res.state_json.tables || []).map((t) => ({
-          id: t.table_id,
-          x: t.pos_x,
-          y: t.pos_y,
-          tableName: t.name ?? "",
-          description: t.description ?? "",
-          columns: (t.columns || []).map((c) => ({
-            ...c,
-            id: c.column_id,
-            name: c.name ?? "",
-            dataType: c.data_type ?? "",
-            isNullable: !c.is_not_null,
-            isPrimaryKey: c.is_primary,
-            isForeignKey: c.is_foreign,
-            defaultValue: c.default_value ?? "",
-            comment: c.description ?? "",
-          })),
-        }));
-
-        const parsedRelations = (res.state_json.relations || []).map((r) => ({
-          relationId: r.relation_id,
-          fromColumnId: r.source_column_id,
-          toColumnId: r.target_column_id,
-          participation_left: r.participation_source,
-          participation_right: r.participation_target,
-          relation_left: "bar", // 항상 bar
-          relation_right: r.relation_type === "1:N" ? "crow" : "bar",
-          relationType: `${r.relation_type}|${r.participation_source}|${r.participation_target}`,
-        }));
-
-        setTables?.(parsedTables);
-        setRelations?.(parsedRelations);
-        showToast("🪄 마지막 상태로 되돌렸습니다.");
-      }
-    } catch (err) {
-      console.error("Undo 실패:", err);
-      showToast("📌 처음 상태입니다.");
-    }
-  };
-
-  const handleRedo = async () => {
-    try {
-      const res = await redoErdSnapshot(erdId);
-      if (res?.state_json) {
-        const parsedTables = (res.state_json.tables || []).map((t) => ({
-          id: t.table_id,
-          x: t.pos_x,
-          y: t.pos_y,
-          tableName: t.name ?? "",
-          description: t.description ?? "",
-          columns: (t.columns || []).map((c) => ({
-            ...c,
-            id: c.column_id,
-            name: c.name ?? "",
-            dataType: c.data_type ?? "",
-            isNullable: !c.is_not_null,
-            isPrimaryKey: c.is_primary,
-            isForeignKey: c.is_foreign,
-            defaultValue: c.default_value ?? "",
-            comment: c.description ?? "",
-          })),
-        }));
-
-        const parsedRelations = (res.state_json.relations || []).map((r) => ({
-          relationId: r.relation_id,
-          fromColumnId: r.source_column_id,
-          toColumnId: r.target_column_id,
-          participation_left: r.participation_source,
-          relation_left: "bar", // 항상 bar
-          relation_right: r.relation_type === "1:N" ? "crow" : "bar",
-          participation_right: r.participation_target,
-          relationType: `${r.relation_type}|${r.participation_source}|${r.participation_target}`,
-        }));
-
-        setTables?.(parsedTables);
-        setRelations?.(parsedRelations);
-        showToast("🔁 다음 상태로 되돌렸습니다.");
-      }
-    } catch (err) {
-      console.error("Redo 실패:", err);
-      showToast("📌이미 최신 상태 입니다.");
-    }
-  };
+  
 
   const handleImageDownload = async () => {
     const canvasElement = document.getElementById("erd-canvas");
@@ -315,14 +230,14 @@ const ErdHeader = ({
                 코드 변환
               </button>
               <button
-                onClick={handleUndo}
+                onClick={onUndo}
                 className="btn-header flex items-center gap-1"
               >
                 <Undo2 size={16} className="text-orange-400" />
                 Undo
               </button>
               <button
-                onClick={handleRedo}
+                onClick={onRedo}
                 className="btn-header flex items-center gap-1"
               >
                 <Redo2 size={16} className="text-orange-400" />

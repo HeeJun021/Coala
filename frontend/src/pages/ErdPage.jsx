@@ -1,6 +1,10 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
-import { getErdDetail } from "../api/erd/erdDetailApi";
+import {
+  getErdDetail,
+  undoErdSnapshot,
+  redoErdSnapshot,
+} from "../api/erd/erdDetailApi";
 import ErdHeader from "../components/erd/canvas/ErdHeader";
 import ErdListSidebar from "../components/erd/canvas/ErdListSidebar";
 import ErdCanvas from "../components/erd/canvas/ErdCanvas";
@@ -34,9 +38,9 @@ const ErdPage = () => {
 
   const [toastMessage, setToastMessage] = useState("");
 
-  const showToast = (msg) => {
-    setToastMessage(msg); // 시간 제어는 Toast 안에서
-  };
+  const showToast = useCallback((msg) => {
+  setToastMessage(msg); // 시간 제어는 Toast 안에서
+}, []);
 
   // 📦 ERD 상세 조회 함수
   const fetchErdDetail = useCallback(async () => {
@@ -92,6 +96,113 @@ const ErdPage = () => {
     fetchErdDetail();
   }, [erdId, fetchErdDetail]); // ✅ erdId 추가
 
+  const handleUndo = useCallback(async () => {
+    try {
+      const res = await undoErdSnapshot(erdId);
+      if (res?.state_json) {
+        const parsedTables = (res.state_json.tables || []).map((t) => ({
+          id: t.table_id,
+          x: t.pos_x,
+          y: t.pos_y,
+          tableName: t.name ?? "",
+          description: t.description ?? "",
+          columns: (t.columns || []).map((c) => ({
+            ...c,
+            id: c.column_id,
+            name: c.name ?? "",
+            dataType: c.data_type ?? "",
+            isNullable: !c.is_not_null,
+            isPrimaryKey: c.is_primary,
+            isForeignKey: c.is_foreign,
+            defaultValue: c.default_value ?? "",
+            comment: c.description ?? "",
+          })),
+        }));
+
+        const parsedRelations = (res.state_json.relations || []).map((r) => ({
+          relationId: r.relation_id,
+          fromColumnId: r.source_column_id,
+          toColumnId: r.target_column_id,
+          participation_left: r.participation_source,
+          participation_right: r.participation_target,
+          relation_left: "bar",
+          relation_right: r.relation_type === "1:N" ? "crow" : "bar",
+          relationType: `${r.relation_type}|${r.participation_source}|${r.participation_target}`,
+        }));
+
+        setTables?.(parsedTables);
+        setRelations?.(parsedRelations);
+        showToast("🪄 마지막 상태로 되돌렸습니다.");
+      }
+    } catch (err) {
+      console.error("Undo 실패:", err);
+      showToast("📌 처음 상태입니다.");
+    }
+  }, [erdId, setTables, setRelations, showToast]);
+
+  const handleRedo = useCallback(async () => {
+    try {
+      const res = await redoErdSnapshot(erdId);
+      if (res?.state_json) {
+        const parsedTables = (res.state_json.tables || []).map((t) => ({
+          id: t.table_id,
+          x: t.pos_x,
+          y: t.pos_y,
+          tableName: t.name ?? "",
+          description: t.description ?? "",
+          columns: (t.columns || []).map((c) => ({
+            ...c,
+            id: c.column_id,
+            name: c.name ?? "",
+            dataType: c.data_type ?? "",
+            isNullable: !c.is_not_null,
+            isPrimaryKey: c.is_primary,
+            isForeignKey: c.is_foreign,
+            defaultValue: c.default_value ?? "",
+            comment: c.description ?? "",
+          })),
+        }));
+
+        const parsedRelations = (res.state_json.relations || []).map((r) => ({
+          relationId: r.relation_id,
+          fromColumnId: r.source_column_id,
+          toColumnId: r.target_column_id,
+          participation_left: r.participation_source,
+          participation_right: r.participation_target,
+          relation_left: "bar",
+          relation_right: r.relation_type === "1:N" ? "crow" : "bar",
+          relationType: `${r.relation_type}|${r.participation_source}|${r.participation_target}`,
+        }));
+
+        setTables?.(parsedTables);
+        setRelations?.(parsedRelations);
+        showToast("🔁 다음 상태로 되돌렸습니다.");
+      }
+    } catch (err) {
+      console.error("Redo 실패:", err);
+      showToast("📌이미 최신 상태 입니다.");
+    }
+  }, [erdId, setTables, setRelations, showToast]);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.ctrlKey && e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        handleUndo();
+      }
+
+      if (e.ctrlKey && e.shiftKey && (e.key === "z" || e.key === "Z")) {
+        e.preventDefault();
+        handleRedo();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [handleUndo, handleRedo]); // ✅ 의존성 추가
+
   // 💡 샘플 SQL 쿼리 자동 삽입
   const handleFetchAutoSql = () => {
     setSqlQuery(`-- Users 테이블
@@ -126,6 +237,8 @@ CREATE TABLE users (
             setTables={setTables}
             setRelations={setRelations}
             showToast={showToast}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
           />
         </div>
 
