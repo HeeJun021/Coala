@@ -38,7 +38,6 @@ const ProfileCard = ({ userData, setUserData }) => {
     const saveProfile = async () => {
         try {
             const updatedData = await updateUserInfo(userData.user_id, formData);
-            alert('프로필이 업데이트되었습니다.');
 
             setUserData(prevData => ({
                 ...prevData,
@@ -50,7 +49,7 @@ const ProfileCard = ({ userData, setUserData }) => {
 
             setIsEditing(false);
         } catch (error) {
-            alert('프로필 업데이트 실패');
+            console.log("업데이트 실패");
         }
     };
 
