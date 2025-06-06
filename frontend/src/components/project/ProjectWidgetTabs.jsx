@@ -8,6 +8,9 @@ import { updateProject, getMyProjects } from "../../api/projectApi";
 import { getErds } from "../../api/erd/erdApi";
 import { getMyTasks } from "../../api/taskApi";
 import ErdListPanel from "../erd/list/ErdListPanel";
+import DocumentWrapperPage from "./DocumentWrapperPage"; // ✅ 문서 전환 관리용 컴포넌트
+
+console.log("🧪 타입 확인:", typeof DocumentWrapperPage);
 
 const WIDGET_TABS = [
   { key: "overview", label: "개요" },
@@ -240,12 +243,15 @@ const ProjectWidgetTabs = ({ project, onNameChange }) => {
         return <ProjectTasksTab project={currentProject} />;
       case "timeline":
         return <TimelineWidget project={currentProject} />;
+      case "docs":
+        return (
+          <DocumentWrapperPage projectId={currentProject.project_id} />
+        );
       default:
         return (
           <div className="p-10 text-gray-500 text-sm">
             <p>
-              🚧 `{WIDGET_TABS.find((t) => t.key === activeTab)?.label}` 탭은
-              준비 중입니다.
+              🚧 `{WIDGET_TABS.find((t) => t.key === activeTab)?.label}` 탭은 준비 중입니다.
             </p>
           </div>
         );
@@ -266,10 +272,12 @@ const ProjectWidgetTabs = ({ project, onNameChange }) => {
                 onDragOver={(e) => handleDragOver(e, tab)}
                 onDrop={(e) => handleDrop(e, tab)}
                 onClick={() => setActiveTab(tab)}
-                className={`mr-4 text-sm font-medium border-b-2 cursor-move min-w-[50px] px-2 py-1 ${activeTab === tab
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-blue-600"
-                  } ${tab === "overview" ? "cursor-default" : ""}`}
+                className={`mr-4 text-sm font-medium border-b-2 px-2 py-1 ${
+                  activeTab === tab
+                    ? "border-blue-600 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-blue-600"
+                } ${tab === "overview" ? "cursor-default" : "cursor-move"}`}
+
               >
                 <span className="whitespace-nowrap">{label}</span>
               </button>

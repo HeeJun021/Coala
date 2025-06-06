@@ -59,3 +59,15 @@ export const fetchProjectNameByErd = async (erdId) => {
   const response = await apiClient.get(`/erds/${erdId}/project-name`);
   return response.data;
 };
+
+// ✅ 문서 불러오기
+export const fetchProjectDocument = async (projectId) => {
+  const response = await apiClient.get(`/projects/${projectId}/docs`);
+  return response.data;
+};
+
+// ✅ 문서 저장 (생성 또는 업데이트)
+export const saveProjectDocument = async (projectId, content) => {
+  const response = await apiClient.post(`/projects/${projectId}/docs`, { content });
+  return response.data;
+};

@@ -13,3 +13,5 @@ class ProjectMembers(Base):
 
     project = relationship("Project", back_populates="members")
     user = relationship("Users")
+    
+    project = relationship("Project", back_populates="document")
