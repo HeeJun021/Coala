@@ -12,6 +12,7 @@ import {
   deleteCodeFile,
   deleteFolder,
 } from "../../api/codeApi";
+import AlertModal from "../AlertModal";
 import { useLocation, useNavigate } from "react-router-dom";
 import { templateFiles, templateDescriptions } from "../../data/templateData";
 
@@ -58,6 +59,47 @@ const SelfCodingExplorerPanel = ({
   const navigate = useNavigate();
   const templateIdFromNav = location.state?.templateId;
   const hasInsertedTemplateRef = useRef(false);
+
+  const [alertModal, setAlertModal] = useState({
+    isOpen: false,
+    message: "",
+    isConfirm: false,
+    onConfirm: null,
+    onCancel: null,
+  });
+
+  const showAlert = (message) => {
+  return new Promise((resolve) => {
+    setAlertModal({
+      isOpen: true,
+      message,
+      isConfirm: false,
+      onConfirm: () => {
+        setAlertModal((prev) => ({ ...prev, isOpen: false }));
+        resolve();
+      },
+    });
+  });
+};
+
+// ✅ confirm 함수
+const showConfirm = (message) => {
+  return new Promise((resolve) => {
+    setAlertModal({
+      isOpen: true,
+      message,
+      isConfirm: true,
+      onConfirm: () => {
+        setAlertModal((prev) => ({ ...prev, isOpen: false }));
+        resolve(true);
+      },
+      onCancel: () => {
+        setAlertModal((prev) => ({ ...prev, isOpen: false }));
+        resolve(false);
+      },
+    });
+  });
+};
 
   const loadRoot = useCallback(async () => {
     try {
@@ -176,7 +218,6 @@ const SelfCodingExplorerPanel = ({
         });
       } catch (err) {
         console.error("템플릿 생성 실패:", err);
-        alert("템플릿 생성에 실패했습니다. 네트워크를 확인하세요.");
         hasInsertedTemplateRef.current = false;
       }
     };
@@ -248,7 +289,6 @@ const SelfCodingExplorerPanel = ({
   const ContextMenu = ({ position }) => {
     const handleClick = async (label, submenuItem) => {
       if (!contextMenu?.targetId) {
-        alert("폴더 안에서만 작업할 수 있습니다.");
         return;
       }
 
@@ -324,7 +364,6 @@ const SelfCodingExplorerPanel = ({
             });
           } catch (err) {
             console.error("파일 내용 조회 실패", err);
-            alert("파일을 불러올 수 없습니다.");
           }
         }
         setMenuVisible(false);
@@ -371,17 +410,19 @@ if (contextMenu.targetId?.startsWith("code-")) {
 
       if (label === "경로 복사") {
         if (navigator.clipboard && contextMenu?.targetId) {
-          navigator.clipboard
-            .writeText(contextMenu.targetId)
-            .then(() => alert("경로가 클립보드에 복사되었습니다."))
-            .catch(() => alert("클립보드 복사에 실패했습니다."));
+          try {
+            await navigator.clipboard.writeText(contextMenu.targetId);
+            await showAlert("경로가 클립보드에 복사되었습니다.");
+          } catch (err) {
+            await showAlert("클립보드 복사에 실패했습니다.");
+          }
         }
         setMenuVisible(false);
         return;
       }
 
       if (label === "삭제") {
-        const confirmDelete = window.confirm(
+        const confirmDelete = await showConfirm(
           contextMenu.targetId.startsWith("folder-")
             ? "폴더의 하위 폴더 및 파일도 모두 삭제됩니다. 정말로 삭제하시겠습니까?"
             : "정말로 삭제하시겠습니까?"
@@ -413,7 +454,6 @@ if (contextMenu.targetId?.startsWith("code-")) {
             setFolders(newTree);
           } catch (err) {
             console.error("폴더 삭제 실패", err);
-            alert("폴더 삭제에 실패했습니다.");
           }
         } else if (contextMenu.targetId.startsWith("code-")) {
           const codeId = parseInt(contextMenu.targetId.replace("code-", ""));
@@ -439,7 +479,6 @@ if (contextMenu.targetId?.startsWith("code-")) {
             setFolders({ ...newTree });
           } catch (err) {
             console.error("코드 삭제 실패", err);
-            alert("파일 삭제에 실패했습니다.");
           }
         }
         setMenuVisible(false);
@@ -502,7 +541,6 @@ if (contextMenu.targetId?.startsWith("code-")) {
 const handleFolderToggle = async (node) => {
   if (!node?.folder_id) {
     console.error("❌ 잘못된 폴더 node:", node);
-    alert("폴더 ID가 유효하지 않습니다.");
     return;
   }
   // 오직 이 폴더만!
@@ -523,7 +561,7 @@ const handleFolderToggle = async (node) => {
       node.loaded = true;
     } catch (err) {
       console.error("하위 항목 불러오기 실패", err);
-      alert("하위 항목 불러오기 중 오류 발생");
+      await showAlert("하위 항목 불러오기 중 오류 발생");
     }
   }
 
@@ -551,7 +589,7 @@ const handleFolderToggle = async (node) => {
       setActiveTabId(tabId);
     } catch (err) {
       console.error("파일 내용 조회 실패", err);
-      alert("파일을 불러올 수 없습니다.");
+      await showAlert("파일을 불러올 수 없습니다.");
     }
   };
 
@@ -579,7 +617,7 @@ const handleFolderToggle = async (node) => {
                 if (e.key === "Enter") {
                   const newName = renamingItem.name.trim();
                   if (!newName) {
-                    alert("이름을 입력하세요.");
+                    await showAlert("이름을 입력하세요.");
                     return;
                   }
                   try {
@@ -589,7 +627,6 @@ const handleFolderToggle = async (node) => {
                     setFolders({ ...folderTree });
                   } catch (err) {
                     console.error("폴더 이름 변경 실패", err);
-                    alert("변경 실패");
                   } finally {
                     setRenamingItem(null);
                   }
@@ -632,7 +669,7 @@ const handleFolderToggle = async (node) => {
                           if (e.key === "Enter") {
                             const newName = renamingItem.name.trim();
                             if (!newName) {
-                              alert("이름을 입력하세요.");
+                              await showAlert("이름을 입력하세요.");
                               return;
                             }
                             try {
@@ -642,7 +679,6 @@ const handleFolderToggle = async (node) => {
                               setFolders({ ...folderTree });
                             } catch (err) {
                               console.error("파일 이름 변경 실패", err);
-                              alert("변경 실패");
                             } finally {
                               setRenamingItem(null);
                             }
@@ -677,7 +713,7 @@ const handleFolderToggle = async (node) => {
                       if (e.key === "Enter") {
                         const name = newItemName.trim();
                         if (!name) {
-                          alert("이름을 입력하세요.");
+                          console.log("이름 x"); // 나중에 모달이든 다이아로그든 띄우기
                           return;
                         }
                         try {
@@ -698,7 +734,6 @@ const handleFolderToggle = async (node) => {
                           setFolders({ ...folderTree });
                         } catch (err) {
                           console.error("폴더 생성 실패", err);
-                          alert("폴더 생성에 실패했습니다.");
                         } finally {
                           setCreatingItem(null);
                           setNewItemName("");
@@ -730,7 +765,7 @@ const handleFolderToggle = async (node) => {
                       if (e.key === "Enter") {
                         const name = newItemName.trim();
                         if (!name || !name.includes(".")) {
-                          alert("파일 이름과 확장자를 입력하세요 (예: main.js)");
+                          await showAlert("파일 이름과 확장자를 입력하세요 (예: main.js)");
                           return;
                         }
 
@@ -738,7 +773,7 @@ const handleFolderToggle = async (node) => {
                         const languageId = EXT_MAP[ext] || 5;
 
                         if (!languageId) {
-                          alert("지원하지 않는 확장자입니다.");
+                          await showAlert("지원하지 않는 확장자입니다.");
                           return;
                         }
 
@@ -756,7 +791,6 @@ const handleFolderToggle = async (node) => {
                           setFolders({ ...folderTree });
                         } catch (err) {
                           console.error("파일 생성 실패", err);
-                          alert("파일 생성에 실패했습니다.");
                         } finally {
                           setCreatingItem(null);
                           setNewItemName("");
@@ -802,6 +836,13 @@ const handleFolderToggle = async (node) => {
         </div>
       )}
       {menuVisible && <ContextMenu position={menuPosition} />}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        message={alertModal.message}
+        isConfirm={alertModal.isConfirm}
+        onConfirm={alertModal.onConfirm}
+        onCancel={alertModal.onCancel}
+      />
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getQuizResult } from "../api/quizApi";
+import { ShieldCheck, Lightbulb } from "lucide-react";
 
 const QuizResultPage = ({ userData }) => {
   const { quizId } = useParams();
@@ -18,10 +19,10 @@ const QuizResultPage = ({ userData }) => {
 
       try {
         const response = await getQuizResult(quizId, userData.user_id);
-        console.log("✅ 퀴즈 결과 데이터:", response);
+        console.log("퀴즈 결과 데이터:", response);
         setQuizResult(response);
       } catch (err) {
-        console.error("🚨 퀴즈 결과 불러오기 실패:", err);
+        console.error("퀴즈 결과 불러오기 실패:", err);
         setError("퀴즈 결과를 불러오는 중 오류가 발생했습니다.");
       } finally {
         setLoading(false);
@@ -42,15 +43,22 @@ const QuizResultPage = ({ userData }) => {
         </h2>
 
         <div className="text-center mb-8">
-          <p className="text-lg text-gray-800">
-            <strong>퀴즈 유형:</strong>{" "}
-            {quizResult.quiz_type === "test" ? "📝 퀴즈 테스트" : "🎯 연습 퀴즈"}
+          <div className="flex items-center justify-center gap-2 mb-2">
+            {quizResult.quiz_type === "test" ? (
+            <ShieldCheck size={20} className="text-blue-500" />
+            ) : (
+            <Lightbulb size={20} className="text-yellow-400" />
+            )}
+            <p className="text-lg text-gray-800">
+          <strong>퀴즈 유형:</strong>{" "}
+          {quizResult.quiz_type === "test" ? "퀴즈 테스트" : "연습 퀴즈"}
           </p>
-          <p className="text-sm text-gray-500 mt-1">
-            <strong>제출 시간:</strong>{" "}
-            {new Date(quizResult.submitted_at).toLocaleString()}
-          </p>
-        </div>
+      </div>
+    <p className="text-sm text-gray-500 mt-1">
+    <strong>제출 시간:</strong>{" "}
+    {new Date(quizResult.submitted_at).toLocaleString()}
+  </p>
+</div>
 
         <div className="space-y-6">
           {quizResult.questions.map((q, index) => (
@@ -67,7 +75,7 @@ const QuizResultPage = ({ userData }) => {
 
               <div className="pl-4">
                 <p className="text-lg font-semibold text-gray-900 mb-2">
-                  문제 {index + 1} 🧠 ({q.question_type?.toUpperCase()})
+                  문제 {index + 1}({q.question_type?.toUpperCase()})
                 </p>
                 <p className="text-gray-800 mb-3">{q.question_text}</p>
 

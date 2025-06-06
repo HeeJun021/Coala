@@ -19,7 +19,7 @@ const QuizSideBar = () => {
     >
       {/* ✅ 상단 헤더 */}
       <div className="h-[56px] flex items-center px-6 bg-[#88C078] rounded-t-2xl shadow-sm">
-        <h1 className="text-[18px] font-semibold text-white tracking-wide">🧠 퀴즈</h1>
+        <h1 className="text-[18px] font-semibold text-white tracking-wide">퀴즈</h1>
       </div>
 
       {/* ✅ 카테고리 목록 */}

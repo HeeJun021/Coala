@@ -38,7 +38,6 @@ const ProfileCard = ({ userData, setUserData }) => {
     const saveProfile = async () => {
         try {
             const updatedData = await updateUserInfo(userData.user_id, formData);
-            alert('프로필이 업데이트되었습니다.');
 
             setUserData(prevData => ({
                 ...prevData,
@@ -50,7 +49,7 @@ const ProfileCard = ({ userData, setUserData }) => {
 
             setIsEditing(false);
         } catch (error) {
-            alert('프로필 업데이트 실패');
+            console.log("업데이트 실패");
         }
     };
 
@@ -141,7 +140,7 @@ const ProfileCard = ({ userData, setUserData }) => {
                             src={userData.profile_image_url}
                             alt="Profile"
                             className="w-16 h-16 rounded-md cursor-pointer"
-                            onClick={() => setIsModalOpen(true)} // ✅ 보기 모드에서도 클릭 가능
+                            onClick={() => setIsModalOpen(true)}
                         />
                     )}
                     <div className="flex flex-col gap-2">

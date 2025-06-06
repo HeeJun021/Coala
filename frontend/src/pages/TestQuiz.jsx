@@ -14,24 +14,24 @@ const TestQuiz = () => {
         multiple: true
     };
 
-    // ✅ "퀴즈 풀기" 버튼 클릭 시 API 호출
+    // "퀴즈 풀기" 버튼 클릭 시 API 호출
     const handleStartQuiz = async () => {
         setLoading(true);
         try {
             const quizPayload = {
                 title: "사용자 테스트 퀴즈",
-                quiz_type: "test", // ✅ 테스트 퀴즈
-                time_limit: 30, // ✅ 30분 제한
+                quiz_type: "test", // 테스트 퀴즈
+                time_limit: 30, // 30분 제한
                 settings: Object.keys(selectedTypes).map((type) => ({
                     question_type: type === "ox" ? 1 : type === "short" ? 2 : 3,
-                    difficulty: 3, // ✅ 난이도 Lv.3 고정
-                    question_count: 5 // ✅ 문제 개수 5개 고정
+                    difficulty: 3, // 난이도 Lv.3 고정
+                    question_count: 3 // 문제 개수 5개 고정
                 }))
             };
 
-            console.log("📡 퀴즈 생성 요청:", quizPayload);
+            console.log("퀴즈 생성 요청:", quizPayload);
             const newQuiz = await createQuiz(quizPayload);
-            console.log("✅ 퀴즈 생성 완료:", newQuiz);
+            console.log("퀴즈 생성 완료:", newQuiz);
 
             if (newQuiz && newQuiz.quiz_id) {
               navigate(`/quizsolve/${newQuiz.quiz_id}?mode=test`);
@@ -39,7 +39,7 @@ const TestQuiz = () => {
                 alert("퀴즈 생성은 되었지만 ID를 찾을 수 없습니다.");
             }
         } catch (error) {
-            console.error("🚨 퀴즈 생성 실패:", error);
+            console.error("퀴즈 생성 실패:", error);
             alert("퀴즈 생성 중 오류가 발생했습니다.");
         } finally {
             setLoading(false);
@@ -79,7 +79,7 @@ const TestQuiz = () => {
                             <label className="block mb-2">
                                 <span className="text-sm">문제 개수</span>
                                 <select className="w-full p-2 mt-1 border rounded-lg bg-gray-200" disabled>
-                                    <option value="5">5개</option>
+                                    <option value="5">3개</option>
                                 </select>
                             </label>
 

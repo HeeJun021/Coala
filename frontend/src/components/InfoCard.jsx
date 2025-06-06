@@ -12,7 +12,6 @@ const InfoCard = ({ userData, setUserData }) => {
     // 비밀번호 저장 로직 (백엔드와 연결 필요)
     const savePassword = async () => {
         if (newPassword !== confirmPassword) {
-            alert('비밀번호가 일치하지 않습니다.'); // 비밀번호 확인 실패
             return;
         }
 
@@ -24,7 +23,7 @@ const InfoCard = ({ userData, setUserData }) => {
             setNewPassword("");
             setConfirmPassword("");
         } catch (error) {
-            alert(error || "비밀번호 변경에 실패했습니다.");
+            console.log("비밀번호 변경 실패");
         } finally {
             setLoading(false);
         }

@@ -17,14 +17,12 @@ const MyPageModify = () => {
 
         try {
             await deleteUser(userData.user_id); // ✅ 백엔드에 탈퇴 요청
-            alert("계정이 성공적으로 삭제되었습니다.");
 
             // ✅ 탈퇴 후 로그아웃
             await logoutUser();
             window.location.href = "/"; // ✅ 홈으로 이동
         } catch (error) {
             console.error("계정 탈퇴 실패:", error);
-            alert(error.response?.data?.detail || "계정 탈퇴에 실패했습니다.");
         }
     };
 
