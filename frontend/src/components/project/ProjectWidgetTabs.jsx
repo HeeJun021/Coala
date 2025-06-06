@@ -171,7 +171,9 @@ const ProjectWidgetTabs = ({ project, onNameChange }) => {
   const loadTasks = useCallback(async () => {
     try {
       const allTasks = await getMyTasks();
-      const projectTasks = allTasks.filter(task => task.project_id === project.project_id);
+      const projectTasks = allTasks.filter(
+        (task) => task.project_id === project.project_id
+      );
       setTasks(projectTasks);
     } catch (err) {
       console.error("작업 목록 조회 실패", err);
@@ -188,7 +190,9 @@ const ProjectWidgetTabs = ({ project, onNameChange }) => {
   const handleUpdate = async () => {
     try {
       const projects = await getMyProjects();
-      const updatedProject = projects.find((p) => p.project_id === currentProject.project_id);
+      const updatedProject = projects.find(
+        (p) => p.project_id === currentProject.project_id
+      );
       if (updatedProject) {
         setCurrentProject(updatedProject);
         const widgets = updatedProject.widgets || {};
@@ -266,10 +270,14 @@ const ProjectWidgetTabs = ({ project, onNameChange }) => {
                 onDragOver={(e) => handleDragOver(e, tab)}
                 onDrop={(e) => handleDrop(e, tab)}
                 onClick={() => setActiveTab(tab)}
-                className={`mr-4 text-sm font-medium border-b-2 cursor-move min-w-[50px] px-2 py-1 ${activeTab === tab
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-blue-600"
-                  } ${tab === "overview" ? "cursor-default" : ""}`}
+                className={`mr-4 text-sm font-medium border-b-2 min-w-[50px] px-2 py-1
+    ${
+      activeTab === tab
+        ? "border-blue-600 text-blue-600"
+        : "border-transparent text-gray-500 hover:text-blue-600"
+    }
+    cursor-pointer  // ✅ 수정됨
+  `}
               >
                 <span className="whitespace-nowrap">{label}</span>
               </button>
@@ -284,14 +292,18 @@ const ProjectWidgetTabs = ({ project, onNameChange }) => {
           >
             <button
               onClick={() => setShowAddMenu((prev) => !prev)}
-              className={`text-gray-400 hover:text-blue-500 text-lg font-bold ${draggedTab ? "text-red-500" : ""
-                } ${isOverTrash ? "text-red-700" : ""}`}
+              className={`text-gray-400 hover:text-blue-500 text-lg font-bold ${
+                draggedTab ? "text-red-500" : ""
+              } ${isOverTrash ? "text-red-700" : ""}`}
             >
               {draggedTab ? "🗑️" : "＋"}
             </button>
 
             {showAddMenu && (
-              <div ref={addMenuRef} className="absolute left-0 top-full mt-2 bg-white border rounded shadow p-2 z-20">
+              <div
+                ref={addMenuRef}
+                className="absolute left-0 top-full mt-2 bg-white border rounded shadow p-2 z-20"
+              >
                 {WIDGET_TABS.filter(
                   (w) => w.key !== "overview" && !enabledTabs.includes(w.key)
                 ).map((w) => (
