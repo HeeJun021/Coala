@@ -17,7 +17,6 @@ const ErdListPanel = ({ erds, onSelect, onRefresh, project }) => {
 
     try {
       await createErd(projectId, data);
-      alert("ERD 생성 완료");
       setShowCreateModal(false);
       onRefresh?.();
     } catch (error) {

@@ -22,6 +22,7 @@ async def run_js_code(payload: JSCodeRequest):
             ["node", "-e", payload.code],
             capture_output=True,
             text=True,
+            encoding="utf-8",
             timeout=5  # 무한루프 방지용
         )
         return {
@@ -157,6 +158,7 @@ def preview_python_by_code_id(
             [python_cmd, temp_path],
             capture_output=True,
             text=True,
+            encoding="utf-8",   # ✅ 필수!!
             timeout=5,
         )
 

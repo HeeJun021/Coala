@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { patchColumn, setColumnPrimaryKey } from "../../../api/erd/columnApi";
 import { FaKey, FaTimes } from "react-icons/fa";
+import { Check } from "lucide-react";
 
 const ErdColumnRow = ({
   column,
@@ -21,7 +22,7 @@ const ErdColumnRow = ({
   setHoveredColumnId,
   onSnapshotRequest,
   isAddingRelation,
-  originalColumn
+  originalColumn,
 }) => {
   const [showDelete, setShowDelete] = useState(false);
   const [showPkMenu, setShowPkMenu] = useState(false);
@@ -45,39 +46,27 @@ const ErdColumnRow = ({
         return {};
     }
   };
-
+  // ✅ onChange에서는 상태만 변경
   const handleInputChange = (key, value) => {
-    onChange(index, key, value); // 👉 column 상태만 변경 (로컬)
+    onChange(index, key, value);
   };
-  const handleInputBlur = (key) => {
-  if (isAddingRelation) {
-    console.log("⛔ 관계 생성 중: 스냅샷 저장 생략");
-    return;
-  }
 
-  if (!column.column_id) return;
+  // ✅ onBlur에서만 PATCH 호출
+  const handleInputBlur = async (key, value) => {
+    if (!column.column_id) return;
 
-  // ✅ 원래 값과 비교하여 변경 없으면 요청 생략
-  const currentValue = column[key];
-  const originalValue = originalColumn?.[key];
+    const updateData = generateUpdateData(key, value);
+    console.log("📡 PATCH 전송:", updateData);
+    if (!updateData || Object.keys(updateData).length === 0) return;
 
-  if (currentValue === originalValue) {
-    console.log("⚠️ 변경 없음: PATCH 생략");
-    return;
-  }
-
-  const updateData = generateUpdateData(key, currentValue);
-  if (!updateData || Object.keys(updateData).length === 0) return;
-
-  patchColumn(column.column_id, updateData)
-    .then(() => {
+    try {
+      await patchColumn(column.column_id, updateData);
+      onChange(index, key, value); // PATCH 성공 후도 강제 반영
       onSnapshotRequest?.();
-    })
-    .catch((err) => {
+    } catch (err) {
       console.error("PATCH 실패:", err.response?.data || err);
-    });
-};
-
+    }
+  };
 
   const handleRightClick = (e) => {
     e.preventDefault();
@@ -169,7 +158,7 @@ const ErdColumnRow = ({
             placeholder="column"
             value={column.name ?? ""}
             onChange={(e) => handleInputChange("name", e.target.value)}
-            onBlur={() => handleInputBlur("name")}
+            onBlur={(e) => handleInputBlur("name", e.target.value)}
           />
 
           <select
@@ -186,7 +175,7 @@ const ErdColumnRow = ({
             }}
             value={column.dataType ?? ""}
             onChange={(e) => handleInputChange("dataType", e.target.value)}
-            onBlur={() => handleInputBlur("dataType")}
+            onBlur={(e) => handleInputBlur("dataType", e.target.value)}
           >
             <option value="" disabled className="text-gray-400">
               type
@@ -211,7 +200,11 @@ const ErdColumnRow = ({
 
           <div
             className="cursor-pointer text-xs w-[50px] text-center text-gray-300 hover:text-white"
-            onClick={() => handleInputChange("isNullable", !column.isNullable)}
+            onClick={() => {
+              const newValue = !column.isNullable;
+              handleInputChange("isNullable", newValue);
+              handleInputBlur("isNullable", newValue);
+            }}
             style={{ lineHeight: "22px", height: "24px" }}
           >
             {column.isNullable ? "NULL" : "N-N"}
@@ -230,7 +223,7 @@ const ErdColumnRow = ({
             placeholder="default"
             value={column.defaultValue ?? ""}
             onChange={(e) => handleInputChange("defaultValue", e.target.value)}
-            onBlur={() => handleInputBlur("defaultValue")}
+            onBlur={(e) => handleInputBlur("defaultValue", e.target.value)}
           />
 
           <input
@@ -246,7 +239,7 @@ const ErdColumnRow = ({
             placeholder="description"
             value={column.comment ?? ""}
             onChange={(e) => handleInputChange("comment", e.target.value)}
-            onBlur={() => handleInputBlur("comment")}
+            onBlur={(e) => handleInputBlur("comment", e.target.value)}
           />
         </div>
 
@@ -264,20 +257,28 @@ const ErdColumnRow = ({
 
       {showPkMenu && (
         <div
-          className="absolute z-50 pk-menu bg-[#3a3a4d] border border-gray-600 text-sm rounded px-2 py-1 cursor-pointer shadow"
+          className="absolute z-50 min-w-[140px] bg-[#1f2233] border border-[#2b2e42] rounded-lg shadow-xl text-sm"
           style={{ top: pkMenuPos.y, left: pkMenuPos.x }}
-          onClick={async () => {
-            try {
-              await setColumnPrimaryKey(column.column_id, !isPK);
-              onTogglePrimaryKey(column.id);
-              setShowPkMenu(false);
-            } catch (error) {
-              console.error("PK 설정 실패:", error);
-              alert("PK 설정에 실패했습니다.");
-            }
-          }}
         >
-          🔑 PK 설정
+          <button
+            className="flex items-center justify-between gap-2 px-4 py-[6px] w-full hover:bg-[#2c2f45] text-gray-100 rounded-lg transition"
+            onClick={async () => {
+              try {
+                await setColumnPrimaryKey(column.column_id, !isPK);
+                onTogglePrimaryKey(column.id);
+                setShowPkMenu(false);
+              } catch (error) {
+                console.error("PK 설정 실패:", error);
+                alert("PK 설정에 실패했습니다.");
+              }
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <FaKey className="w-3.5 h-3.5 text-yellow-400" />
+              PK 설정
+            </div>
+            {isPK && <Check className="w-4 h-4 text-green-400" />}
+          </button>
         </div>
       )}
     </>

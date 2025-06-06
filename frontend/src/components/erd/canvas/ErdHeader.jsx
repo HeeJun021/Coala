@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import html2canvas from "html2canvas";
 import {
   Camera,
@@ -11,16 +11,14 @@ import {
   FileUp,
   Blocks,
   History,
+  HelpCircle,
+  Dot,
 } from "lucide-react";
+import ErdGuideModal from "../modal/ErdGuideModal";
 import ExportSqlModal from "../modal/ExportSqlModal";
 import EditErdNameModal from "../modal/EditErdNameModal";
 import CodeConvertHeaderPanel from "../CodeConvertHeaderPanel";
-import {
-  commitErd,
-  undoErdSnapshot,
-  redoErdSnapshot,
-  updateErdName,
-} from "../../../api/erd/erdDetailApi";
+import { commitErd, updateErdName } from "../../../api/erd/erdDetailApi";
 
 const ErdHeader = ({
   projectName,
@@ -41,9 +39,24 @@ const ErdHeader = ({
   setTables,
   setRelations,
   showToast,
+  onUndo,
+  onRedo,
 }) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [showDot, setShowDot] = useState(false);
+
+  useEffect(() => {
+    const seen = localStorage.getItem("erd_guide_seen");
+    setShowDot(seen !== "true");
+  }, []);
+
+  const handleOpenGuide = () => {
+    setIsGuideOpen(true);
+    setShowDot(false);
+    localStorage.setItem("erd_guide_seen", "true");
+  };
 
   const handleZoom = (direction) => {
     setZoomLevel((prev) =>
@@ -62,94 +75,6 @@ const ErdHeader = ({
     } catch (err) {
       console.error("히스토리 기록 실패:", err);
       showToast("❌ 히스토리 기록 중 오류 발생");
-    }
-  };
-
-  const handleUndo = async () => {
-    try {
-      const res = await undoErdSnapshot(erdId);
-      if (res?.state_json) {
-        const parsedTables = (res.state_json.tables || []).map((t) => ({
-          id: t.table_id,
-          x: t.pos_x,
-          y: t.pos_y,
-          tableName: t.name ?? "",
-          description: t.description ?? "",
-          columns: (t.columns || []).map((c) => ({
-            ...c,
-            id: c.column_id,
-            name: c.name ?? "",
-            dataType: c.data_type ?? "",
-            isNullable: !c.is_not_null,
-            isPrimaryKey: c.is_primary,
-            isForeignKey: c.is_foreign,
-            defaultValue: c.default_value ?? "",
-            comment: c.description ?? "",
-          })),
-        }));
-
-        const parsedRelations = (res.state_json.relations || []).map((r) => ({
-          relationId: r.relation_id,
-          fromColumnId: r.source_column_id,
-          toColumnId: r.target_column_id,
-          participation_left: r.participation_source,
-          participation_right: r.participation_target,
-          relation_left: "bar", // 항상 bar
-          relation_right: r.relation_type === "1:N" ? "crow" : "bar",
-          relationType: `${r.relation_type}|${r.participation_source}|${r.participation_target}`,
-        }));
-
-        setTables?.(parsedTables);
-        setRelations?.(parsedRelations);
-        showToast("🪄 마지막 상태로 되돌렸습니다.");
-      }
-    } catch (err) {
-      console.error("Undo 실패:", err);
-      showToast("📌 처음 상태입니다.");
-    }
-  };
-
-  const handleRedo = async () => {
-    try {
-      const res = await redoErdSnapshot(erdId);
-      if (res?.state_json) {
-        const parsedTables = (res.state_json.tables || []).map((t) => ({
-          id: t.table_id,
-          x: t.pos_x,
-          y: t.pos_y,
-          tableName: t.name ?? "",
-          description: t.description ?? "",
-          columns: (t.columns || []).map((c) => ({
-            ...c,
-            id: c.column_id,
-            name: c.name ?? "",
-            dataType: c.data_type ?? "",
-            isNullable: !c.is_not_null,
-            isPrimaryKey: c.is_primary,
-            isForeignKey: c.is_foreign,
-            defaultValue: c.default_value ?? "",
-            comment: c.description ?? "",
-          })),
-        }));
-
-        const parsedRelations = (res.state_json.relations || []).map((r) => ({
-          relationId: r.relation_id,
-          fromColumnId: r.source_column_id,
-          toColumnId: r.target_column_id,
-          participation_left: r.participation_source,
-          relation_left: "bar", // 항상 bar
-          relation_right: r.relation_type === "1:N" ? "crow" : "bar",
-          participation_right: r.participation_target,
-          relationType: `${r.relation_type}|${r.participation_source}|${r.participation_target}`,
-        }));
-
-        setTables?.(parsedTables);
-        setRelations?.(parsedRelations);
-        showToast("🔁 다음 상태로 되돌렸습니다.");
-      }
-    } catch (err) {
-      console.error("Redo 실패:", err);
-      showToast("📌이미 최신 상태 입니다.");
     }
   };
 
@@ -172,6 +97,30 @@ const ErdHeader = ({
       return;
     }
 
+    // ✅ 캡처 전 transform 제거 + 위치 보정
+    const originalTransform = transformedRoot.style.transform;
+    transformedRoot.style.transform = "none";
+
+    const zoom = parseFloat(
+      originalTransform.match(/scale\((.*?)\)/)?.[1] || "1"
+    );
+
+    const adjustedTables = [];
+    tableEls.forEach((el) => {
+      const x = parseFloat(el.style.left || "0");
+      const y = parseFloat(el.style.top || "0");
+
+      adjustedTables.push({
+        el,
+        originalLeft: el.style.left,
+        originalTop: el.style.top,
+      });
+
+      el.style.left = `${x * zoom}px`;
+      el.style.top = `${y * zoom}px`;
+    });
+
+    // ✅ 캡처 범위 계산
     let minX = Infinity,
       minY = Infinity,
       maxX = -Infinity,
@@ -214,6 +163,13 @@ const ErdHeader = ({
     } catch (err) {
       console.error("❌ 이미지 저장 오류:", err);
       alert("이미지 저장 중 오류가 발생했습니다.");
+    } finally {
+      // ✅ 위치 원복
+      transformedRoot.style.transform = originalTransform;
+      adjustedTables.forEach(({ el, originalLeft, originalTop }) => {
+        el.style.left = originalLeft;
+        el.style.top = originalTop;
+      });
     }
   };
 
@@ -232,6 +188,23 @@ const ErdHeader = ({
               >
                 <Edit size={16} className="text-blue-400" />
               </button>
+              {/* 오른쪽: 가이드 보기 버튼 */}
+              <div className="ml-auto">
+                <button
+                  onClick={handleOpenGuide}
+                  className="relative text-sm text-gray-400 hover:text-white flex items-center gap-1"
+                >
+                  <HelpCircle size={16} className="text-blue-300" />
+                  <span>가이드 보기</span>
+
+                  {showDot && (
+                    <div
+                      className="absolute top-0.5 -right-2.5 w-[8px] h-[8px] bg-rose-600 rounded-full shadow-md"
+                      style={{ transform: "translateY(-50%)" }}
+                    />
+                  )}
+                </button>
+              </div>
             </div>
           )}
 
@@ -284,14 +257,14 @@ const ErdHeader = ({
                 코드 변환
               </button>
               <button
-                onClick={handleUndo}
+                onClick={onUndo}
                 className="btn-header flex items-center gap-1"
               >
                 <Undo2 size={16} className="text-orange-400" />
                 Undo
               </button>
               <button
-                onClick={handleRedo}
+                onClick={onRedo}
                 className="btn-header flex items-center gap-1"
               >
                 <Redo2 size={16} className="text-orange-400" />
@@ -343,6 +316,13 @@ const ErdHeader = ({
             erdId={erdId}
             onClose={() => setIsExportModalOpen(false)} // 패널 내에서 닫기 버튼 연결
             erdCanvasId="erd-canvas" // ← 캔버스 div에 id 지정해줘야 함
+          />
+        )}
+        {/* ✅ 가이드 모달 */}
+        {isGuideOpen && (
+          <ErdGuideModal
+            isOpen={isGuideOpen}
+            onClose={() => setIsGuideOpen(false)}
           />
         )}
       </div>

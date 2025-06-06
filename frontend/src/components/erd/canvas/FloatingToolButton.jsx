@@ -5,7 +5,7 @@ import {
   Table,
   GitCompareArrows,
   History,
-  Settings,
+  // Settings, 추후 구현 예정
 } from "lucide-react";
 import SnapshotHistoryModal from "../modal/SnapshotHistoryModal";
 
@@ -129,10 +129,10 @@ const FloatingToolButton = ({
                 히스토리
               </button>
 
-              <button className="flex items-center gap-2 w-full text-left px-4 py-2 hover:bg-[#3a3a4c] text-sm">
+              {/* <button className="flex items-center gap-2 w-full text-left px-4 py-2 hover:bg-[#3a3a4c] text-sm">
                 <Settings size={16} className="text-gray-400" />
                 설정
-              </button>
+              </button> */}
             </div>
           )}
         </div>
