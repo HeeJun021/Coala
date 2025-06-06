@@ -140,7 +140,7 @@ const ProfileCard = ({ userData, setUserData }) => {
                             src={userData.profile_image_url}
                             alt="Profile"
                             className="w-16 h-16 rounded-md cursor-pointer"
-                            onClick={() => setIsModalOpen(true)} // ✅ 보기 모드에서도 클릭 가능
+                            onClick={() => setIsModalOpen(true)}
                         />
                     )}
                     <div className="flex flex-col gap-2">
