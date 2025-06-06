@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { getProjectMembers, updateProject, transferLeader, removeMember, addMember, getProjectActivity } from "../../api/projectApi";
-
-const dummyFriends = [
-  { id: 1, nickname: "김코알라", email: "koala1@example.com" },
-  { id: 2, nickname: "이개발자", email: "devlee@example.com" },
-  { id: 3, nickname: "박프론트", email: "frontp@example.com" },
-];
+import InviteProjectMember from "./InviteProjectMember";
+import {
+  getProjectMembers,
+  updateProject,
+  transferLeader,
+  removeMember,
+  getProjectActivity,
+  sendProjectInvite,
+} from "../../api/projectApi";
 
 const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
   const [members, setMembers] = useState([]);
@@ -28,7 +30,11 @@ const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
           getProjectMembers(project.project_id),
           getProjectActivity(project.project_id),
         ]);
-        setMembers(membersRes);
+
+        const acceptedMembers = membersRes.filter(
+          (m) => m.status === "accepted"
+        );
+        setMembers(acceptedMembers);
         setActivityLogs(activityRes);
       } catch (err) {
         console.error("데이터 가져오기 실패", err);
@@ -41,22 +47,16 @@ const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
     setProjectName(project.name);
   }, [project.name]);
 
-  const handleAddMember = async () => {
+  const handleInviteMember = async () => {
     if (selectedFriend) {
       try {
-        await addMember(project.project_id, selectedFriend.id);
-        const [membersRes, activityRes] = await Promise.all([
-          getProjectMembers(project.project_id),
-          getProjectActivity(project.project_id),
-        ]);
-        setMembers(membersRes);
-        setActivityLogs(activityRes);
+        await sendProjectInvite(project.project_id, selectedFriend.id); // 🔁 초대 API 호출
+        alert("초대장을 보냈습니다.");
         setShowInviteModal(false);
         setSelectedFriend(null);
-        onUpdate();
       } catch (err) {
-        console.error("멤버 추가 실패", err);
-        alert("멤버 추가에 실패했습니다.");
+        console.error("초대 실패", err);
+        alert("초대에 실패했습니다.");
       }
     }
   };
@@ -68,7 +68,9 @@ const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
         getProjectMembers(project.project_id),
         getProjectActivity(project.project_id),
       ]);
-      setMembers(membersRes);
+
+      const acceptedMembers = membersRes.filter((m) => m.status === "accepted");
+      setMembers(acceptedMembers);
       setActivityLogs(activityRes);
       setOpenMenuId(null);
       onUpdate();
@@ -85,7 +87,9 @@ const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
         getProjectMembers(project.project_id),
         getProjectActivity(project.project_id),
       ]);
-      setMembers(membersRes);
+
+      const acceptedMembers = membersRes.filter((m) => m.status === "accepted");
+      setMembers(acceptedMembers);
       setActivityLogs(activityRes);
       setOpenMenuId(null);
       onUpdate();
@@ -173,7 +177,9 @@ const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
           ) : (
             <p
               className="text-sm text-gray-700 whitespace-pre-line cursor-pointer hover:bg-gray-100 p-2 rounded"
-              onClick={() => setEditMode((prev) => ({ ...prev, description: true }))}
+              onClick={() =>
+                setEditMode((prev) => ({ ...prev, description: true }))
+              }
             >
               {description || "이 프로젝트에 대해 설명을 입력하세요."}
             </p>
@@ -200,11 +206,18 @@ const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="text-base font-semibold text-gray-800">
-                      {m.nickname} {m.is_leader && <span className="text-blue-600 text-sm">(팀장)</span>}
+                      {m.nickname}{" "}
+                      {m.is_leader && (
+                        <span className="text-blue-600 text-sm">(팀장)</span>
+                      )}
                     </p>
-                    <p className="text-xs text-gray-500 mt-0.5">프로젝트 소유자</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      프로젝트 소유자
+                    </p>
                   </div>
-                  <div className="text-gray-400 group-hover:text-gray-800 text-lg leading-none">⌄</div>
+                  <div className="text-gray-400 group-hover:text-gray-800 text-lg leading-none">
+                    ⌄
+                  </div>
                 </div>
                 {openMenuId === m.user_id && (
                   <div className="absolute top-full left-0 mt-2 w-full bg-white border rounded shadow z-10">
@@ -270,8 +283,12 @@ const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
         <div className="bg-white border rounded p-4">
           <p className="text-sm font-semibold mb-2">📌 프로젝트 상태</p>
           <div className="flex gap-2 flex-wrap">
-            <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded">진행 중</span>
-            <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded">위험</span>
+            <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded">
+              진행 중
+            </span>
+            <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded">
+              위험
+            </span>
           </div>
         </div>
 
@@ -280,7 +297,9 @@ const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
           <ul className="text-xs text-gray-700 space-y-1">
             {displayedLogs.map((log) => (
               <li key={log.id} className="flex justify-between">
-                <span>👤 {log.actor} - {log.text}</span>
+                <span>
+                  👤 {log.actor} - {log.text}
+                </span>
                 <span className="text-gray-400">{log.date}</span>
               </li>
             ))}
@@ -290,48 +309,21 @@ const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
               onClick={() => setShowAllLogs((prev) => !prev)}
               className="text-sm text-blue-600 hover:underline mt-2 block w-full text-left"
             >
-              {showAllLogs ? "Show less" : `Show more (${activityLogs.length - 5})`}
+              {showAllLogs
+                ? "Show less"
+                : `Show more (${activityLogs.length - 5})`}
             </button>
           )}
         </div>
       </div>
-
       {showInviteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center">
-          <div className="bg-white w-[420px] p-6 rounded-xl shadow-lg">
-            <h2 className="text-xl font-bold mb-4">멤버 초대</h2>
-            <div className="space-y-2 mb-4">
-              {dummyFriends.map((friend) => (
-                <div
-                  key={friend.id}
-                  className={`border rounded p-2 cursor-pointer ${
-                    selectedFriend?.id === friend.id
-                      ? "bg-blue-100 border-blue-400"
-                      : "hover:bg-gray-100"
-                  }`}
-                  onClick={() => setSelectedFriend(friend)}
-                >
-                  <p className="text-sm font-medium">{friend.nickname}</p>
-                  <p className="text-xs text-gray-500">{friend.email}</p>
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setShowInviteModal(false)}
-                className="text-sm px-3 py-1 border rounded hover:bg-gray-100"
-              >
-                취소
-              </button>
-              <button
-                onClick={handleAddMember}
-                className="text-sm px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                초대
-              </button>
-            </div>
-          </div>
-        </div>
+        <InviteProjectMember
+          projectId={project.project_id}
+          selectedFriend={selectedFriend}
+          setSelectedFriend={setSelectedFriend}
+          onClose={() => setShowInviteModal(false)}
+          onInvite={handleInviteMember}
+        />
       )}
     </div>
   );

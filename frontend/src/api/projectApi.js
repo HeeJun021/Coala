@@ -59,3 +59,20 @@ export const fetchProjectNameByErd = async (erdId) => {
   const response = await apiClient.get(`/erds/${erdId}/project-name`);
   return response.data;
 };
+
+
+// ✅ 1. 프로젝트 초대 전송
+export const sendProjectInvite = (projectId, receiverId) =>
+  apiClient.post(`/projects/${projectId}/invite`, {
+    receiver_id: receiverId,
+  });
+
+
+
+// ✅ 2. 프로젝트 초대 수락
+export const acceptProjectInvite = (projectId) =>
+  apiClient.post(`/projects/${projectId}/accept`);
+
+// ✅ 3. 프로젝트 초대 거절
+export const rejectProjectInvite = (projectId) =>
+  apiClient.post(`/projects/${projectId}/reject`);

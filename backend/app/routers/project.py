@@ -47,7 +47,7 @@ def get_my_projects(db: Session = Depends(get_db), current_user: User = Depends(
 @router.get("/{project_id}/members")
 def get_project_members(project_id: int, db: Session = Depends(get_db)):
     members = (
-        db.query(User, ProjectMembers.is_leader)
+        db.query(User, ProjectMembers.is_leader, ProjectMembers.status)
         .join(ProjectMembers, User.user_id == ProjectMembers.user_id)
         .filter(ProjectMembers.project_id == project_id)
         .all()
@@ -58,9 +58,11 @@ def get_project_members(project_id: int, db: Session = Depends(get_db)):
             "nickname": m[0].nickname,
             "email": m[0].email,
             "is_leader": m[1],
+            "status": m[2],  # ✅ 추가
         }
         for m in members
     ]
+
 
 # ✅ 3. 프로젝트 생성
 @router.post("")
@@ -81,7 +83,8 @@ def create_project(
     member = ProjectMembers(
         project_id=new_project.project_id,
         user_id=current_user.user_id,
-        is_leader=True
+        is_leader=True,
+        status="accepted"  # ✅ 추가
     )
     db.add(member)
 
