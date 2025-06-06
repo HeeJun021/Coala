@@ -3,6 +3,7 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { updateTask } from "../../api/taskApi";
+import { CalendarDays, Users } from "lucide-react";
 
 // 연하고 밝은 색상 팔레트
 const colorPalette = [
@@ -164,27 +165,10 @@ const TaskCalendarView = ({ tasks = [], projects = [], onTaskClick }) => {
         <p className="text-gray-500">프로젝트 데이터를 로드하지 못했습니다. 부모 컴포넌트를 확인하세요.</p>
       )}
 
-      <div className="absolute top-6 right-6 w-[300px] bg-gray-50 rounded-lg p-4 shadow-sm z-10">
-        <h3 className="text-lg font-semibold mb-3">📋 이 달의 작업 ({thisMonthTasks.length})</h3>
-        {thisMonthTasks.length > 0 ? (
-          <ul className="space-y-2 max-h-[200px] overflow-y-auto">
-            {thisMonthTasks.map((task) => {
-              const taskIndex = tasks.findIndex((t) => t.task_id === task.task_id);
-              const color = taskColors[taskIndex % taskColors.length];
-              return (
-                <li key={task.task_id} className="flex justify-between items-center text-sm">
-                  <span className="font-medium text-gray-800" style={{ color }}>{task.title}</span>
-                  <span className="text-gray-500">{task.due_date || "미정"}</span>
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-          <p className="text-sm text-gray-500">이 달에 예정된 작업이 없습니다.</p>
-        )}
-      </div>
-
-      <h2 className="text-2xl font-bold mb-4 text-gray-800 px-6">📅 내 작업 캘린더</h2>
+      <h2 className="text-2xl font-bold mb-4 text-gray-800 px-6 flex items-center gap-2">
+  <CalendarDays size={20} className="text-gray-600" />
+  내 작업 캘린더
+</h2>
 
       <FullCalendar
         plugins={[dayGridPlugin, interactionPlugin]}
@@ -201,15 +185,16 @@ const TaskCalendarView = ({ tasks = [], projects = [], onTaskClick }) => {
         datesSet={handleDatesSet}
         dayMaxEvents={3}
         displayEventTime={false}
-        eventClassNames="text-white px-2 py-1 rounded-lg shadow-sm text-sm cursor-pointer transition-all hover:opacity-90"
+        eventClassNames="text-white text-xs px-2 py-[2px] rounded-md shadow-sm cursor-pointer transition-all hover:opacity-90 border border-white"
         dayCellClassNames="border-gray-100 hover:bg-gray-50 transition-all"
         eventContent={(eventInfo) => (
           <div className="flex items-center gap-2">
             <span className="truncate">{eventInfo.event.title}</span>
             {eventInfo.event.extendedProps.collaborators?.length > 0 && (
-              <span className="text-xs bg-white text-gray-600 rounded-full px-2 py-0.5">
-                👥 {eventInfo.event.extendedProps.collaborators.length}
-              </span>
+              <span className="flex items-center text-xs bg-white text-gray-600 rounded-full px-2 py-0.5 gap-1">
+  <Users size={12} />
+  {eventInfo.event.extendedProps.collaborators.length}
+</span>
             )}
           </div>
         )}
@@ -317,7 +302,10 @@ const TaskCalendarView = ({ tasks = [], projects = [], onTaskClick }) => {
             </div>
           </div>
           <div className="mb-6 relative">
-            <p className="text-sm text-gray-500 mb-1">👥 참여자</p>
+            <p className="text-sm text-gray-500 mb-1 flex items-center gap-1">
+  <Users size={14} className="text-gray-500" />
+  참여자
+</p>
             <div className="flex flex-wrap gap-2 mb-2">
               {selectedTask.collaborators?.map((user) => (
                 <div
