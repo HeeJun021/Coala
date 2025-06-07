@@ -183,16 +183,23 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
     // 기본적으로는 메뉴 닫기
     setContextMenu(null);
   };
+const getChatRoomsAndSet = async () => {
+  try {
+    const data = await getChatRooms();
+    console.log("✅ 채팅방 목록 갱신됨:", data);
 
-  const getChatRoomsAndSet = async () => {
-    try {
-      const data = await getChatRooms();
-      console.log("✅ 채팅방 목록 갱신됨:", data);
+    const transformed = data.map((room) => {
+      const isInviteRoom = room.room_type === "invite";
+      const projectName = isInviteRoom
+        ? room.message_metadata?.project_name || "알 수 없음"
+        : room.room_name || "알 수 없음";
 
-      const transformed = data.map((room) => ({
+      return {
         id: room.room_id,
-        name: room.room_name ?? "이름 없음",
-        preview: room.last_message || "(아직 메시지가 없습니다)",
+        name: isInviteRoom ? `${projectName}에서 보낸 초대` : projectName,
+        preview: isInviteRoom
+          ? "프로젝트 초대 메시지가 도착했습니다."
+          : room.last_message || "(아직 메시지가 없습니다)",
         time: room.last_message_time
           ? new Date(room.last_message_time).toLocaleTimeString([], {
               hour: "2-digit",
@@ -205,13 +212,14 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
         participants: room.participants ?? [],
         is_pinned: room.is_pinned ?? false,
         pinned_at: room.pinned_at ?? null,
-      }));
+      };
+    });
 
-      setChatRooms(transformed);
-    } catch (error) {
-      console.error("🚨 채팅방 목록 갱신 실패:", error);
-    }
-  };
+    setChatRooms(transformed);
+  } catch (error) {
+    console.error("🚨 채팅방 목록 갱신 실패:", error);
+  }
+};
 
   useEffect(() => {
     if (!user) return;

@@ -28,6 +28,8 @@ class ProjectUpdateRequest(BaseModel):
     description: Optional[str] = None
     widgets: Optional[ProjectWidget] = None
     widget_order: Optional[List[str]] = None
+    topic: Optional[str] = None
+    tech_stack: Optional[List[str]] = None
 
 # ✅ 프로젝트 생성 응답
 class ProjectCreateResponse(BaseModel):

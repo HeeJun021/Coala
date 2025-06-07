@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import ProjectInviteCard from "./ProjectInviteCard";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FaArrowLeft,
@@ -410,6 +411,9 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
                     )}
                     {isLastOfBundleOrLastMessage && <span>{currentTime}</span>}
                   </div>
+                  {msg.message_type === "project_invite" && (
+                    <ProjectInviteCard invite={msg} isMine={true} />
+                  )}
 
                   {msg.message_type === "image" ? (
                     <div
@@ -509,9 +513,11 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
                       )}
                     </div>
                   ) : (
-                    <div className="px-3 py-2 rounded-xl text-sm whitespace-pre-line shadow leading-snug bg-[#FFF36C] text-black max-w-[70%]">
-                      {msg.message}
-                    </div>
+                    msg.message_type === "text" && (
+                      <div className="px-3 py-2 rounded-xl text-sm whitespace-pre-line shadow leading-snug bg-[#FFF36C] text-black max-w-[70%]">
+                        {msg.message}
+                      </div>
+                    )
                   )}
                 </div>
               ) : (
@@ -547,6 +553,10 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
                   </div>
 
                   <div className="flex items-end max-w-[80%] gap-1">
+                    {msg.message_type === "project_invite" && (
+                      <ProjectInviteCard invite={msg} isMine={false} />
+                    )}
+
                     {msg.message_type === "image" ? (
                       <div
                         className="relative group"
@@ -645,9 +655,11 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
                         )}
                       </div>
                     ) : (
-                      <div className="px-3 py-2 rounded-xl text-sm whitespace-pre-line shadow leading-snug bg-white text-left">
-                        {msg.message}
-                      </div>
+                      msg.message_type === "text" && (
+                        <div className="px-3 py-2 rounded-xl text-sm whitespace-pre-line shadow leading-snug bg-white text-left">
+                          {msg.message}
+                        </div>
+                      )
                     )}
 
                     <div className="flex flex-col items-end justify-end text-[10px] leading-tight h-full mb-0.5">

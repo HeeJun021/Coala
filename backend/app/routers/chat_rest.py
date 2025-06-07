@@ -8,6 +8,7 @@ from sqlalchemy import and_
 from typing import List, Optional
 from app.database import get_db
 from app.models.chat import ChatRoom, ChatRoomParticipant, ChatMessage, ChatMessageRead
+from app.models.project_models import ProjectMembers  # 🔥 추가 필요
 from app.models.user import UserFollow
 from app.models.user import User
 from app.dependencies.auth import get_current_user
@@ -217,6 +218,7 @@ def get_chat_rooms(
                 last_message_time=last_msg.sent_at if last_msg else None,
                 unread_count=unread_count,
                 participants=participants,
+                message_metadata=last_msg.message_metadata if last_msg else None,
             )
         )
 
@@ -255,15 +257,16 @@ def send_message(
         message=data.message,
         message_type=data.message_type,
         file_url=data.file_url,
-        file_name=data.file_name,  # ✅ 추가
-        file_size=data.file_size,  # ✅ 추가
-        uploaded_at=data.uploaded_at,  # ✅ 추가
+        file_name=data.file_name,
+        file_size=data.file_size,
+        uploaded_at=data.uploaded_at,
+        message_metadata=data.message_metadata,  # ✅ 추가
     )
     db.add(new_message)
     db.commit()
     db.refresh(new_message)
 
-    # ✅ 3. 보낸 사람은 자동으로 읽은 것으로 처리
+    # 3. 보낸 사람은 자동으로 읽은 것으로 처리
     stmt = (
         insert(ChatMessageRead)
         .values(message_id=new_message.message_id, user_id=current_user.user_id)
@@ -280,19 +283,19 @@ def send_message(
         message=new_message.message,
         message_type=new_message.message_type,
         file_url=new_message.file_url,
-        file_name=new_message.file_name,  # ✅ 추가
-        file_size=new_message.file_size,  # ✅ 추가
-        uploaded_at=new_message.uploaded_at,  # ✅ 추가
+        file_name=new_message.file_name,
+        file_size=new_message.file_size,
+        uploaded_at=new_message.uploaded_at,
         sent_at=new_message.sent_at,
+        message_metadata=new_message.message_metadata,  # ✅ 응답에도 포함
     )
-
 
 # 채팅 조회
 @router.get("/{room_id}/messages", response_model=List[ChatMessageItem])
 def get_messages(
     room_id: int,
     limit: int = Query(20, ge=1, le=100),
-    before_message_id: Optional[int] = Query(None),  # 🔄 offset → cursor 방식
+    before_message_id: Optional[int] = Query(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -307,14 +310,12 @@ def get_messages(
 
     # 2. 메시지 조회 쿼리 (최신순)
     query = db.query(ChatMessage).filter(ChatMessage.room_id == room_id)
-
-    # ✅ 이전 메시지만 가져오도록 조건 추가 (cursor 방식)
     if before_message_id:
         query = query.filter(ChatMessage.message_id < before_message_id)
 
     messages = query.order_by(ChatMessage.sent_at.desc()).limit(limit).all()
 
-    # 3. 읽음 처리: 가장 최신 메시지를 읽은 것으로 간주
+    # 3. 읽음 처리
     if messages:
         newest_message = messages[0]
         if (
@@ -325,7 +326,7 @@ def get_messages(
             participant.last_read_at = newest_message.sent_at
             db.commit()
 
-    # 4. read_count 조회
+    # 4. read_count
     message_ids = [m.message_id for m in messages]
     read_counts_raw = (
         db.query(ChatMessageRead.message_id, func.count(ChatMessageRead.user_id))
@@ -335,23 +336,39 @@ def get_messages(
     )
     read_count_map = {msg_id: count for msg_id, count in read_counts_raw}
 
-    # 5. 유저 정보 캐싱
+    # 5. 유저 정보
     sender_ids = {m.sender_id for m in messages}
     sender_info_map = {
         u.user_id: u for u in db.query(User).filter(User.user_id.in_(sender_ids)).all()
     }
 
-    # 6. 응답 생성 (최신순으로 받은 후 프론트에서 .reverse() 해야 함)
-    return [
-        ChatMessageItem(
+    # 6. 응답 생성
+    result = []
+    for msg in messages:
+        # 🔍 기본값
+        invite_status = None
+
+        # 🎯 초대 메시지인 경우 상태 조회
+        if msg.message_type == "project_invite":
+            project_id = msg.message_metadata.get("project_id")
+            if project_id:
+                member = (
+                    db.query(ProjectMembers)
+                    .filter(
+                        ProjectMembers.project_id == project_id,
+                        ProjectMembers.user_id == current_user.user_id
+                    )
+                    .first()
+                )
+                if member:
+                    invite_status = member.status  # 'pending', 'accepted', 'rejected'
+
+        result.append(ChatMessageItem(
             message_id=msg.message_id,
             sender=UserSimpleInfo.model_validate(sender_info_map[msg.sender_id]),
             message=(
-                "파일을 보냈습니다."
-                if msg.message_type == "file"
-                else (
-                    "사진을 보냈습니다." if msg.message_type == "image" else msg.message
-                )
+                "파일을 보냈습니다." if msg.message_type == "file"
+                else ("사진을 보냈습니다." if msg.message_type == "image" else msg.message)
             ),
             message_type=msg.message_type,
             file_url=msg.file_url,
@@ -360,9 +377,11 @@ def get_messages(
             uploaded_at=msg.uploaded_at,
             sent_at=msg.sent_at,
             read_count=read_count_map.get(msg.message_id, 0),
-        )
-        for msg in messages
-    ]
+            message_metadata=msg.message_metadata,
+            invite_status=invite_status,  # ✅ 여기에 추가!
+        ))
+
+    return result
 
 
 # 채팅방 초대(시스템 메시지도 구현 완)
@@ -645,6 +664,7 @@ def get_archived_chat_rooms(
                 last_message_time=last_msg.sent_at if last_msg else None,
                 unread_count=unread_count,
                 participants=participants,
+                message_metadata=last_msg.message_metadata if last_msg else None,
             )
         )
 
