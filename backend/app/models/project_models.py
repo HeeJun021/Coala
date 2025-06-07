@@ -35,10 +35,12 @@ class Project(Base):
     activity_logs = relationship("ProjectActivityLog", back_populates="project")
     widgets = relationship("ProjectWidgets", back_populates="project")
     erds = relationship("Erds", back_populates="project", cascade="all, delete-orphan")
-    tasks = relationship(
-        "Tasks", back_populates="project", cascade="all, delete-orphan"
+    tasks = relationship("Tasks", back_populates="project", cascade="all, delete-orphan")
+    documents = relationship(  # ✅ 문서 다중 관계
+        "ProjectDocument",
+        back_populates="project",
+        cascade="all, delete-orphan"
     )
-
 
 class ProjectMembers(Base):
     __tablename__ = "projectmembers"

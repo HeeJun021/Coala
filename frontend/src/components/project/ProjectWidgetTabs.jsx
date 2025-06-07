@@ -8,6 +8,9 @@ import { updateProject, getMyProjects } from "../../api/projectApi";
 import { getErds } from "../../api/erd/erdApi";
 import { getMyTasks } from "../../api/taskApi";
 import ErdListPanel from "../erd/list/ErdListPanel";
+import DocumentWrapperPage from "./DocumentWrapperPage"; // ✅ 문서 전환 관리용 컴포넌트
+
+console.log("🧪 타입 확인:", typeof DocumentWrapperPage);
 
 const WIDGET_TABS = [
   { key: "overview", label: "개요" },
@@ -244,6 +247,8 @@ const ProjectWidgetTabs = ({ project, onNameChange }) => {
         return <ProjectTasksTab project={currentProject} />;
       case "timeline":
         return <TimelineWidget project={currentProject} />;
+      case "docs":
+        return <DocumentWrapperPage projectId={currentProject.project_id} />;
       default:
         return (
           <div className="p-10 text-gray-500 text-sm">

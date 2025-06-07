@@ -3,6 +3,7 @@
     "@fullcalendar/daygrid": "^6.1.17",
     "@fullcalendar/interaction": "^6.1.17",
     "@fullcalendar/react": "^6.1.17",
+    "@tiptap/extension-text-align": "^2.13.0",
     "cssutils": "^1.0.0"
   }
 }

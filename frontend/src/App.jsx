@@ -76,6 +76,8 @@ import SelfCodingTemplatePage from "./pages/SelfCodingTemplatePage";
 
 // 팀프로젝트
 import TeamProjectPage from "./pages/TeamProjectPage";
+import DocumentWrapperPage from "./components/project/DocumentWrapperPage";
+
 
 // ERD UI
 import ErdPage from "./pages/ErdPage";
@@ -210,7 +212,9 @@ const App = () => {
                     <Route path="codingtest" element={<MyPageCTHistory />} />
                   </Route>
 
-                  <Route path="/team-project" element={<TeamProjectPage />} />
+                  <Route path="/team-project" element={<TeamProjectPage />}>
+                    <Route path="/team-project/:projectId/docs" element={<DocumentWrapperPage />} />
+                  </Route>
 
                   <Route path="/board/:boardType" element={<BoardPage />} />
                   <Route path="/board/:boardType/write" element={<BoardWritePage />} />
@@ -218,6 +222,7 @@ const App = () => {
                   <Route path="/board/:boardType/edit/:postId" element={<BoardEditPage />} />
                   <Route path="/board/:boardType/applicants/:postId" element={<ProjectApplicantsPage />} />
                   <Route path="/board" element={<Navigate to="/board/free" />} />
+
                 </Routes>
               </MainLayout>
             } />

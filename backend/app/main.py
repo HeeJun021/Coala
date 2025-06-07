@@ -5,6 +5,7 @@ from app.database import engine, get_db, Base
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi import Request
+from app.routers import document
 
 
 
@@ -142,6 +143,9 @@ app.include_router(erd_log_action.router)
 app.include_router(erd_snapshot.router)
 app.include_router(erd_commit.router)
 app.include_router(erd_sql_export.router)
+
+#프로젝트 문서
+app.include_router(document.router)
 
 app.include_router(eucalyptus.router)
 

@@ -76,3 +76,14 @@ export const acceptProjectInvite = (projectId) =>
 // ✅ 3. 프로젝트 초대 거절
 export const rejectProjectInvite = (projectId) =>
   apiClient.post(`/projects/${projectId}/reject`);
+// ✅ 문서 불러오기
+export const fetchProjectDocument = async (projectId) => {
+  const response = await apiClient.get(`/projects/${projectId}/docs`);
+  return response.data;
+};
+
+// ✅ 문서 저장 (생성 또는 업데이트)
+export const saveProjectDocument = async (projectId, content) => {
+  const response = await apiClient.post(`/projects/${projectId}/docs`, { content });
+  return response.data;
+};
