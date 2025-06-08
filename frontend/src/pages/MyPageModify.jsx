@@ -29,7 +29,6 @@ const MyPageModify = () => {
     return (
         <div className="flex min-h-screen">
             <div className="w-[250px]">
-                <MyPageSidebar userData={userData} />
             </div>
 
             {/* 메인 콘텐츠 */}

@@ -2,7 +2,7 @@ import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const BOARD_LABELS = {
-  free: "자유게시판",
+  free: "자유 게시판",
   project: "프로젝트 게시판",
   code: "코드 공유 게시판",
 };
@@ -11,28 +11,38 @@ const BoardSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const currentBoard = location.pathname.split("/")[2] || "free";
+
+  const handleClick = (boardType) => {
+    navigate(`/board/${boardType}`);
+  };
+
   return (
-    <div className="w-48 p-6">
-      <h2 className="text-lg font-semibold mb-4">게시판</h2>
-      <ul className="flex flex-col">
-        {Object.entries(BOARD_LABELS).map(([key, label], index) => (
-          <li key={key}>
-            <button
-              onClick={() => navigate(`/board/${key}`)}
-              className={`w-full text-left px-3 py-2 font-medium border
-                ${
-                  location.pathname.includes(key)
-                    ? "bg-green-200 text-black"
-                    : "bg-gray-300 text-black"
-                } ${
-                index === 0 ? "rounded-t-sm" : index === 2 ? "rounded-b-sm" : ""
-              }`}
-            >
-              {label}
-            </button>
-          </li>
+    <div
+      className="absolute left-[33px] w-[260px] bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden z-40"
+      style={{ top: "239px" }}
+    >
+      {/* ✅ 상단 헤더 */}
+      <div className="h-[56px] flex items-center px-6 bg-[#88C078] rounded-t-2xl shadow-sm">
+        <h1 className="text-[18px] font-semibold text-white tracking-wide">게시판</h1>
+      </div>
+
+      {/* ✅ 게시판 목록 */}
+      <div className="divide-y divide-gray-100">
+        {Object.entries(BOARD_LABELS).map(([key, label]) => (
+          <div
+            key={key}
+            className={`px-6 py-4 cursor-pointer text-[16px] font-semibold transition-all duration-150 ${
+              currentBoard === key
+                ? "bg-[#A7DA9B] text-white"
+                : "hover:bg-gray-100 text-gray-800"
+            }`}
+            onClick={() => handleClick(key)}
+          >
+            {label}
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 };

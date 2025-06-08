@@ -128,3 +128,11 @@ def get_board_list(board_type: str, page: int = 1, sort_order: str = "최신 순
 def import_code(post_id: int, user_id: int = Query(...), db: Session = Depends(get_db)):
     result = board_service.import_code(post_id, user_id, db)
     return result
+
+@router.get("/my/posts", response_model=List[PostResponse])
+def get_my_posts(user_id: int = Query(...), db: Session = Depends(get_db)):
+    return board_service.get_my_posts(user_id, db)
+
+@router.get("/my/comments", response_model=List[CommentResponse])
+def get_my_comments(user_id: int = Query(...), db: Session = Depends(get_db)):
+    return board_service.get_my_comments(user_id, db)

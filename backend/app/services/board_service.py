@@ -16,6 +16,7 @@ from app.schemas.board import (
     PostReportCreate, CommentReportCreate,
     ProjectApplicantCreate, ProjectApplicantResponse
 )
+from typing import List
 
 # 기존 함수들 (변경 없음)
 def create_post(post: PostCreate, db: Session):
@@ -401,3 +402,48 @@ def import_code(post_id: int, user_id: int, db: Session):
     db.commit()
     
     return {"folder_id": folder.folder_id, "code_id": code.code_id}
+
+def get_my_posts(user_id: int, db: Session) -> List[PostResponse]:
+    posts = (
+        db.query(Post)
+        .filter(Post.user_id == user_id)
+        .order_by(Post.created_at.desc())
+        .all()
+    )
+    return [PostResponse.model_validate(post).model_dump() for post in posts]
+
+def get_my_comments(user_id: int, db: Session) -> List[CommentResponse]:
+    # 🧩 좋아요 수 서브쿼리
+    like_subq = (
+        db.query(CommentLike.comment_id, func.count(CommentLike.user_id).label("like_count"))
+        .group_by(CommentLike.comment_id)
+        .subquery()
+    )
+
+    results = (
+        db.query(
+            Comment,
+            User.nickname,
+            func.coalesce(like_subq.c.like_count, 0).label("like_count")
+        )
+        .join(User, Comment.user_id == User.user_id)
+        .outerjoin(like_subq, Comment.comment_id == like_subq.c.comment_id)
+        .filter(Comment.user_id == user_id)
+        .order_by(Comment.created_at.desc())
+        .all()
+    )
+
+    return [
+        CommentResponse(
+            comment_id=comment.comment_id,
+            post_id=comment.post_id,
+            user_id=comment.user_id,
+            content=comment.content,
+            parent_comment_id=comment.parent_comment_id,
+            created_at=comment.created_at,
+            updated_at=comment.updated_at,
+            nickname=nickname,
+            like_count=like_count
+        )
+        for comment, nickname, like_count in results
+    ]

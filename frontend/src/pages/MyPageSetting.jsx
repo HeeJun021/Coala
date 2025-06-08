@@ -42,7 +42,6 @@ const MyPageSetting = () => {
     return (
         <div className="flex min-h-screen">
             <div className="w-[250px]">
-                <MyPageSidebar userData={userData} />
             </div>
             <div className="flex-1 p-6 ml-10">
                 <header className="p-6">

@@ -94,3 +94,19 @@ export const updateApplicantStatus = async (applicantId, status) => {
     params: { status },
   });
 };
+
+// 내가 쓴 게시글 조회
+export const getMyPosts = async (userId) => {
+  const response = await apiClient.get(`/board/my/posts`, {
+    params: { user_id: userId },
+  });
+  return response.data;
+};
+
+// 내가 쓴 댓글 조회
+export const getMyComments = async (userId) => {
+  const response = await apiClient.get(`/board/my/comments`, {
+    params: { user_id: userId },
+  });
+  return response.data;
+};

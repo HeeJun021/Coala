@@ -57,10 +57,9 @@ const MyPageCTHistory = () => {
   return (
     <div className="flex min-h-screen">
       <div className="w-[250px]">
-        <MyPageSidebar userData={userData} />
       </div>
       <div className="flex-1 p-6">
-        <h2 className="text-xl font-semibold mt-4">🧠 코딩 테스트 제출 내역</h2>
+        <h2 className="text-xl font-semibold mt-4">코딩 테스트 제출 내역</h2>
         {submissionHistory.length === 0 ? (
           <p className="text-sm text-gray-500">제출 기록이 없습니다.</p>
         ) : (

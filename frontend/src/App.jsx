@@ -50,6 +50,7 @@ import MyPageSetting from "./pages/MyPageSetting";
 import MyPageQuizHistory from "./pages/MyPageQuizHistory";
 import MyPageUserQuizHistory from "./pages/MyPageUserQuizHistory";
 import MyPageCTHistory from "./pages/MyPageCTHistory";
+import MyPageCommunity from "./pages/MyPageCommunity";
 
 // 인증
 import Signup from "./pages/Signup";
@@ -205,11 +206,13 @@ const App = () => {
                   <Route path="/reset-password" element={<ResetPassword />} />
 
                   <Route path="mypage" element={<MyPage userData={userData} setUserData={setUserData} />}>
+                    <Route index element={<MyPageModify />} />
                     <Route path="modify" element={<MyPageModify />} />
                     <Route path="setting" element={<MyPageSetting />} />
                     <Route path="quiz-history" element={<MyPageQuizHistory />} />
                     <Route path="userquiz-history" element={<MyPageUserQuizHistory />} />
                     <Route path="codingtest" element={<MyPageCTHistory />} />
+                    <Route path="community" element={<MyPageCommunity />} />
                   </Route>
 
                   <Route path="/team-project" element={<TeamProjectPage />}>

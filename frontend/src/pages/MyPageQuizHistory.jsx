@@ -72,7 +72,6 @@ const MyPageQuizHistory = () => {
   return (
     <div className="flex min-h-screen">
       <div className="w-[250px]">
-        <MyPageSidebar userData={userData} />
       </div>
       <div className="flex-1 p-6">
         <h2 className="text-xl font-semibold mt-4">📜 퀴즈 풀이 내역</h2>
