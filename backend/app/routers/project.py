@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy.sql import func
 from app.database import get_db
 from app.dependencies.auth import get_current_user
 from app.schemas.project_schemas import ProjectCreateRequest, ProjectUpdateRequest
 from app.models.project_models import Project, ProjectMembers, ProjectWidgets, ProjectActivityLog
+from datetime import datetime
 from app.models.user import User
 
 router = APIRouter(prefix="/projects", tags=["Projects"])
@@ -24,6 +24,8 @@ def get_my_projects(db: Session = Depends(get_db), current_user: User = Depends(
             "name": p.name,
             "description": p.description,
             "progress": p.progress,
+            "topic": p.topic,  # ✅ 이거 추가!
+            "tech_stack": p.tech_stack,  # ✅ 이거도 추가!
             "leader_id": (
                 db.query(ProjectMembers)
                 .filter(ProjectMembers.project_id == p.project_id, ProjectMembers.is_leader == True)
@@ -47,7 +49,7 @@ def get_my_projects(db: Session = Depends(get_db), current_user: User = Depends(
 @router.get("/{project_id}/members")
 def get_project_members(project_id: int, db: Session = Depends(get_db)):
     members = (
-        db.query(User, ProjectMembers.is_leader)
+        db.query(User, ProjectMembers.is_leader, ProjectMembers.status)
         .join(ProjectMembers, User.user_id == ProjectMembers.user_id)
         .filter(ProjectMembers.project_id == project_id)
         .all()
@@ -58,9 +60,11 @@ def get_project_members(project_id: int, db: Session = Depends(get_db)):
             "nickname": m[0].nickname,
             "email": m[0].email,
             "is_leader": m[1],
+            "status": m[2],  # ✅ 추가
         }
         for m in members
     ]
+
 
 # ✅ 3. 프로젝트 생성
 @router.post("")
@@ -81,7 +85,8 @@ def create_project(
     member = ProjectMembers(
         project_id=new_project.project_id,
         user_id=current_user.user_id,
-        is_leader=True
+        is_leader=True,
+        status="accepted"  # ✅ 추가
     )
     db.add(member)
 
@@ -95,7 +100,7 @@ def create_project(
         project_id=new_project.project_id,
         actor_id=current_user.user_id,
         action=f"{current_user.nickname}이(가) 프로젝트를 생성함",
-        created_at=func.now()
+        created_at=datetime.now()
     ))
 
     db.commit()
@@ -136,6 +141,10 @@ def update_project(
         project.description = project_data.description
     if project_data.widget_order is not None:
         project.widget_order = project_data.widget_order
+    if project_data.topic is not None:
+        project.topic = project_data.topic
+    if project_data.tech_stack is not None:
+        project.tech_stack = project_data.tech_stack
 
     # 위젯 업데이트
     if project_data.widgets is not None:
@@ -149,7 +158,7 @@ def update_project(
         project_id=project_id,
         actor_id=current_user.user_id,
         action=f"{current_user.nickname}이(가) 프로젝트 정보를 업데이트함",
-        created_at=func.now()
+        created_at=datetime.now()
     ))
 
     db.commit()
@@ -204,7 +213,7 @@ def add_project_member(
         project_id=project_id,
         actor_id=current_user.user_id,
         action=f"{current_user.nickname}이(가) {user.nickname}을(를) 팀에 추가함",
-        created_at=func.now()
+        created_at=datetime.now()
     ))
 
     db.commit()
@@ -250,7 +259,7 @@ def remove_project_member(
         project_id=project_id,
         actor_id=current_user.user_id,
         action=f"{current_user.nickname}이(가) {user.nickname}을(를) 팀에서 방출함",
-        created_at=func.now()
+        created_at=datetime.now()
     ))
 
     db.commit()
@@ -299,7 +308,7 @@ def transfer_leader(
         project_id=project_id,
         actor_id=current_user.user_id,
         action=f"{current_user.nickname}이(가) 팀장 권한을 {new_leader_user.nickname}에게 이전함",
-        created_at=func.now()
+        created_at=datetime.now()
     ))
 
     db.commit()

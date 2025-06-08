@@ -1,6 +1,19 @@
-from sqlalchemy import Column, Integer, String, Text, Float, Date, func, ForeignKey, Boolean, JSON
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Text,
+    Float,
+    DateTime,
+    func,
+    Date,
+    ForeignKey,
+    Boolean,
+    JSON,
+)
 from sqlalchemy.orm import relationship
 from app.database import Base
+
 
 class Project(Base):
     __tablename__ = "projects"
@@ -15,6 +28,8 @@ class Project(Base):
     created_at = Column(Date, server_default=func.now())
     updated_at = Column(Date, server_default=func.now(), onupdate=func.now())
     widget_order = Column(JSON, nullable=True)  # 위젯 순서 저장
+    topic = Column(String(255), nullable=True)  # ✅ 주제(토픽)
+    tech_stack = Column(JSON, nullable=True)  # ✅ 기술 스택
 
     members = relationship("ProjectMembers", back_populates="project")
     activity_logs = relationship("ProjectActivityLog", back_populates="project")
@@ -34,9 +49,11 @@ class ProjectMembers(Base):
     project_id = Column(Integer, ForeignKey("projects.project_id", ondelete="CASCADE"))
     user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"))
     is_leader = Column(Boolean, default=False)
+    status = Column(String, default="pending")  # ✅ 여기 있음
 
     project = relationship("Project", back_populates="members")
     user = relationship("User")
+
 
 class ProjectWidgets(Base):
     __tablename__ = "projectwidgets"
@@ -47,6 +64,7 @@ class ProjectWidgets(Base):
 
     project = relationship("Project", back_populates="widgets")
 
+
 class ProjectActivityLog(Base):
     __tablename__ = "projectactivitylogs"
 
@@ -54,7 +72,7 @@ class ProjectActivityLog(Base):
     project_id = Column(Integer, ForeignKey("projects.project_id", ondelete="CASCADE"))
     actor_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"))
     action = Column(Text, nullable=False)
-    created_at = Column(Date, server_default=func.now())
+    created_at = Column(DateTime, server_default=func.now())
 
     project = relationship("Project", back_populates="activity_logs")
     actor = relationship("User")

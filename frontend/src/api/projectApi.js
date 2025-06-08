@@ -60,6 +60,22 @@ export const fetchProjectNameByErd = async (erdId) => {
   return response.data;
 };
 
+
+// ✅ 1. 프로젝트 초대 전송
+export const sendProjectInvite = (projectId, receiverId) =>
+  apiClient.post(`/projects/${projectId}/invite`, {
+    receiver_id: receiverId,
+  });
+
+
+
+// ✅ 2. 프로젝트 초대 수락
+export const acceptProjectInvite = (projectId) =>
+  apiClient.post(`/projects/${projectId}/accept`);
+
+// ✅ 3. 프로젝트 초대 거절
+export const rejectProjectInvite = (projectId) =>
+  apiClient.post(`/projects/${projectId}/reject`);
 // ✅ 문서 불러오기
 export const fetchProjectDocument = async (projectId) => {
   const response = await apiClient.get(`/projects/${projectId}/docs`);

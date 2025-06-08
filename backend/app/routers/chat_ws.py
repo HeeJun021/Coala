@@ -157,6 +157,14 @@ async def websocket_endpoint(websocket: WebSocket, db: Session = Depends(get_db)
                 message = data.get("message")
                 message_type = data.get("message_type", "text")
                 file_url = data.get("file_url")
+                 # ✅ 메시지 메타데이터 처리
+                message_metadata = None
+                if message_type == "project_invite":
+                    message_metadata = {
+                        "project_id": data.get("project_id"),
+                        "project_title": data.get("project_title"),
+                        "inviter_id": user_id,
+                    }
 
                 if not message:
                     await websocket.send_json({"error": "message는 필수입니다."})
@@ -210,6 +218,7 @@ async def websocket_endpoint(websocket: WebSocket, db: Session = Depends(get_db)
                         },
                         "message": message,
                         "message_type": message_type,
+                        "message_metadata": message_metadata,
                         "file_url": file_url,
                         "sent_at": chat_message.sent_at.isoformat(),
                         "unread_count": unread_count,

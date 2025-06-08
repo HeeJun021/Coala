@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from datetime import datetime
 from app.schemas.user import UserSimpleInfo
 
@@ -30,6 +30,7 @@ class ChatRoomListItem(BaseModel):
     last_message_time: Optional[datetime]
     unread_count: int
     participants: List[ChatParticipant]  # ✅ 추가
+    message_metadata: Optional[Dict[str, Any]] = None  # ✅ 이거 추가
 
 
 # 채팅 보내기 요청, 응답
@@ -40,6 +41,7 @@ class ChatMessageCreateRequest(BaseModel):
     file_name: Optional[str] = None          # ⬅️ 추가
     file_size: Optional[int] = None          # ⬅️ 추가
     uploaded_at: Optional[datetime] = None   # ⬅️ 추가
+    message_metadata: Optional[Dict[str, Any]] = None  # ✅ 추가
 
 
 class ChatMessageCreateResponse(BaseModel):
@@ -53,6 +55,7 @@ class ChatMessageCreateResponse(BaseModel):
     file_size: Optional[int] = None          # ✅ 추가
     uploaded_at: Optional[datetime] = None   # ✅ 추가
     sent_at: datetime
+    message_metadata: Optional[Dict[str, Any]] = None  # ✅ 추가
 
 
 # 채팅 조회 스키마
@@ -67,6 +70,9 @@ class ChatMessageItem(BaseModel):
     uploaded_at: Optional[datetime] = None   # ✅ 추가
     sent_at: datetime
     read_count: int
+    
+    message_metadata: Optional[Dict[str, Any]] = None  # ✅ 이 줄 추가!
+    invite_status: Optional[str] = None  # ✅ 'pending' | 'accepted' | 'rejected'
 
 
 

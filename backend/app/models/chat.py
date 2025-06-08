@@ -1,3 +1,4 @@
+from sqlalchemy.dialects.postgresql import JSONB  # ✅ 추가 필요
 from sqlalchemy import Column, Integer, String, Boolean, Text, ForeignKey, TIMESTAMP, DateTime
 from sqlalchemy.sql import func
 from app.database import Base
@@ -11,6 +12,9 @@ class ChatRoom(Base):
     is_group = Column(Boolean, default=False)
     room_name = Column(String(100), nullable=True)  # ✅ 채팅방 이름
     created_at = Column(TIMESTAMP, server_default=func.now())
+    
+     # ✅ 여기에 추가!
+    project_id = Column(Integer, ForeignKey("projects.project_id", ondelete="SET NULL"), nullable=True)
 
 
 # 2. 채팅방 참여자 테이블
@@ -38,13 +42,15 @@ class ChatMessage(Base):
     room_id = Column(Integer, ForeignKey("chatrooms.room_id", ondelete="CASCADE"), nullable=False)
     sender_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
     message = Column(Text, nullable=True)
-    message_type = Column(String(10), default="text")  # 'text', 'file', 'image'
+    message_type = Column(String(30), default="text")  # 'text', 'file', 'image'
     file_url = Column(Text, nullable=True)
     file_name = Column(Text, nullable=True)
     file_size = Column(Integer, nullable=True)
     uploaded_at = Column(DateTime(timezone=True), nullable=True)
     sent_at = Column(TIMESTAMP, server_default=func.now())
     read_count = Column(Integer, default=0)
+    
+    message_metadata = Column(JSONB, nullable=True)
     
     
 # 4. 메시지 읽은 수, 읽은 사람
