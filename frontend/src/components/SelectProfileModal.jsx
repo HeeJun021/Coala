@@ -1,6 +1,7 @@
 import React from "react";
-import { updateProfileImage } from "../api/userApi"; // 👤 프로필 이미지 변경 API
+import { updateProfileImage } from "../api/userApi"; // 프로필 이미지 변경 API
 import { EucalyptusActions } from "../constants/eucalyptusActions";
+import { getCurrentUser } from "../api/authApi";
 
 const profileImages = [
   "/assets/koala.jpg",
@@ -24,9 +25,10 @@ const SelectProfileModal = ({ isOpen, onClose, onSelectImage, currentImageUrl })
         action: EucalyptusActions.CHANGE_PROFILE_IMAGE,
       });
 
-      onSelectImage(imageUrl); // 부모에게 전달
+      const freshUser = await getCurrentUser();
+      onSelectImage(freshUser.profile_image_url, freshUser);
     } catch (error) {
-      console.error("❌ 이미지 변경 실패:", error);
+      console.error("이미지 변경 실패:", error);
       alert(error.response?.data?.detail || "이미지 변경에 실패했습니다.");
     }
   };

@@ -62,10 +62,10 @@ def change_profile_image(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user_object),
 ):
-    # ✅ 화폐 사용 처리
+    # 화폐 사용 처리
     use_eucalyptus_by_action(current_user, req.action, db)
 
-    # ✅ 이미지 변경 처리
+    # 이미지 변경 처리
     updated_user = update_profile_image(current_user, req.image_url, db)
 
     return {

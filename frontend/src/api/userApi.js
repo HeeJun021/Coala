@@ -23,7 +23,7 @@ export async function verifyEmail(email, token) {
   return response.data;
 }
 
-// ✅ 프로필 이미지 업데이트 (화폐 차감 포함)
+// 프로필 이미지 업데이트 (화폐 차감 포함)
 export const updateProfileImage = async ({ profile_image_url, action }) => {
   return await apiClient.patch("/users/profile-image", {
     image_url: profile_image_url,
@@ -31,7 +31,7 @@ export const updateProfileImage = async ({ profile_image_url, action }) => {
   });
 };
 
-// ✅ 사용자 정보 조회 (닉네임, 자기소개, 등급 등)
+// 사용자 정보 조회 (닉네임, 자기소개, 등급 등)
 export const fetchUserProfile = async (userId) => {
   try {
     const response = await apiClient.get(`/users/${userId}`);

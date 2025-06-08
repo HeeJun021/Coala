@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { updateUserInfo } from '../api/userApi';
 import RatingProgressBar from './RatingProgressBar';
-import SelectProfileModal from './SelectProfileModal'; // ✅ 이미지 선택 모달 추가
+import SelectProfileModal from './SelectProfileModal'; 
 
 const ProfileCard = ({ userData, setUserData }) => {
     const [isEditing, setIsEditing] = useState(false);
@@ -53,9 +53,10 @@ const ProfileCard = ({ userData, setUserData }) => {
         }
     };
 
-    const handleImageSelect = (newUrl) => {
+    const handleImageSelect = (newUrl, freshUser) => {
         setUserData((prev) => ({
             ...prev,
+            ...freshUser,
             profile_image_url: newUrl,
         }));
         setIsModalOpen(false);
