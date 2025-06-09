@@ -68,6 +68,7 @@ const TimelineWidget = ({ project }) => {
     };
   }, []);
 
+  
   useEffect(() => {
     const syncScroll = () => {
       if (timelineRef.current && contentRef.current) {
@@ -120,6 +121,10 @@ const TimelineWidget = ({ project }) => {
   const timelineStartDate = isValid(parsedCreatedAt) ? startOfMonth(parsedCreatedAt) : startOfMonth(new Date('2025-06-07T19:47:00+09:00'));
   const timelineEndDate = lastDayOfMonth(addYears(timelineStartDate, 1));
   const totalDays = differenceInDays(timelineEndDate, timelineStartDate) + 1;
+
+  const today = new Date();
+const todayOffset = Math.max(0, differenceInDays(today, timelineStartDate));
+const todayLeft = todayOffset * pixelPerDay;
 
   const scrollToTask = (taskId) => {
     requestAnimationFrame(() => {
@@ -426,16 +431,24 @@ const TimelineWidget = ({ project }) => {
 
   return (
     <div className="flex w-full px-0 py-6 bg-gray-50">
-      <div className="flex-1 min-h-screen bg-white rounded-lg overflow-hidden">
+      <div className="flex-1 min-h-screen bg-white rounded-lg overflow-hidden relative">
         <div className="flex flex-col h-full">
           <div className="overflow-x-auto" style={{ width: '100%' }}>
-            <div className="min-w-max">
+            <div className="min-w-max relative">
               {/* 날짜 헤더 */}
               <div
                 ref={timelineRef}
                 className="flex flex-col sticky top-0 bg-white z-0 border-b border-gray-300"
                 style={{ height: '80px' }}
               >
+              <div
+  className="absolute w-[2px] bg-emerald-500/40 z-30"
+  style={{
+    top: 0,
+    left: `${todayLeft + 160}px`,
+    height: `${80 + sections.reduce((sum, section) => sum + (getSectionTasks(section.status).length * 40 + 80), 0)}px`,
+  }}
+></div>
                 {/* 상단: 월 표시 */}
                 <div className="flex" style={{ height: '40px' }}>
                   <div className="flex-shrink-0 w-40"></div>
@@ -446,6 +459,7 @@ const TimelineWidget = ({ project }) => {
                       minWidth: `${totalDays * pixelPerDay}px`,
                     }}
                   >
+                  
                     {startDate && endDate && (
                       <div
                         className="absolute text-xs font-medium bg-blue-600 text-white px-3 py-1 rounded-full flex items-center justify-center z-20"
@@ -491,6 +505,7 @@ const TimelineWidget = ({ project }) => {
 
                 {/* 하단: 주차 표시 */}
                 <div className="flex border-t border-gray-200" style={{ height: '40px' }}>
+                
                   <div className="flex-shrink-0 w-40 flex items-center justify-center text-xs text-gray-500 border-r border-gray-200">
                     주차
                   </div>
@@ -515,9 +530,9 @@ const TimelineWidget = ({ project }) => {
                   </div>
                 </div>
               </div>
-
               {/* 타스크 바디 */}
               <div ref={contentRef} style={{ width: `${totalDays * pixelPerDay + 200}px` }}>
+ 
                 {isMobile ? (
                   sections.map((section) => {
                     const sectionTasks = getSectionTasks(section.status);
@@ -562,6 +577,7 @@ const TimelineWidget = ({ project }) => {
                         onDragOver={handleDragOver}
                         onDrop={(e) => handleDrop(e, section.status)}
                       >
+                      
                         <div className="flex h-full">
                           <div className="w-40 flex-shrink-0 py-3 px-4 bg-gray-100 text-sm font-semibold text-gray-800 flex items-center">
                             {section.label} <span className="ml-2 text-xs text-gray-500">({sectionTasks.length})</span>
@@ -610,10 +626,8 @@ const TimelineWidget = ({ project }) => {
                 )}
                 {!isMobile && (
                   <div className="mt-12 px-4">
-                    <h3 className="text-sm font-semibold text-gray-600 mb-3">
-                      📌 프로젝트 작업 미리보기
-                    </h3>
                     <div className="bg-yellow-100 p-4 rounded-xl shadow-md space-y-4 w-full max-w-md">
+                      📌 작업 미리보기
                       {sections.map((section) => {
                         const sectionTasks = getSectionTasks(section.status);
                         return (

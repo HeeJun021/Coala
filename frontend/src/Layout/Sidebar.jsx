@@ -1,5 +1,6 @@
 import React, { useEffect, useState,useRef  } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { FileCheck } from "lucide-react";
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -156,7 +157,7 @@ const Sidebar = () => {
         : `🧪 ${selectedExample?.title}`}
     </span>
     {(selectedMaterial?.is_completed || selectedExample?.is_completed) && (
-      <span className="text-green-400 text-xs">✅</span>
+      <FileCheck className="w-4 h-4 text-green-500" />
     )}
   </div>
 )}
@@ -188,7 +189,7 @@ const Sidebar = () => {
                     >
                       <span className="whitespace-normal break-words">{material.title}</span>
                       {material.is_completed && (
-                        <span className="text-green-500 text-xs ml-2">✅</span>
+                        <FileCheck className="w-4 h-4 text-green-500 ml-2" />
                       )}
                     </div>
                   ))}
@@ -209,7 +210,7 @@ const Sidebar = () => {
                       >
                         <span className="whitespace-normal break-words">{example.title}</span>
                         {example.is_completed && (
-                          <span className="text-green-500 text-xs ml-2">✅</span>
+                          <FileCheck className="w-4 h-4 text-green-500 ml-2" />
                         )}
                       </div>
                     ))
