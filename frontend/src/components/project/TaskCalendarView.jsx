@@ -1,3 +1,4 @@
+// TaskCalendarView.jsx
 import React, { useState, useEffect, useRef } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -7,21 +8,21 @@ import { CalendarDays, Users } from "lucide-react";
 
 // 연하고 밝은 색상 팔레트
 const colorPalette = [
-  "#a3bffa", // 연한 파란색
-  "#c4d7ed", // 연한 회청색
-  "#d1e7dd", // 연한 민트
-  "#e6d8d1", // 연한 살구
-  "#e8e1d6", // 연한 베이지
-  "#f0e6e6", // 연한 핑크
-  "#e0f2e9", // 연한 초록
-  "#f5e8c7", // 연한 노랑
-  "#e0e0f8", // 연한 보라
-  "#f2e8f0", // 연한 라벤더
-  "#e0f0f8", // 연한 청록
-  "#f8ece0", // 연한 오렌지
-  "#e8f0e0", // 연한 라임
-  "#f0e8f2", // 연한 자주
-  "#e0f8f0", // 연한 터코이즈
+  "#a3bffa",
+  "#c4d7ed",
+  "#d1e7dd",
+  "#e6d8d1",
+  "#e8e1d6",
+  "#f0e6e6",
+  "#e0f2e9",
+  "#f5e8c7",
+  "#e0e0f8",
+  "#f2e8f0",
+  "#e0f0f8",
+  "#f8ece0",
+  "#e8f0e0",
+  "#f0e8f2",
+  "#e0f8f0",
 ];
 
 // 색상 랜덤화 및 중복 방지 함수
@@ -30,7 +31,7 @@ const getRandomColors = (count) => {
   return shuffled.slice(0, Math.min(count, colorPalette.length));
 };
 
-const TaskCalendarView = ({ tasks = [], projects = [], onTaskClick }) => {
+const TaskCalendarView = ({ tasks = [], projects = [], onTaskClick , Blacksmith }) => {
   const [selectedTask, setSelectedTask] = useState(null);
   const [calendarEvents, setCalendarEvents] = useState([]);
   const [isAddingCollaborator, setIsAddingCollaborator] = useState(false);
@@ -54,33 +55,33 @@ const TaskCalendarView = ({ tasks = [], projects = [], onTaskClick }) => {
 
   useEffect(() => {
     if (!tasks || taskColors.length === 0) return;
-    const mapped = tasks.map((task, index) => ({
-      id: String(task.task_id),
-      title: task.title,
-      start: task.start_date || task.due_date,
-      end: task.due_date ? new Date(new Date(task.due_date).getTime() + 86400000).toISOString().slice(0, 10) : undefined,
-      extendedProps: task,
-      backgroundColor: taskColors[index % taskColors.length],
-      borderColor: taskColors[index % taskColors.length],
-    }));
+    const mapped = tasks
+      .filter((task) => projects.some((proj) => proj.project_id === task.project_id))
+      .map((task, index) => ({
+        id: String(task.task_id),
+        title: task.title,
+        start: task.start_date || task.due_date,
+        end: task.due_date
+          ? new Date(new Date(task.due_date).getTime() + 86400000)
+              .toISOString()
+              .slice(0, 10)
+          : undefined,
+        extendedProps: task,
+        backgroundColor: taskColors[index % taskColors.length],
+        borderColor: taskColors[index % taskColors.length],
+      }));
     setCalendarEvents(mapped);
-  }, [tasks, taskColors]);
-
-  const thisMonthTasks = tasks.filter((task) => {
-    const due = task.due_date ? new Date(task.due_date) : null;
-    return (
-      due &&
-      due.getMonth() === currentViewDate.getMonth() &&
-      due.getFullYear() === currentViewDate.getFullYear()
-    );
-  });
+  }, [tasks, taskColors, projects]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (slideRef.current && !slideRef.current.contains(event.target)) {
         setSelectedTask(null);
       }
-      if (collaboratorRef.current && !collaboratorRef.current.contains(event.target)) {
+      if (
+        collaboratorRef.current &&
+        !collaboratorRef.current.contains(event.target)
+      ) {
         setIsAddingCollaborator(false);
       }
     };
@@ -99,19 +100,34 @@ const TaskCalendarView = ({ tasks = [], projects = [], onTaskClick }) => {
 
   const handleUpdateTask = async (taskId, updatedData) => {
     try {
-      const taskData = { ...updatedData, status: updatedData.due_date ? "예정" : "완료됨" };
+      const taskData = {
+        ...updatedData,
+        status: updatedData.due_date ? "예정" : "완료됨",
+      };
       const res = await updateTask(taskId, taskData);
       setSelectedTask(res);
-      const updatedTasks = tasks.map((task) => (task.task_id === res.task_id ? res : task));
-      setCalendarEvents(updatedTasks.map((task, index) => ({
-        id: String(task.task_id),
-        title: task.title,
-        start: task.start_date || task.due_date,
-        end: task.due_date ? new Date(new Date(task.due_date).getTime() + 86400000).toISOString().slice(0, 10) : undefined,
-        extendedProps: task,
-        backgroundColor: taskColors[index % taskColors.length],
-        borderColor: taskColors[index % taskColors.length],
-      })));
+      const updatedTasks = tasks.map((task) =>
+        task.task_id === res.task_id ? res : task
+      );
+      setCalendarEvents(
+        updatedTasks
+          .filter((task) =>
+            projects.some((proj) => proj.project_id === task.project_id)
+          )
+          .map((task, index) => ({
+            id: String(task.task_id),
+            title: task.title,
+            start: task.start_date || task.due_date,
+            end: task.due_date
+              ? new Date(new Date(task.due_date).getTime() + 86400000)
+                  .toISOString()
+                  .slice(0, 10)
+              : undefined,
+            extendedProps: task,
+            backgroundColor: taskColors[index % taskColors.length],
+            borderColor: taskColors[index % taskColors.length],
+          }))
+      );
     } catch (err) {
       console.error("작업 수정 실패", err);
       alert("작업 수정에 실패했습니다.");
@@ -132,7 +148,9 @@ const TaskCalendarView = ({ tasks = [], projects = [], onTaskClick }) => {
 
   const handleRemoveCollaborator = (userId) => {
     if (!selectedTask) return;
-    const updatedCollaborators = selectedTask.collaborators.filter((c) => c.user_id !== userId);
+    const updatedCollaborators = selectedTask.collaborators.filter(
+      (c) => c.user_id !== userId
+    );
     const newTask = { ...selectedTask, collaborators: updatedCollaborators };
     setSelectedTask(newTask);
     handleUpdateTask(selectedTask.task_id, newTask);
@@ -146,7 +164,9 @@ const TaskCalendarView = ({ tasks = [], projects = [], onTaskClick }) => {
     if (selectedTask && selectedTask.project_id) {
       const fetchMembers = async () => {
         try {
-          const res = await (await import("../../api/projectApi")).getProjectMembers(selectedTask.project_id);
+          const res = await (
+            await import("../../api/projectApi")
+          ).getProjectMembers(selectedTask.project_id);
           setMembers(res);
         } catch (err) {
           console.error("멤버 불러오기 실패", err);
@@ -157,18 +177,20 @@ const TaskCalendarView = ({ tasks = [], projects = [], onTaskClick }) => {
   }, [selectedTask]);
 
   return (
-     <div className="relative w-full h-full">
+    <div className="relative w-full">
       {tasks.length === 0 && (
         <p className="text-gray-500">작업 데이터를 로드 중입니다...</p>
       )}
       {projects.length === 0 && (
-        <p className="text-gray-500">프로젝트 데이터를 로드하지 못했습니다. 부모 컴포넌트를 확인하세요.</p>
+        <p className="text-gray-500">
+          프로젝트 데이터를 로드하지 못했습니다. 부모 컴포넌트를 확인하세요.
+        </p>
       )}
 
       <h2 className="text-2xl font-bold mb-4 text-gray-800 px-6 flex items-center gap-2">
-  <CalendarDays size={20} className="text-gray-600" />
-  내 작업 캘린더
-</h2>
+        <CalendarDays size={20} className="text-gray-600" />
+        내 작업 캘린더
+      </h2>
 
       <FullCalendar
         plugins={[dayGridPlugin, interactionPlugin]}
@@ -185,16 +207,16 @@ const TaskCalendarView = ({ tasks = [], projects = [], onTaskClick }) => {
         datesSet={handleDatesSet}
         dayMaxEvents={3}
         displayEventTime={false}
-        eventClassNames="text-white text-xs px-2 py-[2px] rounded-md shadow-sm cursor-pointer transition-all hover:opacity-90 border border-white"
-        dayCellClassNames="border-gray-100 hover:bg-gray-50 transition-all"
+        eventClassNames="text-white text-[10px] px-1 py-[1px] rounded-md shadow-sm cursor-pointer transition-all hover:opacity-90 border border-white"
+        dayCellClassNames="border-gray-100 hover:bg-gray-50 transition-all text-[12px] h-[100px]"
         eventContent={(eventInfo) => (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <span className="truncate">{eventInfo.event.title}</span>
             {eventInfo.event.extendedProps.collaborators?.length > 0 && (
-              <span className="flex items-center text-xs bg-white text-gray-600 rounded-full px-2 py-0.5 gap-1">
-  <Users size={12} />
-  {eventInfo.event.extendedProps.collaborators.length}
-</span>
+              <span className="flex items-center text-[8px] bg-white text-gray-600 rounded-full px-1 py-0.5 gap-1">
+                <Users size={10} />
+                {eventInfo.event.extendedProps.collaborators.length}
+              </span>
             )}
           </div>
         )}
@@ -213,7 +235,7 @@ const TaskCalendarView = ({ tasks = [], projects = [], onTaskClick }) => {
           week: "주",
           day: "일",
         }}
-        dayHeaderClassNames="text-gray-600 font-medium"
+        dayHeaderClassNames="text-gray-600 font-medium text-[12px]"
         eventBorderColor="transparent"
         eventTextColor="#ffffff"
       />
@@ -261,7 +283,10 @@ const TaskCalendarView = ({ tasks = [], projects = [], onTaskClick }) => {
                 type="date"
                 value={selectedTask.start_date || ""}
                 onChange={(e) => {
-                  const newTask = { ...selectedTask, start_date: e.target.value };
+                  const newTask = {
+                    ...selectedTask,
+                    start_date: e.target.value,
+                  };
                   setSelectedTask(newTask);
                   handleUpdateTask(selectedTask.task_id, newTask);
                 }}
@@ -274,7 +299,10 @@ const TaskCalendarView = ({ tasks = [], projects = [], onTaskClick }) => {
                 type="date"
                 value={selectedTask.due_date || ""}
                 onChange={(e) => {
-                  const newTask = { ...selectedTask, due_date: e.target.value };
+                  const newTask = {
+                    ...selectedTask,
+                    due_date: e.target.value,
+                  };
                   setSelectedTask(newTask);
                   handleUpdateTask(selectedTask.task_id, newTask);
                 }}
@@ -286,7 +314,10 @@ const TaskCalendarView = ({ tasks = [], projects = [], onTaskClick }) => {
               <select
                 value={selectedTask.project_id || ""}
                 onChange={(e) => {
-                  const newTask = { ...selectedTask, project_id: e.target.value };
+                  const newTask = {
+                    ...selectedTask,
+                    project_id: e.target.value,
+                  };
                   setSelectedTask(newTask);
                   handleUpdateTask(selectedTask.task_id, newTask);
                 }}
@@ -303,9 +334,9 @@ const TaskCalendarView = ({ tasks = [], projects = [], onTaskClick }) => {
           </div>
           <div className="mb-6 relative">
             <p className="text-sm text-gray-500 mb-1 flex items-center gap-1">
-  <Users size={14} className="text-gray-500" />
-  참여자
-</p>
+              <Users size={14} className="text-gray-500" />
+              참여자
+            </p>
             <div className="flex flex-wrap gap-2 mb-2">
               {selectedTask.collaborators?.map((user) => (
                 <div
@@ -336,7 +367,9 @@ const TaskCalendarView = ({ tasks = [], projects = [], onTaskClick }) => {
                 {members
                   .filter(
                     (member) =>
-                      !selectedTask.collaborators?.some((c) => c.user_id === member.user_id)
+                      !selectedTask.collaborators?.some(
+                        (c) => c.user_id === member.user_id
+                      )
                   )
                   .map((member) => (
                     <div
@@ -355,7 +388,10 @@ const TaskCalendarView = ({ tasks = [], projects = [], onTaskClick }) => {
             <textarea
               value={selectedTask.description || ""}
               onChange={(e) => {
-                const newTask = { ...selectedTask, description: e.target.value };
+                const newTask = {
+                  ...selectedTask,
+                  description: e.target.value,
+                };
                 setSelectedTask(newTask);
                 handleUpdateTask(selectedTask.task_id, newTask);
               }}

@@ -50,13 +50,13 @@ const ProjectSidebar = ({ setActiveTab, onProjectSelect, selectedProjectId, onUp
       <div className="space-y-3 text-sm">
         <div className="text-gray-400 uppercase tracking-wide mb-1">작업</div>
         <button onClick={() => handleTabClick("dashboard")} className="flex items-center gap-2 text-left text-white hover:underline">
-          📋 <span>대시보드</span>
+          🖥️ <span>대시보드</span>
         </button>
         <button onClick={() => handleTabClick("my-tasks")} className="flex items-center gap-2 text-left text-white hover:underline">
-          🗒️ <span>내 작업</span>
+          📝 <span>내 작업</span>
         </button>
         <button onClick={() => handleTabClick("inbox")} className="flex items-center gap-2 text-left text-white hover:underline">
-          📥 <span>수신함</span>
+          📬 <span>수신함</span>
         </button>
       </div>
 
