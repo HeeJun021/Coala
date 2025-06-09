@@ -116,7 +116,12 @@ async def update_task(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
     if task.user_id != current_user.user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to update this task")
+    
+    valid_statuses = {"예정", "진행중", "완료됨", "마감일 지남"}
     update_data = task_data.dict(exclude_unset=True)
+    if "status" in update_data and update_data["status"] not in valid_statuses:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid status: {update_data['status']}")
+    
     if "collaborator_ids" in update_data:
         db.query(TaskCollaborators).filter(TaskCollaborators.task_id == task_id).delete()
         for user_id in task_data.collaborator_ids:
@@ -128,6 +133,7 @@ async def update_task(
             collaborator = TaskCollaborators(task_id=task_id, user_id=user_id)
             db.add(collaborator)
         del update_data["collaborator_ids"]
+    
     for key, value in update_data.items():
         setattr(task, key, value)
     db.commit()

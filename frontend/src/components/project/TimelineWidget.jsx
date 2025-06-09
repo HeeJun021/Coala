@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { getMyTasks, updateTask, deleteTask } from "../../api/taskApi";
-import { format, addDays, addYears, differenceInDays, parseISO, isValid, getDaysInMonth, startOfMonth, lastDayOfMonth } from "date-fns";
+import { format, addDays, addYears, differenceInDays, parseISO, isValid, getDaysInMonth, startOfMonth, lastDayOfMonth, addMonths } from "date-fns";
 import { ko } from "date-fns/locale";
 import { getProjectMembers } from "../../api/projectApi";
 
@@ -15,10 +15,69 @@ const TimelineWidget = ({ project }) => {
   const [pixelPerDay, setPixelPerDay] = useState((window.innerWidth - 160) / 120);
   const [members, setMembers] = useState([]);
   const [isAddingCollaborator, setIsAddingCollaborator] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ left: 0, width: 0 });
+  const [localResizeDates, setLocalResizeDates] = useState({ taskId: null, start: null, end: null });
+  const [monthHeaders, setMonthHeaders] = useState([]);
   const timelineRef = useRef(null);
   const contentRef = useRef(null);
   const slideRef = useRef(null);
   const collaboratorRef = useRef(null);
+
+  const parsedCreatedAt = project?.created_at ? parseISO(project.created_at) : parseISO('2025-06-07T19:47:00Z');
+  const [timelineStartDate, setTimelineStartDate] = useState(
+    isValid(parsedCreatedAt) ? startOfMonth(parsedCreatedAt) : startOfMonth(new Date("2025-06-07T19:47:00+09:00"))
+  );
+  const [timelineEndDate, setTimelineEndDate] = useState(lastDayOfMonth(addYears(timelineStartDate, 1)));
+  const totalDays = differenceInDays(timelineEndDate, timelineStartDate) + 1;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayOffset = Math.max(0, differenceInDays(today, timelineStartDate));
+  const todayLeft = todayOffset * pixelPerDay;
+
+  const getMonthHeaders = useCallback(() => {
+    const months = [];
+    let currentMonth = format(timelineStartDate, "yyyy-MM");
+    let currentDate = timelineStartDate;
+    let cumulativeDays = 0;
+
+    while (currentDate <= timelineEndDate) {
+      const month = format(currentDate, "yyyy-MM");
+      if (month !== currentMonth) {
+        const startDate = parseISO(currentMonth + "-01");
+        const daysInMonth = getDaysInMonth(startDate);
+        const monthWidth = daysInMonth * pixelPerDay;
+
+        months.push({
+          month: format(startDate, "yyyy년 M월", { locale: ko }),
+          startDays: cumulativeDays,
+          days: daysInMonth,
+          width: monthWidth,
+          startDate,
+          endDate: addDays(startDate, daysInMonth - 1),
+        });
+
+        cumulativeDays += daysInMonth;
+        currentMonth = month;
+      }
+      currentDate = addDays(currentDate, 1);
+    }
+
+    const lastStartDate = parseISO(currentMonth + "-01");
+    const remainingDays = differenceInDays(timelineEndDate, lastStartDate) + 1;
+    const lastMonthWidth = remainingDays * pixelPerDay;
+    months.push({
+      month: format(lastStartDate, "yyyy년 M월", { locale: ko }),
+      startDays: cumulativeDays,
+      days: remainingDays,
+      width: lastMonthWidth,
+      startDate: lastStartDate,
+      endDate: timelineEndDate,
+    });
+
+    return months;
+  }, [timelineStartDate, timelineEndDate, pixelPerDay]);
 
   useEffect(() => {
     const updatePixelPerDay = () => {
@@ -42,7 +101,7 @@ const TimelineWidget = ({ project }) => {
     fetchTasks();
     const interval = setInterval(fetchTasks, 30000);
     return () => clearInterval(interval);
-  }, [project.project_id, setTasks]);
+  }, [project.project_id]);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -68,7 +127,6 @@ const TimelineWidget = ({ project }) => {
     };
   }, []);
 
-  
   useEffect(() => {
     const syncScroll = () => {
       if (timelineRef.current && contentRef.current) {
@@ -117,14 +175,9 @@ const TimelineWidget = ({ project }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const parsedCreatedAt = project?.created_at ? parseISO(project.created_at) : parseISO('2025-06-07T19:47:00Z');
-  const timelineStartDate = isValid(parsedCreatedAt) ? startOfMonth(parsedCreatedAt) : startOfMonth(new Date('2025-06-07T19:47:00+09:00'));
-  const timelineEndDate = lastDayOfMonth(addYears(timelineStartDate, 1));
-  const totalDays = differenceInDays(timelineEndDate, timelineStartDate) + 1;
-
-  const today = new Date();
-const todayOffset = Math.max(0, differenceInDays(today, timelineStartDate));
-const todayLeft = todayOffset * pixelPerDay;
+  useEffect(() => {
+    setMonthHeaders(getMonthHeaders());
+  }, [timelineStartDate, timelineEndDate, pixelPerDay, getMonthHeaders]);
 
   const scrollToTask = (taskId) => {
     requestAnimationFrame(() => {
@@ -154,72 +207,40 @@ const todayLeft = todayOffset * pixelPerDay;
     });
   };
 
-  const getMonthHeaders = () => {
-    const months = [];
-    let currentMonth = format(timelineStartDate, "yyyy-MM");
-    let currentDate = timelineStartDate;
-    let cumulativeDays = 0;
+const getTaskPosition = (task, isDragging = false) => {
+  const start = isDragging
+    ? draggedDates.start && isValid(draggedDates.start)
+      ? draggedDates.start
+      : timelineStartDate
+    : localResizeDates.taskId === task.task_id && localResizeDates.start
+    ? localResizeDates.start
+    : task.start_date && isValid(parseISO(task.start_date))
+    ? parseISO(task.start_date)
+    : timelineStartDate;
+  const end = isDragging
+    ? draggedDates.end && isValid(draggedDates.end)
+      ? draggedDates.end
+      : addDays(start, 1)
+    : localResizeDates.taskId === task.task_id && localResizeDates.end
+    ? localResizeDates.end
+    : task.due_date && isValid(parseISO(task.due_date))
+    ? parseISO(task.due_date)
+    : addDays(start, 1);
+  const daysFromStart = Math.max(differenceInDays(start, timelineStartDate), 0);
+  const duration = Math.max(differenceInDays(end, start) + 1, 1);
+  const width = duration * pixelPerDay;
+  return { left: daysFromStart * pixelPerDay, width: Math.max(width, 10) };
+};
 
-    while (currentDate <= timelineEndDate) {
-      const month = format(currentDate, "yyyy-MM");
-      if (month !== currentMonth) {
-        const startDate = parseISO(currentMonth + "-01");
-        const daysInMonth = getDaysInMonth(startDate);
-        const monthWidth = daysInMonth * pixelPerDay;
+const sections = [
+  { key: "todo", label: "할 일", status: "예정", color: "bg-blue-200 border-blue-400 text-blue-900" },
+  { key: "inprogress", label: "진행 중", status: "진행중", color: "bg-yellow-200 border-yellow-400 text-yellow-900" },
+  { key: "done", label: "완료", status: "완료됨", color: "bg-green-200 border-green-400 text-green-900" },
+];
 
-        months.push({
-          month: format(startDate, "yyyy년 M월", { locale: ko }),
-          startDays: cumulativeDays,
-          days: daysInMonth,
-          width: monthWidth,
-          startDate,
-          endDate: addDays(startDate, daysInMonth - 1),
-        });
-
-        cumulativeDays += daysInMonth;
-        currentMonth = month;
-      }
-      currentDate = addDays(currentDate, 1);
-    }
-
-    const lastStartDate = parseISO(currentMonth + "-01");
-    const remainingDays = differenceInDays(timelineEndDate, lastStartDate) + 1;
-    const lastMonthWidth = remainingDays * pixelPerDay;
-    months.push({
-      month: format(lastStartDate, "yyyy년 M월", { locale: ko }),
-      startDays: cumulativeDays,
-      days: remainingDays,
-      width: lastMonthWidth,
-      startDate: lastStartDate,
-      endDate: timelineEndDate,
-    });
-
-    return months;
-  };
-  const monthHeaders = getMonthHeaders();
-
-  const getTaskPosition = (task, isDragging = false) => {
-    const start = isDragging
-      ? draggedDates.start && isValid(draggedDates.start) ? draggedDates.start : timelineStartDate
-      : task.start_date && isValid(parseISO(task.start_date)) ? parseISO(task.start_date) : timelineStartDate;
-    const end = isDragging
-      ? draggedDates.end && isValid(draggedDates.end) ? draggedDates.end : addDays(start, 1)
-      : task.due_date && isValid(parseISO(task.due_date)) ? parseISO(task.due_date) : addDays(start, 1);
-    const daysFromStart = Math.max(differenceInDays(start, timelineStartDate), 0);
-    const duration = Math.max(differenceInDays(end, start) + 1, 1);
-    const width = duration * pixelPerDay;
-    return { left: daysFromStart * pixelPerDay, width: Math.max(width, 10) };
-  };
-
-  const sections = [
-    { key: "todo", label: "할 일", status: "예정", color: "bg-blue-200 border-blue-400 text-blue-900" },
-    { key: "inprogress", label: "수행 중", status: "수행 중", color: "bg-yellow-200 border-yellow-400 text-yellow-900" },
-    { key: "done", label: "완료", status: "완료됨", color: "bg-green-200 border-green-400 text-green-900" },
-  ];
-
-  const getSectionTasks = (status) => {
-    return tasks.filter((task) => task.status === status);
-  };
+const getSectionTasks = (status) => {
+  return tasks.filter((task) => task.status === status);
+};
 
   const handleDragStart = (e, task) => {
     setDraggedTask(task);
@@ -239,7 +260,7 @@ const todayLeft = todayOffset * pixelPerDay;
 
   const handleDragOver = (e) => {
     e.preventDefault();
-    if (draggedTask && timelineRef.current) {
+    if (draggedTask && timelineRef.current && !isResizing) {
       const rect = timelineRef.current.getBoundingClientRect();
       const sidebarWidth = document.querySelector('.flex-shrink-0.w-40')?.getBoundingClientRect().width || 160;
       const offsetX = e.clientX - rect.left - sidebarWidth + timelineRef.current.scrollLeft;
@@ -277,13 +298,16 @@ const todayLeft = todayOffset * pixelPerDay;
 
       if (isValid(newStart) && isValid(newEnd)) {
         setDraggedDates({ start: newStart, end: newEnd });
+        const tooltipLeft = Math.max(0, clampedOffsetDays * pixelPerDay);
+        const tooltipWidth = originalDuration * pixelPerDay;
+        setTooltipPosition({ left: tooltipLeft, width: tooltipWidth });
       }
     }
   };
 
   const handleDrop = async (e, newStatus) => {
     e.preventDefault();
-    if (draggedTask && timelineRef.current) {
+    if (draggedTask && timelineRef.current && !isResizing) {
       const rect = timelineRef.current.getBoundingClientRect();
       const sidebarWidth = document.querySelector('.flex-shrink-0.w-40')?.getBoundingClientRect().width || 160;
       const offsetX = e.clientX - rect.left - sidebarWidth + timelineRef.current.scrollLeft;
@@ -304,18 +328,23 @@ const todayLeft = todayOffset * pixelPerDay;
         try {
           const updatedTask = { ...draggedTask, status: newStatus, start_date: newStartISO, due_date: newEndISO };
           const res = await updateTask(draggedTask.task_id, updatedTask);
-          setTasks((prev) => prev.map((task) => (task.task_id === res.task_id ? res : task)));
-          updateDependentTasks(draggedTask.task_id, res);
-          if (selectedTask && selectedTask.task_id === draggedTask.task_id) {
-            setSelectedTask(res);
-          }
-        } catch (err) {
-          console.error("작업 상태 업데이트 실패:", err);
-        }
+          const resultTask = { ...res, status: newStatus };
+           setTasks((prev) =>
+    prev.map((task) => (task.task_id === resultTask.task_id ? resultTask : task))
+  );
+
+          updateDependentTasks(draggedTask.task_id, resultTask);
+  if (selectedTask && selectedTask.task_id === draggedTask.task_id) {
+    setSelectedTask(null);
+  }
+} catch (err) {
+  console.error("작업 상태 업데이트 실패:", err);
+}
       }
       setDraggedTask(null);
       setDraggedDates({ start: null, end: null });
       setDragStartOffset(0);
+      setTooltipPosition({ left: 0, width: 0 });
     }
   };
 
@@ -402,6 +431,7 @@ const todayLeft = todayOffset * pixelPerDay;
       const res = await updateTask(taskId, taskData);
       setTasks((prev) => prev.map((task) => (task.task_id === res.task_id ? res : task)));
       setSelectedTask(res);
+      setLocalResizeDates({ taskId: null, start: null, end: null }); // Reset after final update
     } catch (err) {
       console.error("Failed to update task:", err);
       alert("작업 수정에 실패했습니다.");
@@ -415,19 +445,128 @@ const todayLeft = todayOffset * pixelPerDay;
     const { left, width } = getTaskPosition(task, isDragging);
     const start = isDragging
       ? draggedDates.start
+      : localResizeDates.taskId === task.task_id && localResizeDates.start
+      ? localResizeDates.start
       : task.start_date && isValid(parseISO(task.start_date)) ? parseISO(task.start_date) : timelineStartDate;
     const end = isDragging
       ? draggedDates.end
+      : localResizeDates.taskId === task.task_id && localResizeDates.end
+      ? localResizeDates.end
       : task.due_date && isValid(parseISO(task.due_date)) ? parseISO(task.due_date) : addDays(start, 1);
     return { start, end, left, width };
   };
 
   const handleTaskClick = (task) => {
-    setSelectedTask(task.task_id === selectedTask?.task_id ? null : task);
-    scrollToTask(task.task_id);
+    if (!isResizing && !draggedTask) {
+      setSelectedTask(task.task_id === selectedTask?.task_id ? null : task);
+      scrollToTask(task.task_id);
+    }
   };
 
-  const { start: startDate, end: endDate, left: tooltipLeft, width: tooltipWidth } = getHoverOrDragDates();
+  const handleResizeStart = (e, task, direction) => {
+    e.preventDefault();
+    e.stopPropagation(); // Prevent any click or propagation events during resize
+
+    setIsResizing(true);
+    const startX = e.clientX;
+    const initialStartDate = new Date(task.start_date);
+    const initialDueDate = new Date(task.due_date);
+    const taskBar = document.getElementById(`task-bar-${task.task_id}`);
+    let currentLeft = taskBar ? taskBar.offsetLeft : 0;
+    let currentWidth = taskBar ? taskBar.offsetWidth : 10; // 최소 너비 10px
+
+    const onMouseMove = (moveEvent) => {
+      const deltaX = moveEvent.clientX - startX;
+      const daysDiff = Math.round(deltaX / pixelPerDay);
+
+      if (daysDiff === 0) return;
+
+      let newStartDate = new Date(initialStartDate);
+      let newDueDate = new Date(initialDueDate);
+      let newLeft = currentLeft;
+      let newWidth = currentWidth;
+
+      if (direction === 'start') {
+        newStartDate.setDate(initialStartDate.getDate() + daysDiff);
+        if (newStartDate < initialDueDate) {
+          newLeft = currentLeft + (daysDiff * pixelPerDay);
+          newWidth = currentWidth - (daysDiff * pixelPerDay);
+          if (newWidth < 10) {
+            newWidth = 10;
+            newLeft = currentLeft + (currentWidth - 10);
+          }
+          if (taskBar) {
+            taskBar.style.left = `${newLeft}px`;
+            taskBar.style.width = `${newWidth}px`;
+          }
+          if (newStartDate < timelineStartDate) {
+            setTimelineStartDate(startOfMonth(newStartDate));
+          }
+        }
+      } else if (direction === 'end') {
+        newDueDate.setDate(initialDueDate.getDate() + daysDiff);
+        if (newDueDate > initialStartDate) {
+          newWidth = currentWidth + (daysDiff * pixelPerDay);
+          if (newWidth < 10) newWidth = 10;
+          if (taskBar) {
+            taskBar.style.width = `${newWidth}px`;
+          }
+          if (newDueDate > timelineEndDate) {
+            setTimelineEndDate(lastDayOfMonth(addMonths(newDueDate, 1)));
+          }
+        }
+      }
+
+      const tooltipLeft = Math.max(0, newLeft);
+      const tooltipWidth = Math.max(10, newWidth);
+      setTooltipPosition({ left: tooltipLeft, width: tooltipWidth });
+      setLocalResizeDates({ taskId: task.task_id, start: newStartDate, end: newDueDate });
+    };
+
+    const onMouseUp = async () => {
+      setIsResizing(false);
+      if (taskBar) {
+        const finalLeftDays = Math.round((taskBar.offsetLeft - currentLeft) / pixelPerDay);
+        const finalWidthDays = Math.round(taskBar.offsetWidth / pixelPerDay);
+        const finalStartDate = addDays(initialStartDate, finalLeftDays);
+        const finalEndDate = addDays(finalStartDate, finalWidthDays - 1);
+
+        if (isValid(finalStartDate) && isValid(finalEndDate) && finalStartDate <= finalEndDate) {
+          const newTimelineStart = finalStartDate < timelineStartDate ? startOfMonth(finalStartDate) : timelineStartDate;
+          const newTimelineEnd = finalEndDate > timelineEndDate ? lastDayOfMonth(addMonths(finalEndDate, 1)) : timelineEndDate;
+          setTimelineStartDate(newTimelineStart);
+          setTimelineEndDate(newTimelineEnd);
+
+          try {
+            const updatedTask = {
+              ...task,
+              start_date: format(finalStartDate, 'yyyy-MM-dd'),
+              due_date: format(finalEndDate, 'yyyy-MM-dd')
+            };
+            const res = await updateTask(task.task_id, updatedTask);
+            setTasks((prev) => prev.map((t) => (t.task_id === res.task_id ? res : t)));
+            if (selectedTask && selectedTask.task_id === task.task_id) {
+              setSelectedTask(null); // 모달을 닫기 위해 null로 설정
+            }
+          } catch (err) {
+            console.error("작업 업데이트 실패:", err);
+            alert("작업 수정에 실패했습니다. 원래 상태로 복구됩니다.");
+            taskBar.style.left = `${currentLeft}px`;
+            taskBar.style.width = `${currentWidth}px`;
+          }
+        }
+      }
+      setTooltipPosition({ left: 0, width: 0 });
+      setLocalResizeDates({ taskId: null, start: null, end: null });
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  };
+
+  const { start: startDate, end: endDate, left: hoverTooltipLeft, width: hoverTooltipWidth } = getHoverOrDragDates();
 
   return (
     <div className="flex w-full px-0 py-6 bg-gray-50">
@@ -441,14 +580,23 @@ const todayLeft = todayOffset * pixelPerDay;
                 className="flex flex-col sticky top-0 bg-white z-0 border-b border-gray-300"
                 style={{ height: '80px' }}
               >
-              <div
-  className="absolute w-[2px] bg-emerald-500/40 z-30"
-  style={{
-    top: 0,
-    left: `${todayLeft + 160}px`,
-    height: `${80 + sections.reduce((sum, section) => sum + (getSectionTasks(section.status).length * 40 + 80), 0)}px`,
-  }}
-></div>
+                <div
+                  className="absolute z-40"
+                  style={{
+                    top: '-8px', // 헤더보다 살짝 위에 표시
+                    left: `${todayLeft + 160 - 8}px`, // ▼ 중앙 정렬 (삼각형 너비 고려)
+                  }}
+                >
+                  <div className="text-emerald-500 text-lg leading-none">▼</div>
+                </div>
+                <div
+                  className="absolute w-[2px] bg-emerald-500/40 z-30"
+                  style={{
+                    top: 0,
+                    left: `${todayLeft + 160}px`,
+                    height: `${80 + sections.reduce((sum, section) => sum + (getSectionTasks(section.status).length * 40 + 80), 0)}px`,
+                  }}
+                ></div>
                 {/* 상단: 월 표시 */}
                 <div className="flex" style={{ height: '40px' }}>
                   <div className="flex-shrink-0 w-40"></div>
@@ -459,18 +607,17 @@ const todayLeft = todayOffset * pixelPerDay;
                       minWidth: `${totalDays * pixelPerDay}px`,
                     }}
                   >
-                  
-                    {startDate && endDate && (
+                    {(draggedTask || hoveredTask) && (
                       <div
                         className="absolute text-xs font-medium bg-blue-600 text-white px-3 py-1 rounded-full flex items-center justify-center z-20"
                         style={{
                           top: '6px',
-                          left: `${tooltipLeft}px`,
-                          width: `${tooltipWidth}px`,
+                          left: draggedTask ? `${tooltipPosition.left}px` : `${hoverTooltipLeft}px`,
+                          width: draggedTask ? `${tooltipPosition.width}px` : `${hoverTooltipWidth}px`,
                           minWidth: '120px',
                         }}
                       >
-                        {`${format(startDate, "M월 d일", { locale: ko })} - ${format(endDate, "M월 d일", { locale: ko })}`}
+                        {`${format(draggedTask ? draggedDates.start : startDate, "M월 d일", { locale: ko })} - ${format(draggedTask ? draggedDates.end : endDate, "M월 d일", { locale: ko })}`}
                       </div>
                     )}
                     {monthHeaders.map((header, index) => (
@@ -505,7 +652,6 @@ const todayLeft = todayOffset * pixelPerDay;
 
                 {/* 하단: 주차 표시 */}
                 <div className="flex border-t border-gray-200" style={{ height: '40px' }}>
-                
                   <div className="flex-shrink-0 w-40 flex items-center justify-center text-xs text-gray-500 border-r border-gray-200">
                     주차
                   </div>
@@ -532,7 +678,6 @@ const todayLeft = todayOffset * pixelPerDay;
               </div>
               {/* 타스크 바디 */}
               <div ref={contentRef} style={{ width: `${totalDays * pixelPerDay + 200}px` }}>
- 
                 {isMobile ? (
                   sections.map((section) => {
                     const sectionTasks = getSectionTasks(section.status);
@@ -558,7 +703,12 @@ const todayLeft = todayOffset * pixelPerDay;
                           >
                             <div className="text-sm font-medium">{task.title}</div>
                             <div className="text-xs text-gray-600">
-                              {task.start_date} - {task.due_date}
+                              {localResizeDates.taskId === task.task_id && localResizeDates.start
+                                ? format(localResizeDates.start, 'yyyy-MM-dd')
+                                : task.start_date || format(timelineStartDate, 'yyyy-MM-dd')} - 
+                              {localResizeDates.taskId === task.task_id && localResizeDates.end
+                                ? format(localResizeDates.end, 'yyyy-MM-dd')
+                                : task.due_date || format(addDays(timelineStartDate, 1), 'yyyy-MM-dd')}
                             </div>
                           </div>
                         ))}
@@ -577,7 +727,6 @@ const todayLeft = todayOffset * pixelPerDay;
                         onDragOver={handleDragOver}
                         onDrop={(e) => handleDrop(e, section.status)}
                       >
-                      
                         <div className="flex h-full">
                           <div className="w-40 flex-shrink-0 py-3 px-4 bg-gray-100 text-sm font-semibold text-gray-800 flex items-center">
                             {section.label} <span className="ml-2 text-xs text-gray-500">({sectionTasks.length})</span>
@@ -596,8 +745,12 @@ const todayLeft = todayOffset * pixelPerDay;
                                       onDragStart={(e) => handleDragStart(e, task)}
                                       onMouseEnter={() => setHoveredTask(task)}
                                       onMouseLeave={() => setHoveredTask(null)}
-                                      onClick={() => handleTaskClick(task)}
-                                      className={`absolute h-8 rounded-lg ${section.color} px-3 py-1 text-xs font-medium flex items-center cursor-move hover:shadow-md transition-all duration-200 z-[1]`}
+                                      onClick={(e) => {
+                                        if (!isResizing && !draggedTask) {
+                                          handleTaskClick(task);
+                                        }
+                                      }}
+                                      className={`absolute h-8 rounded-lg ${section.color} px-3 py-1 text-xs font-medium flex items-center cursor-move hover:shadow-md transition-all duration-200 z-[1] group`}
                                       style={{
                                         left: `${left}px`,
                                         width: `${width}px`,
@@ -607,7 +760,21 @@ const todayLeft = todayOffset * pixelPerDay;
                                       }}
                                       id={`task-bar-${task.task_id}`}
                                     >
+                                      <div
+                                        className="absolute left-0 top-0 h-full w-2 bg-gray-400/50 rounded-l cursor-ew-resize opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-xs font-mono"
+                                        onMouseDown={(e) => handleResizeStart(e, task, 'start')}
+                                      >
+                                        ||
+                                      </div>
+
                                       <span className="truncate flex-1 whitespace-nowrap">{task.title}</span>
+                                      <div
+                                        className="absolute right-0 top-0 h-full w-2 bg-gray-400/50 rounded-r cursor-ew-resize opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-xs font-mono"
+                                        onMouseDown={(e) => handleResizeStart(e, task, 'end')}
+                                      >
+                                        ||
+                                      </div>
+
                                       {task.dependencies?.length > 0 && (
                                         <svg className="absolute -left-2 top-2 w-4 h-4" viewBox="0 0 20 20">
                                           <path d="M10 0 L15 5 L10 17" fill="none" stroke="gray" strokeWidth="2" />
@@ -763,12 +930,12 @@ const todayLeft = todayOffset * pixelPerDay;
                   <div
                     key={user.user_id}
                     className="flex items-center bg-gray-100 text-gray-800 text-xs font-medium rounded-md px-3 py-1"
-                    >
+                  >
                     {user.nickname}
                     <button
                       onClick={() => handleRemoveCollaborator(user.user_id)}
                       className="ml-2 text-blue-600 hover:text-red-600"
-                      >
+                    >
                       ✗
                     </button>
                   </div>
