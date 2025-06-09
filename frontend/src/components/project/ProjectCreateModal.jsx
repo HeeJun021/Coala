@@ -1,15 +1,27 @@
 import React, { useState } from 'react';
+import {
+  Database,
+  GitBranch,
+  FileText,
+  MessageCircle,
+  Calendar,
+  StickyNote,
+  CheckSquare,
+  Activity,
+  X,
+} from 'lucide-react';
 import { createProject } from '../../api/projectApi';
 
+// ✅ 모달 UI
 const Modal = ({ onClose, title, children }) => {
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-30 flex items-center justify-center">
       <div className="bg-white rounded-xl w-[500px] max-h-[90vh] overflow-y-auto p-6 shadow-xl relative">
         <button
           onClick={onClose}
-          className="absolute top-3 right-4 text-gray-500 hover:text-black text-xl"
+          className="absolute top-3 right-4 text-gray-500 hover:text-black"
         >
-          ×
+          <X size={20} />
         </button>
         <h2 className="text-xl font-bold mb-4 text-black">{title}</h2>
         {children}
@@ -18,15 +30,16 @@ const Modal = ({ onClose, title, children }) => {
   );
 };
 
+// ✅ 위젯 아이콘 + 색상 정의
 const WIDGET_OPTIONS = [
-  { key: "erd", label: "ERD 설계" },
-  { key: "git", label: "GitHub 공유" },
-  { key: "docs", label: "문서 관리" },
-  { key: "chat", label: "채팅" },
-  { key: "calendar", label: "캘린더" },
-  { key: "memo", label: "메모" },
-  { key: "tasks", label: "작업" },
-  { key: "timeline", label: "타임라인" },
+  { key: "erd", label: "ERD 설계", icon: <Database size={16} className="text-purple-600" /> },
+  { key: "git", label: "GitHub 공유", icon: <GitBranch size={16} className="text-gray-700" /> },
+  { key: "docs", label: "문서 관리", icon: <FileText size={16} className="text-green-700" /> },
+  { key: "chat", label: "채팅", icon: <MessageCircle size={16} className="text-blue-500" /> },
+  { key: "calendar", label: "캘린더", icon: <Calendar size={16} className="text-red-500" /> },
+  { key: "memo", label: "메모", icon: <StickyNote size={16} className="text-yellow-600" /> },
+  { key: "tasks", label: "작업", icon: <CheckSquare size={16} className="text-indigo-600" /> },
+  { key: "timeline", label: "타임라인", icon: <Activity size={16} className="text-pink-500" /> },
 ];
 
 const ProjectCreateModal = ({ onClose, onCreated }) => {
@@ -95,7 +108,10 @@ const ProjectCreateModal = ({ onClose, onCreated }) => {
                     : "bg-white"
                 } text-black hover:bg-gray-100`}
               >
-                ✅ {opt.label}
+                <span className="flex items-center gap-2">
+                  {opt.icon}
+                  {opt.label}
+                </span>
               </button>
             ))}
           </div>
