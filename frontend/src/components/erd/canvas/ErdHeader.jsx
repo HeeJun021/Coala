@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import html2canvas from "html2canvas";
 import {
   Camera,
@@ -12,7 +13,6 @@ import {
   Blocks,
   History,
   HelpCircle,
-  Dot,
 } from "lucide-react";
 import ErdGuideModal from "../modal/ErdGuideModal";
 import ExportSqlModal from "../modal/ExportSqlModal";
@@ -46,6 +46,7 @@ const ErdHeader = ({
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [showDot, setShowDot] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const seen = localStorage.getItem("erd_guide_seen");
@@ -180,33 +181,58 @@ const ErdHeader = ({
         <div className="max-w-7xl mx-auto px-4 flex flex-col gap-3">
           {/* 🔤 프로젝트 이름 + 수정 버튼 */}
           {mode !== "codegen" && (
-            <div className="flex items-center justify-start gap-2">
-              <h1 className="text-xl font-semibold">{projectName}</h1>
-              <button
-                onClick={() => setIsEditModalOpen(true)}
-                className="text-sm text-gray-400 hover:text-white flex items-center gap-1"
-              >
-                <Edit size={16} className="text-blue-400" />
-              </button>
-              {/* 오른쪽: 가이드 보기 버튼 */}
-              <div className="ml-auto">
-                <button
-                  onClick={handleOpenGuide}
-                  className="relative text-sm text-gray-400 hover:text-white flex items-center gap-1"
-                >
-                  <HelpCircle size={16} className="text-blue-300" />
-                  <span>가이드 보기</span>
+  <div className="flex items-center justify-between gap-4">
+    {/* ⬅️ 왼쪽: 뒤로가기 버튼 + 제목 + 수정 */}
+    <div className="flex items-center gap-2">
+      <button
+        onClick={() => navigate(-1)}
+        className="text-white hover:text-gray-300 flex items-center gap-1"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M15 19l-7-7 7-7"
+          />
+        </svg>
+      </button>
 
-                  {showDot && (
-                    <div
-                      className="absolute top-0.5 -right-2.5 w-[8px] h-[8px] bg-rose-600 rounded-full shadow-md"
-                      style={{ transform: "translateY(-50%)" }}
-                    />
-                  )}
-                </button>
-              </div>
-            </div>
-          )}
+      <h1 className="text-xl font-semibold">{projectName}</h1>
+      <button
+        onClick={() => setIsEditModalOpen(true)}
+        className="text-sm text-gray-400 hover:text-white flex items-center gap-1"
+      >
+        <Edit size={16} className="text-blue-400" />
+      </button>
+    </div>
+
+    {/* ➡️ 오른쪽: 가이드 보기 버튼 */}
+    <div>
+      <button
+        onClick={handleOpenGuide}
+        className="relative text-sm text-gray-400 hover:text-white flex items-center gap-1"
+      >
+        <HelpCircle size={16} className="text-blue-300" />
+        <span>가이드 보기</span>
+
+        {showDot && (
+          <div
+            className="absolute top-0.5 -right-2.5 w-[8px] h-[8px] bg-rose-600 rounded-full shadow-md"
+            style={{ transform: "translateY(-50%)" }}
+          />
+        )}
+      </button>
+    </div>
+  </div>
+)}
+
 
           {/* 🧱 버튼 영역 */}
           {mode === "codegen" ? (
