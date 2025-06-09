@@ -1,6 +1,6 @@
-import React, { useEffect, useState,useRef  } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { FileCheck } from "lucide-react";
+import { Library, BookOpenText, Code2, FileCheck } from "lucide-react";
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -9,7 +9,7 @@ const Sidebar = () => {
   const initialCategory = queryParams.get("category") || "HTML";
   const initialMaterialId = queryParams.get("id") || "";
   const initialExampleId = queryParams.get("exampleId") || "";
-  const sidebarRef = useRef(null); // ⬅️ 사이드바 DOM 참조
+  const sidebarRef = useRef(null);
 
   const [languages, setLanguages] = useState([]);
   const [materialsMap, setMaterialsMap] = useState({});
@@ -20,24 +20,30 @@ const Sidebar = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [hoveredLanguage, setHoveredLanguage] = useState(null);
-  const [sidebarTop, setSidebarTop] = useState(239); // 초기 위치
-  const [isHovering, setIsHovering] = useState(false); // 마우스 오버 여부
+  const [sidebarTop, setSidebarTop] = useState(239);
+  const [isHovering, setIsHovering] = useState(false);
 
   useEffect(() => {
+    // Update selectedLanguage and selectedMaterialId when URL changes
+    setSelectedLanguage(initialCategory);
+    setSelectedMaterialId(initialMaterialId);
+    setSelectedExampleId(initialExampleId);
+    setHoveredLanguage(initialCategory); // Auto-expand the selected language's dropdown
+
     let animationFrameId;
 
     const handleScroll = () => {
-      if (isHovering) return; // 마우스 오버 시 고정
+      if (isHovering) return;
 
       const targetTop = window.scrollY + 239;
       animationFrameId = requestAnimationFrame(() => {
         setSidebarTop((prevTop) => {
           const diff = targetTop - prevTop;
-          return prevTop + diff * 0.3; // 자연스럽고 빠른 반응
+          return prevTop + diff * 0.3;
         });
       });
     };
-    
+
     const fetchAll = async () => {
       try {
         const langRes = await fetch("http://localhost:8000/languages");
@@ -58,6 +64,15 @@ const Sidebar = () => {
           ]);
           matMap[lang.language] = await matRes.json();
           exMap[lang.language] = await exRes.json();
+
+          // If no materialId or exampleId is provided, select the first material for the initialCategory
+          if (lang.language === initialCategory && !initialMaterialId && !initialExampleId && matMap[lang.language].length > 0) {
+            setSelectedMaterialId(String(matMap[lang.language][0].material_id));
+            navigate(
+              `/StudyMaterialsPage?category=${encodeURIComponent(lang.language)}&id=${matMap[lang.language][0].material_id}`,
+              { replace: true }
+            );
+          }
         }
 
         setMaterialsMap(matMap);
@@ -76,9 +91,8 @@ const Sidebar = () => {
       window.removeEventListener("scroll", handleScroll);
       cancelAnimationFrame(animationFrameId);
     };
-    }, [isHovering]);
+  }, [isHovering, initialCategory, initialMaterialId, initialExampleId, navigate]);
 
-    // ✅ 사이드바 마우스 상태 체크
   const handleMouseEnter = () => setIsHovering(true);
   const handleMouseLeave = () => setIsHovering(false);
 
@@ -86,24 +100,26 @@ const Sidebar = () => {
     if (selectedMaterialId === String(materialId)) return;
     setSelectedMaterialId(String(materialId));
     setSelectedExampleId("");
-    setSelectedLanguage(lang); // ✅ 언어도 갱신해줘야 UI에 강조됨
-  
+    setSelectedLanguage(lang);
+    setHoveredLanguage(lang); // Keep the dropdown expanded for the selected language
+
     window.scrollTo({ top: 0, behavior: "smooth" });
-  
+
     navigate(`/StudyMaterialsPage?category=${encodeURIComponent(lang)}&id=${materialId}`, { replace: false });
   };
-  
+
   const handleExampleClick = (exampleId, lang) => {
     if (selectedExampleId === String(exampleId)) return;
     setSelectedExampleId(String(exampleId));
     setSelectedMaterialId("");
     setSelectedLanguage(lang);
-  
+    setHoveredLanguage(lang); // Keep the dropdown expanded for the selected language
+
     window.scrollTo({ top: 0, behavior: "smooth" });
-  
+
     navigate(`/StudyMaterialsPage?category=${encodeURIComponent(lang)}&exampleId=${exampleId}`, { replace: false });
   };
-  
+
   return (
     <div
       ref={sidebarRef}
@@ -116,7 +132,8 @@ const Sidebar = () => {
       className="absolute left-[33px] w-[260px] bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden z-40"
     >
       <div className="h-[56px] flex items-center px-6 bg-[#A7DA9B] rounded-t-2xl shadow-sm">
-        <h1 className="text-[18px] font-semibold text-white tracking-wide">📚 학습자료</h1>
+        <Library className="w-5 h-5 text-white mr-2" />
+        <h1 className="text-[18px] font-semibold text-white tracking-wide">학습자료</h1>
       </div>
 
       {loading ? (
@@ -128,54 +145,63 @@ const Sidebar = () => {
           {languages.map((lang) => {
             const materials = materialsMap[lang.language] || [];
             const examples = examplesMap[lang.language] || [];
-            const selectedMaterial = materials.find(m => String(m.material_id) === selectedMaterialId);
-            const selectedExample = examples.find(e => String(e.example_id) === selectedExampleId);
+            const selectedMaterial = materials.find((m) => String(m.material_id) === selectedMaterialId);
+            const selectedExample = examples.find((e) => String(e.example_id) === selectedExampleId);
             return (
               <div
                 key={lang.language_id}
                 onMouseEnter={() => setHoveredLanguage(lang.language)}
-                onMouseLeave={() => setHoveredLanguage(null)}
+                onMouseLeave={() => setHoveredLanguage(selectedLanguage)} // Keep dropdown open for selected language
               >
                 <div
-  className={`px-6 py-4 cursor-pointer text-[16px] font-semibold transition-all duration-150 ${
-    selectedLanguage === lang.language
-      ? "bg-[#88C078] text-white"
-      : "hover:bg-gray-100 text-gray-800"
-  }`}
-  onClick={() => setSelectedLanguage(lang.language)}
->
-  {/* 언어 이름 + 선택된 항목 제목 표시 */}
-  <div className="flex flex-col">
-    <span>{lang.language}</span>
+                  className={`px-6 py-4 cursor-pointer text-[16px] font-semibold transition-all duration-150 ${
+                    selectedLanguage === lang.language
+                      ? "bg-[#88C078] text-white"
+                      : "hover:bg-gray-100 text-gray-800"
+                  }`}
+                  onClick={() => {
+                    setSelectedLanguage(lang.language);
+                    if (materials.length > 0 && !selectedMaterialId && !selectedExampleId) {
+                      handleMaterialClick(materials[0].material_id, lang.language);
+                    }
+                  }}
+                >
+                  <div className="flex flex-col">
+                    <span>{lang.language}</span>
+                    {selectedLanguage === lang.language &&
+                      (selectedMaterial?.title || selectedExample?.title) && (
+                        <div className="flex items-center gap-1 mt-1 px-1">
+  {/* 제목 */}
+  <span className="text-sm font-normal text-gray-700 whitespace-normal break-words leading-snug">
+    {selectedMaterialId
+      ? selectedMaterial?.title
+      : selectedExample?.title}
+  </span>
 
-    {(selectedLanguage === lang.language) &&
-  (selectedMaterial?.title || selectedExample?.title) && (
-  <div className="flex items-center gap-1 mt-1 px-1">
-    <span className="text-sm font-normal text-gray-200 whitespace-normal break-words leading-snug">
-      {selectedMaterialId
-        ? `📘 ${selectedMaterial?.title}`
-        : `🧪 ${selectedExample?.title}`}
-    </span>
-    {(selectedMaterial?.is_completed || selectedExample?.is_completed) && (
-      <FileCheck className="w-4 h-4 text-green-500" />
-    )}
-  </div>
-)}
-
-  </div>
+  {/* 완료 체크 */}
+  {(selectedMaterial?.is_completed || selectedExample?.is_completed) && (
+    <FileCheck className="w-4 h-4 text-green-500" />
+  )}
 </div>
+                      )}
+                  </div>
+                </div>
 
                 <div
                   className={`transition-all duration-500 ease-in-out overflow-hidden transform origin-top ${
-                    hoveredLanguage === lang.language
+                    hoveredLanguage === lang.language || selectedLanguage === lang.language
                       ? "max-h-[800px] opacity-100 scale-y-100"
                       : "max-h-0 opacity-0 scale-y-95"
                   }`}
                   style={{
-                    pointerEvents: hoveredLanguage === lang.language ? "auto" : "none",
+                    pointerEvents:
+                      hoveredLanguage === lang.language || selectedLanguage === lang.language ? "auto" : "none",
                   }}
                 >
-                  <div className="px-6 mt-3 mb-1 font-semibold text-gray-700 text-[15px]">📘 {lang.language} 학습자료 </div>
+                  <div className="px-6 mt-3 mb-1 font-semibold text-gray-700 text-[15px] flex items-center">
+                    <BookOpenText className="w-4 h-4 mr-1 text-[#88C078]" />
+                    {lang.language} 학습자료
+                  </div>
 
                   {materials.map((material) => (
                     <div
@@ -194,8 +220,9 @@ const Sidebar = () => {
                     </div>
                   ))}
 
-                  <div className="px-6 mt-4 mb-1 font-semibold text-gray-700 text-[15px]">
-                    🧪 {lang.language} 예제
+                  <div className="px-6 mt-4 mb-1 font-semibold text-gray-700 text-[15px] flex items-center">
+                    <Code2 className="w-4 h-4 mr-1 text-[#88C078]" />
+                    {lang.language} 예제
                   </div>
                   {examples.length ? (
                     examples.map((example) => (

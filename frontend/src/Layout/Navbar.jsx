@@ -1,12 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { initRootCodeFolder } from "../api/codeApi";
+import { getLanguages } from "../api/languageApi";
+import { fetchStudyMaterials } from "../api/studyMaterialsApi";
 
 const Navbar = () => {
-  const { user, handleLogout, loading } = useAuth();
+  const { user, handleLogout} = useAuth();
   const navigate = useNavigate();
   const [hoverIndex, setHoverIndex] = useState(null);
+  const [languages, setLanguages] = useState([]);
+
+  useEffect(() => {
+    const fetchLanguages = async () => {
+      const langData = await getLanguages();
+      setLanguages(langData);
+    };
+    fetchLanguages();
+  }, []);
 
   const logoutAndRedirect = async () => {
     await handleLogout();
@@ -14,13 +25,26 @@ const Navbar = () => {
     window.location.reload();
   };
 
-  if (loading) return null;
+  const handleLanguageClick = async (language) => {
+    try {
+      const materials = await fetchStudyMaterials(language);
+      if (materials.length > 0) {
+        const firstMaterial = materials[0];
+        navigate(`/StudyMaterialsPage?category=${encodeURIComponent(language)}&id=${firstMaterial.material_id}`);
+      } else {
+        alert("해당 언어의 학습자료가 없습니다.");
+      }
+    } catch (error) {
+      console.error(`Error fetching materials for ${language}:`, error);
+      alert("학습자료를 불러오는 중 오류가 발생했습니다.");
+    }
+  };
 
   const menuItems = [
     {
       label: "학습자료",
       path: "/StudyMaterialsPage",
-      children: ["HTML", "CSS", "JavaScript", "Python"],
+      children: languages.map(lang => lang.language),
     },
     {
       label: "퀴즈문제",
@@ -77,24 +101,11 @@ const Navbar = () => {
                 <span
                   onClick={async () => {
                     try {
-                      const res = await fetch(
-                        "http://localhost:8000/languages"
-                      );
-                      const languages = await res.json();
-                      if (languages.length > 0) {
-                        const lang = languages[0].language;
-                        const mat = await fetch(
-                          `http://localhost:8000/api/materials/${lang}`,
-                          {
-                            credentials: "include",
-                          }
+                      const materials = await fetchStudyMaterials(languages[0]?.language);
+                      if (materials.length > 0) {
+                        navigate(
+                          `/StudyMaterialsPage?category=${encodeURIComponent(languages[0]?.language)}&id=${materials[0].material_id}`
                         );
-                        const list = await mat.json();
-                        if (list.length > 0) {
-                          navigate(
-                            `/StudyMaterialsPage?category=${lang}&id=${list[0].material_id}`
-                          );
-                        }
                       }
                     } catch {
                       alert("오류 발생");
@@ -173,6 +184,20 @@ const Navbar = () => {
           {menuItems.map((item, idx) => (
             <div key={idx} className="flex flex-col items-center gap-3">
               {item.children.map((child, i) => {
+                if (item.label === "학습자료") {
+                  return (
+                    <span
+                      key={i}
+                      onClick={() => handleLanguageClick(child)}
+                      className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
+                        hoverIndex === idx ? "" : "opacity-50"
+                      }`}
+                    >
+                      {child}
+                    </span>
+                  );
+                }
+
                 if (item.label === "코딩테스트" && child === "문제 목록") {
                   return (
                     <Link
@@ -223,8 +248,6 @@ const Navbar = () => {
                   let tab = "";
                   if (child === "대시보드") tab = "dashboard";
                   if (child === "내 작업") tab = "my-tasks";
-                  if (child === "수신함") tab = "inbox";
-
                   return (
                     <span
                       key={i}
