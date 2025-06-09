@@ -169,7 +169,8 @@ const Navbar = () => {
             : "max-h-0 opacity-0"
         }`}
       >
-        <div className="grid grid-cols-7 w-[1050px] ml-[407px] text-center">
+        {/* 넷바 하단 길이 수동 */}
+        <div className="grid grid-cols-7 w-[1050px] ml-[416px] text-center">
           {menuItems.map((item, idx) => (
             <div key={idx} className="flex flex-col items-center gap-3">
               {item.children.map((child, i) => {
