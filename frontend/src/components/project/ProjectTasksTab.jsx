@@ -14,7 +14,7 @@ const sections = [
 
 const ProjectTasksTab = ({ project }) => {
   const [tasks, setTasks] = useState([]);
-  const [viewMode, setViewMode] = useState("list");
+const [viewMode] = useState("list");
   const [selectedTask, setSelectedTask] = useState(null);
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTask, setNewTask] = useState({
@@ -217,19 +217,6 @@ const ProjectTasksTab = ({ project }) => {
         <div className="mb-6">
           <h1 className="text-3xl font-bold">{project?.name} 작업</h1>
           <div className="flex gap-4 mt-4 border-b pb-2">
-            {["list", "calendar", "memo"].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setViewMode(tab)}
-                className={`px-4 py-1 text-sm border-b-2 transition font-medium ${
-                  viewMode === tab
-                    ? "border-blue-600 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-blue-600"
-                }`}
-              >
-                {tab === "list" ? "목록" : tab === "calendar" ? "캘린더" : "메모"}
-              </button>
-            ))}
           </div>
           <button
             onClick={() => setIsAddingTask(true)}

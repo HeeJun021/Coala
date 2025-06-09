@@ -95,7 +95,7 @@ const ProjectCreateModal = ({ onClose, onCreated }) => {
                     : "bg-white"
                 } text-black hover:bg-gray-100`}
               >
-                ✅ {opt.label}
+                 {opt.label}
               </button>
             ))}
           </div>
