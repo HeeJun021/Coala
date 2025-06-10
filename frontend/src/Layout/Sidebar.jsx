@@ -24,11 +24,10 @@ const Sidebar = () => {
   const [isHovering, setIsHovering] = useState(false);
 
   useEffect(() => {
-    // Update selectedLanguage and selectedMaterialId when URL changes
     setSelectedLanguage(initialCategory);
     setSelectedMaterialId(initialMaterialId);
     setSelectedExampleId(initialExampleId);
-    setHoveredLanguage(initialCategory); // Auto-expand the selected language's dropdown
+    setHoveredLanguage(initialCategory);
 
     let animationFrameId;
 
@@ -36,10 +35,7 @@ const Sidebar = () => {
       if (isHovering) return;
       const targetTop = window.scrollY + 239;
       animationFrameId = requestAnimationFrame(() => {
-        setSidebarTop((prevTop) => {
-          const diff = targetTop - prevTop;
-          return prevTop + diff * 0.3;
-        });
+        setSidebarTop((prevTop) => prevTop + (targetTop - prevTop) * 0.3);
       });
     };
 
@@ -54,23 +50,20 @@ const Sidebar = () => {
 
         for (const lang of langData) {
           const [matRes, exRes] = await Promise.all([
-            fetch(`http://localhost:8000/api/materials/${lang.language}`, {
-              credentials: "include",
-            }),
-            fetch(`http://localhost:8000/api/examples/${lang.language}`, {
-              credentials: "include",
-            }),
+            fetch(`http://localhost:8000/api/materials/${lang.language}`, { credentials: "include" }),
+            fetch(`http://localhost:8000/api/examples/${lang.language}`, { credentials: "include" }),
           ]);
           matMap[lang.language] = await matRes.json();
           exMap[lang.language] = await exRes.json();
 
-          // If no materialId or exampleId is provided, select the first material for the initialCategory
-          if (lang.language === initialCategory && !initialMaterialId && !initialExampleId && matMap[lang.language].length > 0) {
+          if (
+            lang.language === initialCategory &&
+            !initialMaterialId &&
+            !initialExampleId &&
+            matMap[lang.language].length > 0
+          ) {
             setSelectedMaterialId(String(matMap[lang.language][0].material_id));
-            navigate(
-              `/StudyMaterialsPage?category=${encodeURIComponent(lang.language)}&id=${matMap[lang.language][0].material_id}`,
-              { replace: true }
-            );
+            navigate(`/StudyMaterialsPage?category=${encodeURIComponent(lang.language)}&id=${matMap[lang.language][0].material_id}`, { replace: true });
           }
         }
 
@@ -100,10 +93,8 @@ const Sidebar = () => {
     setSelectedMaterialId(String(materialId));
     setSelectedExampleId("");
     setSelectedLanguage(lang);
-    setHoveredLanguage(lang); // Keep the dropdown expanded for the selected language
-
+    setHoveredLanguage(lang);
     window.scrollTo({ top: 0, behavior: "smooth" });
-
     navigate(`/StudyMaterialsPage?category=${encodeURIComponent(lang)}&id=${materialId}`, { replace: false });
   };
 
@@ -112,10 +103,8 @@ const Sidebar = () => {
     setSelectedExampleId(String(exampleId));
     setSelectedMaterialId("");
     setSelectedLanguage(lang);
-    setHoveredLanguage(lang); // Keep the dropdown expanded for the selected language
-
+    setHoveredLanguage(lang);
     window.scrollTo({ top: 0, behavior: "smooth" });
-
     navigate(`/StudyMaterialsPage?category=${encodeURIComponent(lang)}&exampleId=${exampleId}`, { replace: false });
   };
 
@@ -124,15 +113,12 @@ const Sidebar = () => {
       ref={sidebarRef}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      style={{
-        top: `${sidebarTop}px`,
-        transition: "top 0.1s ease-out",
-      }}
+      style={{ top: `${sidebarTop}px`, transition: "top 0.1s ease-out" }}
       className="absolute left-[33px] w-[260px] bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden z-40"
     >
-      <div className="h-[56px] flex items-center px-6 bg-[#A7DA9B] rounded-t-2xl shadow-sm">
+      <div className="h-[56px] flex items-center px-6 bg-[#88C078] rounded-t-2xl shadow-sm">
         <Library className="w-5 h-5 text-white mr-2" />
-        <h1 className="text-[18px] font-semibold text-white tracking-wide">학습자료</h1>
+        <h1 className="text-[18px] font-semibold text-black tracking-wide">학습자료</h1>
       </div>
 
       {loading ? (
@@ -147,16 +133,15 @@ const Sidebar = () => {
             const selectedMaterial = materials.find((m) => String(m.material_id) === selectedMaterialId);
             const selectedExample = examples.find((e) => String(e.example_id) === selectedExampleId);
             return (
-              <div
-                key={lang.language_id}
+              <div key={lang.language_id}
                 onMouseEnter={() => setHoveredLanguage(lang.language)}
-                onMouseLeave={() => setHoveredLanguage(selectedLanguage)} // Keep dropdown open for selected language
+                onMouseLeave={() => setHoveredLanguage(selectedLanguage)}
               >
                 <div
                   className={`px-6 py-4 cursor-pointer text-[16px] font-semibold transition-all duration-150 ${
                     selectedLanguage === lang.language
-                      ? "bg-[#88C078] text-white"
-                      : "hover:bg-gray-100 text-gray-800"
+                      ? "bg-[#D9D9D9] text-gray-800"
+                      : "hover:bg-gray-100 text-gray-600"
                   }`}
                   onClick={() => {
                     setSelectedLanguage(lang.language);
@@ -167,22 +152,16 @@ const Sidebar = () => {
                 >
                   <div className="flex flex-col">
                     <span>{lang.language}</span>
-                    {selectedLanguage === lang.language &&
-                      (selectedMaterial?.title || selectedExample?.title) && (
-                        <div className="flex items-center gap-1 mt-1 px-1">
-  {/* 제목 */}
-  <span className="text-sm font-normal text-gray-700 whitespace-normal break-words leading-snug">
-    {selectedMaterialId
-      ? selectedMaterial?.title
-      : selectedExample?.title}
-  </span>
-
-  {/* 완료 체크 */}
-  {(selectedMaterial?.is_completed || selectedExample?.is_completed) && (
-    <FileCheck className="w-4 h-4 text-green-500" />
-  )}
-</div>
-                      )}
+                    {selectedLanguage === lang.language && (selectedMaterial?.title || selectedExample?.title) && (
+                      <div className="flex items-center gap-1 mt-1 px-1">
+                        <span className="text-sm font-normal text-gray-700 break-words leading-snug">
+                          {selectedMaterialId ? selectedMaterial?.title : selectedExample?.title}
+                        </span>
+                        {(selectedMaterial?.is_completed || selectedExample?.is_completed) && (
+                          <FileCheck className="w-4 h-4 text-green-500" />
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -208,14 +187,12 @@ const Sidebar = () => {
                       className={`flex items-center justify-between text-[14px] rounded-md mx-4 px-3 py-2 cursor-pointer transition-all duration-150 ${
                         selectedMaterialId === String(material.material_id)
                           ? "bg-[#D9D9D9] text-gray-800 font-semibold"
-                          : "text-gray-700 hover:bg-gray-100"
+                          : "text-gray-600 hover:bg-gray-100"
                       }`}
                       onClick={() => handleMaterialClick(material.material_id, lang.language)}
                     >
-                      <span className="whitespace-normal break-words">{material.title}</span>
-                      {material.is_completed && (
-                        <FileCheck className="w-4 h-4 text-green-500 ml-2" />
-                      )}
+                      <span className="break-words">{material.title}</span>
+                      {material.is_completed && <FileCheck className="w-4 h-4 text-green-500 ml-2" />}
                     </div>
                   ))}
 
@@ -223,6 +200,7 @@ const Sidebar = () => {
                     <Code2 className="w-4 h-4 mr-1 text-[#88C078]" />
                     {lang.language} 예제
                   </div>
+
                   {examples.length ? (
                     examples.map((example) => (
                       <div
@@ -230,14 +208,12 @@ const Sidebar = () => {
                         className={`flex items-center justify-between text-[14px] rounded-md mx-4 px-3 py-2 cursor-pointer transition-all duration-150 ${
                           selectedExampleId === String(example.example_id)
                             ? "bg-[#D9D9D9] text-gray-800 font-semibold"
-                            : "text-gray-700 hover:bg-gray-100"
+                            : "text-gray-600 hover:bg-gray-100"
                         }`}
                         onClick={() => handleExampleClick(example.example_id, lang.language)}
                       >
-                        <span className="whitespace-normal break-words">{example.title}</span>
-                        {example.is_completed && (
-                          <FileCheck className="w-4 h-4 text-green-500 ml-2" />
-                        )}
+                        <span className="break-words">{example.title}</span>
+                        {example.is_completed && <FileCheck className="w-4 h-4 text-green-500 ml-2" />}
                       </div>
                     ))
                   ) : (
