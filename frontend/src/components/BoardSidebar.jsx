@@ -24,7 +24,7 @@ const BoardSidebar = () => {
     >
       {/* ✅ 상단 헤더 */}
       <div className="h-[56px] flex items-center px-6 bg-[#88C078] rounded-t-2xl shadow-sm">
-        <h1 className="text-[18px] font-semibold text-white tracking-wide">게시판</h1>
+        <h1 className="text-[18px] font-semibold text-black tracking-wide">게시판</h1>
       </div>
 
       {/* ✅ 게시판 목록 */}
@@ -34,8 +34,8 @@ const BoardSidebar = () => {
             key={key}
             className={`px-6 py-4 cursor-pointer text-[16px] font-semibold transition-all duration-150 ${
               currentBoard === key
-                ? "bg-[#A7DA9B] text-white"
-                : "hover:bg-gray-100 text-gray-800"
+                ? "bg-[#D9D9D9] text-gray-800"
+                : "hover:bg-gray-100 text-gray-600"
             }`}
             onClick={() => handleClick(key)}
           >

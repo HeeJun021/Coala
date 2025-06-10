@@ -1,5 +1,6 @@
-import React, { useEffect, useState,useRef  } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { CheckSquare } from "lucide-react";
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -8,7 +9,7 @@ const Sidebar = () => {
   const initialCategory = queryParams.get("category") || "HTML";
   const initialMaterialId = queryParams.get("id") || "";
   const initialExampleId = queryParams.get("exampleId") || "";
-  const sidebarRef = useRef(null); // ⬅️ 사이드바 DOM 참조
+  const sidebarRef = useRef(null);
 
   const [languages, setLanguages] = useState([]);
   const [materialsMap, setMaterialsMap] = useState({});
@@ -19,24 +20,23 @@ const Sidebar = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [hoveredLanguage, setHoveredLanguage] = useState(null);
-  const [sidebarTop, setSidebarTop] = useState(239); // 초기 위치
-  const [isHovering, setIsHovering] = useState(false); // 마우스 오버 여부
+  const [sidebarTop, setSidebarTop] = useState(239);
+  const [isHovering, setIsHovering] = useState(false);
 
   useEffect(() => {
     let animationFrameId;
 
     const handleScroll = () => {
-      if (isHovering) return; // 마우스 오버 시 고정
-
+      if (isHovering) return;
       const targetTop = window.scrollY + 239;
       animationFrameId = requestAnimationFrame(() => {
         setSidebarTop((prevTop) => {
           const diff = targetTop - prevTop;
-          return prevTop + diff * 0.3; // 자연스럽고 빠른 반응
+          return prevTop + diff * 0.3;
         });
       });
     };
-    
+
     const fetchAll = async () => {
       try {
         const langRes = await fetch("http://localhost:8000/languages");
@@ -75,9 +75,8 @@ const Sidebar = () => {
       window.removeEventListener("scroll", handleScroll);
       cancelAnimationFrame(animationFrameId);
     };
-    }, [isHovering]);
+  }, [isHovering]);
 
-    // ✅ 사이드바 마우스 상태 체크
   const handleMouseEnter = () => setIsHovering(true);
   const handleMouseLeave = () => setIsHovering(false);
 
@@ -85,24 +84,20 @@ const Sidebar = () => {
     if (selectedMaterialId === String(materialId)) return;
     setSelectedMaterialId(String(materialId));
     setSelectedExampleId("");
-    setSelectedLanguage(lang); // ✅ 언어도 갱신해줘야 UI에 강조됨
-  
+    setSelectedLanguage(lang);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  
-    navigate(`/StudyMaterialsPage?category=${encodeURIComponent(lang)}&id=${materialId}`, { replace: false });
+    navigate(`/StudyMaterialsPage?category=${encodeURIComponent(lang)}&id=${materialId}`);
   };
-  
+
   const handleExampleClick = (exampleId, lang) => {
     if (selectedExampleId === String(exampleId)) return;
     setSelectedExampleId(String(exampleId));
     setSelectedMaterialId("");
     setSelectedLanguage(lang);
-  
     window.scrollTo({ top: 0, behavior: "smooth" });
-  
-    navigate(`/StudyMaterialsPage?category=${encodeURIComponent(lang)}&exampleId=${exampleId}`, { replace: false });
+    navigate(`/StudyMaterialsPage?category=${encodeURIComponent(lang)}&exampleId=${exampleId}`);
   };
-  
+
   return (
     <div
       ref={sidebarRef}
@@ -114,8 +109,8 @@ const Sidebar = () => {
       }}
       className="absolute left-[33px] w-[260px] bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden z-40"
     >
-      <div className="h-[56px] flex items-center px-6 bg-[#A7DA9B] rounded-t-2xl shadow-sm">
-        <h1 className="text-[18px] font-semibold text-white tracking-wide">📚 학습자료</h1>
+      <div className="h-[56px] flex items-center px-6 bg-[#88C078] rounded-t-2xl shadow-sm">
+        <h1 className="text-[18px] font-semibold text-black tracking-wide">학습자료</h1>
       </div>
 
       {loading ? (
@@ -136,33 +131,30 @@ const Sidebar = () => {
                 onMouseLeave={() => setHoveredLanguage(null)}
               >
                 <div
-  className={`px-6 py-4 cursor-pointer text-[16px] font-semibold transition-all duration-150 ${
-    selectedLanguage === lang.language
-      ? "bg-[#88C078] text-white"
-      : "hover:bg-gray-100 text-gray-800"
-  }`}
-  onClick={() => setSelectedLanguage(lang.language)}
->
-  {/* 언어 이름 + 선택된 항목 제목 표시 */}
-  <div className="flex flex-col">
-    <span>{lang.language}</span>
-
-    {(selectedLanguage === lang.language) &&
-  (selectedMaterial?.title || selectedExample?.title) && (
-  <div className="flex items-center gap-1 mt-1 px-1">
-    <span className="text-sm font-normal text-gray-200 whitespace-normal break-words leading-snug">
-      {selectedMaterialId
-        ? `📘 ${selectedMaterial?.title}`
-        : `🧪 ${selectedExample?.title}`}
-    </span>
-    {(selectedMaterial?.is_completed || selectedExample?.is_completed) && (
-      <span className="text-green-400 text-xs">✅</span>
-    )}
-  </div>
-)}
-
-  </div>
-</div>
+                  className={`px-6 py-4 cursor-pointer text-[16px] font-semibold transition-all duration-150 ${
+                    selectedLanguage === lang.language
+                      ? "bg-[#D9D9D9] text-gray-800"
+                      : "hover:bg-gray-100 text-gray-600"
+                  }`}
+                  onClick={() => setSelectedLanguage(lang.language)}
+                >
+                  <div className="flex flex-col">
+                    <span>{lang.language}</span>
+                    {(selectedLanguage === lang.language) &&
+                      (selectedMaterial?.title || selectedExample?.title) && (
+                        <div className="flex items-center gap-1 mt-1 px-1">
+                          <span className="text-sm font-normal text-gray-500 whitespace-normal break-words leading-snug">
+                            {selectedMaterialId
+                              ? `📘 ${selectedMaterial?.title}`
+                              : `🧪 ${selectedExample?.title}`}
+                          </span>
+                          {(selectedMaterial?.is_completed || selectedExample?.is_completed) && (
+                            <CheckSquare size={18} className="text-green-500" />
+                          )}
+                        </div>
+                    )}
+                  </div>
+                </div>
 
                 <div
                   className={`transition-all duration-500 ease-in-out overflow-hidden transform origin-top ${
@@ -181,14 +173,14 @@ const Sidebar = () => {
                       key={material.material_id}
                       className={`flex items-center justify-between text-[14px] rounded-md mx-4 px-3 py-2 cursor-pointer transition-all duration-150 ${
                         selectedMaterialId === String(material.material_id)
-                          ? "bg-[#D9EAD3] text-black font-semibold"
+                          ? "bg-[#D9D9D9] text-gray-800 font-semibold"
                           : "text-gray-700 hover:bg-gray-100"
                       }`}
                       onClick={() => handleMaterialClick(material.material_id, lang.language)}
                     >
                       <span className="whitespace-normal break-words">{material.title}</span>
                       {material.is_completed && (
-                        <span className="text-green-500 text-xs ml-2">✅</span>
+                        <CheckSquare size={18} className="text-green-500" />
                       )}
                     </div>
                   ))}
@@ -202,14 +194,14 @@ const Sidebar = () => {
                         key={example.example_id}
                         className={`flex items-center justify-between text-[14px] rounded-md mx-4 px-3 py-2 cursor-pointer transition-all duration-150 ${
                           selectedExampleId === String(example.example_id)
-                            ? "bg-[#D9EAD3] text-black font-semibold"
+                            ? "bg-[#D9D9D9] text-gray-800 font-semibold"
                             : "text-gray-700 hover:bg-gray-100"
                         }`}
                         onClick={() => handleExampleClick(example.example_id, lang.language)}
                       >
                         <span className="whitespace-normal break-words">{example.title}</span>
                         {example.is_completed && (
-                          <span className="text-green-500 text-xs ml-2">✅</span>
+                          <CheckSquare size={18} className="text-green-500" />
                         )}
                       </div>
                     ))
