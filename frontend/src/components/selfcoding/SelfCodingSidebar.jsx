@@ -1,13 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FaBars,
   FaFileAlt,
   FaGithub,
   FaSave,
   FaCog,
+  FaQuestionCircle,
 } from "react-icons/fa";
 import SelfCodingSettingsPanel from "./SelfCodingSettingsPanel";
-import { saveCodeFile } from "../../api/codeApi"; // ✅ DB 저장 함수 추가
+import SelfCodingGuideModal from "./SelfCodingGuideModal";
+import { saveCodeFile } from "../../api/codeApi";
 
 const icons = [
   { name: "menu", icon: <FaBars />, tooltip: "메뉴" },
@@ -40,11 +42,25 @@ const SelfCodingSidebar = ({
   setTabs,
   setActiveTabId,
   rootFolderId,
-  reloadFolderTree, 
+  reloadFolderTree,
 }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [fileMenuVisible, setFileMenuVisible] = useState(false);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [showGuideTooltip, setShowGuideTooltip] = useState(false);
+
+  // 최초 진입시 안내 말풍선 노출
+  useEffect(() => {
+    const seen = localStorage.getItem("selfcoding_guide_seen");
+    if (seen !== "true") setShowGuideTooltip(true);
+  }, []);
+
+  const handleGuideClick = () => {
+    setIsGuideOpen(true);
+    setShowGuideTooltip(false);
+    localStorage.setItem("selfcoding_guide_seen", "true");
+  };
 
   const handleSaveAs = async (filename, content) => {
     try {
@@ -157,7 +173,7 @@ const SelfCodingSidebar = ({
       setTabs((prev) => [...prev, { tabId, filename, content }]);
       setActiveTabId(tabId);
 
-      await reloadFolderTree(); // ✅ 가져온 후 트리 갱신
+      await reloadFolderTree();
 
       alert("파일이 성공적으로 업로드되었습니다.");
     } catch (err) {
@@ -196,83 +212,124 @@ const SelfCodingSidebar = ({
   };
 
   return (
-    <div className="w-12 bg-[#f3f3f3] text-black flex flex-col items-center py-2 border-r border-gray-300 relative">
-      {icons.map((item) => (
-        <div key={item.name} className="w-full relative">
-          <button
-            title={item.tooltip}
-            onClick={() => {
-              if (item.name === "menu") {
-                setShowMenu((prev) => !prev);
-                setShowSettings(false);
-              } else if (item.name === "save") {
-                handleLocalDownload();
-              } else {
-                setActivePanel(item.name);
-                setShowMenu(false);
-                setShowSettings(false);
-              }
-            }}
-            className={`w-full h-12 flex items-center justify-center text-[20px] transition-colors duration-150 ${
-              activePanel === item.name ? "text-black font-bold" : "text-gray-500 hover:text-black"
-            }`}
-          >
-            {item.icon}
-          </button>
+    <>
+      <div className="w-12 bg-[#f3f3f3] text-black flex flex-col items-center py-2 border-r border-gray-300 relative">
+        {/* 상단 아이콘 */}
+        {icons.map((item) => (
+          <div key={item.name} className="w-full relative">
+            <button
+              title={item.tooltip}
+              onClick={() => {
+                if (item.name === "menu") {
+                  setShowMenu((prev) => !prev);
+                  setShowSettings(false);
+                } else if (item.name === "save") {
+                  handleLocalDownload();
+                } else {
+                  setActivePanel(item.name);
+                  setShowMenu(false);
+                  setShowSettings(false);
+                }
+              }}
+              className={`w-full h-12 flex items-center justify-center text-[20px] transition-colors duration-150 ${
+                activePanel === item.name ? "text-black font-bold" : "text-gray-500 hover:text-black"
+              }`}
+            >
+              {item.icon}
+            </button>
 
-          {item.name === "menu" && showMenu && (
-            <div className="absolute left-12 top-0 bg-white border border-gray-300 rounded shadow z-50 w-32 text-sm">
-              <div
-                className="px-4 py-2 hover:bg-gray-100 cursor-pointer relative"
-                onMouseEnter={() => setFileMenuVisible(true)}
-                onMouseLeave={() => setFileMenuVisible(false)}
-              >
-                File
-                {fileMenuVisible && (
-                  <div className="absolute left-full top-0 ml-1 w-48 bg-white border border-gray-300 rounded shadow z-50">
-                    <div
-                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                      onClick={() => handleFileMenuClick("save")}
-                    >
-                      저장하기 (Ctrl+S)
+            {item.name === "menu" && showMenu && (
+              <div className="absolute left-12 top-0 bg-white border border-gray-300 rounded shadow z-50 w-32 text-sm">
+                <div
+                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer relative"
+                  onMouseEnter={() => setFileMenuVisible(true)}
+                  onMouseLeave={() => setFileMenuVisible(false)}
+                >
+                  File
+                  {fileMenuVisible && (
+                    <div className="absolute left-full top-0 ml-1 w-48 bg-white border border-gray-300 rounded shadow z-50">
+                      <div
+                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                        onClick={() => handleFileMenuClick("save")}
+                      >
+                        저장하기 (Ctrl+S)
+                      </div>
+                      <div
+                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                        onClick={() => handleFileMenuClick("saveAs")}
+                      >
+                        다른 이름으로 저장하기
+                      </div>
+                      <div
+                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                        onClick={() => handleFileMenuClick("import")}
+                      >
+                        파일 가져오기
+                      </div>
                     </div>
-                    <div
-                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                      onClick={() => handleFileMenuClick("saveAs")}
-                    >
-                      다른 이름으로 저장하기
-                    </div>
-                    <div
-                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                      onClick={() => handleFileMenuClick("import")}
-                    >
-                      파일 가져오기
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
+                <div className="px-4 py-2 hover:bg-gray-100 cursor-pointer">Edit</div>
+                <div className="px-4 py-2 hover:bg-gray-100 cursor-pointer">View</div>
+                <div className="px-4 py-2 hover:bg-gray-100 cursor-pointer">Run</div>
+                <div className="px-4 py-2 hover:bg-gray-100 cursor-pointer">Help</div>
               </div>
-              <div className="px-4 py-2 hover:bg-gray-100 cursor-pointer">Edit</div>
-              <div className="px-4 py-2 hover:bg-gray-100 cursor-pointer">View</div>
-              <div className="px-4 py-2 hover:bg-gray-100 cursor-pointer">Run</div>
-              <div className="px-4 py-2 hover:bg-gray-100 cursor-pointer">Help</div>
-            </div>
-          )}
-        </div>
-      ))}
+            )}
+          </div>
+        ))}
 
-      <div
-        className="mt-auto w-full h-12 flex items-center justify-center text-[20px] text-gray-500 hover:text-black cursor-pointer"
-        title="설정"
-        onClick={() => {
-          setShowSettings((prev) => !prev);
-          setShowMenu(false);
-        }}
-      >
-        <FaCog />
+        {/* 하단: 가이드 버튼, 설정 버튼 */}
+        <div className="mt-auto flex flex-col items-center gap-0">
+          {/* 가이드 보기 버튼 */}
+          <div className="w-full relative pb-4">
+            <button
+              title="가이드 보기"
+              onClick={handleGuideClick}
+              className="w-full h-12 flex items-center justify-center text-[20px] text-gray-500 hover:text-black"
+              style={{ marginBottom: "0.25rem" }} // 버튼 간격 조정
+            >
+              <FaQuestionCircle />
+            </button>
+            {showGuideTooltip && (
+              <div className="absolute left-12 top-0 flex items-center z-50">
+                {/* 꼬리 */}
+                <div
+                  className="w-4 h-4 bg-yellow-50 border-l border-t border-yellow-400 absolute"
+                  style={{
+                    left: '-8px',
+                    top: '20px', // 버튼 중앙 또는 원하는 위치
+                    transform: 'rotate(-45deg)'
+                  }}
+                />
+                <div className="ml-2 bg-yellow-50 border border-yellow-400 text-base text-gray-900 rounded-xl shadow-lg px-4 py-3 min-w-[220px]">
+                  <span>
+                    <b className="text-blue-700">이 버튼</b>을 클릭하여 <b className="text-blue-700">설명서</b>를 볼 수 있습니다!
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 설정 버튼 */}
+          <div
+            className="w-full h-12 flex items-center justify-center text-[20px] pb-10 text-gray-500 hover:text-black cursor-pointer"
+            title="설정"
+            onClick={() => {
+              setShowSettings((prev) => !prev);
+              setShowMenu(false);
+            }}
+          >
+            <FaCog />
+          </div>
+        </div>
+
+        {showSettings && <SelfCodingSettingsPanel onClose={() => setShowSettings(false)} />}
       </div>
 
-      {showSettings && <SelfCodingSettingsPanel onClose={() => setShowSettings(false)} />}
-    </div>
+      {isGuideOpen && (
+        <SelfCodingGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
+      )}
+    </>
   );
 };
 

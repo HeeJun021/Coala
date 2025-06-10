@@ -101,7 +101,7 @@ def preview_html_by_code_id(
         "html_filename": html_code.title
     }
     
-# ✅ 실행 가능한 Python 경로 자동 탐색 함수
+# 실행 가능한 Python 경로 자동 탐색 함수
 def find_python_executable():
     # 우선순위 1: 직접 지정한 경로
     preferred_path = r"C:\Users\user\AppData\Local\Programs\Python\Python313\python.exe"

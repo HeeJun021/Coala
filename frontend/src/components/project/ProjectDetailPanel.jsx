@@ -219,55 +219,57 @@ const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
             </button>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {members.map((m) => (
-              <div
-                key={m.user_id}
-                onClick={() => {
-                  if (project.leader_id !== m.user_id) toggleMenu(m.user_id);
-                }}
-                className="relative group bg-white border hover:border-blue-400 transition rounded-xl p-4 shadow-sm cursor-pointer"
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-base font-semibold text-gray-800">
-                      {m.nickname}{" "}
-                      {m.is_leader && (
-                        <span className="text-blue-600 text-sm">(팀장)</span>
-                      )}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {m.role || "역할 미지정"}
-                    </p>
+            {[...members]
+              .sort((a, b) => (b.is_leader ? 1 : 0) - (a.is_leader ? 1 : 0)) // 팀장 맨 앞
+              .map((m) => (
+                <div
+                  key={m.user_id}
+                  onClick={() => {
+                    if (project.leader_id !== m.user_id) toggleMenu(m.user_id);
+                  }}
+                  className="relative group bg-white border hover:border-blue-400 transition rounded-xl p-4 shadow-sm cursor-pointer"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-base font-semibold text-gray-800">
+                        {m.nickname}{" "}
+                        {m.is_leader && (
+                          <span className="text-blue-600 text-sm">(팀장)</span>
+                        )}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {m.role || "역할 미지정"}
+                      </p>
+                    </div>
+
+                    {/* 팀장 자신일 경우 펼침 버튼 숨김 */}
+                    {project.leader_id !== m.user_id && (
+                      <div className="text-gray-400 group-hover:text-gray-800 text-lg leading-none">
+                        ⌄
+                      </div>
+                    )}
                   </div>
 
-                  {/* 팀장 자신일 경우 펼침 버튼 숨김 */}
-                  {project.leader_id !== m.user_id && (
-                    <div className="text-gray-400 group-hover:text-gray-800 text-lg leading-none">
-                      ⌄
+                  {openMenuId === m.user_id && (
+                    <div className="absolute top-full left-0 mt-2 w-full bg-white border rounded shadow z-10">
+                      <button
+                        onClick={() => handleRemoveMember(m.user_id)}
+                        className="block w-full px-4 py-2 text-sm text-left hover:bg-gray-100"
+                      >
+                        팀원 방출
+                      </button>
+                      {!m.is_leader && (
+                        <button
+                          onClick={() => handleTransferLeader(m.user_id)}
+                          className="block w-full px-4 py-2 text-sm text-left hover:bg-gray-100"
+                        >
+                          팀장 권한 부여
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
-
-                {openMenuId === m.user_id && (
-                  <div className="absolute top-full left-0 mt-2 w-full bg-white border rounded shadow z-10">
-                    <button
-                      onClick={() => handleRemoveMember(m.user_id)}
-                      className="block w-full px-4 py-2 text-sm text-left hover:bg-gray-100"
-                    >
-                      팀원 방출
-                    </button>
-                    {!m.is_leader && (
-                      <button
-                        onClick={() => handleTransferLeader(m.user_id)}
-                        className="block w-full px-4 py-2 text-sm text-left hover:bg-gray-100"
-                      >
-                        팀장 권한 부여
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
+              ))}
           </div>
         </div>
 
@@ -316,9 +318,6 @@ const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
           <div className="flex gap-2 flex-wrap">
             <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded">
               진행 중
-            </span>
-            <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded">
-              위험
             </span>
           </div>
         </div>

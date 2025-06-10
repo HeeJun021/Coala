@@ -10,6 +10,7 @@ import "../index.css";
 import Split from "react-split";
 import { getCurrentUser, checkGithubConnection } from "../api/authApi";
 import { getRootCodeFolder, updateCodeFile, getChildFolders, getCodesInFolder } from "../api/codeApi";
+import SelfCodingGuideModal from "../components/selfcoding/SelfCodingGuideModal";
 
 const SelfCodingPage = () => {
   const location = useLocation();
@@ -76,7 +77,7 @@ const SelfCodingPage = () => {
       const githubStatus = await checkGithubConnection();
       setIsGithubConnected(githubStatus.isConnected);
       if (githubStatus.isConnected) {
-        setActivePanel("git");
+        setActivePanel("explorer");
       }
     } catch (error) {
       console.error("Failed to fetch user or GitHub status:", error);
@@ -120,7 +121,7 @@ const SelfCodingPage = () => {
           setTabs={setTabs}
           setActiveTabId={setActiveTabId}
           rootFolderId={rootFolderId}
-          reloadFolderTree={reloadFolderTree} // ✅ 전달
+          reloadFolderTree={reloadFolderTree} 
         />
         <SelfCodingPanel
           activePanel={activePanel}

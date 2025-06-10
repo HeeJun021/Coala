@@ -34,7 +34,6 @@ const Sidebar = () => {
 
     const handleScroll = () => {
       if (isHovering) return;
-
       const targetTop = window.scrollY + 239;
       animationFrameId = requestAnimationFrame(() => {
         setSidebarTop((prevTop) => {
@@ -208,7 +207,7 @@ const Sidebar = () => {
                       key={material.material_id}
                       className={`flex items-center justify-between text-[14px] rounded-md mx-4 px-3 py-2 cursor-pointer transition-all duration-150 ${
                         selectedMaterialId === String(material.material_id)
-                          ? "bg-[#D9EAD3] text-black font-semibold"
+                          ? "bg-[#D9D9D9] text-gray-800 font-semibold"
                           : "text-gray-700 hover:bg-gray-100"
                       }`}
                       onClick={() => handleMaterialClick(material.material_id, lang.language)}
@@ -230,7 +229,7 @@ const Sidebar = () => {
                         key={example.example_id}
                         className={`flex items-center justify-between text-[14px] rounded-md mx-4 px-3 py-2 cursor-pointer transition-all duration-150 ${
                           selectedExampleId === String(example.example_id)
-                            ? "bg-[#D9EAD3] text-black font-semibold"
+                            ? "bg-[#D9D9D9] text-gray-800 font-semibold"
                             : "text-gray-700 hover:bg-gray-100"
                         }`}
                         onClick={() => handleExampleClick(example.example_id, lang.language)}

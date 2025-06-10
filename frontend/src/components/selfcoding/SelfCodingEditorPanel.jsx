@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { FaTimes } from "react-icons/fa";
 import { Controlled as CodeMirror } from "react-codemirror2";
 import { getCodeById, updateCodeFile } from "../../api/codeApi";
-import { registerCustomHints } from "../../utils/customHints"; // ✅ 추가
+import { registerCustomHints } from "../../utils/customHints";
 import {
   runJsPreview,
   runHtmlPreview,
@@ -56,10 +56,10 @@ const SelfCodingEditorPanel = ({
     if (mode === "text/x-java") return hints?.["java-custom"] || hints?.anyword;
     return hints?.anyword;
   };
-  useEffect(() => {
-  registerCustomHints(); // ✅ custom hint 연결
-}, []);
 
+  useEffect(() => {
+    registerCustomHints();
+  }, []);
 
   const handleSave = useCallback(async () => {
     const codeId = parseInt(activeTabId.replace("code-", ""));
@@ -74,22 +74,13 @@ const SelfCodingEditorPanel = ({
       console.error("코드 저장 실패:", err);
       alert("저장에 실패했습니다.");
     }
-  }, [
-    activeTabId,
-    selectedFileContent,
-    languageId,
-    setOriginalContent,
-    setUnsaved,
-  ]);
+  }, [activeTabId, selectedFileContent, languageId, setOriginalContent, setUnsaved]);
 
   const handleRunJs = async () => {
     try {
       const result = await runJsPreview(selectedFileContent);
-      console.log("🔥 runJs 결과:", result); // ✅ 로그
-      const escapedCode = selectedFileContent.replace(
-        /<\/script>/g,
-        "<\\/script>"
-      );
+      console.log("🔥 runJs 결과:", result);
+      const escapedCode = selectedFileContent.replace(/<\/script>/g, "<\\/script>");
       const jsOutput = `
         <html>
           <body style="font-family:monospace; padding:20px;">
@@ -165,24 +156,7 @@ const SelfCodingEditorPanel = ({
       }
     };
     fetchContent();
-  }, [
-    activeTabId,
-    setSelectedFilename,
-    setSelectedFileContent,
-    setUnsaved,
-    setLanguageId,
-  ]);
-
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
-        e.preventDefault();
-        handleSave();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleSave]);
+  }, [activeTabId, setSelectedFilename, setSelectedFileContent, setUnsaved, setLanguageId]);
 
   const renderActionButton = () => {
     if (unsaved || extension === "css") {
@@ -292,7 +266,15 @@ const SelfCodingEditorPanel = ({
             tabSize: 2,
             lineWrapping: true,
             extraKeys: {
-              "Ctrl-Space": "autocomplete", // ✅ 단축키
+              "Ctrl-Space": "autocomplete",
+              "Ctrl-S": (cm) => {
+                cm.execCommand("save");
+                handleSave();
+              },
+              "Cmd-S": (cm) => {
+                cm.execCommand("save");
+                handleSave();
+              },
             },
             hintOptions: {
               hint: getHintByLanguage(),
@@ -305,8 +287,15 @@ const SelfCodingEditorPanel = ({
           }}
           onKeyUp={(editor, event) => {
             const { key } = event;
-            if (!editor.state.completionActive && /^[\w.]$/.test(key)) {
-              editor.showHint(); // ✅ 자동 트리거
+            const isTypingKey = /^[\w.]$/.test(key);
+            const isModifier = event.ctrlKey || event.metaKey || event.altKey;
+
+            if (
+              isTypingKey &&
+              !isModifier &&
+              !editor.state.completionActive
+            ) {
+              editor.showHint();
             }
           }}
         />
