@@ -3,6 +3,7 @@ import { FaCheck, FaSort, FaSearch, FaTimes } from "react-icons/fa";
 import { useSearchParams, Link } from "react-router-dom";
 import { getCodingTestList } from "../api/codingTestApi";
 import { useAuth } from "../context/AuthContext";
+import { BookOpenText } from "lucide-react";
 
 const getLevelClass = (level) => {
   switch (level) {
@@ -102,27 +103,33 @@ const CodingTestPage = () => {
     sort === "desc" ? "정답률이 높은 문제" : "정답률이 낮은 문제";
 
   return (
-    <div className="p-6 bg-whit min-h-screen">
+    <div className="p-6 bg-white min-h-screen">
       <div className="max-w-6xl mx-auto bg-white shadow-xl rounded-2xl border border-gray-300 p-7">
         {/* 페이지 타이틀 */}
-        <div className="mb-8">
+        <div className="mb-4">
           <h1 className="text-4xl font-extrabold text-gray-800 mb-4 tracking-wide">
-            <span className="text-black">코딩 테스트</span>
+            코딩 테스트
           </h1>
-
-          <p className="text-gray-500 text-sm">
+          <p className="text-gray-500 text-sm leading-relaxed">
             다양한 문제를 풀며{" "}
             <span className="font-medium text-gray-700">알고리즘 사고력</span>을
-            키워보세요!
+            키우고, 실력을 단계별로 쌓아보세요.
           </p>
         </div>
 
-        {/* 검색 & 필터 */}
-        <div className="flex flex-col gap-2 mb-4">
-          <h2 className="text-lg font-medium text-gray-700 mb-2">
-            문제 검색 및 필터링
-          </h2>
+        {/* 문제 목록 타이틀 (아이콘 + 구분선) */}
+        <div className="flex items-center gap-2 mb-4">
+          <BookOpenText className="w-5 h-5 text-green-600" />
+          <h2 className="text-lg font-semibold text-gray-800">문제 목록</h2>
+        </div>
 
+        {/* 문제 검색 및 필터링 설명 */}
+        <p className="text-sm text-gray-600 mb-2 ml-[2px]">
+          원하는 문제를 검색하거나 조건별로 필터링해보세요.
+        </p>
+
+        {/* 검색 & 필터 */}
+        <div className="flex flex-col gap-2 mb-6">
           <div
             className={`flex items-center border rounded-md w-[500px] bg-white px-2 ${
               search
@@ -150,28 +157,8 @@ const CodingTestPage = () => {
             />
           </div>
 
+          {/* 필터 순서: 난이도 → 카테고리 → 상태 */}
           <div className="flex gap-2 mt-2">
-            {user && (
-              <select
-                value={status}
-                onChange={(e) =>
-                  setSearchParams({
-                    page: 1,
-                    search,
-                    level,
-                    category,
-                    sort,
-                    status: e.target.value,
-                  })
-                }
-                className="border border-gray-300 rounded-md px-2 py-1 w-[100px]"
-              >
-                <option value="">상태</option>
-                <option value="solved">푼 문제</option>
-                <option value="unsolved">안 푼 문제</option>
-              </select>
-            )}
-
             <select
               value={level}
               onChange={(e) =>
@@ -215,6 +202,27 @@ const CodingTestPage = () => {
                 </option>
               ))}
             </select>
+
+            {user && (
+              <select
+                value={status}
+                onChange={(e) =>
+                  setSearchParams({
+                    page: 1,
+                    search,
+                    level,
+                    category,
+                    sort,
+                    status: e.target.value,
+                  })
+                }
+                className="border border-gray-300 rounded-md px-2 py-1 w-[100px]"
+              >
+                <option value="">상태</option>
+                <option value="solved">푼 문제</option>
+                <option value="unsolved">안 푼 문제</option>
+              </select>
+            )}
           </div>
         </div>
 
@@ -305,8 +313,7 @@ const CodingTestPage = () => {
                   category,
                   sort,
                 });
-                // window.scrollTo(0, 0); // 스크롤 최상단 바로 이동
-                window.scrollTo({ top: 0, behavior: "smooth" }); // 스크롤 최상단 smooth 이동
+                window.scrollTo({ top: 0, behavior: "smooth" });
               }}
               className={`px-3 py-1 rounded-md border ${
                 page === i + 1 ? "bg-green-600 text-white" : "hover:bg-gray-200"
