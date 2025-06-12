@@ -137,7 +137,7 @@ const StudyMaterialsPage = () => {
   };
 
   return (
-    <div className="bg-[#f9fafb] min-h-screen py-10">
+    <div className="p-6 bg-[#f9fafb] min-h-screen">
       <div className={`bg-white shadow-md rounded-lg p-8 max-w-[1000px] w-full mx-auto text-left transition-opacity duration-500 ${fadeIn ? "opacity-100" : "opacity-0"}`}>
         {isCompleted && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
@@ -165,7 +165,7 @@ const StudyMaterialsPage = () => {
         <div className="text-red-500">{error}</div>
       ) : studyContent ? (
         <>
-          <h1 className="text-4xl font-bold text-gray-800 mb-4">
+          <h1 className="text-5xl font-bold text-gray-900 mb-10">
             {studyContent.title}
             {isCompleted && (
               <span className="ml-4 text-green-600 text-xl font-semibold">
@@ -238,23 +238,23 @@ const StudyMaterialsPage = () => {
     <p className="mt-2 text-sm text-gray-600">{section.problem_description}</p>
 
     {/* 버튼 영역 */}
-    <div className="flex gap-2 mt-4">
-      {showCodeTestButton(category) && (
-        <button
-          onClick={() =>
-            navigate(
-              `/codetest?code=${encodeURIComponent(section.content)}&language=${encodeURIComponent(
-                category
-              )}&title=${encodeURIComponent(
-                studyContent.title
-              )}&problem_description=${encodeURIComponent(section.problem_description || "")}`
-            )
-          }
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-        >
-          코드 테스트 →
-        </button>
-      )}
+<div className="flex gap-2 mt-4">
+  {showCodeTestButton(category) && (
+    <button
+      onClick={() =>
+        navigate(
+          `/codetest?code=${encodeURIComponent(section.content)}&language=${encodeURIComponent(
+            category
+          )}&title=${encodeURIComponent(
+            studyContent.title
+          )}&problem_description=${encodeURIComponent(section.problem_description || "")}`
+        )
+      }
+      className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+    >
+      코드 테스트 →
+    </button>
+  )}
 
       {showTerminalButton(category, studyContent.title, section.content) ? (
         <button
@@ -311,7 +311,7 @@ const StudyMaterialsPage = () => {
                           </div>
                           <button
                             onClick={() => handleSubmit(index, section.content.correct_answer)}
-                            className={`mt-4 w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 transition ${
+                            className={`mt-4 w-full bg-green-600 text-white py-2 rounded-md hover:bg-green-700 transition ${
                               selectedOptions[index] == null ? "opacity-50 cursor-not-allowed" : ""
                             }`}
                             disabled={selectedOptions[index] == null}

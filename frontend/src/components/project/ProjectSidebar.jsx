@@ -42,9 +42,9 @@ const ProjectSidebar = ({ setActiveTab, onProjectSelect, selectedProjectId, onUp
     <aside className="w-64 bg-[#1d1d1d] text-white flex flex-col px-4 py-6">
       <button
         onClick={() => setIsModalOpen(true)}
-        className="bg-blue-600 text-white py-2 px-3 rounded mb-6 hover:bg-blue-700"
+        className="bg-green-600 text-white py-2 px-3 rounded mb-6 hover:bg-green-700"
       >
-        + 생성
+        + 프로젝트 생성
       </button>
 
       <div className="space-y-3 text-sm">
