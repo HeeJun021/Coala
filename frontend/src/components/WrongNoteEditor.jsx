@@ -103,7 +103,7 @@ const WrongNoteEditor = ({
         }));
       }
 
-      alert("오답노트 저장 완료!");
+      // alert("오답노트 저장 완료!");
       setIsEditing(false); // ✅ 저장 후 읽기 모드로 전환
     } catch (err) {
       console.error("오답노트 저장 실패", err);
