@@ -50,7 +50,7 @@ const StudyMaterialsPageDetails = () => {
       {/* 뒤로 가기 버튼 */}
       <div className="mt-8 flex justify-between">
         <button
-          className="px-6 py-2 bg-[#A7DA9B] text-white rounded-lg hover:bg-gray-600 transition"
+          className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
           onClick={() => navigate(-1)}
         >
           뒤로 가기
