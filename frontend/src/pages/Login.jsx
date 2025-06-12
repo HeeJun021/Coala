@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock } from "lucide-react";
+import { Mail, Lock, ChevronLeft } from "lucide-react";
 import { loginUser } from "../api/authApi";
 import SocialLogin from "../components/SocialLogin"; // ✅ 추가
 
@@ -36,9 +36,20 @@ const Login = () => {
 
       {/* 우측 로그인 박스 */}
       <div className="w-full max-w-[450px] bg-white p-16 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-gray-100 text-left mt-12 md:mt-0">
+        {/* 이전 버튼 - h2 위에 왼쪽 정렬 */}
+        <div className="mb-4 -mt-4">
+          <ChevronLeft
+            className="text-gray-500 hover:text-gray-700 cursor-pointer"
+            size={24}
+            onClick={() => navigate(-1)}
+          />
+        </div>
+
+        {/* 제목 */}
         <h2 className="text-3xl font-extrabold text-center mb-6 text-green-600">
           로그인
         </h2>
+
         <p className="text-center text-dark mb-8">
           Coala에 오신 것을 환영합니다!
         </p>
