@@ -55,7 +55,7 @@ const guideSections = {
         </>
       ),
       icon: <Settings2 size={18} className="text-blue-500" />,
-      imgSrc: "/guide/floating-button.png",
+      imgSrc: "/guide/erd/floating-button.png",
     },
     {
       title: "테이블 추가",
@@ -65,13 +65,13 @@ const guideSections = {
       imgSrc: (
         <div className="flex items-center justify-center gap-4">
           <img
-            src="/guide/add-table-step1.png"
+            src="/guide/erd/add-table-step1.png"
             alt="테이블 추가 단계 1"
             className="w-[45%] rounded border shadow"
           />
           <ArrowRight size={24} className="text-blue-400" />
           <img
-            src="/guide/add-table-step2.png"
+            src="/guide/erd/add-table-step2.png"
             alt="테이블 추가 단계 2"
             className="w-[45%] rounded border shadow"
           />
@@ -95,49 +95,49 @@ const guideSections = {
         </div>
       ),
       icon: <MousePointerClick size={18} className="text-indigo-500" />,
-      imgSrc: "/guide/add-column.png",
+      imgSrc: "/guide/erd/add-column.png",
     },
     {
       title: "관계 추가",
       content:
         "관계 추가 모드에서 컬럼 하나를 클릭하고, 다른 컬럼을 클릭하면 관계가 설정돼요.",
       icon: <GitCompareArrows size={18} className="text-pink-500" />,
-      imgSrc: "/guide/add-relation.png",
+      imgSrc: "/guide/erd/add-relation.png",
     },
     {
       title: "PK 설정",
       content:
         "컬럼을 우클릭하면 나오는 메뉴에서 'PK 설정'을 선택해 기본키로 지정할 수 있어요.",
       icon: <KeyRound size={18} className="text-yellow-500" />,
-      imgSrc: "/guide/set-pk.png",
+      imgSrc: "/guide/erd/set-pk.png",
     },
     {
       title: "히스토리 기록",
       content:
         "상단 툴바의 히스토리 기록 버튼을 누르면 현재 상태가 저장되고 로그에 남아요.",
       icon: <History size={18} className="text-pink-400" />,
-      imgSrc: "/guide/save-history.png",
+      imgSrc: "/guide/erd/save-history.png",
     },
     {
       title: "히스토리 보기 및 이동",
       content:
         "플로팅 메뉴의 히스토리 항목을 클릭하면 이전 설계 상태를 열람하거나 복원할 수 있어요.",
       icon: <History size={18} className="text-yellow-400" />,
-      imgSrc: "/guide/history-modal.png",
+      imgSrc: "/guide/erd/history-modal.png",
     },
     {
       title: "SQL 내보내기",
       content:
         "플로팅 버튼의 SQL 아이콘을 클릭하면 설계된 ERD를 SQL 쿼리 형식으로 변환해볼 수 있어요.",
       icon: <FileUp size={18} className="text-gray-400" />,
-      imgSrc: "/guide/export-sql.png",
+      imgSrc: "/guide/erd/export-sql.png",
     },
     {
       title: "이미지 내보내기",
       content:
         "ERD 전체를 이미지(PNG)로 저장할 수 있어요. 문서나 발표 자료에 붙여넣을 때 유용해요.",
       icon: <Camera size={18} className="text-green-400" />,
-      imgSrc: "/guide/export-image.png",
+      imgSrc: "/guide/erd/export-image.png",
     },
   ],
   단축키: [

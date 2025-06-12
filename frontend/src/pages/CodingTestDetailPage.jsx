@@ -25,7 +25,7 @@ import {
 } from "../api/codingTestApi";
 
 // 🧩 컴포넌트
-import ResultModal from "../components/CodingTest/ResultModal";
+import ResultModal from "../components/CodingTest/modal/ResultModal";
 import WrongNoteEditor from "../components/WrongNoteEditor";
 
 // 🎨 스타일

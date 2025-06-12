@@ -7,7 +7,7 @@ import {
   UsersRound,
   MessageSquareQuote,
 } from "lucide-react";
-import ConfirmRatingLossModal from "./ConfirmRatingLossModal";
+import ConfirmRatingLossModal from "./modal/ConfirmRatingLossModal";
 import { markViewedOthers } from "../../api/codingTestApi";
 
 const CodingTestFooterButtons = ({

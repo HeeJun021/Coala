@@ -54,7 +54,7 @@ const CodingTestTabMenu = ({
           </button>
 
           <select
-            className="border border-gray-300 rounded px-2 py-1 text-sm text-gray-700 bg-white hover:border-gray-400 transition"
+            className="h-[36px] border border-gray-300 rounded px-2 text-sm text-gray-700 bg-white hover:border-gray-400 transition"
             value={language}
             onChange={handleLanguageChange}
           >
