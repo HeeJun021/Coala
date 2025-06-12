@@ -19,10 +19,11 @@ const CodingTestTabMenu = ({
             }
           }}
           className={`py-3 text-sm transition-all ${
-            activeTab === tab
-              ? "border-b-2 border-teal-500 text-teal-600 font-semibold"
-              : "text-gray-500 hover:text-gray-700"
-          }`}
+  activeTab === tab
+    ? "border-b-2 border-green-600 text-green-700 font-semibold"
+    : "text-gray-500 hover:text-gray-700"
+}`}
+
         >
           {tab === "info"
             ? "문제 정보"

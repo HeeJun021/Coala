@@ -54,7 +54,7 @@ const CodingTestFooterButtons = ({
       {activeTab === "notes" ? (
         <div className="flex gap-2 justify-end items-center p-3 border-t border-gray-300 bg-[#f9fafb] shadow">
           <button onClick={handleViewOthersClick} className={sharedButton}>
-            <UsersRound size={14} />
+            <UsersRound size={14} color="#2563eb" />
             다른 사람의 풀이
           </button>
         </div>
@@ -89,8 +89,8 @@ const CodingTestFooterButtons = ({
               disabled={!problem || isSubmitting}
               className={`flex items-center gap-1 text-xs px-3 py-2 rounded transition text-white ${
                 !problem || isSubmitting
-                  ? "bg-teal-300 cursor-not-allowed opacity-50"
-                  : "bg-teal-500 hover:bg-teal-600"
+                  ? "bg-green-300 cursor-not-allowed opacity-50"
+                  : "bg-green-600 hover:bg-green-700"
               }`}
             >
               <Send size={14} color="#ffffff" />
