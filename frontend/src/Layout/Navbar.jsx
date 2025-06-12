@@ -59,7 +59,7 @@ const Navbar = () => {
     {
       label: "코딩테스트",
       path: "/codingtest",
-      children: ["문제 목록", "내 제출"],
+      children: ["문제 목록", "통계 및 제출 내역"],
     },
     {
       label: "프로젝트",
@@ -213,11 +213,11 @@ const Navbar = () => {
                   );
                 }
 
-                if (item.label === "코딩테스트" && child === "내 제출") {
+                if (item.label === "코딩테스트" && child === "통계 및 제출 내역") {
                   return (
                     <Link
                       key={i}
-                      to="/mypage/codingtest"
+                      to="/my-submissions"
                       className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
                         hoverIndex === idx ? "" : "opacity-50"
                       }`}

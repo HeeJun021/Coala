@@ -20,6 +20,7 @@ import {
   Trash2,
   Plus,
   Minus,
+  XCircle,
 } from "lucide-react";
 
 const guideSections = {
@@ -157,27 +158,33 @@ const guideSections = {
     },
   ],
   "조작 방법": [
-    {
-      title: "테이블 생성",
-      content: "툴바의 + 버튼 클릭 후 캔버스를 클릭",
-      icon: <Table size={18} className="text-cyan-500" />,
-    },
-    {
-      title: "관계 설정",
-      content: "관계 모드에서 컬럼 클릭 → 다른 컬럼 클릭",
-      icon: <GitCompareArrows size={18} className="text-pink-500" />,
-    },
-    {
-      title: "드래그 후 삭제",
-      content: "테이블 선택 후 Delete 키로 삭제",
-      icon: <Trash2 size={18} className="text-rose-500" />,
-    },
-    {
-      title: "화면 이동",
-      content: "캔버스에서 마우스 휠 클릭 후 드래그",
-      icon: <Move size={18} className="text-blue-500" />,
-    },
-  ],
+  {
+    title: "테이블 생성",
+    content: "툴바의 + 버튼 클릭 후 캔버스를 클릭",
+    icon: <Table size={18} className="text-cyan-500" />,
+  },
+  {
+    title: "관계 설정",
+    content: "관계 모드에서 컬럼 클릭 → 다른 컬럼 클릭",
+    icon: <GitCompareArrows size={18} className="text-pink-500" />,
+  },
+  {
+    title: "드래그 후 삭제",
+    content: "테이블 선택 후 Delete 키로 삭제",
+    icon: <Trash2 size={18} className="text-rose-500" />,
+  },
+  {
+    title: "화면 이동",
+    content: "캔버스에서 마우스 휠 클릭 후 드래그",
+    icon: <Move size={18} className="text-blue-500" />,
+  },
+  {
+    title: "상태 취소",
+    content: "테이블 추가 또는 관계 설정 중 ESC 키로 취소 가능",
+    icon: <XCircle size={18} className="text-red-500" />,
+  },
+]
+
 };
 
 // 메모이제이션된 탭 섹션

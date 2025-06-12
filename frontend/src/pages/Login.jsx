@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FaEnvelope, FaLock } from "react-icons/fa";
+import { Mail, Lock } from "lucide-react";
 import { loginUser } from "../api/authApi";
 import SocialLogin from "../components/SocialLogin"; // ✅ 추가
 
@@ -24,7 +24,7 @@ const Login = () => {
     <div className="flex items-center justify-center min-h-[90vh] bg-gray-50 px-4 gap-24">
       {/* 좌측 설명 영역 */}
       <div className="flex-1 max-w-[500px] text-left -mt-40">
-        <h1 className="text-5xl font-extrabold text-navbar mb-4">Coala</h1>
+        <h1 className="text-5xl font-extrabold text-green-600 mb-4">Coala</h1>
         <p className="text-lg text-black leading-8">
           <span className="font-semibold text-gray-800">
             코드를 배우고, 문제를 해결하며
@@ -36,7 +36,7 @@ const Login = () => {
 
       {/* 우측 로그인 박스 */}
       <div className="w-full max-w-[450px] bg-white p-16 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-gray-100 text-left mt-12 md:mt-0">
-        <h2 className="text-3xl font-extrabold text-center mb-6 text-navbar">
+        <h2 className="text-3xl font-extrabold text-center mb-6 text-green-600">
           로그인
         </h2>
         <p className="text-center text-dark mb-8">
@@ -45,7 +45,7 @@ const Login = () => {
 
         <form className="flex flex-col gap-6" onSubmit={handleLogin}>
           <div className="flex items-center border-b border-gray-200 pb-2">
-            <FaEnvelope className="text-dark mr-2" />
+            <Mail size={18} className="text-green-500 mr-2" />
             <input
               type="text"
               placeholder="이메일"
@@ -56,7 +56,7 @@ const Login = () => {
           </div>
 
           <div className="flex items-center border-b border-gray-200 pb-2">
-            <FaLock className="text-dark mr-2" />
+            <Lock size={18} className="text-red-400 mr-2" />
             <input
               type="password"
               placeholder="비밀번호"

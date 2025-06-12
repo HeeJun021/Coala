@@ -62,6 +62,7 @@ import ResetPassword from "./pages/ResetPassword";
 import CodingTestPage from "./pages/CodingTestPage";
 import CodingTestDetailPage from "./pages/CodingTestDetailPage";
 import CorrectSolutionsPage from "./pages/CorrectSolutionsPage";
+import MyCodingTestSubmissionsPage from "./pages/MyCodingTestSubmissionsPage";
 
 // 게시판
 import "@toast-ui/editor/dist/toastui-editor.css";
@@ -199,6 +200,7 @@ const App = () => {
                   <Route path="/codingtest" element={<CodingTestPage />} />
                   <Route path="/codetest" element={<CodeTestPage />} />
                   <Route path="/terminal" element={<CodeTestTerminalPage />} />
+                  <Route path="/my-submissions" element={<MyCodingTestSubmissionsPage />} />
 
                   <Route path="/signup" element={<Signup />} />
                   <Route path="/login" element={<Login />} />

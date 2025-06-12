@@ -69,6 +69,19 @@ const ErdCanvas = ({
   const dragOriginRef = useRef(null);
   const tablePositionsRef = useRef({});
 
+  
+useEffect(() => {
+  const handleKeyDown = (e) => {
+    if (e.key === "Escape") {
+      if (isPlacing) setIsPlacing(false);
+      if (isAddingRelation) setIsAddingRelation(false);
+    }
+  };
+
+  window.addEventListener("keydown", handleKeyDown);
+  return () => window.removeEventListener("keydown", handleKeyDown);
+}, [isPlacing, isAddingRelation, setIsPlacing, setIsAddingRelation]);
+
   // 🧱 1. 드래그 시작
   const handleMouseDown = (e) => {
     if (e.button !== 0 || isToolDragging) return;

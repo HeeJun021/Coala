@@ -118,7 +118,7 @@ const Signup = () => {
     <div className="flex items-center justify-center min-h-[90vh] bg-gray-50 px-4 gap-24">
       {/* 좌측 설명 영역 */}
       <div className="flex-1 max-w-[500px] text-left -mt-40">
-        <h1 className="text-5xl font-extrabold text-navbar mb-4">Coala</h1>
+        <h1 className="text-5xl font-extrabold text-green-600 mb-4">Coala</h1>
         <p className="text-lg text-black leading-8">
           <span className="font-semibold text-gray-800">
             함께 배우고 성장하는 개발 학습 플랫폼
@@ -138,7 +138,7 @@ const Signup = () => {
           />
         </div>
 
-        <h2 className="text-3xl font-extrabold text-center mb-6 text-navbar">
+        <h2 className="text-3xl font-extrabold text-center mb-6 text-green-600">
           회원가입
         </h2>
         <p className="text-center text-dark mb-6">

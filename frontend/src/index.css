@@ -349,21 +349,21 @@ body {
 .select-dark {
   background-color: #1e1e2e;
   color: #ffffff;
+  border: 1px solid #4b5563;
   border-radius: 6px;
-  padding: 2px 8px;
+  padding: 4px 10px;
   font-size: 14px;
-  text-align: center;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
   text-align-last: center;
 }
 
-/* 셀렉트 옵션 스타일 (브라우저 지원 제한 있음) */
 .select-dark option {
-  background-color: #cbd5e1; /* gray-300 */
+  background-color: #1e1e2e;
   color: #ffffff;
-  font-size: 14px;
-  padding: 8px;
-  text-align: center;
 }
+
 
 /* sql 스크롤바 스타일 */
 .sql-scrollbar::-webkit-scrollbar {

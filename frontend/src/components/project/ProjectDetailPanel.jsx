@@ -62,7 +62,6 @@ const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
     if (selectedFriend) {
       try {
         await sendProjectInvite(project.project_id, selectedFriend.id); // 🔁 초대 API 호출
-        alert("초대장을 보냈습니다.");
         setShowInviteModal(false);
         setSelectedFriend(null);
       } catch (err) {
