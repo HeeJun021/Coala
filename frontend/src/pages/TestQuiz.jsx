@@ -3,110 +3,137 @@ import { useNavigate } from "react-router-dom";
 import { createQuiz } from "../api/quizApi";
 import QuizSideBar from "../Layout/QuizSideBar";
 
+// lucide-react 아이콘
+import { CircleCheck, FileText, ListChecks } from "lucide-react";
+
 const TestQuiz = () => {
-    const [loading, setLoading] = useState(false);
-    const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-    // ✅ 문제 유형은 항상 OX, 단답형, 선택형 포함
-    const selectedTypes = {
-        ox: true,
-        short: true,
-        multiple: true
-    };
+  const selectedTypes = {
+    ox: true,
+    short: true,
+    multiple: true,
+  };
 
-    // "퀴즈 풀기" 버튼 클릭 시 API 호출
-    const handleStartQuiz = async () => {
-        setLoading(true);
-        try {
-            const quizPayload = {
-                title: "사용자 테스트 퀴즈",
-                quiz_type: "test", // 테스트 퀴즈
-                time_limit: 30, // 30분 제한
-                settings: Object.keys(selectedTypes).map((type) => ({
-                    question_type: type === "ox" ? 1 : type === "short" ? 2 : 3,
-                    difficulty: 3, // 난이도 Lv.3 고정
-                    question_count: 3 // 문제 개수 5개 고정
-                }))
-            };
+  const handleStartQuiz = async () => {
+    setLoading(true);
+    try {
+      const quizPayload = {
+        title: "사용자 테스트 퀴즈",
+        quiz_type: "test",
+        time_limit: 30,
+        settings: Object.keys(selectedTypes).map((type) => ({
+          question_type: type === "ox" ? 1 : type === "short" ? 2 : 3,
+          difficulty: 3,
+          question_count: 3,
+        })),
+      };
 
-            console.log("퀴즈 생성 요청:", quizPayload);
-            const newQuiz = await createQuiz(quizPayload);
-            console.log("퀴즈 생성 완료:", newQuiz);
+      const newQuiz = await createQuiz(quizPayload);
+      if (newQuiz && newQuiz.quiz_id) {
+        navigate(`/quizsolve/${newQuiz.quiz_id}?mode=test`);
+      } else {
+        alert("퀴즈 생성은 되었지만 ID를 찾을 수 없습니다.");
+      }
+    } catch (error) {
+      console.error("퀴즈 생성 실패:", error);
+      alert("퀴즈 생성 중 오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            if (newQuiz && newQuiz.quiz_id) {
-              navigate(`/quizsolve/${newQuiz.quiz_id}?mode=test`);
-            } else {
-                alert("퀴즈 생성은 되었지만 ID를 찾을 수 없습니다.");
-            }
-        } catch (error) {
-            console.error("퀴즈 생성 실패:", error);
-            alert("퀴즈 생성 중 오류가 발생했습니다.");
-        } finally {
-            setLoading(false);
-        }
-    };
+  const getLabel = (type) =>
+    type === "ox" ? "O/X" : type === "short" ? "단답형 문제" : "선택형 문제";
 
-    return (
-        <div className="flex w-full">
-            <QuizSideBar />
-            <div className="flex-1 max-w-5xl pt-12 mx-auto">
-                <h2 className="text-2xl font-bold mb-6">테스트 퀴즈 설정</h2>
+  const getIcon = (type) => {
+    const className = "w-5 h-5 text-green-600 inline-block mr-3";
+    switch (type) {
+      case "ox":
+        return <CircleCheck className={className} />;
+      case "short":
+        return <FileText className={className} />;
+      case "multiple":
+        return <ListChecks className={className} />;
+      default:
+        return null;
+    }
+  };
 
-                {/* ✅ 문제 유형 (항상 OX, 단답형, 선택형 포함) */}
-                <div className="flex items-center gap-7 mb-6">
-                    <span className="text-lg font-semibold">문제 유형</span>
-                    {["ox", "short", "multiple"].map((type) => (
-                        <label key={type} className="flex items-center space-x-2 cursor-default">
-                        {/* 선택 불가능하므로 input은 렌더링 X */}
-                        <div
-                            className="px-4 py-2 rounded-lg border-2 bg-accent text-white border-navbar transition-all"
-                        >
-                            {type === "ox" ? "O/X" : type === "short" ? "단답형" : "선택형"}
-                        </div>
-                        </label>
-                    ))}
-                </div>
+  return (
+    <div className="flex w-full">
+      <QuizSideBar />
 
-                {/* ✅ 문제 개수 & 난이도 (수정 불가능) */}
-                <div className="grid grid-cols-3 gap-6 w-full">
-                    {["ox", "short", "multiple"].map((type) => (
-                        <div key={type} className="p-4 rounded-lg border-2 transition-all border-navbar-500">
-                            <h3 className="text-md font-semibold mb-3">
-                                {type === "ox" ? "O/X" : type === "short" ? "단답형" : "선택형"}
-                            </h3>
-
-                            {/* ✅ 문제 개수 (5개 고정, 수정 불가능) */}
-                            <label className="block mb-2">
-                                <span className="text-sm">문제 개수</span>
-                                <select className="w-full p-2 mt-1 border rounded-lg bg-gray-200" disabled>
-                                    <option value="5">3개</option>
-                                </select>
-                            </label>
-
-                            {/* ✅ 난이도 (Lv.3 고정, 수정 불가능) */}
-                            <label className="block">
-                                <span className="text-sm">난이도</span>
-                                <select className="w-full p-2 mt-1 border rounded-lg bg-gray-200" disabled>
-                                    <option value="Lv.3">Lv.3</option>
-                                </select>
-                            </label>
-                        </div>
-                    ))}
-                </div>
-
-                {/* ✅ 퀴즈 풀기 버튼 */}
-                <div className="flex pt-4 justify-end">
-                    <button
-                        className="px-6 py-2 bg-accent text-white font-semibold rounded-lg shadow-lg hover:bg-green-600 transition-all"
-                        onClick={handleStartQuiz}
-                        disabled={loading}
-                    >
-                        {loading ? "생성 중..." : "퀴즈 풀기"}
-                    </button>
-                </div>
-            </div>
+      <div className="flex-1 max-w-6xl pt-8 mt-8 mx-auto bg-white shadow-xl rounded-2xl border border-gray-300 p-7">
+        {/* 타이틀 */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-extrabold text-gray-800 mb-4 tracking-wide">
+            <span className="text-black">테스트 퀴즈</span>
+          </h1>
+          <p className="text-gray-500 text-sm">
+            자동으로 생성되는 <span className="font-medium text-gray-700">퀴즈 유형</span>을 확인하고
+            <br /> 테스트를 시작해보세요!
+          </p>
         </div>
-    );
+
+        {/* 문제 유형 박스 */}
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold mb-2 text-gray-700">문제 유형</h2>
+          <div className="flex gap-4">
+            {["ox", "short", "multiple"].map((type) => (
+              <div
+                key={type}
+                className="px-4 py-2 rounded-lg border-2 bg-green-600 text-white border-green-600 font-semibold shadow-sm"
+              >
+                {getLabel(type).replace(" 문제", "")}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 문제 설정 카드 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+          {["ox", "short", "multiple"].map((type) => (
+            <div
+              key={type}
+              className="p-5 rounded-xl border border-green-500 bg-white shadow-sm text-sm"
+            >
+              {/* 카드 헤더 */}
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-gray-800 flex items-center">
+                  {getIcon(type)} {getLabel(type)}
+                </h3>
+              </div>
+
+              {/* 카드 본문 */}
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">문제 개수</span>
+                  <span className="text-gray-800 font-semibold">3개</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">난이도</span>
+                  <span className="text-gray-800 font-semibold">Lv.3</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* 버튼 */}
+        <div className="flex pt-8 justify-end">
+          <button
+            className="px-6 py-2 bg-green-600 text-white font-semibold rounded-xl shadow-md hover:bg-green-700 transition-all"
+            onClick={handleStartQuiz}
+            disabled={loading}
+          >
+            {loading ? "퀴즈 생성 중..." : "퀴즈 풀기"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default TestQuiz;

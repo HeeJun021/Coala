@@ -2,137 +2,152 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createQuiz } from "../api/quizApi";
 import QuizSideBar from "../Layout/QuizSideBar";
+import { CircleCheck, FileText, ListChecks } from "lucide-react";
 
 const PracticeQuiz = () => {
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-    // ✅ API 요청 중 로딩 상태
-    const [loading, setLoading] = useState(false);
-    const navigate = useNavigate();
+  const difficultyMap = {
+    "Lv.1": 1,
+    "Lv.2": 2,
+    "Lv.3": 3,
+  };
 
-    const difficultyMap = {
-        "Lv.1": 1,
-        "Lv.2": 2,
-        "Lv.3": 3,
+  const [selectedTypes, setSelectedTypes] = useState({
+    ox: true,
+    short: true,
+    multiple: true,
+  });
+
+  const [settings, setSettings] = useState({
+    ox: { count: 5, difficulty: "Lv.1" },
+    short: { count: 5, difficulty: "Lv.1" },
+    multiple: { count: 5, difficulty: "Lv.1" },
+  });
+
+  const handleTypeChange = (type) => {
+    setSelectedTypes((prev) => ({
+      ...prev,
+      [type]: !prev[type],
+    }));
+  };
+
+  const handleSettingChange = (type, field, value) => {
+    setSettings((prev) => ({
+      ...prev,
+      [type]: { ...prev[type], [field]: value },
+    }));
+  };
+
+  const handleStartQuiz = async () => {
+    setLoading(true);
+    try {
+      const quizPayload = {
+        title: "사용자 연습 퀴즈",
+        quiz_type: "practice",
+        time_limit: null,
+        settings: Object.keys(selectedTypes)
+          .filter((type) => selectedTypes[type])
+          .map((type) => ({
+            question_type: type === "ox" ? 1 : type === "short" ? 2 : 3,
+            difficulty: difficultyMap[settings[type].difficulty],
+            question_count: settings[type].count,
+          })),
       };
 
-    // ✅ 문제 유형 체크 여부 관리
-    const [selectedTypes, setSelectedTypes] = useState({
-        ox: true,
-        short: true,
-        multiple: true
-    });
+      const newQuiz = await createQuiz(quizPayload);
+      if (newQuiz && newQuiz.quiz_id) {
+        navigate(`/quizsolve/${newQuiz.quiz_id}`);
+      }
+    } catch (error) {
+      console.error("🚨 퀴즈 생성 실패:", error);
+      alert("퀴즈 생성 중 오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // ✅ 문제 개수 & 난이도 관리
-    const [settings, setSettings] = useState({
-        ox: { count: 5, difficulty: "Lv.1" },
-        short: { count: 5, difficulty: "Lv.1" },
-        multiple: { count: 5, difficulty: "Lv.1" }
-    });
+  const getIcon = (type) => {
+    const className = "w-5 h-5 text-green-600 mr-2";
+    switch (type) {
+      case "ox":
+        return <CircleCheck className={className} />;
+      case "short":
+        return <FileText className={className} />;
+      case "multiple":
+        return <ListChecks className={className} />;
+      default:
+        return null;
+    }
+  };
 
-    // ✅ 문제 유형 체크박스 핸들러
-    const handleTypeChange = (type) => {
-        setSelectedTypes((prev) => ({
-        ...prev,
-        [type]: !prev[type]
-        }));
-    };
-
-    // ✅ 문제 개수 & 난이도 변경 핸들러
-    const handleSettingChange = (type, field, value) => {
-        setSettings((prev) => ({
-        ...prev,
-        [type]: { ...prev[type], [field]: value }
-        }));
-    };
-
-    // ✅  "퀴즈 풀기" 버튼 클릭 시 퀴즈 생성 API 호출
-    const handleStartQuiz = async () => {
-        setLoading(true);
-        try {
-        const quizPayload = {
-            title: "사용자 연습 퀴즈",
-            quiz_type: "practice", // ✅ 연습 퀴즈로 설정
-            time_limit: null, // 연습 퀴즈는 시간 제한 없음
-            settings: Object.keys(selectedTypes)
-                .filter((type) => selectedTypes[type]) // 체크된 문제 유형만 포함
-                .map((type) => ({
-                    question_type: type === "ox" ? 1 : type === "short" ? 2 : 3,
-                    difficulty: difficultyMap[settings[type].difficulty],
-                    question_count: settings[type].count
-                }))
-        };
-
-        console.log("📡 퀴즈 생성 요청:", quizPayload); // ✅ API 요청 전 확인
-
-        const newQuiz = await createQuiz(quizPayload);
-        console.log("✅ 퀴즈 생성 완료:", newQuiz); // ✅ 생성된 퀴즈 확인
-
-        if (newQuiz && newQuiz.quiz_id) {
-          navigate(`/quizsolve/${newQuiz.quiz_id}`);
-        }// ✅ 퀴즈 생성 성공 알림
-        } catch (error) {
-            console.error("🚨 퀴즈 생성 실패:", error);
-            alert("퀴즈 생성 중 오류가 발생했습니다.");
-        } finally {
-            setLoading(false);
-        }
-    };
+  const getLabel = (type) =>
+    type === "ox" ? "O/X 문제" : type === "short" ? "단답형 문제" : "선택형 문제";
 
   return (
     <div className="flex w-full">
       <QuizSideBar />
-      {/* ✅ 퀴즈 설정 박스 */}
-      <div className="flex-1 max-w-5xl pt-12 mx-auto">
-        {/* ✅ 타이틀 */}
-        <h2 className="text-2xl font-bold mb-6">연습 퀴즈 설정</h2>
 
-        {/* ✅ 문제 유형 선택 */}
-        <div className="flex items-center gap-6 mb-6">
-          <span className="text-lg font-semibold">문제 유형</span>
-          {["ox", "short", "multiple"].map((type) => (
-            <label key={type} className="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={selectedTypes[type]}
-                onChange={() => handleTypeChange(type)}
-                className="hidden"
-              />
-              <div
-                className={`px-4 py-2 rounded-lg border-2 transition-all
-                  ${
-                    selectedTypes[type]
-                      ? "bg-accent text-white border-navbar"
-                      : "bg-gray-200 border-gray-400"
-                  }`}
-              >
-                {type === "ox" ? "O/X" : type === "short" ? "단답형" : "선택형"}
-              </div>
-            </label>
-          ))}
+      <div className="flex-1 max-w-6xl pt-8 mt-8 mx-auto bg-white shadow-xl rounded-2xl border border-gray-300 p-7">
+        {/* 타이틀 */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-extrabold text-gray-800 mb-4 tracking-wide">
+            <span className="text-black">연습 퀴즈</span>
+          </h1>
+          <p className="text-gray-500 text-sm">
+            원하는 유형과 난이도를 선택해 <span className="font-medium text-gray-700">자유롭게 연습</span>하세요!
+          </p>
         </div>
 
+        {/* 문제 유형 선택 */}
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold mb-2 text-gray-700">문제 유형 선택</h2>
+          <div className="flex gap-4">
+            {["ox", "short", "multiple"].map((type) => (
+              <label
+                key={type}
+                className="flex items-center space-x-2 cursor-pointer"
+                onClick={() => handleTypeChange(type)}
+              >
+                <div
+                  className={`px-4 py-2 rounded-lg border-2 transition-all flex items-center font-semibold
+                  ${
+                    selectedTypes[type]
+                      ? "bg-green-600 text-white border-green-600"
+                      : "bg-gray-100 text-gray-600 border-gray-300"
+                  }`}
+                >
+                  {getLabel(type).replace(" 문제", "")}
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
 
-        {/* ✅ 문제 개수 & 난이도 설정 */}
-        <div className="grid grid-cols-3 gap-6 w-full">
+        {/* 문제 설정 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
           {["ox", "short", "multiple"].map((type) => (
             <div
               key={type}
-              className={`p-4 rounded-lg border-2 transition-all ${
-                selectedTypes[type] ? "border-navbar-500" : "border-gray-300 bg-gray-100 opacity-50"
-              }`}
+              className={`p-5 rounded-xl border ${
+                selectedTypes[type]
+                  ? "border-green-500 bg-white"
+                  : "border-gray-300 bg-gray-100 opacity-60"
+              } transition-all text-sm`}
             >
-              <h3 className="text-md font-semibold mb-3">
-                {type === "ox" ? "O/X" : type === "short" ? "단답형" : "선택형"}
+              <h3 className="font-bold text-gray-800 flex items-center mb-4">
+                {getIcon(type)} {getLabel(type)}
               </h3>
 
-              {/* 문제 개수 드롭다운 */}
-              <label className="block mb-2">
-                <span className="text-sm">문제 개수</span>
+              {/* 문제 개수 */}
+              <label className="block mb-3">
+                <span className="text-sm text-gray-600">문제 개수</span>
                 <select
                   className="w-full p-2 mt-1 border rounded-lg"
                   value={settings[type].count}
                   onChange={(e) => handleSettingChange(type, "count", Number(e.target.value))}
-                  disabled={!selectedTypes[type]} // ✅ 체크 안 하면 비활성화
+                  disabled={!selectedTypes[type]}
                 >
                   {[2, 3, 5].map((num) => (
                     <option key={num} value={num}>
@@ -142,14 +157,14 @@ const PracticeQuiz = () => {
                 </select>
               </label>
 
-              {/* 난이도 드롭다운 */}
+              {/* 난이도 */}
               <label className="block">
-                <span className="text-sm">난이도</span>
+                <span className="text-sm text-gray-600">난이도</span>
                 <select
                   className="w-full p-2 mt-1 border rounded-lg"
                   value={settings[type].difficulty}
                   onChange={(e) => handleSettingChange(type, "difficulty", e.target.value)}
-                  disabled={!selectedTypes[type]} // ✅ 체크 안 하면 비활성화
+                  disabled={!selectedTypes[type]}
                 >
                   {["Lv.1", "Lv.2", "Lv.3"].map((level) => (
                     <option key={level} value={level}>
@@ -161,13 +176,16 @@ const PracticeQuiz = () => {
             </div>
           ))}
         </div>
-        <div className="flex pt-4 justify-end">
-            <button 
-            className="px-6 py-2 bg-accent text-white font-semibold rounded-lg shadow-lg hover:bg-green-600 transition-all"
+
+        {/* 버튼 */}
+        <div className="flex pt-8 justify-end">
+          <button
+            className="px-6 py-2 bg-green-600 text-white font-semibold rounded-xl shadow-md hover:bg-green-700 transition-all"
             onClick={handleStartQuiz}
-            disabled={loading}>
-            {loading ? "생성 중..." : "퀴즈 풀기"}
-            </button>
+            disabled={loading}
+          >
+            {loading ? "퀴즈 생성 중..." : "퀴즈 풀기"}
+          </button>
         </div>
       </div>
     </div>

@@ -107,9 +107,7 @@ const CodingTestPage = () => {
         {/* 페이지 타이틀 */}
         <div className="mb-8">
           <h1 className="text-4xl font-extrabold text-gray-800 mb-4 tracking-wide">
-            <span className="text-teal-600">CODING</span>
-
-            <span className="text-black">TEST</span>
+            <span className="text-black">코딩 테스트</span>
           </h1>
 
           <p className="text-gray-500 text-sm">
@@ -127,9 +125,9 @@ const CodingTestPage = () => {
 
           <div
             className={`flex items-center border rounded-md w-[500px] bg-white px-2 ${
-              searchTerm
-                ? "border-blue-500"
-                : "border-gray-300 hover:border-blue-400 focus-within:border-blue-500"
+              search
+                ? "border-green-500"
+                : "border-gray-300 hover:border-green-500 focus-within:border-green-500"
             }`}
           >
             <input
