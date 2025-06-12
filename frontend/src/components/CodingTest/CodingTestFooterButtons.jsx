@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   RefreshCcw,
-  Play,
+  // Play,
   Send,
   UsersRound,
   MessageSquareQuote,
@@ -74,7 +74,7 @@ const CodingTestFooterButtons = ({
               <RefreshCcw size={14} color="#d97706" />
               초기화
             </button>
-            <button
+            {/* <button
               onClick={handleRunCode}
               disabled={!problem}
               className={`${sharedButton} ${
@@ -83,7 +83,7 @@ const CodingTestFooterButtons = ({
             >
               <Play size={14} color="#4f46e5" strokeWidth={2.5} />
               테스트케이스 실행
-            </button>
+            </button> */}
             <button
               onClick={handleSubmitCode}
               disabled={!problem || isSubmitting}

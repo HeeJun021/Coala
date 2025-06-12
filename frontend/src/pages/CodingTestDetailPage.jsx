@@ -317,6 +317,9 @@ const CodingTestDetailPage = () => {
           fetchSubmissions={fetchSubmissions}
           language={language}
           handleLanguageChange={handleLanguageChange}
+          handleRunCode={handleRunCode}
+          isRunning={isRunning}
+          problem={problem}
         />
 
         {/* 콘텐츠 영역 */}
