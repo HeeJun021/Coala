@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Controlled as CodeMirror } from "react-codemirror2";
 import "codemirror/lib/codemirror.css";
 import "codemirror/theme/eclipse.css";
@@ -15,11 +15,15 @@ import apiClient from "../api/apiClient";
 
 const CodeTestPage = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
   const initialCode = queryParams.get("code") || "";
   const codeLanguage = queryParams.get("language") || "";
   const title = queryParams.get("title") || "코딩 테스트 연습";
   const problemDescription = queryParams.get("problem_description") || "코드를 실행하여 결과를 확인하세요.";
+  const category = queryParams.get("category") || "";
+  const materialId = queryParams.get("id") || "";
+  const exampleId = queryParams.get("exampleId") || "";
 
   const safeDecodeURIComponent = (str) => {
     try {
@@ -80,6 +84,13 @@ const CodeTestPage = () => {
   const withWhiteBackground = htmlPreview?.includes("<body")
     ? htmlPreview.replace(/<body([^>]*)>/, `<body$1 style="background-color: white;">`)
     : `<body style="background-color: white;">${htmlPreview}</body>`;
+
+  const handleBack = () => {
+    const query = materialId
+      ? `category=${encodeURIComponent(category)}&id=${encodeURIComponent(materialId)}`
+      : `category=${encodeURIComponent(category)}&exampleId=${encodeURIComponent(exampleId)}`;
+    navigate(`/StudyMaterialsPage?${query}`);
+  };
 
   return (
     <div className={`min-h-screen flex flex-col items-center p-8 transition-all duration-300
@@ -152,9 +163,13 @@ const CodeTestPage = () => {
           </div>
         </div>
 
-        <div className={`mt-4 p-4 border rounded-md ${theme === "dark" ? "bg-[#2d2d2d]" : "bg-gray-100"}`}>
+        <div className="mt-4 p-4 border rounded-md">
           <h2 className="text-lg font-semibold">실행 결과</h2>
-          <div className={`border rounded p-2 min-h-[50px] font-mono text-sm ${theme === "dark" ? "bg-[#1e1e1e] text-green-300" : "bg-white text-black"}`}>
+          <div
+  className={`border rounded p-2 min-h-[50px] font-mono text-sm ${
+    theme === 'dark' ? 'bg-[#1e1e1e]' : 'bg-white text-black'
+  }`}
+>
             {htmlPreview && (
               <div className="mt-2">
                 <iframe
@@ -190,22 +205,30 @@ const CodeTestPage = () => {
           </div>
         </div>
 
-        <div className="flex justify-end mt-4">
+        <div className="flex justify-between mt-4">
           <button
-            className="px-4 py-2 bg-gray-500 text-white rounded mr-2"
-            onClick={() => {
-              setCode(safeDecodeURIComponent(initialCode));
-              setInput("");
-              setResult("");
-              setError("");
-              setHtmlPreview("");
-            }}
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+            onClick={handleBack}
           >
-            초기화
+            뒤로 가기
           </button>
-          <button className="px-4 py-2 bg-blue-500 text-white rounded" onClick={runCode}>
-            코드 실행
-          </button>
+          <div>
+            <button
+              className="px-4 py-2 bg-gray-500 text-white rounded mr-2"
+              onClick={() => {
+                setCode(safeDecodeURIComponent(initialCode));
+                setInput("");
+                setResult("");
+                setError("");
+                setHtmlPreview("");
+              }}
+            >
+              초기화
+            </button>
+            <button className="px-4 py-2 bg-blue-500 text-white rounded" onClick={runCode}>
+              코드 실행
+            </button>
+          </div>
         </div>
       </div>
     </div>
