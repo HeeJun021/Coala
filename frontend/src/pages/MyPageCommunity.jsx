@@ -77,8 +77,8 @@ const MyPageCommunity = () => {
           <button
             className={`px-5 py-2 rounded-lg font-semibold ${
               activeTab === "posts"
-                ? "bg-accent text-white"
-                : "bg-gray-200 text-gray-700 hover:bg-accent/40"
+                ? "bg-green-600 text-white"
+                : "bg-gray-200 text-gray-700 hover:bg-green-700"
             }`}
             onClick={() => setActiveTab("posts")}
           >
@@ -87,8 +87,8 @@ const MyPageCommunity = () => {
           <button
             className={`px-5 py-2 rounded-lg font-semibold ${
               activeTab === "comments"
-                ? "bg-accent text-white"
-                : "bg-gray-200 text-gray-700 hover:bg-accent/40"
+                ? "bg-green-600 text-white"
+                : "bg-gray-200 text-gray-700 hover:bg-green-700"
             }`}
             onClick={() => setActiveTab("comments")}
           >

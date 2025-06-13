@@ -82,7 +82,7 @@ const ProfileCard = ({ userData, setUserData }) => {
                             className="w-16 h-16 rounded-md cursor-pointer transition duration-200 hover:brightness-75"
                             onClick={() => setIsModalOpen(true)} // ✅ 클릭 시 모달 열기
                         />
-                        <button className="bg-accent text-white px-4 py-1 rounded-lg hover:bg-[#6b8d63]">
+                        <button className="bg-green-600 text-white px-4 py-1 rounded-lg hover:bg-green-700">
                             변경
                         </button>
                     </div>
@@ -126,7 +126,7 @@ const ProfileCard = ({ userData, setUserData }) => {
                             취소
                         </button>
                         <button
-                            className="bg-accent text-white px-4 py-1 rounded-lg hover:bg-[#6b8d63]"
+                            className="bg-green-600 text-white px-4 py-1 rounded-lg hover:bg-green-700"
                             onClick={saveProfile}
                         >
                             저장
@@ -170,7 +170,7 @@ const ProfileCard = ({ userData, setUserData }) => {
                         )}
                     </div>
                     <button
-                        className="absolute bottom-0 text-white right-0 bg-accent px-4 py-1 rounded-lg hover:bg-[#6b8d63]"
+                        className="absolute bottom-0 text-white right-0 bg-green-600 px-4 py-1 rounded-lg hover:bg-green-700"
                         onClick={toggleEditMode}
                     >
                         수정

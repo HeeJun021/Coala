@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { getUserQuizHistory } from "../api/userQuizApi";
 import MyPageSidebar from "../Layout/MyPageSideBar";
+import { ScrollText, CheckCircle, CalendarClock } from "lucide-react";
 
 const MyPageUserQuizHistory = () => {
   const navigate = useNavigate();
@@ -58,8 +59,11 @@ const MyPageUserQuizHistory = () => {
     <div className="flex min-h-screen">
       <div className="w-[250px]">
       </div>
-      <div className="flex-1 p-6">
-        <h2 className="text-xl font-semibold mt-4">📜 사용자 퀴즈 풀이 내역</h2>
+      <div className="flex-1 p-6 max-w-6xl mx-auto">
+        <h2 className="text-xl font-semibold mt-4 flex items-center gap-2">
+          <ScrollText size={20} className="text-green-600" />
+          사용자 퀴즈 풀이 내역
+        </h2>
 
         {quizHistory.length === 0 ? (
           <p className="text-sm text-gray-500">풀이한 퀴즈가 없습니다.</p>
@@ -79,14 +83,28 @@ const MyPageUserQuizHistory = () => {
                 {currentItems.map((quiz) => (
                   <tr key={quiz.uq_submission_id} className="border text-sm">
                     <td className="px-4 py-2 text-center">{quiz.title}</td>
-                    <td className="px-4 py-2 text-center">{quiz.correct_count}</td>
+
                     <td className="px-4 py-2 text-center">
-                      {new Date(quiz.submitted_at).toLocaleString()}
+                      <div className="inline-flex items-center justify-center gap-1 text-green-600">
+                        <CheckCircle size={16} />
+                        {quiz.correct_count}
+                      </div>
                     </td>
-                    <td className="px-4 py-2 text-center">{quiz.creator_name}</td>
+
+                    <td className="px-4 py-2 text-center">
+                      <div className="inline-flex items-center justify-center gap-1 text-gray-700">
+                        <CalendarClock size={16} />
+                        {new Date(quiz.submitted_at).toLocaleString()}
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-2 text-center">
+                      {quiz.creator_name}
+                    </td>
+
                     <td className="px-4 py-2 text-center">
                       <button
-                        className="px-4 py-2 bg-accent text-white text-sm rounded-lg"
+                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg"
                         onClick={() => navigate(`/user-quiz-result/${quiz.uq_submission_id}`)}
                       >
                         보기

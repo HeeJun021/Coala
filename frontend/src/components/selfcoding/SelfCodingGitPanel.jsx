@@ -600,7 +600,7 @@ const SelfCodingGitPanel = ({ isGithubConnected }) => {
               type="text"
               value={repoName}
               onChange={handleInputChange(setRepoName)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-green-600"
               placeholder="저장소 이름을 입력하세요"
             />
           </div>
@@ -610,7 +610,7 @@ const SelfCodingGitPanel = ({ isGithubConnected }) => {
               type="text"
               value={repoDescription}
               onChange={handleInputChange(setRepoDescription)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-green-500"
               placeholder="저장소 설명을 입력하세요 (선택)"
             />
           </div>
@@ -632,7 +632,7 @@ const SelfCodingGitPanel = ({ isGithubConnected }) => {
             </button>
             <button
               onClick={handleCreateRepo}
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
               disabled={loading}
             >
               {loading ? "생성 중..." : "생성"}
@@ -743,7 +743,7 @@ const SelfCodingGitPanel = ({ isGithubConnected }) => {
             </button>
             <button
               onClick={handleUpload}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors shadow-sm"
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors shadow-sm"
               disabled={!selectedRepo || selectedPaths.length === 0}
             >
               업로드

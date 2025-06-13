@@ -63,7 +63,7 @@ const InfoCard = ({ userData, setUserData }) => {
                                 placeholder="비밀번호 확인"
                             />
                             <button
-                                className="bg-accent px-4 py-1 rounded-md text-sm text-white font-medium hover:bg-[#6b8d63]"
+                                className="bg-green-600 px-4 py-1 rounded-md text-sm text-white font-medium hover:bg-green-700"
                                 onClick={savePassword} // 비밀번호 저장 버튼
                             >
                                 저장
@@ -74,7 +74,7 @@ const InfoCard = ({ userData, setUserData }) => {
                     <>
                         <p className="text-gray-700 flex-1">********</p>
                         <button
-                            className="ml-auto bg-accent px-4 py-1 rounded-md text-sm text-white font-medium hover:bg-[#6b8d63]"
+                            className="ml-auto bg-green-600 px-4 py-1 rounded-md text-sm text-white font-medium hover:bg-green-700"
                             onClick={() => setIsEditingPassword(true)} // 수정 모드 전환 버튼
                         >
                             변경

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { getAllSubmissionsByUser } from "../api/codingTestApi";
+import { CheckCircle, XCircle, FileText } from "lucide-react";
 import MyPageSidebar from "../Layout/MyPageSideBar";
 
 const MyPageCTHistory = () => {
@@ -58,8 +59,12 @@ const MyPageCTHistory = () => {
     <div className="flex min-h-screen">
       <div className="w-[250px]">
       </div>
-      <div className="flex-1 p-6">
-        <h2 className="text-xl font-semibold mt-4">코딩 테스트 제출 내역</h2>
+      <div className="flex-1 p-6 max-w-6xl mx-auto">
+        <h2 className="text-xl font-semibold mt-4 flex items-center gap-2">
+          <FileText size={20} className="text-green-600" />
+          코딩 테스트 제출 내역
+        </h2>
+
         {submissionHistory.length === 0 ? (
           <p className="text-sm text-gray-500">제출 기록이 없습니다.</p>
         ) : (
@@ -83,21 +88,27 @@ const MyPageCTHistory = () => {
                     <td className="px-4 py-2 text-center">{submission.title}</td>
                     <td className="px-4 py-2 text-center">{submission.language}</td>
                     <td className="px-4 py-2 text-center">
-                      {submission.is_correct ? "✅ 통과" : "❌ 실패"}
+                      {submission.is_correct ? (
+                        <span className="flex items-center justify-center text-green-600 gap-1">
+                          <CheckCircle size={16} /> 통과
+                        </span>
+                      ) : (
+                        <span className="flex items-center justify-center text-red-500 gap-1">
+                          <XCircle size={16} /> 실패
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-2 text-center">
                       {submission.passed_test_cases} / {submission.total_test_cases}
                     </td>
                     <td className="px-4 py-2 text-center">{submission.submitted_at}</td>
                     <td className="px-4 py-2 text-center">
-                        <button
-                        className="px-4 py-2 bg-accent text-white text-sm rounded-lg"
-                        onClick={() =>
-                        navigate(`/codingtest/${submission.test_id}`)  // ✅ 문제 상세 페이지로 이동만!
-                        }
-                        >
+                      <button
+                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg"
+                        onClick={() => navigate(`/codingtest/${submission.test_id}`)}
+                      >
                         보기
-                        </button>
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -122,7 +133,9 @@ const MyPageCTHistory = () => {
                 key={index}
                 onClick={() => handlePageChange(index + 1)}
                 className={`px-4 py-2 rounded-lg ${
-                  currentPage === index + 1 ? "bg-accent text-white" : "bg-gray-300 text-gray-700"
+                  currentPage === index + 1
+                    ? "bg-accent text-white"
+                    : "bg-gray-300 text-gray-700"
                 }`}
               >
                 {index + 1}
@@ -131,7 +144,9 @@ const MyPageCTHistory = () => {
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               className={`px-3 py-2 rounded-lg ${
-                currentPage === totalPages ? "bg-gray-300 text-gray-600" : "bg-accent text-white"
+                currentPage === totalPages
+                  ? "bg-gray-300 text-gray-600"
+                  : "bg-accent text-white"
               }`}
               disabled={currentPage === totalPages}
             >
