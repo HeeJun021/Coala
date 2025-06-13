@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { getAllUserQuizzes } from "../api/userQuizApi";
 import QuizSideBar from "../Layout/QuizSideBar";
 import { FaSearch, FaTimes } from "react-icons/fa";
+import { HelpCircle } from "lucide-react";
+import QuizGuideModal from "../components/quiz/QuizGuideModal";
 
 const UserQuiz = ({ userData }) => {
   const navigate = useNavigate();
@@ -11,6 +13,20 @@ const UserQuiz = ({ userData }) => {
   const [myOnly, setMyOnly] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
+
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [showGuideTooltip, setShowGuideTooltip] = useState(false);
+
+  useEffect(() => {
+    const seen = localStorage.getItem("quiz_guide_seen");
+    if (seen !== "true") setShowGuideTooltip(true);
+  }, []);
+
+  const handleGuideClick = () => {
+    setIsGuideOpen(true);
+    setShowGuideTooltip(false);
+    localStorage.setItem("quiz_guide_seen", "true");
+  };
 
   const fetchAllQuizzes = useCallback(async () => {
     try {
@@ -70,7 +86,19 @@ const UserQuiz = ({ userData }) => {
     <div className="flex w-full">
       <QuizSideBar />
 
-      <div className="flex-1 max-w-6xl pt-8 mt-8 mx-auto bg-white shadow-xl rounded-2xl border border-gray-300 p-7">
+      <div className="flex-1 max-w-6xl pt-8 mt-8 mx-auto bg-white shadow-xl rounded-2xl border border-gray-300 p-7 relative">
+        {/* 🟢 가이드 버튼 */}
+        <button
+          onClick={handleGuideClick}
+          className="absolute top-4 right-4 text-gray-500 hover:text-black"
+          title="가이드 보기"
+        >
+          <HelpCircle size={24} />
+          {showGuideTooltip && (
+            <div className="absolute top-[-2px] right-[-6px] w-[7px] h-[7px] bg-rose-600 rounded-full shadow-sm" />
+          )}
+        </button>
+
         {/* 타이틀 */}
         <div className="mb-8">
           <h1 className="text-3xl font-extrabold text-gray-800 mb-4 tracking-wide">
@@ -84,10 +112,7 @@ const UserQuiz = ({ userData }) => {
 
         {/* 검색 및 필터 */}
         <div className="flex flex-col gap-2 mb-4">
-          <h2 className="text-lg font-medium text-gray-700 mb-2">
-            퀴즈 검색 및 필터링
-          </h2>
-
+          <h2 className="text-lg font-medium text-gray-700 mb-2">퀴즈 검색 및 필터링</h2>
           <div
             className={`flex items-center border rounded-md w-[500px] bg-white px-2 ${
               search
@@ -118,7 +143,6 @@ const UserQuiz = ({ userData }) => {
             />
           </div>
 
-          {/* 체크박스 필터 */}
           <div className="mt-2">
             <label className="inline-flex items-center cursor-pointer">
               <input
@@ -195,6 +219,11 @@ const UserQuiz = ({ userData }) => {
           </button>
         </div>
       </div>
+
+      {/* 가이드 모달 */}
+      {isGuideOpen && (
+        <QuizGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
+      )}
     </div>
   );
 };

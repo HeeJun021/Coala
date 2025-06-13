@@ -1,12 +1,27 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createQuiz } from "../api/quizApi";
 import QuizSideBar from "../Layout/QuizSideBar";
-import { CircleCheck, FileText, ListChecks } from "lucide-react";
+import { CircleCheck, FileText, ListChecks, HelpCircle } from "lucide-react";
+import QuizGuideModal from "../components/quiz/QuizGuideModal";
 
 const PracticeQuiz = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [showGuideTooltip, setShowGuideTooltip] = useState(false);
+
+  useEffect(() => {
+    const seen = localStorage.getItem("quiz_guide_seen");
+    if (seen !== "true") setShowGuideTooltip(true);
+  }, []);
+
+  const handleGuideClick = () => {
+    setIsGuideOpen(true);
+    setShowGuideTooltip(false);
+    localStorage.setItem("quiz_guide_seen", "true");
+  };
 
   const difficultyMap = {
     "Lv.1": 1,
@@ -89,14 +104,29 @@ const PracticeQuiz = () => {
     <div className="flex w-full">
       <QuizSideBar />
 
-      <div className="flex-1 max-w-6xl pt-8 mt-8 mx-auto bg-white shadow-xl rounded-2xl border border-gray-300 p-7">
+      {/* 퀴즈 박스 */}
+      <div className="flex-1 max-w-6xl pt-8 mt-8 mx-auto bg-white shadow-xl rounded-2xl border border-gray-300 p-7 relative">
+
+        {/* 🟢 가이드 버튼 */}
+         <button
+            onClick={handleGuideClick}
+            className="absolute top-4 right-4 text-gray-500 hover:text-black"
+            title="가이드 보기"
+          >
+            <HelpCircle size={24} />
+            {showGuideTooltip && (
+              <div className="absolute top-[-2px] right-[-6px] w-[7px] h-[7px] bg-rose-600 rounded-full shadow-sm" />
+            )}
+          </button>
+
         {/* 타이틀 */}
         <div className="mb-8">
           <h1 className="text-3xl font-extrabold text-gray-800 mb-4 tracking-wide">
             <span className="text-black">연습 퀴즈</span>
           </h1>
           <p className="text-gray-500 text-sm">
-            원하는 유형과 난이도를 선택해 <span className="font-medium text-gray-700">자유롭게 연습</span>하세요!
+            원하는 유형과 난이도를 선택해{" "}
+            <span className="font-medium text-gray-700">자유롭게 연습</span>하세요!
           </p>
         </div>
 
@@ -146,7 +176,9 @@ const PracticeQuiz = () => {
                 <select
                   className="w-full p-2 mt-1 border rounded-lg"
                   value={settings[type].count}
-                  onChange={(e) => handleSettingChange(type, "count", Number(e.target.value))}
+                  onChange={(e) =>
+                    handleSettingChange(type, "count", Number(e.target.value))
+                  }
                   disabled={!selectedTypes[type]}
                 >
                   {[2, 3, 5].map((num) => (
@@ -163,7 +195,9 @@ const PracticeQuiz = () => {
                 <select
                   className="w-full p-2 mt-1 border rounded-lg"
                   value={settings[type].difficulty}
-                  onChange={(e) => handleSettingChange(type, "difficulty", e.target.value)}
+                  onChange={(e) =>
+                    handleSettingChange(type, "difficulty", e.target.value)
+                  }
                   disabled={!selectedTypes[type]}
                 >
                   {["Lv.1", "Lv.2", "Lv.3"].map((level) => (
@@ -177,7 +211,7 @@ const PracticeQuiz = () => {
           ))}
         </div>
 
-        {/* 버튼 */}
+        {/* 시작 버튼 */}
         <div className="flex pt-8 justify-end">
           <button
             className="px-6 py-2 bg-green-600 text-white rounded-xl shadow-md hover:bg-green-700 transition-all"
@@ -188,6 +222,11 @@ const PracticeQuiz = () => {
           </button>
         </div>
       </div>
+
+      {/* 가이드 모달 */}
+      {isGuideOpen && (
+        <QuizGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
+      )}
     </div>
   );
 };

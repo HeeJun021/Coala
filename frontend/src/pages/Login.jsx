@@ -56,7 +56,7 @@ const Login = () => {
 
         <form className="flex flex-col gap-6" onSubmit={handleLogin}>
           <div className="flex items-center border-b border-gray-200 pb-2">
-            <Mail size={18} className="text-green-500 mr-2" />
+            <Mail size={18} className="text-green-600 mr-2" />
             <input
               type="text"
               placeholder="이메일"
@@ -80,7 +80,7 @@ const Login = () => {
           <div className="flex justify-center mt-8">
             <button
               type="submit"
-              className="bg-accent text-white px-8 py-3 rounded-full font-bold hover:bg-[#17a94d] shadow-lg w-full"
+              className="bg-green-600 text-white px-8 py-3 rounded-full font-bold hover:bg-green-700 shadow-lg w-full"
             >
               로그인
             </button>

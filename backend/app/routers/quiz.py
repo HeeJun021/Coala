@@ -101,10 +101,10 @@ def submit_quiz(quiz_id: int, submission_data: QuizSubmissionRequest, db: Sessio
     rating_change = 0
     if mode == "test":
         correct_rate = correct_count / total_questions
-        if correct_rate >= 0.8:
+        if correct_rate >= 1.0:
             rating_change = 50
-        elif correct_rate >= 0.6:
-            rating_change = 20
+        elif correct_rate >= 0.75:
+            rating_change = 25
         elif correct_rate < 0.3:
             rating_change = -30
 

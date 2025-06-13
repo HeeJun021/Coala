@@ -1,14 +1,27 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createQuiz } from "../api/quizApi";
 import QuizSideBar from "../Layout/QuizSideBar";
-
-// lucide-react 아이콘
-import { CircleCheck, FileText, ListChecks } from "lucide-react";
+import { CircleCheck, FileText, ListChecks, HelpCircle } from "lucide-react";
+import QuizGuideModal from "../components/quiz/QuizGuideModal";
 
 const TestQuiz = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [showGuideTooltip, setShowGuideTooltip] = useState(false);
+
+  useEffect(() => {
+    const seen = localStorage.getItem("quiz_guide_seen");
+    if (seen !== "true") setShowGuideTooltip(true);
+  }, []);
+
+  const handleGuideClick = () => {
+    setIsGuideOpen(true);
+    setShowGuideTooltip(false);
+    localStorage.setItem("quiz_guide_seen", "true");
+  };
 
   const selectedTypes = {
     ox: true,
@@ -65,7 +78,20 @@ const TestQuiz = () => {
     <div className="flex w-full">
       <QuizSideBar />
 
-      <div className="flex-1 max-w-6xl pt-8 mt-8 mx-auto bg-white shadow-xl rounded-2xl border border-gray-300 p-7">
+      {/* 퀴즈 카드 */}
+      <div className="flex-1 max-w-6xl pt-8 mt-8 mx-auto bg-white shadow-xl rounded-2xl border border-gray-300 p-7 relative">
+        {/* 🟢 가이드 버튼 */}
+        <button
+          onClick={handleGuideClick}
+          className="absolute top-4 right-4 text-gray-500 hover:text-black"
+          title="가이드 보기"
+        >
+          <HelpCircle size={24} />
+          {showGuideTooltip && (
+            <div className="absolute top-[-2px] right-[-6px] w-[7px] h-[7px] bg-rose-600 rounded-full shadow-sm" />
+          )}
+        </button>
+
         {/* 타이틀 */}
         <div className="mb-8">
           <h1 className="text-3xl font-extrabold text-gray-800 mb-4 tracking-wide">
@@ -92,21 +118,19 @@ const TestQuiz = () => {
           </div>
         </div>
 
-        {/* 문제 설정 카드 */}
+        {/* 문제 카드 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
           {["ox", "short", "multiple"].map((type) => (
             <div
               key={type}
               className="p-5 rounded-xl border border-green-500 bg-white shadow-sm text-sm"
             >
-              {/* 카드 헤더 */}
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-gray-800 flex items-center">
                   {getIcon(type)} {getLabel(type)}
                 </h3>
               </div>
 
-              {/* 카드 본문 */}
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-gray-500">문제 개수</span>
@@ -132,6 +156,11 @@ const TestQuiz = () => {
           </button>
         </div>
       </div>
+
+      {/* 가이드 모달 */}
+      {isGuideOpen && (
+        <QuizGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
+      )}
     </div>
   );
 };

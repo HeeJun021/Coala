@@ -5,8 +5,8 @@ import {
   FaGithub,
   FaSave,
   FaCog,
-  FaQuestionCircle,
 } from "react-icons/fa";
+import { HelpCircle } from "lucide-react";
 import SelfCodingSettingsPanel from "./SelfCodingSettingsPanel";
 import SelfCodingGuideModal from "./SelfCodingGuideModal";
 import { saveCodeFile } from "../../api/codeApi";
@@ -50,7 +50,6 @@ const SelfCodingSidebar = ({
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [showGuideTooltip, setShowGuideTooltip] = useState(false);
 
-  // 최초 진입시 안내 말풍선 노출
   useEffect(() => {
     const seen = localStorage.getItem("selfcoding_guide_seen");
     if (seen !== "true") setShowGuideTooltip(true);
@@ -282,33 +281,18 @@ const SelfCodingSidebar = ({
         <div className="mt-auto flex flex-col items-center gap-0">
           {/* 가이드 보기 버튼 */}
           <div className="w-full relative pb-4">
-            <button
-              title="가이드 보기"
-              onClick={handleGuideClick}
-              className="w-full h-12 flex items-center justify-center text-[20px] text-gray-500 hover:text-black"
-              style={{ marginBottom: "0.25rem" }} // 버튼 간격 조정
-            >
-              <FaQuestionCircle />
-            </button>
-            {showGuideTooltip && (
-              <div className="absolute left-12 top-0 flex items-center z-50">
-                {/* 꼬리 */}
-                <div
-                  className="w-4 h-4 bg-yellow-50 border-l border-t border-yellow-400 absolute"
-                  style={{
-                    left: '-8px',
-                    top: '20px', // 버튼 중앙 또는 원하는 위치
-                    transform: 'rotate(-45deg)'
-                  }}
-                />
-                <div className="ml-2 bg-yellow-50 border border-yellow-400 text-base text-gray-900 rounded-xl shadow-lg px-4 py-3 min-w-[220px]">
-                  <span>
-                    <b className="text-blue-700">이 버튼</b>을 클릭하여 <b className="text-blue-700">설명서</b>를 볼 수 있습니다!
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
+  <button
+    title="가이드 보기"
+    onClick={handleGuideClick}
+    className="w-full h-12 flex items-center justify-center text-[20px] text-gray-500 hover:text-black relative"
+    style={{ marginBottom: "0.25rem" }}
+  >
+    <HelpCircle size={24} className="text-gray-500" />
+    {showGuideTooltip && (
+      <div className="absolute top-[5px] right-[-6px] w-[7px] h-[7px] bg-rose-600 rounded-full shadow-sm" />
+    )}
+  </button>
+</div>
 
           {/* 설정 버튼 */}
           <div

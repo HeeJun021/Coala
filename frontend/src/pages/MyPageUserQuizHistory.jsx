@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { getUserQuizHistory } from "../api/userQuizApi";
-import MyPageSidebar from "../Layout/MyPageSideBar";
 import { ScrollText, CheckCircle, CalendarClock } from "lucide-react";
 
 const MyPageUserQuizHistory = () => {

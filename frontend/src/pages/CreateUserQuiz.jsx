@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { createUserQuiz } from "../api/userQuizApi";
 import UserQuizDialog from "../components/UserQuizDialog";
+import { Plus, Trash2 } from "lucide-react";
 
 const CreateUserQuiz = ({ userData }) => {
   const [quizTitle, setQuizTitle] = useState("");
@@ -14,13 +15,19 @@ const CreateUserQuiz = ({ userData }) => {
       ...questions,
       {
         question_text: "",
-        choices: [],
-        correct_answer: "",
+        choices: ["", "", "", ""],
+        correct_answer: [],
         explanation: "",
         categories: "",
         question_type: 1,
       },
     ]);
+  };
+
+  const handleDeleteQuestion = (index) => {
+    const updated = [...questions];
+    updated.splice(index, 1);
+    setQuestions(updated);
   };
 
   const handleQuestionChange = (index, field, value) => {
@@ -82,46 +89,66 @@ const CreateUserQuiz = ({ userData }) => {
   };
 
   return (
-    <div className="max-w-3xl mt-6 mx-auto p-6">
-      <h2 className="text-2xl mb-4 font-semibold text-center">사용자 퀴즈 만들기</h2>
-      <input
-        type="text"
-        placeholder="퀴즈 제목"
-        value={quizTitle}
-        onChange={(e) => setQuizTitle(e.target.value)}
-        className="border-2 p-2 mb-2 w-full"
-      />
-      <textarea
-        placeholder="퀴즈 설명"
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        className="border-2 p-2 mb-4 w-full"
-      />
+    <div className="relative max-w-4xl mt-10 mx-auto p-6">
+      {/* 퀴즈 생성하기 버튼 (상단 우측) */}
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-semibold">사용자 퀴즈 만들기</h2>
+        <button
+          onClick={handleSubmit}
+          className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded shadow"
+        >
+          퀴즈 생성하기
+        </button>
+      </div>
 
+      {/* 제목 & 설명 */}
+      <div className="border border-gray-300 rounded-md p-4 mb-6 bg-gray-50">
+        <input
+          type="text"
+          placeholder="퀴즈 제목"
+          value={quizTitle}
+          onChange={(e) => setQuizTitle(e.target.value)}
+          className="border p-2 mb-4 w-full rounded"
+        />
+        <textarea
+          placeholder="퀴즈 설명"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          className="border p-2 w-full h-24 resize-none rounded"
+        />
+      </div>
+
+      {/* 문제 목록 */}
       {questions.map((q, idx) => (
         <div
           key={idx}
-          className="mb-6 border border-gray-300 rounded p-4 bg-white shadow-sm"
+          className="mb-6 border border-gray-300 rounded p-4 bg-white shadow-sm relative"
         >
-          <div className="flex items-center mb-3">
-            <span className="mr-3 font-semibold">문제 {idx + 1}</span>
-            <div className="flex gap-2">
-              {[{ type: 1, label: "O/X" }, { type: 2, label: "객관식" }, { type: 3, label: "단답형" }].map((item) => (
-                <button
-                  key={item.type}
-                  onClick={() =>
-                    handleQuestionChange(idx, "question_type", item.type)
-                  }
-                  className={`px-3 py-1 rounded ${
-                    q.question_type === item.type
-                      ? "bg-navbar text-white"
-                      : "bg-gray-200 text-gray-700"
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
+          <div className="flex items-center justify-between mb-3">
+            <span className="font-semibold text-lg">문제 {idx + 1}</span>
+            <button
+              onClick={() => handleDeleteQuestion(idx)}
+              className="text-red-500 hover:text-red-700"
+              title="문제 삭제"
+            >
+              <Trash2 size={20} />
+            </button>
+          </div>
+
+          <div className="flex gap-2 mb-2">
+            {[{ type: 1, label: "O/X" }, { type: 2, label: "객관식" }, { type: 3, label: "단답형" }].map((item) => (
+              <button
+                key={item.type}
+                onClick={() => handleQuestionChange(idx, "question_type", item.type)}
+                className={`px-3 py-1 rounded ${
+                  q.question_type === item.type
+                    ? "bg-green-600 text-white"
+                    : "bg-gray-200 text-gray-700"
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
           </div>
 
           <input
@@ -131,9 +158,10 @@ const CreateUserQuiz = ({ userData }) => {
             onChange={(e) =>
               handleQuestionChange(idx, "question_text", e.target.value)
             }
-            className="border p-2 mb-2 w-full bg-gray-50"
+            className="border p-2 mb-2 w-full bg-gray-50 rounded"
           />
 
+          {/* 문제 유형별 입력 */}
           {q.question_type === 1 && (
             <div className="flex gap-4 mb-2">
               {["O", "X"].map((opt) => (
@@ -169,7 +197,7 @@ const CreateUserQuiz = ({ userData }) => {
                     onChange={(e) =>
                       handleChoiceChange(idx, cIdx, e.target.value)
                     }
-                    className="border p-1 w-full bg-gray-50"
+                    className="border p-1 w-full bg-gray-50 rounded"
                   />
                 </div>
               ))}
@@ -184,7 +212,7 @@ const CreateUserQuiz = ({ userData }) => {
               onChange={(e) =>
                 handleQuestionChange(idx, "correct_answer", e.target.value)
               }
-              className="border p-2 mb-2 w-full bg-gray-50"
+              className="border p-2 mb-2 w-full bg-gray-50 rounded"
             />
           )}
 
@@ -198,30 +226,25 @@ const CreateUserQuiz = ({ userData }) => {
               e.target.style.height = "auto";
               e.target.style.height = `${e.target.scrollHeight}px`;
             }}
-            className="border-2 p-2 mb-4 w-full resize-none overflow-hidden"
+            className="border p-2 w-full resize-none overflow-hidden rounded bg-gray-50"
           />
         </div>
       ))}
 
-      <div className="flex justify-center gap-4 mt-6">
+      <div className="flex justify-center mt-[-8px] ">
         <button
           onClick={handleAddQuestion}
-          className="bg-accent text-white px-4 py-2 rounded"
+          className="text-gray-500 hover:text-green-600 text-sm font-medium transition-colors"
         >
           문제 추가
         </button>
-        <button
-          onClick={handleSubmit}
-          className="bg-navbar text-white px-4 py-2 rounded"
-        >
-          퀴즈 생성하기
-        </button>
       </div>
 
+      {/* 퀴즈 생성 완료 다이얼로그 */}
       {showDialog && (
         <UserQuizDialog
           onClose={() => setShowDialog(false)}
-          createdQuizId={createdQuizId} // ✅ quiz id 전달
+          createdQuizId={createdQuizId}
         />
       )}
     </div>

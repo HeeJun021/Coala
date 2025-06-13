@@ -1,10 +1,29 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext"; 
 import studymaterialImg from "../assets/studymaterialpage.png";
 import quizImg from "../assets/quizpage.png";
 import codingTestImg from "../assets/codingtestpage.png";
 
 const Home = () => {
+  const { user } = useAuth(); 
+  const navigate = useNavigate();
+  const scrollRef = useRef(null); 
+
+  const handleStart = () => {
+    if (user) {
+      navigate("/StudyMaterialsPage");
+    } else {
+      navigate("/signup");
+    }
+  };
+
+  const handleScroll = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return (
     <div className="w-full">
       {/* 히어로 영역 */}
@@ -12,17 +31,23 @@ const Home = () => {
         <h1 className="text-4xl font-bold mb-4">웹 개발을 배우는 가장 실용적인 방법</h1>
         <p className="text-gray-600 mb-6">퀴즈부터 실습까지, 지금 바로 시작해보세요!</p>
         <div className="space-x-4">
-          <Link
-            to="/signup"
+          <button
+            onClick={handleStart}
             className="bg-green-700 text-white px-6 py-2 rounded hover:bg-navbar transition inline-block"
           >
-            시작하기
-          </Link>
-          <button className="border border-gray-400 px-6 py-2 rounded hover:bg-gray-100 transition">
+            {user ? "시작하기" : "가입하기"}
+          </button>
+          <button
+            onClick={handleScroll}
+            className="border border-gray-400 px-6 py-2 rounded hover:bg-gray-100 transition"
+          >
             자세히 보기
           </button>
         </div>
       </section>
+
+      {/* ✅ 스크롤 도착 지점 */}
+      <div ref={scrollRef} />
 
       {/* 학습자료 섹션 */}
       <section className="flex w-full h-auto mb-10">
