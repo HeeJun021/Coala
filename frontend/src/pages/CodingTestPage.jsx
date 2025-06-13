@@ -107,7 +107,7 @@ const CodingTestPage = () => {
       <div className="max-w-6xl mx-auto bg-white shadow-xl rounded-2xl border border-gray-300 p-7">
         {/* 페이지 타이틀 */}
         <div className="mb-4">
-          <h1 className="text-4xl font-extrabold text-gray-800 mb-4 tracking-wide">
+          <h1 className="text-3xl font-extrabold text-gray-800 mb-4 tracking-wide">
             코딩 테스트
           </h1>
           <p className="text-gray-500 text-sm leading-relaxed">

@@ -70,6 +70,7 @@ const ProfileCard = ({ userData, setUserData }) => {
 
     const { min, max } = getRange(userData?.rating || 0);
 
+    
     return (
         <div className="relative rounded-lg bg-white flex flex-col items-left space-y-4">
             {isEditing ? (
@@ -79,12 +80,9 @@ const ProfileCard = ({ userData, setUserData }) => {
                         <img
                             src={userData.profile_image_url}
                             alt="Profile"
-                            className="w-16 h-16 rounded-md cursor-pointer transition duration-200 hover:brightness-75"
-                            onClick={() => setIsModalOpen(true)} // ✅ 클릭 시 모달 열기
+                            className="w-20 h-20 rounded-md cursor-pointer transition duration-200 hover:brightness-75 border border-gray-300"
+                            onClick={() => setIsModalOpen(true)} // ✅ 모달 열기
                         />
-                        <button className="bg-green-600 text-white px-4 py-1 rounded-lg hover:bg-green-700">
-                            변경
-                        </button>
                     </div>
                     <div>
                         <label className="flex items-center justify-between pt-1">
@@ -140,7 +138,7 @@ const ProfileCard = ({ userData, setUserData }) => {
                         <img
                             src={userData.profile_image_url}
                             alt="Profile"
-                            className="w-16 h-16 rounded-md cursor-pointer"
+                            className="w-20 h-20 rounded-md cursor-pointer border border-gray-300"
                             onClick={() => setIsModalOpen(true)}
                         />
                     )}
@@ -178,7 +176,7 @@ const ProfileCard = ({ userData, setUserData }) => {
                 </>
             )}
 
-            {/* ✅ 모달 컴포넌트 렌더링 */}
+            {/* 프로필 이미지 선택 모달 */}
             {isModalOpen && (
                 <SelectProfileModal
                     isOpen={isModalOpen}

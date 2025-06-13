@@ -68,7 +68,7 @@ const TestQuiz = () => {
       <div className="flex-1 max-w-6xl pt-8 mt-8 mx-auto bg-white shadow-xl rounded-2xl border border-gray-300 p-7">
         {/* 타이틀 */}
         <div className="mb-8">
-          <h1 className="text-4xl font-extrabold text-gray-800 mb-4 tracking-wide">
+          <h1 className="text-3xl font-extrabold text-gray-800 mb-4 tracking-wide">
             <span className="text-black">테스트 퀴즈</span>
           </h1>
           <p className="text-gray-500 text-sm">
@@ -124,7 +124,7 @@ const TestQuiz = () => {
         {/* 버튼 */}
         <div className="flex pt-8 justify-end">
           <button
-            className="px-6 py-2 bg-green-600 text-white font-semibold rounded-xl shadow-md hover:bg-green-700 transition-all"
+            className="px-6 py-2 bg-green-600 text-white rounded-xl shadow-md hover:bg-green-700 transition-all"
             onClick={handleStartQuiz}
             disabled={loading}
           >

@@ -73,7 +73,7 @@ const UserQuiz = ({ userData }) => {
       <div className="flex-1 max-w-6xl pt-8 mt-8 mx-auto bg-white shadow-xl rounded-2xl border border-gray-300 p-7">
         {/* 타이틀 */}
         <div className="mb-8">
-          <h1 className="text-4xl font-extrabold text-gray-800 mb-4 tracking-wide">
+          <h1 className="text-3xl font-extrabold text-gray-800 mb-4 tracking-wide">
             <span className="text-black">퀴즈 만들어보기</span>
           </h1>
           <p className="text-gray-500 text-sm">
@@ -189,7 +189,7 @@ const UserQuiz = ({ userData }) => {
         <div className="flex justify-end mt-6">
           <button
             onClick={() => navigate("/user-quiz/create")}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+            className="px-6 py-2 bg-green-600 text-white rounded-xl shadow-md hover:bg-green-700 transition-all"
           >
             퀴즈 만들기
           </button>

@@ -45,7 +45,7 @@ const QuizSideBar = () => {
           }`}
           onClick={() => handleMenuClick("test")}
         >
-          퀴즈 테스트
+          테스트 퀴즈
         </div>
 
         {/* 사용자 정의 퀴즈 */}

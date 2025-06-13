@@ -10,12 +10,15 @@ import "../index.css";
 import Split from "react-split";
 import { getCurrentUser, checkGithubConnection } from "../api/authApi";
 import { getRootCodeFolder, updateCodeFile, getChildFolders, getCodesInFolder } from "../api/codeApi";
-import SelfCodingGuideModal from "../components/selfcoding/SelfCodingGuideModal";
 
 const SelfCodingPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [activePanel, setActivePanel] = useState("explorer");
+
+  // ✅ URL state에서 전달된 panel 초기화
+  const initialPanel = location.state?.panel || "explorer";
+  const [activePanel, setActivePanel] = useState(initialPanel);
+
   const [templateId, setTemplateId] = useState(null);
   const [folders, setFolders] = useState({ "내 파일": {} });
   const [rootFolderId, setRootFolderId] = useState(null);
@@ -54,36 +57,41 @@ const SelfCodingPage = () => {
       ]);
 
       setFolders({
-      ...root,
-      children: children.map(child => ({
-        ...child,
-        children: [],
-        codes: [],
-        expanded: false,
-        loaded: false,
-      })),
-      codes,
-      expanded: true,
-      loaded: true,
-      }); // ✅ 여기 이 setFolders가 핵심!
+        ...root,
+        children: children.map((child) => ({
+          ...child,
+          children: [],
+          codes: [],
+          expanded: false,
+          loaded: false,
+        })),
+        codes,
+        expanded: true,
+        loaded: true,
+      });
     } catch (err) {
       console.error("탐색기 갱신 실패", err);
     }
   };
 
   const fetchUserAndGithubStatus = useCallback(async () => {
-    try {
-      await getCurrentUser();
-      const githubStatus = await checkGithubConnection();
-      setIsGithubConnected(githubStatus.isConnected);
-      if (githubStatus.isConnected) {
-        setActivePanel("explorer");
-      }
-    } catch (error) {
-      console.error("Failed to fetch user or GitHub status:", error);
-      navigate("/login");
+  try {
+    await getCurrentUser();
+    const githubStatus = await checkGithubConnection();
+    setIsGithubConnected(githubStatus.isConnected);
+
+    // ✅ location.state?.panel이 있으면 그걸 우선 적용
+    const requestedPanel = location.state?.panel;
+    if (requestedPanel) {
+      setActivePanel(requestedPanel);
+    } else if (githubStatus.isConnected) {
+      setActivePanel("explorer");
     }
-  }, [navigate]);
+  } catch (error) {
+    console.error("Failed to fetch user or GitHub status:", error);
+    navigate("/login");
+  }
+}, [navigate, location.state?.panel]);
 
   useEffect(() => {
     fetchUserAndGithubStatus();
@@ -121,7 +129,7 @@ const SelfCodingPage = () => {
           setTabs={setTabs}
           setActiveTabId={setActiveTabId}
           rootFolderId={rootFolderId}
-          reloadFolderTree={reloadFolderTree} 
+          reloadFolderTree={reloadFolderTree}
         />
         <SelfCodingPanel
           activePanel={activePanel}

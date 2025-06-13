@@ -1,21 +1,25 @@
 import React, { useState, useEffect } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import { getMyPosts, getMyComments } from "../api/boardApi";
-import MyPageSidebar from "../Layout/MyPageSideBar";
+import {
+  ScrollText,
+  MessageSquare,
+  FileText,
+  CalendarClock,
+} from "lucide-react";
 
 const ITEMS_PER_PAGE = 10;
 
 const MyPageCommunity = () => {
   const { userData } = useOutletContext();
-  const [activeTab, setActiveTab] = useState("posts"); // posts | comments
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("posts");
 
-  // 전체 데이터
   const [posts, setPosts] = useState([]);
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // 페이지네이션
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
@@ -41,7 +45,6 @@ const MyPageCommunity = () => {
     fetchData();
   }, [userData]);
 
-  // 페이지 계산
   const currentItems = (activeTab === "posts" ? posts : comments).slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
@@ -57,23 +60,21 @@ const MyPageCommunity = () => {
     }
   };
 
-  // 탭 전환 시 첫 페이지로 리셋
   useEffect(() => {
     setCurrentPage(1);
   }, [activeTab]);
 
   return (
     <div className="flex min-h-screen">
-      {/* 좌측 Sidebar */}
-      <div className="w-[250px]">
-      </div>
+      <div className="w-[250px]"> </div>
 
-      {/* 오른쪽 컨텐츠 */}
-      <div className="flex-1 p-6">
-        <h2 className="text-xl font-semibold mb-6">커뮤니티 활동 내역</h2>
+      <div className="flex-1 p-6 max-w-6xl mx-auto">
+        <h2 className="text-xl font-semibold mt-4 flex items-center gap-2">
+          <FileText size={20} className="text-green-600" />
+          커뮤니티 활동 내역
+        </h2>
 
-        {/* 탭 */}
-        <div className="flex gap-2 mb-4">
+        <div className="flex gap-2 mb-4 mt-4">
           <button
             className={`px-5 py-2 rounded-lg font-semibold ${
               activeTab === "posts"
@@ -127,11 +128,32 @@ const MyPageCommunity = () => {
               <tbody>
                 {currentItems.map((item) =>
                   activeTab === "posts" ? (
-                    <tr key={item.post_id} className="border text-sm">
-                      <td className="px-4 py-2 text-left font-semibold">{item.title}</td>
-                      <td className="px-4 py-2 text-center">{item.board_type}</td>
+                    <tr
+                      key={item.post_id}
+                      className="border text-sm hover:bg-gray-50 cursor-pointer"
+                      onClick={() => {
+                        if (["free", "code", "project"].includes(item.board_type)) {
+                          navigate(`/board/${item.board_type}/${item.post_id}`);
+                        } else {
+                          alert("알 수 없는 게시판 유형입니다.");
+                        }
+                      }}
+                    >
+                      <td className="px-4 py-2 text-left font-semibold text-blue-700 underline">
+                        {item.title}
+                      </td>
                       <td className="px-4 py-2 text-center">
-                        {new Date(item.created_at).toLocaleDateString()}
+                        {{
+                          free: "자유 게시판",
+                          code: "코드 게시판",
+                          project: "프로젝트 모집 게시판",
+                        }[item.board_type] || item.board_type}
+                      </td>
+                      <td className="px-4 py-2 text-center">
+                        <div className="inline-flex items-center justify-center gap-1 text-gray-700">
+                          <CalendarClock size={16} />
+                          {new Date(item.created_at).toLocaleDateString()}
+                        </div>
                       </td>
                     </tr>
                   ) : (
@@ -139,7 +161,10 @@ const MyPageCommunity = () => {
                       <td className="px-4 py-2 text-left">{item.content}</td>
                       <td className="px-4 py-2 text-center">{item.post_id}</td>
                       <td className="px-4 py-2 text-center">
-                        {new Date(item.created_at).toLocaleDateString()}
+                        <div className="inline-flex items-center justify-center gap-1 text-gray-700">
+                          <CalendarClock size={16} />
+                          {new Date(item.created_at).toLocaleDateString()}
+                        </div>
                       </td>
                     </tr>
                   )
@@ -149,13 +174,12 @@ const MyPageCommunity = () => {
           </div>
         )}
 
-        {/* 페이지네이션 */}
         {totalPages > 1 && (
           <div className="flex justify-center mt-6 space-x-2">
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               className={`px-3 py-2 rounded-lg ${
-                currentPage === 1 ? "bg-gray-300 text-gray-600" : "bg-accent text-white"
+                currentPage === 1 ? "bg-gray-300 text-gray-600" : "bg-green-600 text-black"
               }`}
               disabled={currentPage === 1}
             >
@@ -166,7 +190,9 @@ const MyPageCommunity = () => {
                 key={index}
                 onClick={() => handlePageChange(index + 1)}
                 className={`px-4 py-2 rounded-lg ${
-                  currentPage === index + 1 ? "bg-accent text-white" : "bg-gray-300 text-gray-700"
+                  currentPage === index + 1
+                    ? "bg-accent text-white"
+                    : "bg-gray-300 text-gray-700"
                 }`}
               >
                 {index + 1}
@@ -175,7 +201,7 @@ const MyPageCommunity = () => {
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               className={`px-3 py-2 rounded-lg ${
-                currentPage === totalPages ? "bg-gray-300 text-gray-600" : "bg-accent text-white"
+                currentPage === totalPages ? "bg-gray-300 text-gray-600" : "bg-green-600 text-black"
               }`}
               disabled={currentPage === totalPages}
             >

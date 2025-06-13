@@ -6,7 +6,7 @@ import { getLanguages } from "../api/languageApi";
 import { fetchStudyMaterials } from "../api/studyMaterialsApi";
 
 const Navbar = () => {
-  const { user, handleLogout} = useAuth();
+  const { user, handleLogout } = useAuth();
   const navigate = useNavigate();
   const [hoverIndex, setHoverIndex] = useState(null);
   const [languages, setLanguages] = useState([]);
@@ -30,7 +30,9 @@ const Navbar = () => {
       const materials = await fetchStudyMaterials(language);
       if (materials.length > 0) {
         const firstMaterial = materials[0];
-        navigate(`/StudyMaterialsPage?category=${encodeURIComponent(language)}&id=${firstMaterial.material_id}`);
+        navigate(
+          `/StudyMaterialsPage?category=${encodeURIComponent(language)}&id=${firstMaterial.material_id}`
+        );
       } else {
         alert("해당 언어의 학습자료가 없습니다.");
       }
@@ -44,17 +46,17 @@ const Navbar = () => {
     {
       label: "학습자료",
       path: "/StudyMaterialsPage",
-      children: languages.map(lang => lang.language),
+      children: languages.map((lang) => lang.language),
     },
     {
       label: "퀴즈문제",
       path: "/quizpage",
-      children: ["퀴즈 풀기", "퀴즈 만들기"],
+      children: ["연습 퀴즈", "테스트 퀴즈", "퀴즈 만들기"],
     },
     {
       label: "자율코딩",
       path: "/self-coding",
-      children: ["실습 에디터", "코드 저장소"],
+      children: ["파일 탐색기", "Github"],
     },
     {
       label: "코딩테스트",
@@ -69,17 +71,18 @@ const Navbar = () => {
     {
       label: "게시판",
       path: "/board",
-      children: ["자유 게시판", "질문 게시판", "코드 게시판", "프로젝트 모집"],
+      children: ["자유 게시판", "코드 게시판", "프로젝트 모집"],
     },
     {
       label: "마이페이지",
       path: user ? "/mypage/modify" : "/login",
-      children: ["내 정보", "포트폴리오", "내 학습 현황"],
+      children: ["정보 변경", "내 학습 현황", "커뮤니티 이력"],
     },
   ];
 
   return (
     <div className="relative z-50" onMouseLeave={() => setHoverIndex(null)}>
+      {/* 상단 네비게이션 바 */}
       <nav className="fixed top-0 left-0 w-full bg-white border-b shadow-sm h-[70px] flex items-center justify-between px-12 z-50">
         <Link to="/" className="flex items-center">
           <img
@@ -101,10 +104,14 @@ const Navbar = () => {
                 <span
                   onClick={async () => {
                     try {
-                      const materials = await fetchStudyMaterials(languages[0]?.language);
+                      const materials = await fetchStudyMaterials(
+                        languages[0]?.language
+                      );
                       if (materials.length > 0) {
                         navigate(
-                          `/StudyMaterialsPage?category=${encodeURIComponent(languages[0]?.language)}&id=${materials[0].material_id}`
+                          `/StudyMaterialsPage?category=${encodeURIComponent(
+                            languages[0]?.language
+                          )}&id=${materials[0].material_id}`
                         );
                       }
                     } catch {
@@ -174,99 +181,36 @@ const Navbar = () => {
 
       {/* 드롭다운 메뉴 */}
       <div
-        className={`fixed top-[70px] left-0 w-full bg-white border-b shadow-md z-40 overflow-hidden transition-all duration-300 ${
+        className={`fixed top-[70px] pr-4 left-0 w-full bg-white border-b shadow-md z-40 overflow-hidden transition-all duration-300 ${
           hoverIndex !== null
             ? "max-h-[250px] py-6 opacity-100"
             : "max-h-0 opacity-0"
         }`}
       >
-        {/* 넷바 하단 길이 수동 */}
-        <div className="grid grid-cols-7 w-[1050px] ml-[416px] text-center">
-          {menuItems.map((item, idx) => (
-            <div key={idx} className="flex flex-col items-center gap-3">
-              {item.children.map((child, i) => {
-                if (item.label === "학습자료") {
-                  return (
-                    <span
-                      key={i}
-                      onClick={() => handleLanguageClick(child)}
-                      className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
-                        hoverIndex === idx ? "" : "opacity-50"
-                      }`}
-                    >
-                      {child}
-                    </span>
-                  );
-                }
+        <div className="flex justify-center">
+          <div className="grid grid-cols-7 w-[1050px] text-center">
+            {menuItems.map((item, idx) => (
+              <div key={idx} className="flex flex-col items-center gap-3">
+                {item.children.map((child, i) => {
+                  if (item.label === "학습자료") {
+                    return (
+                      <span
+                        key={i}
+                        onClick={() => handleLanguageClick(child)}
+                        className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
+                          hoverIndex === idx ? "" : "opacity-50"
+                        }`}
+                      >
+                        {child}
+                      </span>
+                    );
+                  }
 
-                if (item.label === "코딩테스트" && child === "문제 목록") {
-                  return (
-                    <Link
-                      key={i}
-                      to="/codingtest"
-                      className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
-                        hoverIndex === idx ? "" : "opacity-50"
-                      }`}
-                    >
-                      {child}
-                    </Link>
-                  );
-                }
-
-                if (item.label === "코딩테스트" && child === "통계 및 제출 내역") {
-                  return (
-                    <Link
-                      key={i}
-                      to="/my-submissions"
-                      className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
-                        hoverIndex === idx ? "" : "opacity-50"
-                      }`}
-                    >
-                      {child}
-                    </Link>
-                  );
-                }
-
-                if (item.label === "퀴즈문제") {
-                  let link = "";
-                  if (child === "퀴즈 풀기") link = "/quizpage";
-                  if (child === "퀴즈 만들기") link = "/quizpage?category=user";
-                  return (
-                    <Link
-                      key={i}
-                      to={link}
-                      className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
-                        hoverIndex === idx ? "" : "opacity-50"
-                      }`}
-                    >
-                      {child}
-                    </Link>
-                  );
-                }
-
-                if (item.label === "프로젝트") {
-                  let link = "/team-project";
-                  let tab = "";
-                  if (child === "대시보드") tab = "dashboard";
-                  if (child === "내 작업") tab = "my-tasks";
-                  return (
-                    <span
-                      key={i}
-                      onClick={() => navigate(link, { state: { tab } })}
-                      className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
-                        hoverIndex === idx ? "" : "opacity-50"
-                      }`}
-                    >
-                      {child}
-                    </span>
-                  );
-                }
-
-                if (item.label === "마이페이지") {
-                  let link = "";
-                  if (child === "내 정보") link = "/mypage/modify";
-                  if (child === "내 학습 현황") link = "/mypage/quiz-history";
-                  if (link) {
+                  if (item.label === "퀴즈문제") {
+                    let link = "";
+                    if (child === "연습 퀴즈") link = "/quizpage";
+                    if (child === "테스트 퀴즈") link = "/quizpage?category=test";
+                    if (child === "퀴즈 만들기") link = "/quizpage?category=user";
                     return (
                       <Link
                         key={i}
@@ -279,21 +223,136 @@ const Navbar = () => {
                       </Link>
                     );
                   }
-                }
 
-                return (
-                  <span
-                    key={i}
-                    className={`text-[15px] font-medium text-gray-800 cursor-default ${
-                      hoverIndex === idx ? "" : "opacity-50"
-                    }`}
-                  >
-                    {child}
-                  </span>
-                );
-              })}
-            </div>
-          ))}
+
+                  if (item.label === "자율코딩") {
+                    if (child === "파일 탐색기") {
+                      return (
+                        <span
+                          key={i}
+                          onClick={async () => {
+                            try {
+                              await initRootCodeFolder();
+                              navigate("/self-coding", { state: { panel: "explorer" } });
+                            } catch (err) {
+                              alert("초기화 실패");
+                            }
+                          }}
+                          className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
+                            hoverIndex === idx ? "" : "opacity-50"
+                          }`}
+                        >
+                          {child}
+                        </span>
+                      );
+                    }
+
+                    if (child === "Github") {
+                      return (
+                        <span
+                          key={i}
+                          onClick={async () => {
+                            try {
+                              await initRootCodeFolder();
+                              navigate("/self-coding", { state: { panel: "git" } });
+                            } catch (err) {
+                              alert("초기화 실패");
+                            }
+                          }}
+                          className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
+                            hoverIndex === idx ? "" : "opacity-50"
+                          }`}
+                        >
+                          {child}
+                        </span>
+                      );
+                    }
+                  }
+
+                  if (item.label === "코딩테스트" && child === "문제 목록") {
+                    return (
+                      <Link
+                        key={i}
+                        to="/codingtest"
+                        className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
+                          hoverIndex === idx ? "" : "opacity-50"
+                        }`}
+                      >
+                        {child}
+                      </Link>
+                    );
+                  }
+
+                  if (
+                    item.label === "코딩테스트" &&
+                    child === "통계 및 제출 내역"
+                  ) {
+                    return (
+                      <Link
+                        key={i}
+                        to="/my-submissions"
+                        className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
+                          hoverIndex === idx ? "" : "opacity-50"
+                        }`}
+                      >
+                        {child}
+                      </Link>
+                    );
+                  }
+
+                  
+                  if (item.label === "프로젝트") {
+                    let link = "/team-project";
+                    let tab = "";
+                    if (child === "대시보드") tab = "dashboard";
+                    if (child === "내 작업") tab = "my-tasks";
+                    return (
+                      <span
+                        key={i}
+                        onClick={() => navigate(link, { state: { tab } })}
+                        className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
+                          hoverIndex === idx ? "" : "opacity-50"
+                        }`}
+                      >
+                        {child}
+                      </span>
+                    );
+                  }
+
+                  if (item.label === "마이페이지") {
+                    let link = "";
+                    if (child === "정보 변경") link = "/mypage/modify";
+                    if (child === "내 학습 현황") link = "/mypage/quiz-history";
+                    if (child === "커뮤니티 이력") link = "/mypage/community";
+                    if (link) {
+                      return (
+                        <Link
+                          key={i}
+                          to={link}
+                          className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
+                            hoverIndex === idx ? "" : "opacity-50"
+                          }`}
+                        >
+                          {child}
+                        </Link>
+                      );
+                    }
+                  }
+
+                  return (
+                    <span
+                      key={i}
+                      className={`text-[15px] font-medium text-gray-800 cursor-default ${
+                        hoverIndex === idx ? "" : "opacity-50"
+                      }`}
+                    >
+                      {child}
+                    </span>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
