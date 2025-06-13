@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Terminal } from "xterm";
 import "xterm/css/xterm.css";
 
@@ -19,11 +19,15 @@ const safeDecode = (text) => {
 
 const CodeTestTerminalPage = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
   const codeLanguage = queryParams.get("language") || "";
   const title = queryParams.get("title") || "코딩 테스트 연습";
   const problemDescription = queryParams.get("problem_description") || "코드를 실행하여 결과를 확인하세요.";
   const initialCode = queryParams.get("code") || "";
+  const category = queryParams.get("category") || "";
+  const materialId = queryParams.get("id") || "";
+  const exampleId = queryParams.get("exampleId") || "";
 
   const terminalRef = useRef(null);
   const termInstance = useRef(null);
@@ -94,7 +98,7 @@ const CodeTestTerminalPage = () => {
   }, [connectWebSocket]);
 
   const handleRun = () => {
-    if (code.includes("<html>") || code.includes("<body>")) {
+    if (code.includes("") || code.includes("")) {
       termInstance.current.writeln("❗️ HTML/DOM 관련 코드는 Node.js 환경에서 실행할 수 없습니다.");
       return;
     }
@@ -112,17 +116,24 @@ const CodeTestTerminalPage = () => {
     return codeLanguage === "javascript" ? "javascript" : "python";
   };
 
-  return (
-    <div className="min-h-screen flex flex-col items-center p-8 bg-gray-100 text-black">
-      <div className="w-full max-w-5xl bg-white shadow-lg rounded-xl p-8">
-        <h1 className="text-3xl font-bold mb-4 text-center text-gray-800">{decodedTitle}</h1>
+  const handleBack = () => {
+    const query = materialId
+      ? `category=${encodeURIComponent(category)}&id=${encodeURIComponent(materialId)}`
+      : `category=${encodeURIComponent(category)}&exampleId=${encodeURIComponent(exampleId)}`;
+    navigate(`/StudyMaterialsPage?${query}`);
+  };
 
-        <div className="p-4 border rounded-md bg-gray-100 text-gray-800 mb-4">
+  return (
+    <div className="min-h-screen bg-gray-100 p-8">
+      <div className="max-w-5xl mx-auto bg-white shadow-lg rounded-xl p-8">
+        <h1 className="text-3xl font-bold mb-4 text-center">{decodedTitle}</h1>
+
+        <div className="mb-4">
           <h2 className="text-lg font-semibold">문제 설명</h2>
-          <p className="text-base leading-7" dangerouslySetInnerHTML={{ __html: decodedDescription }} />
+          <div className="text-base leading-7" dangerouslySetInnerHTML={{ __html: decodedDescription }} />
         </div>
 
-        <div className="border rounded-md p-4 bg-gray-100 text-gray-800 mb-4">
+        <div className="mb-4">
           <h2 className="text-lg font-semibold">코드 입력</h2>
           <CodeMirror
             value={code}
@@ -130,32 +141,40 @@ const CodeTestTerminalPage = () => {
               mode: getCodeMirrorMode(),
               theme: "dracula",
               lineNumbers: true,
-              tabSize: 2,
               lineWrapping: true,
+              tabSize: 4,
             }}
             onBeforeChange={(editor, data, value) => setCode(value)}
+            className="mt-2 border rounded"
           />
         </div>
 
-        <div className="mt-4 p-4 border rounded-md bg-gray-100 text-gray-800" style={{ minHeight: "300px" }}>
-          <h2 className="text-lg font-semibold mb-2">실행 결과 (Terminal)</h2>
-          <div
-            ref={terminalRef}
-            className="w-full border rounded bg-black text-green-400 p-2"
-            style={{ height: "240px" }}
-          />
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold">실행 결과 (Terminal)</h2>
+          <div ref={terminalRef} className="border rounded p-2 bg-black text-green-300 font-mono text-sm" />
         </div>
 
-        <div className="flex justify-end mt-4">
+        <div className="flex justify-between mt-4">
           <button
-            className="px-4 py-2 bg-gray-500 text-white rounded mr-2"
-            onClick={() => setCode(decodedCode)}
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+            onClick={handleBack}
           >
-            초기화
+            뒤로 가기
           </button>
-          <button className="px-4 py-2 bg-blue-500 text-white rounded" onClick={handleRun}>
-            코드 실행
-          </button>
+          <div>
+            <button
+              className="px-4 py-2 bg-gray-500 text-white rounded mr-2"
+              onClick={() => setCode(decodedCode)}
+            >
+              초기화
+            </button>
+            <button
+              className="px-4 py-2 bg-blue-500 text-white rounded"
+              onClick={handleRun}
+            >
+              코드 실행
+            </button>
+          </div>
         </div>
       </div>
     </div>

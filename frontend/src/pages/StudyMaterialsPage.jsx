@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { dracula } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { useAuth } from "../context/AuthContext";
+import { FaQuestionCircle } from "react-icons/fa";
+import StudyMaterialsGuideModal from "../components/StudyMaterialsGuideModal";
 
 const parseStyleString = (styleString) => {
   if (!styleString) return {};
@@ -41,6 +43,7 @@ const StudyMaterialsPage = () => {
   const [submittedStatus, setSubmittedStatus] = useState({});
   const [correctStatus, setCorrectStatus] = useState({});
   const [quizIndices, setQuizIndices] = useState([]);
+const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   useEffect(() => {
     setFadeIn(false);
@@ -164,7 +167,8 @@ const StudyMaterialsPage = () => {
       ) : error ? (
         <div className="text-red-500">{error}</div>
       ) : studyContent ? (
-        <>
+        <>  
+        <div className="flex justify-between items-center mb-6">
           <h1 className="text-5xl font-bold text-gray-900 mb-10">
             {studyContent.title}
             {isCompleted && (
@@ -173,6 +177,16 @@ const StudyMaterialsPage = () => {
               </span>
             )}
           </h1>
+           {/* 가이드 버튼 */}
+  <button
+    onClick={() => setIsGuideOpen(true)}
+    className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 transition"
+  >
+    <FaQuestionCircle className="text-lg" />
+    가이드
+  </button>
+</div>
+
           <p className="text-xl text-gray-700 leading-relaxed mb-6">
             {studyContent.content}
           </p>
@@ -351,6 +365,7 @@ const StudyMaterialsPage = () => {
       ) : (
         <div className="text-gray-500">데이터를 찾을 수 없습니다.</div>
       )}
+      <StudyMaterialsGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
     </div>
     </div>
   );

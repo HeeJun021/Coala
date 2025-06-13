@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import ProjectCreateModal from "./ProjectCreateModal";
 import { getMyProjects } from "../../api/projectApi";
 import { LayoutDashboard, ListTodo, Inbox, Plus } from "lucide-react";
+import ProjectGuideModal from "../ProjectGuideModal";
+import { HelpCircle } from "lucide-react";
 
 const ProjectSidebar = ({
   activeTab,
@@ -14,6 +16,18 @@ const ProjectSidebar = ({
   const [projects, setProjects] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewingProjectId, setViewingProjectId] = useState(null);
+  const [showGuide, setShowGuide] = useState(false);
+  const [showDot, setShowDot] = useState(false);
+
+  useEffect(() => {
+    const seen = localStorage.getItem("project_guide_seen");
+    setShowDot(seen !== "true");
+  }, []);
+  const handleOpenGuide = () => {
+    setShowGuide(true);
+    setShowDot(false);
+    localStorage.setItem("project_guide_seen", "true");
+  };
 
   const fetchProjects = async () => {
     try {
@@ -103,7 +117,22 @@ const ProjectSidebar = ({
       <div className="text-sm flex-1 flex flex-col justify-between">
         <div>
           <div className="flex items-center justify-between text-gray-500 uppercase tracking-wide mb-2">
-            <span>프로젝트</span>
+            {/* 왼쪽: 프로젝트 + 가이드 버튼 */}
+            <div className="flex items-center gap-1">
+              <span>프로젝트</span>
+              <button
+                onClick={handleOpenGuide}
+                className="relative text-green-600 hover:text-green-700 transition"
+                title="프로젝트 가이드"
+              >
+                <HelpCircle size={18} className="text-gray-500" />
+                {showDot && (
+                  <span className="absolute -top-[2px] -right-[8px] w-2 h-2 bg-rose-500 rounded-full shadow" />
+                )}
+              </button>
+            </div>
+
+            {/* 오른쪽: + 버튼 */}
             <button
               onClick={() => setIsModalOpen(true)}
               className="text-gray-700 hover:text-blue-500"
@@ -139,6 +168,12 @@ const ProjectSidebar = ({
         <ProjectCreateModal
           onClose={() => setIsModalOpen(false)}
           onCreated={handleProjectCreated}
+        />
+      )}
+      {showGuide && (
+        <ProjectGuideModal
+          isOpen={showGuide}
+          onClose={() => setShowGuide(false)}
         />
       )}
     </aside>
