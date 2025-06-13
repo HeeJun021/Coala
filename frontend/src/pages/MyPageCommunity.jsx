@@ -2,8 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { getMyPosts, getMyComments } from "../api/boardApi";
 import {
-  ScrollText,
-  MessageSquare,
   FileText,
   CalendarClock,
 } from "lucide-react";

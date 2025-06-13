@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAllUserQuizzes } from "../api/userQuizApi";
 import QuizSideBar from "../Layout/QuizSideBar";
@@ -12,7 +12,7 @@ const UserQuiz = ({ userData }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
 
-  const fetchAllQuizzes = async () => {
+  const fetchAllQuizzes = useCallback(async () => {
     try {
       const data = await getAllUserQuizzes(search, null);
       setQuizzes(data);
@@ -20,7 +20,7 @@ const UserQuiz = ({ userData }) => {
     } catch (err) {
       console.error("전체 퀴즈 불러오기 실패:", err);
     }
-  };
+  }, [search]);
 
   const fetchMyQuizzes = async () => {
     if (!userData?.user_id) return;
@@ -64,7 +64,7 @@ const UserQuiz = ({ userData }) => {
 
   useEffect(() => {
     fetchAllQuizzes();
-  }, []);
+  }, [fetchAllQuizzes]);
 
   return (
     <div className="flex w-full">

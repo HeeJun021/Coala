@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { getAllSubmissionsByUser } from "../api/codingTestApi";
 import { CheckCircle, XCircle, FileText } from "lucide-react";
-import MyPageSidebar from "../Layout/MyPageSideBar";
 
 const MyPageCTHistory = () => {
   const navigate = useNavigate();

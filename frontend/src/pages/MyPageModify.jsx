@@ -30,7 +30,7 @@ const MyPageModify = () => {
 
       {/* 메인 콘텐츠 */}
       <div className="flex-1 p-6 flex justify-center">
-        <div className="w-full max-w-4xl ml-10">
+        <div className="w-full max-w-4xl">
           {/* 상단 제목 */}
           <header className="p-6">
             <h1 className="text-2xl font-bold text-left">
