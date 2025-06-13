@@ -7,10 +7,13 @@ import {
   Inbox,
   Plus,
 } from "lucide-react";
+import ProjectGuideModal from "../ProjectGuideModal";
+import { Info } from "lucide-react";
 
 const ProjectSidebar = ({ setActiveTab, onProjectSelect, selectedProjectId, onUpdate, onNameChange }) => {
   const [projects, setProjects] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+const [showGuide, setShowGuide] = useState(false);
 
   const fetchProjects = async () => {
     try {
@@ -102,26 +105,27 @@ const ProjectSidebar = ({ setActiveTab, onProjectSelect, selectedProjectId, onUp
             <p className="text-xs text-gray-400 italic">등록된 프로젝트 없음</p>
           )}
         </div>
-
-        {/* 하단: 명시적 + 생성 버튼 (보조용) */}
-        <div className="mt-6">
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 flex items-center justify-center gap-2"
-          >
-            <Plus size={16} />
-            <span>프로젝트 생성</span>
-          </button>
-        </div>
       </div>
-
+<div className="mt-6 flex justify-end">
+  <button
+    onClick={() => setShowGuide(true)}
+    className="text-green-600 hover:text-green-700 transition"
+    title="프로젝트 가이드"
+  >
+    <Info className="w-5 h-5" />
+  </button>
+</div>
       {isModalOpen && (
         <ProjectCreateModal
           onClose={() => setIsModalOpen(false)}
           onCreated={handleProjectCreated}
         />
       )}
+            {showGuide && (
+  <ProjectGuideModal isOpen={showGuide} onClose={() => setShowGuide(false)} />
+)}
     </aside>
+    
   );
 };
 
