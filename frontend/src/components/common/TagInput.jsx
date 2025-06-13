@@ -124,13 +124,13 @@ const TagInput = ({
 
   return (
     <div className="relative">
-      <div className="flex flex-wrap items-center gap-2 border rounded px-3 py-2 min-h-[44px] focus-within:ring-2 focus-within:ring-blue-300">
+      <div className="flex flex-wrap items-center gap-2 border border-gray-300 rounded px-3 py-2 min-h-[44px] focus-within:border-green-600 transition">
         {tags.map((tag, idx) => {
           const matched = suggestions.find((s) => s.label === tag);
           return (
             <span
               key={idx}
-              className="bg-blue-100 text-blue-700 text-sm px-2 py-1 rounded flex items-center gap-1"
+              className="bg-green-100 text-green-700 text-sm px-2 py-1 rounded flex items-center gap-1"
             >
               {matched?.icon}
               {tag}

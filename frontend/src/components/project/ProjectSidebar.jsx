@@ -1,19 +1,33 @@
 import React, { useState, useEffect } from "react";
 import ProjectCreateModal from "./ProjectCreateModal";
 import { getMyProjects } from "../../api/projectApi";
-import {
-  LayoutDashboard,
-  ListTodo,
-  Inbox,
-  Plus,
-} from "lucide-react";
+import { LayoutDashboard, ListTodo, Inbox, Plus } from "lucide-react";
 import ProjectGuideModal from "../ProjectGuideModal";
-import { Info } from "lucide-react";
+import { HelpCircle } from "lucide-react";
 
-const ProjectSidebar = ({ setActiveTab, onProjectSelect, selectedProjectId, onUpdate, onNameChange }) => {
+const ProjectSidebar = ({
+  activeTab,
+  setActiveTab,
+  onProjectSelect,
+  selectedProjectId,
+  onUpdate,
+  onNameChange,
+}) => {
   const [projects, setProjects] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-const [showGuide, setShowGuide] = useState(false);
+  const [viewingProjectId, setViewingProjectId] = useState(null);
+  const [showGuide, setShowGuide] = useState(false);
+  const [showDot, setShowDot] = useState(false);
+
+  useEffect(() => {
+    const seen = localStorage.getItem("project_guide_seen");
+    setShowDot(seen !== "true");
+  }, []);
+  const handleOpenGuide = () => {
+    setShowGuide(true);
+    setShowDot(false);
+    localStorage.setItem("project_guide_seen", "true");
+  };
 
   const fetchProjects = async () => {
     try {
@@ -29,6 +43,7 @@ const [showGuide, setShowGuide] = useState(false);
   }, []);
 
   const handleTabClick = (tabName) => {
+    setViewingProjectId(null); // ← 프로젝트 강조 해제
     if (typeof setActiveTab === "function") {
       setActiveTab(tabName);
     }
@@ -36,6 +51,7 @@ const [showGuide, setShowGuide] = useState(false);
 
   const handleProjectClick = (projectId) => {
     onProjectSelect(projectId);
+    setViewingProjectId(projectId); // ← 이게 강조 표시 기준이 됨
   };
 
   const handleProjectCreated = (newProject) => {
@@ -48,34 +64,75 @@ const [showGuide, setShowGuide] = useState(false);
   };
 
   return (
-    <aside className="w-64 bg-[#1d1d1d] text-white flex flex-col px-4 py-6">
-      <button
-        onClick={() => setIsModalOpen(true)}
-        className="bg-green-600 text-white py-2 px-3 rounded mb-6 hover:bg-green-700"
-      >
-        + 프로젝트 생성
-      </button>
+    <aside className="w-64 bg-white text-gray-800 flex flex-col px-4 py-6 border-r border-gray-200 shadow-sm">
+      {/* 섹션: 작업 메뉴 */}
+      <div className="space-y-3 text-sm mb-5">
+        <div className="text-gray-500 uppercase tracking-wide mb-1">작업</div>
+        {/* 대시보드 */}
+        <div
+          onClick={() => handleTabClick("dashboard")}
+          className={`flex items-center gap-2 text-left px-2 py-1 rounded cursor-pointer transition
+    ${
+      activeTab === "dashboard"
+        ? "bg-gray-200 font-medium text-black"
+        : "text-gray-800 hover:text-black"
+    }`}
+        >
+          <LayoutDashboard size={16} className="text-yellow-500" />
+          <span>대시보드</span>
+        </div>
 
-      <div className="space-y-3 text-sm">
-        <div className="text-gray-400 uppercase tracking-wide mb-1">작업</div>
-        <button onClick={() => handleTabClick("dashboard")} className="flex items-center gap-2 text-left text-white hover:underline">
-          🖥️ <span>대시보드</span>
-        </button>
-        <button onClick={() => handleTabClick("my-tasks")} className="flex items-center gap-2 text-left text-white hover:underline">
-          📝 <span>내 작업</span>
-        </button>
-        <button onClick={() => handleTabClick("inbox")} className="flex items-center gap-2 text-left text-white hover:underline">
-          📬 <span>수신함</span>
-        </button>
+        {/* 내 작업 */}
+        <div
+          onClick={() => handleTabClick("my-tasks")}
+          className={`flex items-center gap-2 text-left px-2 py-1 rounded cursor-pointer transition
+    ${
+      activeTab === "my-tasks"
+        ? "bg-gray-200 font-medium text-black"
+        : "text-gray-800 hover:text-black"
+    }`}
+        >
+          <ListTodo size={16} className="text-emerald-500" />
+          <span>내 작업</span>
+        </div>
+
+        {/* 수신함 */}
+        <div
+          onClick={() => handleTabClick("inbox")}
+          className={`flex items-center gap-2 text-left px-2 py-1 rounded cursor-pointer transition
+    ${
+      activeTab === "inbox"
+        ? "bg-gray-200 font-medium text-black"
+        : "text-gray-800 hover:text-black"
+    }`}
+        >
+          <Inbox size={16} className="text-blue-500" />
+          <span>수신함</span>
+        </div>
       </div>
 
-      <hr className="my-4 border-gray-300" />
+      <hr className="my-2 border-gray-300" />
 
       {/* 섹션: 프로젝트 목록 */}
       <div className="text-sm flex-1 flex flex-col justify-between">
         <div>
           <div className="flex items-center justify-between text-gray-500 uppercase tracking-wide mb-2">
-            <span>프로젝트</span>
+            {/* 왼쪽: 프로젝트 + 가이드 버튼 */}
+            <div className="flex items-center gap-1">
+              <span>프로젝트</span>
+              <button
+                onClick={handleOpenGuide}
+                className="relative text-green-600 hover:text-green-700 transition"
+                title="프로젝트 가이드"
+              >
+                <HelpCircle size={18} className="text-gray-500" />
+                {showDot && (
+                  <span className="absolute -top-[2px] -right-[8px] w-2 h-2 bg-rose-500 rounded-full shadow" />
+                )}
+              </button>
+            </div>
+
+            {/* 오른쪽: + 버튼 */}
             <button
               onClick={() => setIsModalOpen(true)}
               className="text-gray-700 hover:text-blue-500"
@@ -91,10 +148,10 @@ const [showGuide, setShowGuide] = useState(false);
                 <button
                   key={project.project_id}
                   onClick={() => handleProjectClick(project.project_id)}
-                  className={`text-left block w-full px-2 py-1 rounded hover:bg-gray-100 ${
-                    selectedProjectId === project.project_id
-                      ? "text-blue-700 font-semibold underline bg-blue-50"
-                      : "text-gray-700"
+                  className={`text-left block w-full px-2 py-1 rounded transition ${
+                    viewingProjectId === project.project_id
+                      ? "bg-gray-200 font-medium text-black"
+                      : "text-gray-700 hover:bg-gray-100"
                   }`}
                 >
                   {project.name}
@@ -106,26 +163,20 @@ const [showGuide, setShowGuide] = useState(false);
           )}
         </div>
       </div>
-<div className="mt-6 flex justify-end">
-  <button
-    onClick={() => setShowGuide(true)}
-    className="text-green-600 hover:text-green-700 transition"
-    title="프로젝트 가이드"
-  >
-    <Info className="w-5 h-5" />
-  </button>
-</div>
+
       {isModalOpen && (
         <ProjectCreateModal
           onClose={() => setIsModalOpen(false)}
           onCreated={handleProjectCreated}
         />
       )}
-            {showGuide && (
-  <ProjectGuideModal isOpen={showGuide} onClose={() => setShowGuide(false)} />
-)}
+      {showGuide && (
+        <ProjectGuideModal
+          isOpen={showGuide}
+          onClose={() => setShowGuide(false)}
+        />
+      )}
     </aside>
-    
   );
 };
 

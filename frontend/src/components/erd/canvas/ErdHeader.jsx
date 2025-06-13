@@ -219,8 +219,7 @@ const ErdHeader = ({
                   onClick={handleOpenGuide}
                   className="relative text-sm text-gray-400 hover:text-white flex items-center gap-1"
                 >
-                  <HelpCircle size={16} className="text-blue-300" />
-                  <span>가이드 보기</span>
+                  <HelpCircle size={18} className="text-gray-300" />
 
                   {showDot && (
                     <div

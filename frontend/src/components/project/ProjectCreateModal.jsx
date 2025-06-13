@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Database,
   GitBranch,
@@ -9,8 +9,8 @@ import {
   CheckSquare,
   Activity,
   X,
-} from 'lucide-react';
-import { createProject } from '../../api/projectApi';
+} from "lucide-react";
+import { createProject } from "../../api/projectApi";
 
 // ✅ 모달 UI
 const Modal = ({ onClose, title, children }) => {
@@ -32,18 +32,50 @@ const Modal = ({ onClose, title, children }) => {
 
 // ✅ 위젯 아이콘 + 색상 정의
 const WIDGET_OPTIONS = [
-  { key: "erd", label: "ERD 설계", icon: <Database size={16} className="text-purple-600" /> },
-  { key: "git", label: "GitHub 공유", icon: <GitBranch size={16} className="text-gray-700" /> },
-  { key: "docs", label: "문서 관리", icon: <FileText size={16} className="text-green-700" /> },
-  { key: "chat", label: "채팅", icon: <MessageCircle size={16} className="text-blue-500" /> },
-  { key: "calendar", label: "캘린더", icon: <Calendar size={16} className="text-red-500" /> },
-  { key: "memo", label: "메모", icon: <StickyNote size={16} className="text-yellow-600" /> },
-  { key: "tasks", label: "작업", icon: <CheckSquare size={16} className="text-indigo-600" /> },
-  { key: "timeline", label: "타임라인", icon: <Activity size={16} className="text-pink-500" /> },
+  {
+    key: "erd",
+    label: "ERD 설계",
+    icon: <Database size={16} className="text-purple-600" />,
+  },
+  {
+    key: "git",
+    label: "GitHub 공유",
+    icon: <GitBranch size={16} className="text-gray-700" />,
+  },
+  {
+    key: "docs",
+    label: "문서 관리",
+    icon: <FileText size={16} className="text-green-700" />,
+  },
+  {
+    key: "chat",
+    label: "채팅",
+    icon: <MessageCircle size={16} className="text-blue-500" />,
+  },
+  {
+    key: "calendar",
+    label: "캘린더",
+    icon: <Calendar size={16} className="text-red-500" />,
+  },
+  {
+    key: "memo",
+    label: "메모",
+    icon: <StickyNote size={16} className="text-yellow-600" />,
+  },
+  {
+    key: "tasks",
+    label: "작업",
+    icon: <CheckSquare size={16} className="text-indigo-600" />,
+  },
+  {
+    key: "timeline",
+    label: "타임라인",
+    icon: <Activity size={16} className="text-pink-500" />,
+  },
 ];
 
 const ProjectCreateModal = ({ onClose, onCreated }) => {
-  const [projectName, setProjectName] = useState('');
+  const [projectName, setProjectName] = useState("");
   const [selectedWidgets, setSelectedWidgets] = useState([]);
 
   const toggleWidget = (key) => {
@@ -86,7 +118,7 @@ const ProjectCreateModal = ({ onClose, onCreated }) => {
             프로젝트 이름
           </label>
           <input
-            className="w-full px-3 py-2 border rounded text-black"
+            className="w-full px-3 py-2 border rounded text-black focus:outline-none focus:border-green-600"
             placeholder="프로젝트 이름을 입력하세요"
             value={projectName}
             onChange={(e) => setProjectName(e.target.value)}
@@ -104,11 +136,14 @@ const ProjectCreateModal = ({ onClose, onCreated }) => {
                 onClick={() => toggleWidget(opt.key)}
                 className={`border px-4 py-2 rounded text-sm text-left transition ${
                   selectedWidgets.includes(opt.key)
-                    ? "bg-blue-100 border-blue-400"
+                   ? "bg-green-50 border-green-400"
                     : "bg-white"
                 } text-black hover:bg-gray-100`}
               >
-                 {opt.label}
+                <span className="flex items-center gap-2">
+                  {opt.icon}
+                  {opt.label}
+                </span>
               </button>
             ))}
           </div>
@@ -116,7 +151,7 @@ const ProjectCreateModal = ({ onClose, onCreated }) => {
 
         <button
           onClick={handleSubmit}
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+          className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
         >
           프로젝트 생성
         </button>

@@ -10,7 +10,9 @@ import { useLocation } from "react-router-dom";
 
 const TeamProjectPage = () => {
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState(location.state?.tab || "dashboard");
+  const [activeTab, setActiveTab] = useState(
+    location.state?.tab || "dashboard"
+  );
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [projects, setProjects] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -49,14 +51,21 @@ const TeamProjectPage = () => {
   };
 
   const renderTabContent = () => {
-    const selectedProject = projects.find((p) => p.project_id === selectedProjectId);
+    const selectedProject = projects.find(
+      (p) => p.project_id === selectedProjectId
+    );
 
     switch (activeTab) {
       case "overview":
         if (!selectedProject) {
           return <p className="text-gray-500">프로젝트를 선택하세요.</p>;
         }
-        return <ProjectWidgetTabs key={selectedProjectId} project={selectedProject} />;
+        return (
+          <ProjectWidgetTabs
+            key={selectedProjectId}
+            project={selectedProject}
+          />
+        );
       case "dashboard":
         return (
           <DashboardTab
@@ -77,6 +86,7 @@ const TeamProjectPage = () => {
   return (
     <div className="flex min-h-screen bg-white">
       <ProjectSidebar
+        activeTab={activeTab}
         setActiveTab={setActiveTab}
         onProjectSelect={handleProjectSelect}
         selectedProjectId={selectedProjectId}

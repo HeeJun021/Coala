@@ -41,8 +41,7 @@ const CodingTestHeader = ({ title }) => {
           onClick={handleOpenGuide}
           className="relative text-sm text-black flex items-center gap-1 hover:text-gray-600"
         >
-          <HelpCircle size={16} className="text-blue-600" />
-          <span>가이드 보기</span>
+          <HelpCircle size={20} className="text-gray-500" />
 
           {showDot && (
             <div
