@@ -159,7 +159,7 @@ const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
                 setEditMode((prev) => ({ ...prev, name: false }));
                 handleUpdateProject();
               }}
-              className="text-3xl font-bold border border-gray-300 rounded-md w-full px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300 transition-all"
+              className="text-3xl font-bold border border-gray-300 rounded-md w-full px-3 py-2 focus:outline-none focus:border-green-600 transition-all"
               autoFocus
             />
           ) : (
@@ -179,28 +179,14 @@ const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
             프로젝트 설명
           </p>
 
-          {editMode.description ? (
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              onBlur={() => {
-                setEditMode((prev) => ({ ...prev, description: false }));
-                handleUpdateProject();
-              }}
-              rows={3}
-              className="w-full border rounded p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300 transition-all"
-              autoFocus
-            />
-          ) : (
-            <p
-              className="text-sm whitespace-pre-line cursor-pointer hover:bg-gray-100 p-2 rounded"
-              onClick={() =>
-                setEditMode((prev) => ({ ...prev, description: true }))
-              }
-            >
-              {description || "이 프로젝트에 대해 설명을 입력하세요."}
-            </p>
-          )}
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            onBlur={() => handleUpdateProject(techStack)}
+            rows={3}
+            placeholder="이 프로젝트에 대한 설명을 입력하세요"
+            className="w-full border rounded p-3 text-sm resize-none focus:outline-none focus:border-green-600 transition-all"
+          />
         </div>
 
         <div>
@@ -226,14 +212,14 @@ const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
                   onClick={() => {
                     if (project.leader_id !== m.user_id) toggleMenu(m.user_id);
                   }}
-                  className="relative group bg-white border hover:border-blue-400 transition rounded-xl p-4 shadow-sm cursor-pointer"
+                  className="relative group bg-white border hover:border-green-500 transition rounded-xl p-4 shadow-sm cursor-pointer"
                 >
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="text-base font-semibold text-gray-800">
                         {m.nickname}{" "}
                         {m.is_leader && (
-                          <span className="text-blue-600 text-sm">(팀장)</span>
+                          <span className="text-green-600 text-sm">(팀장)</span>
                         )}
                       </p>
                       <p className="text-xs text-gray-500 mt-0.5">
@@ -285,7 +271,7 @@ const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
             onChange={(e) => setTopic(e.target.value)}
             onBlur={(e) => handleUpdateProject(techStack, e.target.value)} // 👈 최신 topic 직접 전달
             placeholder="예: AI 기반 추천 시스템"
-            className="w-full border rounded p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300 transition-all"
+            className="w-full border rounded p-3 text-sm focus:outline-none focus:border-green-600 transition-all"
           />
         </div>
 

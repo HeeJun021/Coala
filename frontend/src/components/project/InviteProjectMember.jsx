@@ -50,9 +50,7 @@ const InviteProjectMember = ({
         className="bg-white w-[400px] max-h-[500px] rounded-lg shadow-lg p-5 relative"
       >
         {/* 헤더 */}
-        <div className="text-center font-semibold text-lg mb-4">
-          멤버 초대
-        </div>
+        <div className="text-center font-semibold text-lg mb-4">멤버 초대</div>
         <button
           className="absolute top-4 right-4 text-gray-500 hover:text-black"
           onClick={onClose}
@@ -127,17 +125,17 @@ const InviteProjectMember = ({
           </motion.div>
         </AnimatePresence>
 
-        {/* 초대 버튼 */}
+        {/* 프로젝트 초대 버튼 */}
         <button
           onClick={onInvite}
           disabled={!selectedFriend}
-          className={`w-full mt-4 py-2 rounded text-white text-sm font-medium ${
+          className={`w-full mt-4 py-2 rounded text-sm font-medium ${
             selectedFriend
-              ? "bg-blue-500 hover:bg-blue-600"
-              : "bg-blue-100 text-gray-400 cursor-default"
+              ? "bg-green-600 hover:bg-green-700 text-white"
+              : "bg-gray-100 text-gray-500 cursor-not-allowed"
           }`}
         >
-          초대하기
+          프로젝트 초대
         </button>
       </motion.div>
     </div>

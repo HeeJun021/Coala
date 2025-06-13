@@ -4,6 +4,7 @@ import {
   acceptChatRequest,
   rejectChatRequest,
 } from "../../api/chatApi";
+import { ChevronLeft } from "lucide-react";
 
 const ArchivedChatPanel = ({ onBack, onSelectRoom }) => {
   const [rooms, setRooms] = useState([]);
@@ -35,10 +36,11 @@ const ArchivedChatPanel = ({ onBack, onSelectRoom }) => {
       <div className="flex items-center justify-between p-3 border-b bg-gray-100">
         <button
           onClick={onBack}
-          className="text-sm text-blue-500 hover:underline"
+          className="flex items-center text-sm text-blue-500 hover:underline"
         >
-          ← 돌아가기
+          <ChevronLeft size={20} className="mr-1" />
         </button>
+
         <span className="font-bold text-gray-700">요청 메시지</span>
         <div className="w-10" />
       </div>

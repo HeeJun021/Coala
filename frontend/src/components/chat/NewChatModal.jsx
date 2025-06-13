@@ -170,10 +170,10 @@ const NewChatModal = ({ onClose, onCreateRoom }) => {
         <button
           onClick={handleCreateChat}
           disabled={selectedUserIds.length === 0}
-          className={`w-full mt-4 py-2 rounded text-white text-sm font-medium ${
+          className={`w-full mt-4 py-2 rounded text-sm font-medium ${
             selectedUserIds.length > 0
-              ? "bg-blue-500 hover:bg-blue-600"
-              : "bg-blue-100 text-gray-400 cursor-default"
+              ? "bg-green-600 hover:bg-green-700 text-white"
+              : "bg-gray-100 text-gray-500 cursor-not-allowed"
           }`}
         >
           채팅 시작

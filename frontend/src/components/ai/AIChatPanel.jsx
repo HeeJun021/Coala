@@ -199,7 +199,7 @@ const AIChatPanel = ({ onClose }) => {
               style={{ cursor: "pointer" }}
             >
               {copiedStates[index] ? (
-                <span className="flex items-center gap-1 text-green-600">
+                <span className="flex items-center gap-1 text-gray-700">
                   <Check className="w-4 h-4" />
                   복사됨
                 </span>
@@ -408,7 +408,11 @@ const AIChatPanel = ({ onClose }) => {
             <button
               onClick={handleSend}
               disabled={loading}
-              className="bg-blue-500 text-white px-4 py-2 rounded flex items-center justify-center gap-2"
+              className={`px-4 py-2 rounded flex items-center justify-center gap-2 text-white ${
+                loading
+                  ? "bg-green-600 cursor-not-allowed"
+                  : "bg-green-600 hover:bg-green-700"
+              }`}
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin text-white" />

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
-import { FaSearch, FaCog, FaPen } from "react-icons/fa";
+import { Minus, X, Search, Pencil, Settings } from "lucide-react";
 import ReactDOM from "react-dom";
 import {
   getChatRooms,
@@ -183,43 +183,43 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
     // 기본적으로는 메뉴 닫기
     setContextMenu(null);
   };
-const getChatRoomsAndSet = async () => {
-  try {
-    const data = await getChatRooms();
-    console.log("✅ 채팅방 목록 갱신됨:", data);
+  const getChatRoomsAndSet = async () => {
+    try {
+      const data = await getChatRooms();
+      console.log("✅ 채팅방 목록 갱신됨:", data);
 
-    const transformed = data.map((room) => {
-      const isInviteRoom = room.room_type === "invite";
-      const projectName = isInviteRoom
-        ? room.message_metadata?.project_name || "알 수 없음"
-        : room.room_name || "알 수 없음";
+      const transformed = data.map((room) => {
+        const isInviteRoom = room.room_type === "invite";
+        const projectName = isInviteRoom
+          ? room.message_metadata?.project_name || "알 수 없음"
+          : room.room_name || "알 수 없음";
 
-      return {
-        id: room.room_id,
-        name: isInviteRoom ? `${projectName}에서 보낸 초대` : projectName,
-        preview: isInviteRoom
-          ? "프로젝트 초대 메시지가 도착했습니다."
-          : room.last_message || "(아직 메시지가 없습니다)",
-        time: room.last_message_time
-          ? new Date(room.last_message_time).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-          : "",
-        rawTime: room.last_message_time || null,
-        unread: room.unread_count ?? 0,
-        group: room.is_group ?? false,
-        participants: room.participants ?? [],
-        is_pinned: room.is_pinned ?? false,
-        pinned_at: room.pinned_at ?? null,
-      };
-    });
+        return {
+          id: room.room_id,
+          name: isInviteRoom ? `${projectName}에서 보낸 초대` : projectName,
+          preview: isInviteRoom
+            ? "프로젝트 초대 메시지가 도착했습니다."
+            : room.last_message || "(아직 메시지가 없습니다)",
+          time: room.last_message_time
+            ? new Date(room.last_message_time).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : "",
+          rawTime: room.last_message_time || null,
+          unread: room.unread_count ?? 0,
+          group: room.is_group ?? false,
+          participants: room.participants ?? [],
+          is_pinned: room.is_pinned ?? false,
+          pinned_at: room.pinned_at ?? null,
+        };
+      });
 
-    setChatRooms(transformed);
-  } catch (error) {
-    console.error("🚨 채팅방 목록 갱신 실패:", error);
-  }
-};
+      setChatRooms(transformed);
+    } catch (error) {
+      console.error("🚨 채팅방 목록 갱신 실패:", error);
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -344,325 +344,351 @@ const getChatRoomsAndSet = async () => {
 
   return (
     <>
-      <div className="fixed bottom-24 right-6 w-[360px] h-[520px] bg-white shadow-lg rounded-xl border border-gray-200 z-50 flex flex-col">
-        <div className="px-4 py-2 border-b bg-gray-100 flex items-center justify-between">
-          <span className="text-lg font-bold text-gray-800">채팅</span>
-          <div className="flex items-center gap-3 text-gray-600">
-            {showSearch ? (
-              <input
-                autoFocus
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") {
-                    setSearchQuery("");
-                    setShowSearch(false);
-                  }
-                }}
-                placeholder="채팅방 이름 검색"
-                className="text-sm px-2 py-1 rounded border border-gray-300 w-32 focus:outline-none"
-              />
-            ) : (
-              <FaSearch
-                className="cursor-pointer hover:text-black"
-                onClick={() => {
-                  setSearchQuery("");
-                  setShowSearch(true);
-                }}
-              />
-            )}
-
-            <FaPen
-              className="cursor-pointer hover:text-black"
-              onClick={() => setShowNewChat(true)} // 새로운 채팅창 오픈
-            />
-            <FaCog
-              className="cursor-pointer hover:text-black"
-              onClick={() => setShowSettings(true)}
-            />
-          </div>
-        </div>
-
-        <div className="flex justify-between items-center px-4 pt-2 pb-1 text-sm font-semibold text-gray-500">
-          <span>메시지</span>
-          <button
-            className="text-blue-500 hover:underline text-xs"
-            onClick={() => setShowArchived(true)}
-          >
-            요청
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto">
-          <AnimatePresence mode="popLayout">
-            {(searchQuery
-              ? [...chatRooms]
-                  .filter(
-                    (room) =>
-                      typeof room.name === "string" &&
-                      room.name
-                        .toLowerCase()
-                        .includes(searchQuery.toLowerCase())
-                  )
-                  .sort(
-                    (a, b) =>
-                      new Date(b.rawTime || 0) - new Date(a.rawTime || 0)
-                  )
-              : [
-                  ...chatRooms
-                    .filter((room) => room.is_pinned)
-                    .sort(
-                      (a, b) =>
-                        new Date(b.rawTime || 0) - new Date(a.rawTime || 0)
-                    ),
-                  ...chatRooms
-                    .filter((room) => !room.is_pinned)
-                    .sort(
-                      (a, b) =>
-                        new Date(b.rawTime || 0) - new Date(a.rawTime || 0)
-                    ),
-                ]
-            ).map((room) => (
-              <motion.div
-                key={room.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                transition={{ duration: 0.4 }}
-                onContextMenu={(e) => handleContextMenu(e, room.id)}
-                onClick={() => {
-                  const lastMessageId = room.last_message_id;
-
-                  if (socket?.readyState === WebSocket.OPEN && lastMessageId) {
-                    socket.send(
-                      JSON.stringify({
-                        type: "read",
-                        message_id: lastMessageId,
-                        room_id: room.id,
-                      })
-                    );
-                    console.log("📤 [리스트 클릭 시 읽음 전송]", {
-                      lastMessageId,
-                      roomId: room.id,
-                    });
-                  }
-
-                  // ✅ 기존 로직
-                  if (onSelectRoom) onSelectRoom(room);
-                }}
-                className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer border-b"
+      <div className="fixed bottom-24 right-6 w-[360px] h-[520px] z-50">
+        {/* ✅ 실제 콘텐츠 박스 */}
+        <div className="w-full h-full bg-white shadow-lg rounded-xl border border-gray-200 flex flex-col overflow-hidden">
+          {/* 헤더 */}
+          <div className="px-4 pt-2 pb-2 border-b bg-gray-100">
+            {/* 🔹 상단 줄: X 버튼만 오른쪽 정렬 */}
+            <div className="flex justify-end gap-1 mb-1">
+              {/* 최소화 버튼 (기능 없음) */}
+              <button
+                className="text-gray-400 hover:text-blue-500 p-0 leading-none w-auto h-auto cursor-pointer"
+                title="최소화"
               >
-                <div className="w-10 h-10 rounded-full bg-purple-200 relative">
-                  {renderAvatars(room.participants)}
-                </div>
+                <Minus size={18} strokeWidth={2} />
+              </button>
 
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-gray-900 truncate">
-                    <div className="flex items-center gap-1">
-                      <span>{room.name}</span>
-                      {room.is_pinned && (
-                        <span className="text-yellow-500">📌</span>
-                      )}
+              {/* 닫기 버튼 */}
+              <button
+                onClick={onClose}
+                className="text-gray-400 hover:text-red-500 p-0 leading-none w-auto h-auto cursor-pointer"
+                title="닫기"
+              >
+                <X size={18} strokeWidth={2} />
+              </button>
+            </div>
+
+            {/* 🔹 하단 줄: 채팅 제목 + 아이콘 */}
+            <div className="flex items-center justify-between">
+              <span className="text-lg font-bold text-gray-800">채팅</span>
+              <div className="flex items-center gap-3 text-gray-600">
+                {showSearch ? (
+                  <input
+                    autoFocus
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") {
+                        setSearchQuery("");
+                        setShowSearch(false);
+                      }
+                    }}
+                    placeholder="채팅방 이름 검색"
+                    className="text-sm px-2 py-1 rounded border border-gray-300 w-32 focus:outline-none"
+                  />
+                ) : (
+                  <Search
+                    size={18}
+                    className="cursor-pointer hover:text-black"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setShowSearch(true);
+                    }}
+                  />
+                )}
+
+                <Pencil
+                  size={18}
+                  className="cursor-pointer hover:text-black"
+                  onClick={() => setShowNewChat(true)}
+                />
+                <Settings
+                  size={18}
+                  className="cursor-pointer hover:text-black"
+                  onClick={() => setShowSettings(true)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center px-4 pt-2 pb-1 text-sm font-semibold text-gray-500">
+            <span>메시지</span>
+            <button
+              className="text-blue-500 hover:underline text-xs"
+              onClick={() => setShowArchived(true)}
+            >
+              요청
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto">
+            <AnimatePresence mode="popLayout">
+              {(searchQuery
+                ? [...chatRooms]
+                    .filter(
+                      (room) =>
+                        typeof room.name === "string" &&
+                        room.name
+                          .toLowerCase()
+                          .includes(searchQuery.toLowerCase())
+                    )
+                    .sort(
+                      (a, b) =>
+                        new Date(b.rawTime || 0) - new Date(a.rawTime || 0)
+                    )
+                : [
+                    ...chatRooms
+                      .filter((room) => room.is_pinned)
+                      .sort(
+                        (a, b) =>
+                          new Date(b.rawTime || 0) - new Date(a.rawTime || 0)
+                      ),
+                    ...chatRooms
+                      .filter((room) => !room.is_pinned)
+                      .sort(
+                        (a, b) =>
+                          new Date(b.rawTime || 0) - new Date(a.rawTime || 0)
+                      ),
+                  ]
+              ).map((room) => (
+                <motion.div
+                  key={room.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  transition={{ duration: 0.4 }}
+                  onContextMenu={(e) => handleContextMenu(e, room.id)}
+                  onClick={() => {
+                    const lastMessageId = room.last_message_id;
+
+                    if (
+                      socket?.readyState === WebSocket.OPEN &&
+                      lastMessageId
+                    ) {
+                      socket.send(
+                        JSON.stringify({
+                          type: "read",
+                          message_id: lastMessageId,
+                          room_id: room.id,
+                        })
+                      );
+                      console.log("📤 [리스트 클릭 시 읽음 전송]", {
+                        lastMessageId,
+                        roomId: room.id,
+                      });
+                    }
+
+                    // ✅ 기존 로직
+                    if (onSelectRoom) onSelectRoom(room);
+                  }}
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer border-b"
+                >
+                  <div className="w-10 h-10 rounded-full bg-purple-200 relative">
+                    {renderAvatars(room.participants)}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-gray-900 truncate">
+                      <div className="flex items-center gap-1">
+                        <span>{room.name}</span>
+                        {room.is_pinned && (
+                          <span className="text-yellow-500">📌</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500 truncate">
+                      {room.preview}
                     </div>
                   </div>
-                  <div className="text-xs text-gray-500 truncate">
-                    {room.preview}
+                  <div className="text-right text-xs text-gray-500 flex flex-col items-end">
+                    <span>{room.time}</span>
+                    {room.unread > 0 && (
+                      <span className="mt-1 w-5 h-5 text-[11px] rounded-full bg-red-500 text-white flex items-center justify-center font-bold">
+                        {room.unread}
+                      </span>
+                    )}
                   </div>
-                </div>
-                <div className="text-right text-xs text-gray-500 flex flex-col items-end">
-                  <span>{room.time}</span>
-                  {room.unread > 0 && (
-                    <span className="mt-1 w-5 h-5 text-[11px] rounded-full bg-red-500 text-white flex items-center justify-center font-bold">
-                      {room.unread}
-                    </span>
-                  )}
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+
+          {contextMenu &&
+            ReactDOM.createPortal(
+              <div
+                ref={menuRef}
+                style={{
+                  position: "fixed",
+                  top: contextMenu.y,
+                  left: contextMenu.x,
+                  zIndex: 9999,
+                }}
+                className="bg-white shadow-md border rounded-md text-sm text-gray-700"
+              >
+                <ul>
+                  <li
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                    onClick={() => handleContextMenuClick("rename")}
+                  >
+                    채팅방 이름 설정
+                  </li>
+                  <li
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                    onClick={() => handleContextMenuClick("pin")}
+                  >
+                    {(() => {
+                      const room = chatRooms.find(
+                        (r) => r.id === contextMenu?.roomId
+                      );
+                      return room?.is_pinned
+                        ? "채팅방 상단 해제"
+                        : "채팅방 상단 고정";
+                    })()}
+                  </li>
+
+                  <hr />
+                  <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
+                    알림 끄기
+                  </li>
+                  <li
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-red-500"
+                    onClick={() => handleContextMenuClick("leave")}
+                  >
+                    채팅방 나가기
+                  </li>
+                </ul>
+              </div>,
+              document.body
+            )}
         </div>
 
-        {contextMenu &&
-          ReactDOM.createPortal(
-            <div
-              ref={menuRef}
-              style={{
-                position: "fixed",
-                top: contextMenu.y,
-                left: contextMenu.x,
-                zIndex: 9999,
-              }}
-              className="bg-white shadow-md border rounded-md text-sm text-gray-700"
-            >
-              <ul>
-                <li
-                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                  onClick={() => handleContextMenuClick("rename")}
-                >
-                  채팅방 이름 설정
-                </li>
-                <li
-                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                  onClick={() => handleContextMenuClick("pin")}
-                >
-                  {(() => {
-                    const room = chatRooms.find(
-                      (r) => r.id === contextMenu?.roomId
-                    );
-                    return room?.is_pinned
-                      ? "채팅방 상단 해제"
-                      : "채팅방 상단 고정";
-                  })()}
-                </li>
+        {/* 설정창 */}
+        {showSettings && (
+          <ChatListSettingsPanel
+            user={{ name: "사용자 이름" }}
+            onClose={() => setShowSettings(false)}
+          />
+        )}
 
-                <hr />
-                <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
-                  알림 끄기
-                </li>
-                <li
-                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-red-500"
-                  onClick={() => handleContextMenuClick("leave")}
-                >
-                  채팅방 나가기
-                </li>
-              </ul>
-            </div>,
-            document.body
-          )}
+        {showNewChat && <NewChatModal onClose={() => setShowNewChat(false)} />}
 
-        <button
-          onClick={onClose}
-          className="absolute top-2 right-2 text-gray-400 hover:text-red-500 text-xs"
-        >
-          ✕
-        </button>
+        {/* 채팅방 이름 변경 모달 */}
+        {showRenameModal && (
+          <div className="fixed inset-0 z-[9999] bg-black/30 flex items-center justify-center">
+            <div className="bg-white rounded-lg shadow-lg p-5 w-[300px]">
+              <div className="text-base font-semibold mb-2">채팅방 이름</div>
+              <input
+                type="text"
+                value={renameInput}
+                maxLength={50}
+                onChange={(e) => setRenameInput(e.target.value)}
+                className="w-full border-b border-gray-400 outline-none text-sm py-1"
+              />
+              <div className="text-xs text-right text-gray-500 mt-1">
+                {renameInput.length}/50
+              </div>
+              <div className="flex justify-end mt-4 gap-2">
+                <button
+                  onClick={() => setShowRenameModal(false)}
+                  className="text-sm text-gray-600 hover:text-black"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      await renameChatRoom(renameTarget.id, renameInput); // ✅ 서버에 이름 변경 요청
+                      setChatRooms((prev) => {
+                        const updated = prev.map((room) =>
+                          room.id === renameTarget.id
+                            ? { ...room, name: renameInput }
+                            : room
+                        );
+                        return [
+                          ...updated
+                            .filter((r) => r.is_pinned)
+                            .sort(
+                              (a, b) =>
+                                new Date(b.rawTime || 0) -
+                                new Date(a.rawTime || 0)
+                            ),
+                          ...updated
+                            .filter((r) => !r.is_pinned)
+                            .sort(
+                              (a, b) =>
+                                new Date(b.rawTime || 0) -
+                                new Date(a.rawTime || 0)
+                            ),
+                        ];
+                      });
+                      setShowRenameModal(false);
+                    } catch (err) {
+                      console.error("❌ 채팅방 이름 변경 실패:", err);
+                    }
+                  }}
+                  className="px-4 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+                >
+                  확인
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 채팅방 나가기 모달 */}
+        {showLeaveModal && (
+          <div className="fixed inset-0 z-[9999] bg-black/30 flex items-center justify-center">
+            <div className="bg-white rounded-lg shadow-lg p-5 w-[300px]">
+              <div className="text-base font-semibold mb-4">
+                채팅방에서 나가시겠습니까?
+              </div>
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setShowLeaveModal(false)}
+                  className="text-sm text-gray-600 hover:text-black"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      await leaveChatRoom(leaveTargetId); // ✅ 서버에 나가기 요청
+                      setChatRooms((prev) => {
+                        const updated = prev.filter(
+                          (room) => room.id !== leaveTargetId
+                        );
+                        return [
+                          ...updated
+                            .filter((r) => r.is_pinned)
+                            .sort(
+                              (a, b) =>
+                                new Date(b.rawTime || 0) -
+                                new Date(a.rawTime || 0)
+                            ),
+                          ...updated
+                            .filter((r) => !r.is_pinned)
+                            .sort(
+                              (a, b) =>
+                                new Date(b.rawTime || 0) -
+                                new Date(a.rawTime || 0)
+                            ),
+                        ];
+                      });
+                      setShowLeaveModal(false);
+                    } catch (err) {
+                      console.error("❌ 채팅방 나가기 실패:", err);
+                    }
+                  }}
+                  className="px-4 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
+                >
+                  나가기
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-
-      {/* 설정창 */}
-      {showSettings && (
-        <ChatListSettingsPanel
-          user={{ name: "사용자 이름" }}
-          onClose={() => setShowSettings(false)}
-        />
-      )}
-
-      {showNewChat && <NewChatModal onClose={() => setShowNewChat(false)} />}
-
-      {/* 채팅방 이름 변경 모달 */}
-      {showRenameModal && (
-        <div className="fixed inset-0 z-[9999] bg-black/30 flex items-center justify-center">
-          <div className="bg-white rounded-lg shadow-lg p-5 w-[300px]">
-            <div className="text-base font-semibold mb-2">채팅방 이름</div>
-            <input
-              type="text"
-              value={renameInput}
-              maxLength={50}
-              onChange={(e) => setRenameInput(e.target.value)}
-              className="w-full border-b border-gray-400 outline-none text-sm py-1"
-            />
-            <div className="text-xs text-right text-gray-500 mt-1">
-              {renameInput.length}/50
-            </div>
-            <div className="flex justify-end mt-4 gap-2">
-              <button
-                onClick={() => setShowRenameModal(false)}
-                className="text-sm text-gray-600 hover:text-black"
-              >
-                취소
-              </button>
-              <button
-                onClick={async () => {
-                  try {
-                    await renameChatRoom(renameTarget.id, renameInput); // ✅ 서버에 이름 변경 요청
-                    setChatRooms((prev) => {
-                      const updated = prev.map((room) =>
-                        room.id === renameTarget.id
-                          ? { ...room, name: renameInput }
-                          : room
-                      );
-                      return [
-                        ...updated
-                          .filter((r) => r.is_pinned)
-                          .sort(
-                            (a, b) =>
-                              new Date(b.rawTime || 0) -
-                              new Date(a.rawTime || 0)
-                          ),
-                        ...updated
-                          .filter((r) => !r.is_pinned)
-                          .sort(
-                            (a, b) =>
-                              new Date(b.rawTime || 0) -
-                              new Date(a.rawTime || 0)
-                          ),
-                      ];
-                    });
-                    setShowRenameModal(false);
-                  } catch (err) {
-                    console.error("❌ 채팅방 이름 변경 실패:", err);
-                  }
-                }}
-                className="px-4 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
-              >
-                확인
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 채팅방 나가기 모달 */}
-      {showLeaveModal && (
-        <div className="fixed inset-0 z-[9999] bg-black/30 flex items-center justify-center">
-          <div className="bg-white rounded-lg shadow-lg p-5 w-[300px]">
-            <div className="text-base font-semibold mb-4">
-              채팅방에서 나가시겠습니까?
-            </div>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setShowLeaveModal(false)}
-                className="text-sm text-gray-600 hover:text-black"
-              >
-                취소
-              </button>
-              <button
-                onClick={async () => {
-                  try {
-                    await leaveChatRoom(leaveTargetId); // ✅ 서버에 나가기 요청
-                    setChatRooms((prev) => {
-                      const updated = prev.filter(
-                        (room) => room.id !== leaveTargetId
-                      );
-                      return [
-                        ...updated
-                          .filter((r) => r.is_pinned)
-                          .sort(
-                            (a, b) =>
-                              new Date(b.rawTime || 0) -
-                              new Date(a.rawTime || 0)
-                          ),
-                        ...updated
-                          .filter((r) => !r.is_pinned)
-                          .sort(
-                            (a, b) =>
-                              new Date(b.rawTime || 0) -
-                              new Date(a.rawTime || 0)
-                          ),
-                      ];
-                    });
-                    setShowLeaveModal(false);
-                  } catch (err) {
-                    console.error("❌ 채팅방 나가기 실패:", err);
-                  }
-                }}
-                className="px-4 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
-              >
-                나가기
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 };
