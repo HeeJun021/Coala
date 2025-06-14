@@ -1,14 +1,38 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { getAllSubmissionsByUser } from "../../../api/codingTestApi"; // ✅ API 함수
+import { useAuth } from "../../../context/AuthContext"; // ✅ 현재 로그인 정보 가져오기
 
-const SubmissionListTable = ({ submissions = [] }) => {
+const SubmissionListTable = () => {
   const navigate = useNavigate();
+  const { user } = useAuth(); // 로그인된 사용자 정보
+  const [submissions, setSubmissions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
 
-  if (!submissions || submissions.length === 0) {
-    return <p className="text-sm text-gray-500 text-center mt-10">제출 기록이 없습니다.</p>;
-  }
+  useEffect(() => {
+    const fetchSubmissions = async () => {
+      try {
+        if (!user?.user_id) {
+          setError("로그인이 필요합니다.");
+          setLoading(false);
+          return;
+        }
+        const { submissions } = await getAllSubmissionsByUser(user.user_id);
+        setSubmissions(submissions || []);
+      } catch (err) {
+        console.error("❌ 제출 목록 불러오기 실패:", err);
+        setError("제출 내역을 불러오는 데 실패했습니다.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSubmissions();
+  }, [user]);
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -20,6 +44,11 @@ const SubmissionListTable = ({ submissions = [] }) => {
       setCurrentPage(pageNumber);
     }
   };
+
+  if (loading) return <p className="text-sm text-gray-500 text-center mt-10">로딩 중...</p>;
+  if (error) return <p className="text-sm text-red-500 text-center mt-10">{error}</p>;
+  if (submissions.length === 0)
+    return <p className="text-sm text-gray-500 text-center mt-10">제출 기록이 없습니다.</p>;
 
   return (
     <div className="bg-white shadow-md rounded-lg p-6 mt-10 max-w-screen-lg mx-auto">
