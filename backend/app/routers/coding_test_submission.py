@@ -94,9 +94,13 @@ def get_submission_stats(db: Session = Depends(get_db), current_user: dict = Dep
     accuracy = round(correct / total * 100, 1) if total > 0 else 0.0
 
     # 난이도별 정답 수
-    difficulty_map = {
-        0: "very_easy", 1: "easy", 2: "normal", 3: "medium", 4: "hard", 5: "very_hard"
-    }
+    raw_difficulty = (
+        db.query(CodingTests.difficulty, func.count())
+        .join(CodingTestSubmissions, CodingTests.test_id == CodingTestSubmissions.test_id)
+        .filter(CodingTestSubmissions.user_id == user_id, CodingTestSubmissions.is_correct == True)
+        .group_by(CodingTests.difficulty)
+        .all()
+    )
 
     raw_difficulty = (
         db.query(CodingTests.difficulty, db.query(CodingTestSubmissions)
@@ -110,9 +114,11 @@ def get_submission_stats(db: Session = Depends(get_db), current_user: dict = Dep
         .group_by(CodingTests.difficulty)
         .all()
     )
+
     solved_by_difficulty: Dict[str, int] = {
-        difficulty_map.get(diff, str(diff)): count for diff, count in raw_difficulty
+        str(diff): count for diff, count in raw_difficulty
     }
+
 
     # ✅ 한국 시간 기준 오늘 날짜로 설정
     KST = timezone("Asia/Seoul")
