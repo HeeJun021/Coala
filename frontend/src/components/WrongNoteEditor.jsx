@@ -130,7 +130,6 @@ const WrongNoteEditor = ({
     try {
       await updateSubmissionTitle(selectedSubmission.submission_id, title);
       setEditingTitle(false);
-      alert("제출 제목이 변경되었습니다!");
 
       const updatedList = submissionList.map((s) =>
         s.submission_id === selectedSubmission.submission_id
@@ -360,7 +359,7 @@ const WrongNoteEditor = ({
                     onClick={() => {
                       if (editorRef.current) {
                         const editorInstance = editorRef.current.getInstance();
-                        const formattedCode = `제출 코드:\n\n\`\`\`python\n${codeSnapshot}\n\`\`\`\n`;
+                        const formattedCode = `\n\n\`\`\`python\n${codeSnapshot}\n\`\`\`\n`;
                         editorInstance.insertText(formattedCode);
                       }
                     }}
