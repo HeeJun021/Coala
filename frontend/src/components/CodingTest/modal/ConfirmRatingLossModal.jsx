@@ -25,20 +25,23 @@ const ConfirmRatingLossModal = ({ onConfirm, onCancel }) => {
 
         {/* 버튼 영역 */}
         <div className="flex justify-center gap-4">
-          <button
-            onClick={onCancel}
-            className="px-4 py-2 rounded border border-gray-300 text-gray-700 bg-white hover:bg-gray-100 flex items-center gap-1 transition"
-          >
-            <X className="w-4 h-4" />
-            취소
-          </button>
-          <button
-            onClick={onConfirm}
-            className="px-4 py-2 rounded bg-teal-500 text-white hover:bg-teal-600 flex items-center gap-1 transition"
-          >
-            <Check className="w-4 h-4" />
-            확인
-          </button>
+          {/* 버튼 영역 */}
+          <div className="flex justify-center gap-4">
+            <button
+              onClick={onCancel}
+              className="px-4 py-2 rounded border border-gray-300 text-gray-700 bg-white hover:bg-gray-100 flex items-center gap-1 transition"
+            >
+              <X className="w-4 h-4" />
+              취소
+            </button>
+            <button
+              onClick={onConfirm}
+              className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 flex items-center gap-1 transition"
+            >
+              <Check className="w-4 h-4" />
+              확인
+            </button>
+          </div>
         </div>
       </div>
     </div>

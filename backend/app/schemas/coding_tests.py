@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Dict, List
 from datetime import datetime
 
 # ✅ 코드 제출 요청용 스키마
@@ -78,3 +78,17 @@ class SubmissionTitleUpdate(BaseModel):
 
 class SolutionViewRequest(BaseModel):
     test_id: int
+    
+    
+    
+class WeeklySubmissionItem(BaseModel):
+    date: str        # ✅ 여기를 str로
+    count: int
+    
+# 코딩테스트 제출 통계
+class SubmissionStatsResponse(BaseModel):
+    totalSubmissions: int
+    correctSubmissions: int
+    accuracy: float
+    solvedByDifficulty: Dict[str, int]
+    weeklySubmissions: List[WeeklySubmissionItem]

@@ -53,8 +53,7 @@ const CorrectSolutionsPage = () => {
     const matchesLanguage =
       selectedLang === "전체" ||
       sol.language.toLowerCase() === selectedLang.toLowerCase();
-    const matchesTab =
-      activeTab === "all" || sol.user_id === user?.user_id;
+    const matchesTab = activeTab === "all" || sol.user_id === user?.user_id;
     return matchesLanguage && matchesTab;
   });
 
@@ -71,12 +70,13 @@ const CorrectSolutionsPage = () => {
         <h1 className="text-xl font-bold">{problemTitle}</h1>
         <div className="flex gap-2">
           <button
-            className="flex items-center gap-1 bg-blue-500 text-white hover:bg-blue-600 px-3 py-1 text-sm rounded"
+            className="flex items-center gap-1 bg-green-600 text-white hover:bg-green-700 px-3 py-1 text-sm rounded"
             onClick={() => navigate(`/codingtest/${testId}`)}
           >
             <Eye className="w-4 h-4" />
             문제 보기
           </button>
+
           <button
             className="flex items-center gap-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1 text-sm rounded"
             onClick={() => navigate(`/codingtest/${testId}`)}
@@ -93,7 +93,7 @@ const CorrectSolutionsPage = () => {
           <button
             className={`px-4 py-2 rounded text-sm font-semibold ${
               activeTab === "all"
-                ? "bg-blue-600 text-white"
+                ? "bg-green-600 text-white"
                 : "bg-gray-200 text-gray-800"
             }`}
             onClick={() => setActiveTab("all")}
@@ -103,7 +103,7 @@ const CorrectSolutionsPage = () => {
           <button
             className={`px-4 py-2 rounded text-sm font-semibold ${
               activeTab === "mine"
-                ? "bg-blue-600 text-white"
+                ? "bg-green-600 text-white"
                 : "bg-gray-200 text-gray-800"
             }`}
             onClick={() => setActiveTab("mine")}
@@ -190,7 +190,7 @@ const CorrectSolutionsPage = () => {
                 }}
                 className={`px-3 py-1 rounded border text-sm ${
                   currentPage === i + 1
-                    ? "bg-blue-500 text-white"
+                    ? "bg-green-600 text-white"
                     : "bg-white text-gray-800 hover:bg-gray-200"
                 }`}
               >

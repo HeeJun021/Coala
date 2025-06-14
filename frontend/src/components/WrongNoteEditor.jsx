@@ -130,7 +130,6 @@ const WrongNoteEditor = ({
     try {
       await updateSubmissionTitle(selectedSubmission.submission_id, title);
       setEditingTitle(false);
-      alert("제출 제목이 변경되었습니다!");
 
       const updatedList = submissionList.map((s) =>
         s.submission_id === selectedSubmission.submission_id
@@ -244,9 +243,9 @@ const WrongNoteEditor = ({
                                 alert("오답노트 생성 중 오류 발생");
                               }
                             }}
-                            className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded flex items-center"
+                            className="text-xs bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded flex items-center"
                           >
-                            <StickyNote className="w-3.5 h-4 mr-1" />
+                            <StickyNote className="w-3.5 h-3.5 mr-2" />
                             오답노트 작성
                           </button>
                         )}
@@ -348,7 +347,7 @@ const WrongNoteEditor = ({
                   )}
                   <button
                     onClick={() => setEditingTitle(true)}
-                    className="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+                    className="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"
                   >
                     <Pencil className="w-3 h-3 mr-1 inline-block" />
                     제출 이름 변경
@@ -360,12 +359,11 @@ const WrongNoteEditor = ({
                     onClick={() => {
                       if (editorRef.current) {
                         const editorInstance = editorRef.current.getInstance();
-                        const formattedCode = `제출 코드:\n\n${codeSnapshot}\n`;
-
+                        const formattedCode = `\n\n\`\`\`python\n${codeSnapshot}\n\`\`\`\n`;
                         editorInstance.insertText(formattedCode);
                       }
                     }}
-                    className="text-xs bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                    className="text-xs bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
                   >
                     <Download
                       className="w-4 h-4 mr-1 inline-block"
@@ -407,7 +405,7 @@ const WrongNoteEditor = ({
                     <div className="flex justify-end mt-3 gap-2">
                       <button
                         onClick={handleSave}
-                        className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+                        className="text-xs bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
                       >
                         <Save className="w-4 h-4 mr-1 inline-block text-white" />
                         오답노트 저장
@@ -439,7 +437,7 @@ const WrongNoteEditor = ({
                           setIsEditing(true);
                           setNoteContent(noteContent);
                         }}
-                        className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+                        className="text-xs bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
                       >
                         <Pencil className="w-4 h-4 mr-1 inline-block text-white" />
                         오답노트 수정하기
@@ -473,7 +471,7 @@ const WrongNoteEditor = ({
                   <div className="flex justify-end mt-3">
                     <button
                       onClick={handleSave}
-                      className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+                      className="text-xs bg-blue-green hover:bg-green-600 text-white px-4 py-2 rounded"
                     >
                       <Save className="w-4 h-4 mr-1 inline-block text-white" />
                       오답노트 저장

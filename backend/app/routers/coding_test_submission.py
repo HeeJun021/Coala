@@ -1,11 +1,15 @@
 from sqlalchemy import update, insert, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from app.models.coding_tests import CorrectSubmissionStats, CodingTestSubmissions
+from datetime import datetime, timedelta
+from typing import Dict
+from app.models.coding_tests import CorrectSubmissionStats, CodingTestSubmissions, CodingTestSubmissions, CodingTests
 from fastapi import APIRouter, Depends, HTTPException
 from app.database import get_db
-from app.schemas.coding_tests import SubmissionTitleUpdate
-
+from app.schemas.coding_tests import SubmissionTitleUpdate, SubmissionStatsResponse
+from app.routers.auth import get_current_user
+from sqlalchemy import func
+from pytz import timezone  # ⬅️ 추가
 
 router = APIRouter(
     prefix="/codingtestsubmissions",
@@ -75,3 +79,69 @@ def update_submission_title(
         "result": "success",
         "updated_title": submission.title
     }
+    
+
+# 코딩테스트 통계 조회
+@router.get("/stats", response_model=SubmissionStatsResponse)
+def get_submission_stats(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    user_id = current_user["user_id"]
+
+    # 전체 제출 / 정답 제출
+    total = db.query(CodingTestSubmissions).filter_by(user_id=user_id).count()
+    correct = db.query(CodingTestSubmissions).filter_by(user_id=user_id, is_correct=True).count()
+
+    # 정답률
+    accuracy = round(correct / total * 100, 1) if total > 0 else 0.0
+
+    # 난이도별 정답 수
+    raw_difficulty = (
+        db.query(CodingTests.difficulty, func.count())
+        .join(CodingTestSubmissions, CodingTests.test_id == CodingTestSubmissions.test_id)
+        .filter(CodingTestSubmissions.user_id == user_id, CodingTestSubmissions.is_correct == True)
+        .group_by(CodingTests.difficulty)
+        .all()
+    )
+
+    raw_difficulty = (
+        db.query(CodingTests.difficulty, db.query(CodingTestSubmissions)
+            .filter(CodingTestSubmissions.user_id == user_id, CodingTestSubmissions.is_correct == True)
+            .filter(CodingTestSubmissions.test_id == CodingTests.test_id)
+            .with_entities(CodingTests.difficulty)
+            .subquery())
+        .with_entities(CodingTests.difficulty, func.count())
+        .join(CodingTestSubmissions, CodingTests.test_id == CodingTestSubmissions.test_id)
+        .filter(CodingTestSubmissions.user_id == user_id, CodingTestSubmissions.is_correct == True)
+        .group_by(CodingTests.difficulty)
+        .all()
+    )
+
+    solved_by_difficulty: Dict[str, int] = {
+        str(diff): count for diff, count in raw_difficulty
+    }
+
+
+    # ✅ 한국 시간 기준 오늘 날짜로 설정
+    KST = timezone("Asia/Seoul")
+    today = datetime.now(KST).date()
+    start_date = today - timedelta(days=6)
+
+    result = (
+        db.query(func.date(CodingTestSubmissions.submitted_at), func.count())
+        .filter(CodingTestSubmissions.user_id == user_id)
+        .filter(CodingTestSubmissions.submitted_at >= start_date)
+        .group_by(func.date(CodingTestSubmissions.submitted_at))
+        .all()
+    )
+    date_map = {r[0].isoformat(): r[1] for r in result}
+    weekly_submissions = []
+    for i in range(7):
+        day = (start_date + timedelta(days=i)).isoformat()
+        weekly_submissions.append({"date": day, "count": date_map.get(day, 0)})
+
+    return SubmissionStatsResponse(
+        totalSubmissions=total,
+        correctSubmissions=correct,
+        accuracy=accuracy,
+        solvedByDifficulty=solved_by_difficulty,
+        weeklySubmissions=weekly_submissions,
+    )
