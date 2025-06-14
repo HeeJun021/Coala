@@ -127,7 +127,7 @@ const ResultModal = ({
           {isCorrect && (
             <button
               onClick={() => navigate(`/codingtest/correct/${testId}`)}
-              className="px-4 py-2 bg-blue-500 text-white hover:bg-blue-600 rounded flex items-center gap-1 transition"
+              className="px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded flex items-center gap-1 transition"
             >
               <Eye className="w-4 h-4" />
               다른 사람의 풀이 보기
