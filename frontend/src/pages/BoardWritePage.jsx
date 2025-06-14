@@ -10,7 +10,7 @@ const BoardWritePage = () => {
   const { boardType } = useParams();
   const navigate = useNavigate();
 
-  const [recruitLimit, setRecruitLimit] = useState(""); // 사용자 입력 (문자열)
+  const [recruitLimit, setRecruitLimit] = useState(""); // ✅ 모집 인원 수
   const editorRef = useRef();
   const location = useLocation();
   const [title, setTitle] = useState(location.state?.codeTitle || "");
@@ -58,20 +58,21 @@ const BoardWritePage = () => {
     const ext = filename.includes(".") ? filename.split(".").pop() : "js";
     const codeLanguage = extMap[`.${ext}`] || "javascript";
 
-    // 숫자 변환 및 유효성 처리
+    // ✅ 숫자 변환 및 기본값 처리
     const recruitLimitNumber =
       boardType === "project" && recruitLimit !== ""
         ? parseInt(recruitLimit, 10)
         : 1;
 
     const payload = {
-      boardType: boardType, // ✅ 여기서 수정됨
+      boardType: boardType,
       title,
       content: textContent,
       code: codeContent,
       user_id: user.user_id,
       code_filename: filename,
       code_language: codeLanguage,
+      recruit_limit: recruitLimitNumber, // ✅ 추가됨
     };
 
     console.log("✅ 보내는 payload:", payload);
@@ -111,6 +112,19 @@ const BoardWritePage = () => {
           className="w-full border p-2"
           required
         />
+
+        {/* ✅ 프로젝트 게시판일 때 모집 인원 수 입력 필드 표시 */}
+        {boardType === "project" && (
+          <input
+            type="number"
+            placeholder="모집 인원 수"
+            value={recruitLimit}
+            onChange={(e) => setRecruitLimit(e.target.value)}
+            min={1}
+            className="w-full border p-2"
+          />
+        )}
+
 
         <textarea
           value={content}
