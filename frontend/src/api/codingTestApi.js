@@ -73,3 +73,9 @@ export const markViewedOthers = async (testId) => {
 export const checkHasSolved = async (testId) => {
   return await apiClient.get(`codingtest/${testId}/has-solved`);
 };
+
+// 코딩 테스트 통계 조회
+export const getSubmissionStats = async () => {
+  const res = await apiClient.get("/codingtestsubmissions/stats");
+  return res.data;
+};
