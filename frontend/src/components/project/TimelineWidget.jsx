@@ -3,6 +3,7 @@ import { getMyTasks, updateTask, deleteTask } from "../../api/taskApi";
 import { format, addDays, addYears, differenceInDays, parseISO, isValid, getDaysInMonth, startOfMonth, lastDayOfMonth, addMonths } from "date-fns";
 import { ko } from "date-fns/locale";
 import { getProjectMembers } from "../../api/projectApi";
+import { colorPalette, getRandomColor, getTextColor } from "../../utils/colorUtils";
 
 const TimelineWidget = ({ project }) => {
   const [tasks, setTasks] = useState([]);
@@ -207,40 +208,40 @@ const TimelineWidget = ({ project }) => {
     });
   };
 
-const getTaskPosition = (task, isDragging = false) => {
-  const start = isDragging
-    ? draggedDates.start && isValid(draggedDates.start)
-      ? draggedDates.start
-      : timelineStartDate
-    : localResizeDates.taskId === task.task_id && localResizeDates.start
-    ? localResizeDates.start
-    : task.start_date && isValid(parseISO(task.start_date))
-    ? parseISO(task.start_date)
-    : timelineStartDate;
-  const end = isDragging
-    ? draggedDates.end && isValid(draggedDates.end)
-      ? draggedDates.end
-      : addDays(start, 1)
-    : localResizeDates.taskId === task.task_id && localResizeDates.end
-    ? localResizeDates.end
-    : task.due_date && isValid(parseISO(task.due_date))
-    ? parseISO(task.due_date)
-    : addDays(start, 1);
-  const daysFromStart = Math.max(differenceInDays(start, timelineStartDate), 0);
-  const duration = Math.max(differenceInDays(end, start) + 1, 1);
-  const width = duration * pixelPerDay;
-  return { left: daysFromStart * pixelPerDay, width: Math.max(width, 10) };
-};
+  const getTaskPosition = (task, isDragging = false) => {
+    const start = isDragging
+      ? draggedDates.start && isValid(draggedDates.start)
+        ? draggedDates.start
+        : timelineStartDate
+      : localResizeDates.taskId === task.task_id && localResizeDates.start
+      ? localResizeDates.start
+      : task.start_date && isValid(parseISO(task.start_date))
+      ? parseISO(task.start_date)
+      : timelineStartDate;
+    const end = isDragging
+      ? draggedDates.end && isValid(draggedDates.end)
+        ? draggedDates.end
+        : addDays(start, 1)
+      : localResizeDates.taskId === task.task_id && localResizeDates.end
+      ? localResizeDates.end
+      : task.due_date && isValid(parseISO(task.due_date))
+      ? parseISO(task.due_date)
+      : addDays(start, 1);
+    const daysFromStart = Math.max(differenceInDays(start, timelineStartDate), 0);
+    const duration = Math.max(differenceInDays(end, start) + 1, 1);
+    const width = duration * pixelPerDay;
+    return { left: daysFromStart * pixelPerDay, width: Math.max(width, 10) };
+  };
 
-const sections = [
-  { key: "todo", label: "할 일", status: "예정", color: "bg-blue-200 border-blue-400 text-blue-900" },
-  { key: "inprogress", label: "진행 중", status: "진행중", color: "bg-yellow-200 border-yellow-400 text-yellow-900" },
-  { key: "done", label: "완료", status: "완료됨", color: "bg-green-200 border-green-400 text-green-900" },
-];
+  const sections = [
+    { key: "todo", label: "할 일", status: "예정", color: "bg-blue-200 border-blue-400 text-blue-900" },
+    { key: "inprogress", label: "진행 중", status: "진행중", color: "bg-yellow-200 border-yellow-400 text-yellow-900" },
+    { key: "done", label: "완료", status: "완료됨", color: "bg-green-200 border-green-400 text-green-900" },
+  ];
 
-const getSectionTasks = (status) => {
-  return tasks.filter((task) => task.status === status);
-};
+  const getSectionTasks = (status) => {
+    return tasks.filter((task) => task.status === status);
+  };
 
   const handleDragStart = (e, task) => {
     setDraggedTask(task);
@@ -329,17 +330,17 @@ const getSectionTasks = (status) => {
           const updatedTask = { ...draggedTask, status: newStatus, start_date: newStartISO, due_date: newEndISO };
           const res = await updateTask(draggedTask.task_id, updatedTask);
           const resultTask = { ...res, status: newStatus };
-           setTasks((prev) =>
-    prev.map((task) => (task.task_id === resultTask.task_id ? resultTask : task))
-  );
+          setTasks((prev) =>
+            prev.map((task) => (task.task_id === resultTask.task_id ? resultTask : task))
+          );
 
           updateDependentTasks(draggedTask.task_id, resultTask);
-  if (selectedTask && selectedTask.task_id === draggedTask.task_id) {
-    setSelectedTask(null);
-  }
-} catch (err) {
-  console.error("작업 상태 업데이트 실패:", err);
-}
+          if (selectedTask && selectedTask.task_id === draggedTask.task_id) {
+            setSelectedTask(null);
+          }
+        } catch (err) {
+          console.error("작업 상태 업데이트 실패:", err);
+        }
       }
       setDraggedTask(null);
       setDraggedDates({ start: null, end: null });
@@ -431,7 +432,7 @@ const getSectionTasks = (status) => {
       const res = await updateTask(taskId, taskData);
       setTasks((prev) => prev.map((task) => (task.task_id === res.task_id ? res : task)));
       setSelectedTask(res);
-      setLocalResizeDates({ taskId: null, start: null, end: null }); // Reset after final update
+      setLocalResizeDates({ taskId: null, start: null, end: null });
     } catch (err) {
       console.error("Failed to update task:", err);
       alert("작업 수정에 실패했습니다.");
@@ -465,7 +466,7 @@ const getSectionTasks = (status) => {
 
   const handleResizeStart = (e, task, direction) => {
     e.preventDefault();
-    e.stopPropagation(); // Prevent any click or propagation events during resize
+    e.stopPropagation();
 
     setIsResizing(true);
     const startX = e.clientX;
@@ -473,7 +474,7 @@ const getSectionTasks = (status) => {
     const initialDueDate = new Date(task.due_date);
     const taskBar = document.getElementById(`task-bar-${task.task_id}`);
     let currentLeft = taskBar ? taskBar.offsetLeft : 0;
-    let currentWidth = taskBar ? taskBar.offsetWidth : 10; // 최소 너비 10px
+    let currentWidth = taskBar ? taskBar.offsetWidth : 10;
 
     const onMouseMove = (moveEvent) => {
       const deltaX = moveEvent.clientX - startX;
@@ -546,7 +547,7 @@ const getSectionTasks = (status) => {
             const res = await updateTask(task.task_id, updatedTask);
             setTasks((prev) => prev.map((t) => (t.task_id === res.task_id ? res : t)));
             if (selectedTask && selectedTask.task_id === task.task_id) {
-              setSelectedTask(null); // 모달을 닫기 위해 null로 설정
+              setSelectedTask(null);
             }
           } catch (err) {
             console.error("작업 업데이트 실패:", err);
@@ -583,8 +584,8 @@ const getSectionTasks = (status) => {
                 <div
                   className="absolute z-40"
                   style={{
-                    top: '-8px', // 헤더보다 살짝 위에 표시
-                    left: `${todayLeft + 160 - 8}px`, // ▼ 중앙 정렬 (삼각형 너비 고려)
+                    top: '-8px',
+                    left: `${todayLeft + 160 - 8}px`,
                   }}
                 >
                   <div className="text-emerald-500 text-lg leading-none">▼</div>
@@ -694,7 +695,8 @@ const getSectionTasks = (status) => {
                         {sectionTasks.map((task) => (
                           <div
                             key={task.task_id}
-                            className={`p-3 my-2 rounded-lg ${section.color} cursor-pointer px-4 shadow-sm hover:shadow-md transition-all duration-200`}
+                            className={`p-3 my-2 rounded-lg cursor-pointer px-4 shadow-sm hover:shadow-md transition-all duration-200`}
+                            style={{ backgroundColor: task.color || getRandomColor(), color: getTextColor(task.color || getRandomColor()) }}
                             onMouseEnter={() => setHoveredTask(task)}
                             onMouseLeave={() => setHoveredTask(null)}
                             onClick={() => handleTaskClick(task)}
@@ -702,7 +704,7 @@ const getSectionTasks = (status) => {
                             onDragStart={(e) => handleDragStart(e, task)}
                           >
                             <div className="text-sm font-medium">{task.title}</div>
-                            <div className="text-xs text-gray-600">
+                            <div className="text-xs">
                               {localResizeDates.taskId === task.task_id && localResizeDates.start
                                 ? format(localResizeDates.start, 'yyyy-MM-dd')
                                 : task.start_date || format(timelineStartDate, 'yyyy-MM-dd')} - 
@@ -738,6 +740,8 @@ const getSectionTasks = (status) => {
                             >
                               {sectionTasks.map((task, taskIndex) => {
                                 const { left, width } = getTaskPosition(task);
+                                const bgColor = task.color || getRandomColor();
+                                const textColor = getTextColor(bgColor);
                                 return (
                                   <div key={task.task_id} style={{ position: 'relative', marginTop: `${taskIndex * 36}px` }}>
                                     <div
@@ -750,13 +754,14 @@ const getSectionTasks = (status) => {
                                           handleTaskClick(task);
                                         }
                                       }}
-                                      className={`absolute h-8 rounded-lg ${section.color} px-3 py-1 text-xs font-medium flex items-center cursor-move hover:shadow-md transition-all duration-200 z-[1] group`}
+                                      className={`absolute h-8 rounded-lg px-3 py-1 text-xs font-medium flex items-center cursor-move hover:shadow-md transition-all duration-200 z-[1] group`}
                                       style={{
                                         left: `${left}px`,
                                         width: `${width}px`,
-                                        backgroundColor: section.color.split(' ')[0],
-                                        border: `1px solid ${section.color.split(' ')[1]}`,
+                                        backgroundColor: bgColor,
+                                        border: `1px solid ${bgColor}`,
                                         boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                        color: textColor,
                                       }}
                                       id={`task-bar-${task.task_id}`}
                                     >
@@ -918,34 +923,45 @@ const getSectionTasks = (status) => {
               </select>
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-500 mb-1">🚦 상태</p>
-              <p className="text-sm font-semibold text-gray-700">{selectedTask.status || "없음"}</p>
+              <p className="text-xs font-medium text-gray-500 mb-1">🎨 색상</p>
+              <select
+                value={selectedTask.color || ""}
+                onChange={(e) => {
+                  const newTask = { ...selectedTask, color: e.target.value || getRandomColor() };
+                  setSelectedTask(newTask);
+                  handleUpdateTask(selectedTask.task_id, newTask);
+                }}
+                className="text-sm border-none bg-gray-100 rounded px-2 py-1 w-full focus:ring-blue-500"
+              >
+                <option value="">랜덤 색상</option>
+                {colorPalette.map((color) => (
+                  <option key={color} value={color} style={{ backgroundColor: color, color: getTextColor(color) }}>
+                    {color}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
           <div className="mb-6 relative">
-            <p className="text-xs font-medium text-gray-500 mb-2">👥 참여자</p>
-            <div className="flex flex-wrap gap-2 mb-3">
-              {selectedTask.collaborators?.length > 0 ? (
-                selectedTask.collaborators.map((user) => (
-                  <div
-                    key={user.user_id}
-                    className="flex items-center bg-gray-100 text-gray-800 text-xs font-medium rounded-md px-3 py-1"
+            <p className="text-xs font-medium text-gray-500 mb-1">👥 참여자</p>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {selectedTask.collaborators?.map((user) => (
+                <div
+                  key={user.user_id}
+                  className="flex items-center bg-gray-200 text-gray-800 text-xs rounded px-2 py-1"
+                >
+                  {user.nickname}
+                  <button
+                    onClick={() => handleRemoveCollaborator(user.user_id)}
+                    className="ml-1 text-gray-500 hover:text-red-500"
                   >
-                    {user.nickname}
-                    <button
-                      onClick={() => handleRemoveCollaborator(user.user_id)}
-                      className="ml-2 text-blue-600 hover:text-red-600"
-                    >
-                      ✗
-                    </button>
-                  </div>
-                ))
-              ) : (
-                <span className="text-xs text-gray-500">참여자가 없습니다.</span>
-              )}
+                    ×
+                  </button>
+                </div>
+              ))}
               <button
                 onClick={() => setIsAddingCollaborator(true)}
-                className="text-xs text-blue-600 hover:bg-blue-100 rounded px-2 py-1"
+                className="text-xs text-blue-500 hover:underline"
               >
                 + 참여자 추가
               </button>
@@ -953,31 +969,29 @@ const getSectionTasks = (status) => {
             {isAddingCollaborator && (
               <div
                 ref={collaboratorRef}
-                className="absolute z-30 bg-white border border-gray-200 rounded-lg shadow-lg p-3 max-h-48 overflow-y-auto"
+                className="absolute z-10 bg-white border rounded shadow-lg p-2 max-h-40 overflow-y-auto"
               >
-                {members.length > 0 ? (
-                  members
-                    .filter(
-                      (member) =>
-                        !selectedTask.collaborators?.some((c) => c.user_id === member.user_id)
-                    )
-                    .map((member) => (
-                      <div
-                        key={member.user_id}
-                        onClick={() => handleAddCollaborator(member)}
-                        className="px-3 py-2 hover:bg-blue-50 rounded cursor-pointer text-sm text-gray-700"
-                      >
-                        {member.nickname}
-                      </div>
-                    ))
-                ) : (
-                  <p className="text-xs text-gray-500">추가 가능한 참여자가 없습니다.</p>
-                )}
+                {members
+                  .filter(
+                    (member) =>
+                      !selectedTask.collaborators?.some(
+                        (c) => c.user_id === member.user_id
+                      )
+                  )
+                  .map((member) => (
+                    <div
+                      key={member.user_id}
+                      onClick={() => handleAddCollaborator(member)}
+                      className="px-2 py-1 hover:bg-gray-100 cursor-pointer text-xs"
+                    >
+                      {member.nickname}
+                    </div>
+                  ))}
               </div>
             )}
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-2">📄 설명</h3>
+            <p className="text-xs font-medium text-gray-500 mb-1">📝 설명</p>
             <textarea
               value={selectedTask.description || ""}
               onChange={(e) => {
@@ -985,8 +999,8 @@ const getSectionTasks = (status) => {
                 setSelectedTask(newTask);
                 handleUpdateTask(selectedTask.task_id, newTask);
               }}
-              className="w-full text-sm border border-gray-200 rounded-lg py-3 focus:ring-blue-500 focus:border-blue-500 h-40 resize-none"
-              placeholder="설명을 입력해 주세요..."
+              className="w-full border-none bg-gray-100 rounded px-3 py-2 text-sm h-32 focus:ring-blue-500"
+              placeholder="설명을 입력하세요..."
             />
           </div>
         </div>

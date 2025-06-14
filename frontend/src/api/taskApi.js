@@ -1,4 +1,5 @@
 import apiClient from "./apiClient";
+import { getRandomColor } from "../utils/colorUtils";
 
 export const getMyTasks = async () => {
   const response = await apiClient.get("/tasks/my");
@@ -11,7 +12,10 @@ export const getTaskById = async (taskId) => {
 };
 
 export const createTask = async (taskData) => {
-  const response = await apiClient.post("/tasks", taskData);
+  const response = await apiClient.post("/tasks", {
+    ...taskData,
+    color: taskData.color || getRandomColor(),
+  });
   return response.data;
 };
 

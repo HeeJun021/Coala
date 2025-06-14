@@ -7,8 +7,19 @@ from ..database import get_db
 from ..dependencies.auth import get_current_user
 from ..models.project_models import Project, ProjectMembers
 from ..models.user import User
+import random
 
 router = APIRouter(prefix="/tasks", tags=["Tasks"])
+
+COLOR_PALETTE = [
+    "#8da4f1", "#a5c5e8", "#a9d3c5", "#d9b4a3", "#d3cbc2",
+    "#d5c5c5", "#b9e2cc", "#e9c78a", "#b0b0e8", "#e3b9cb",
+    "#b8dee8", "#f0c9a6", "#c9e0b4", "#dab8e0", "#b8e8d4",
+]
+
+def get_random_color():
+    return random.choice(COLOR_PALETTE)
+
 
 @router.get("/my", response_model=List[TaskResponse])
 async def get_my_tasks(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
@@ -80,7 +91,8 @@ async def create_task(
         start_date=task_data.start_date,
         due_date=task_data.due_date,
         status=task_data.status or "예정",
-        priority=task_data.priority or "보통"
+        priority=task_data.priority or "보통",
+        color=task_data.color or get_random_color()  # 기본 랜덤 색상
     )
     db.add(new_task)
     db.flush()

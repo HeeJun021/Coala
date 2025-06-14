@@ -10,6 +10,7 @@ class TaskBase(BaseModel):
     status: Optional[str] = "예정"
     priority: Optional[str] = "보통"
     project_id: int
+    color: Optional[str] = None  # HEX 색상 코드
 
 class TaskCreate(TaskBase):
     collaborator_ids: List[int] = []
@@ -21,6 +22,7 @@ class TaskUpdate(BaseModel):
     due_date: Optional[date] = None
     status: Optional[str] = None
     priority: Optional[str] = None
+    color: Optional[str] = None
     collaborator_ids: Optional[List[int]] = None
 
 class UserResponse(BaseModel):
