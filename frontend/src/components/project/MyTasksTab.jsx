@@ -242,18 +242,20 @@ const MyTasksTab = ({ projects: propProjects }) => {
               </button>
             ))}
           </div>
-          <button
-            onClick={() => setIsAddingTask(true)}
-            className="mt-2 text-sm bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition"
-          >
-            작업 추가
-          </button>
+          {viewMode === "list" && (
+            <button
+              onClick={() => setIsAddingTask(true)}
+              className="mt-2 text-sm bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition"
+            >
+              작업 추가
+            </button>
+          )}
         </div>
 
         {viewMode === "list" && (
           <div className="space-y-10">
             {tasks.length === 0 && (
-              <p className="text-gray-500">작업이 없습니다. 새 작업을 추가해 보세요.</p>
+              <p className="text-gray-500">작업이 없습니다.</p>
             )}
             {sections.map((section) => (
               <div key={section}>

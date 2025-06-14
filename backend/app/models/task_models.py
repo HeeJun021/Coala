@@ -15,6 +15,7 @@ class Tasks(Base):
     due_date = Column(Date)
     status = Column(String(30), CheckConstraint("status IN ('예정', '진행중', '완료됨', '마감일 지남')"), default="예정")
     priority = Column(String(20), CheckConstraint("priority IN ('낮음', '보통', '높음')"), default="보통")
+    color = Column(String(16))  # HEX 색상 코드 (예: #8da4f1)
     created_at = Column(Date, server_default=func.now())
     updated_at = Column(Date, server_default=func.now(), onupdate=func.now())
     
