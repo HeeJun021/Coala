@@ -1,9 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { FaCheck, FaSort, FaSearch, FaTimes } from "react-icons/fa";
 import { useSearchParams, Link } from "react-router-dom";
 import { getCodingTestList } from "../api/codingTestApi";
 import { useAuth } from "../context/AuthContext";
-import { BookOpenText } from "lucide-react";
+import {
+  ListChecks,
+  FileCode,
+  Check,
+  ArrowUpDown,
+  Search,
+  X,
+} from "lucide-react";
 
 const getLevelClass = (level) => {
   switch (level) {
@@ -103,35 +109,31 @@ const CodingTestPage = () => {
     sort === "desc" ? "정답률이 높은 문제" : "정답률이 낮은 문제";
 
   return (
-    <div className="p-6 bg-white min-h-screen">
-      <div className="max-w-6xl mx-auto bg-white shadow-xl rounded-2xl border border-gray-300 p-7">
-        {/* 페이지 타이틀 */}
-        <div className="mb-4">
-          <h1 className="text-4xl font-extrabold text-gray-800 mb-4 tracking-wide">
-            코딩 테스트
-          </h1>
-          <p className="text-gray-500 text-sm leading-relaxed">
-            다양한 문제를 풀며{" "}
-            <span className="font-medium text-gray-700">알고리즘 사고력</span>을
-            키우고, 실력을 단계별로 쌓아보세요.
+    <div className="p-4 bg-[#F9FAFB] min-h-screen">
+      <div className="max-w-6xl mx-auto bg-white shadow-lg rounded-xl border border-gray-200 p-6 mt-6">
+        {/* 페이지 헤더 */}
+        <div className="mb-6">
+          {/* 코딩 테스트 타이틀 + 아이콘 */}
+          <div className="flex items-center gap-2 mb-2">
+            <FileCode className="w-7 h-7 text-green-600" />
+            <h1 className="text-4xl font-extrabold text-gray-800 tracking-tight">
+              코딩 테스트
+            </h1>
+          </div>
+
+          {/* 간단 설명 */}
+          <p className="text-sm text-gray-500 leading-relaxed">
+            문제를 풀며{" "}
+            <span className="text-green-600 font-medium">알고리즘 사고력</span>
+            을 키워보세요.
           </p>
         </div>
 
-        {/* 문제 목록 타이틀 (아이콘 + 구분선) */}
-        <div className="flex items-center gap-2 mb-4">
-          <BookOpenText className="w-5 h-5 text-green-600" />
-          <h2 className="text-lg font-semibold text-gray-800">문제 목록</h2>
-        </div>
-
-        {/* 문제 검색 및 필터링 설명 */}
-        <p className="text-sm text-gray-600 mb-2 ml-[2px]">
-          원하는 문제를 검색하거나 조건별로 필터링해보세요.
-        </p>
-
-        {/* 검색 & 필터 */}
-        <div className="flex flex-col gap-2 mb-6">
+        {/* 검색 및 필터 */}
+        <div className="flex flex-col gap-3 mb-6">
+          {/* 검색창 */}
           <div
-            className={`flex items-center border rounded-md w-[500px] bg-white px-2 ${
+            className={`flex items-center border rounded-md w-full max-w-md px-3 py-2 ${
               search
                 ? "border-green-500"
                 : "border-gray-300 hover:border-green-500 focus-within:border-green-500"
@@ -139,26 +141,26 @@ const CodingTestPage = () => {
           >
             <input
               type="text"
-              placeholder="풀고 싶은 문제 제목 검색"
+              placeholder="문제 제목 검색"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyPress={handleKeyPress}
-              className="px-2 py-2 w-full outline-none bg-white"
+              className="w-full bg-transparent outline-none text-sm"
             />
             {searchTerm && (
-              <FaTimes
-                className="text-gray-400 cursor-pointer mx-2"
+              <X
+                className="w-4 h-4 text-gray-400 cursor-pointer mx-2"
                 onClick={clearSearch}
               />
             )}
-            <FaSearch
-              className="text-gray-500 cursor-pointer"
+            <Search
+              className="w-4 h-4 text-gray-500 cursor-pointer"
               onClick={handleSearch}
             />
           </div>
 
-          {/* 필터 순서: 난이도 → 카테고리 → 상태 */}
-          <div className="flex gap-2 mt-2">
+          {/* 필터 */}
+          <div className="flex flex-wrap gap-2">
             <select
               value={level}
               onChange={(e) =>
@@ -171,14 +173,14 @@ const CodingTestPage = () => {
                   level: e.target.value,
                 })
               }
-              className="border border-gray-300 rounded-md px-2 py-1 w-[100px]"
+              className="border border-gray-300 rounded-md px-3 py-1 text-sm w-[100px]"
             >
               <option value="">난이도</option>
-              <option value="1">Lv.1</option>
-              <option value="2">Lv.2</option>
-              <option value="3">Lv.3</option>
-              <option value="4">Lv.4</option>
-              <option value="5">Lv.5</option>
+              {[1, 2, 3, 4, 5].map((lv) => (
+                <option key={lv} value={lv}>
+                  Lv.{lv}
+                </option>
+              ))}
             </select>
 
             <select
@@ -193,7 +195,7 @@ const CodingTestPage = () => {
                   category: e.target.value,
                 })
               }
-              className="border border-gray-300 rounded-md px-2 py-1 w-[180px]"
+              className="border border-gray-300 rounded-md px-3 py-1 text-sm w-[180px]"
             >
               <option value="">카테고리</option>
               {categoryCounts.map((cat) => (
@@ -216,7 +218,7 @@ const CodingTestPage = () => {
                     status: e.target.value,
                   })
                 }
-                className="border border-gray-300 rounded-md px-2 py-1 w-[100px]"
+                className="border border-gray-300 rounded-md px-3 py-1 text-sm w-[110px]"
               >
                 <option value="">상태</option>
                 <option value="solved">푼 문제</option>
@@ -225,72 +227,73 @@ const CodingTestPage = () => {
             )}
           </div>
         </div>
+        {/* 문제 목록 헤더 라인 */}
+        <div className="flex justify-between items-center mb-4">
+          {/* 좌측: 아이콘 + 제목 + 총 문제 수 */}
+          <div className="flex items-center gap-2 text-gray-800">
+            <ListChecks className="w-5 h-5 text-green-600" />
+            <h2 className="text-lg font-semibold">
+              문제 목록{" "}
+              <span className="text-sm font-normal text-gray-500">
+                · 총 <strong>{totalCount}</strong> 문제
+              </span>
+            </h2>
+          </div>
 
-        {/* 문제 수 + 정렬 */}
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-black">
-            총 <strong>{totalCount}</strong> 문제
-          </span>
+          {/* 우측: 정렬 버튼 */}
           <button
             onClick={toggleSort}
-            className="flex items-center text-sm text-gray-600 hover:text-gray-800"
+            className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-800"
           >
-            {sortText} <FaSort className="ml-1" />
+            {sortText} <ArrowUpDown className="w-4 h-4" />
           </button>
         </div>
 
-        {/* 문제 목록 */}
-        <div className="max-w-6xl mx-auto bg-white shadow rounded-lg overflow-hidden border border-gray-300">
-          <table className="w-full text-center border-collapse">
-            <thead>
-              <tr className="border-b border-gray-300 bg-white text-gray-700 text-sm">
-                <th className="p-3 font-medium w-[50px] text-center">상태</th>
-                <th className="p-3 font-medium w-[60px] text-center">번호</th>
-                <th className="p-3 font-medium w-[300px] text-left">제목</th>
-                <th className="p-3 font-medium w-[100px] text-center">
-                  난이도
-                </th>
-                <th className="p-3 font-medium w-[160px] text-center">
-                  카테고리
-                </th>
-                <th className="p-3 font-medium w-[100px] text-center">
-                  정답률
-                </th>
+        {/* 문제 목록 테이블 */}
+        <div className="border border-gray-200 rounded-lg overflow-hidden">
+          <table className="w-full text-sm text-gray-700 border-collapse">
+            <thead className="bg-gray-100 border-b border-gray-200">
+              <tr>
+                <th className="p-3 w-[50px] text-center">상태</th>
+                <th className="p-3 w-[60px] text-center">번호</th>
+                <th className="p-3 text-left">제목</th>
+                <th className="p-3 w-[100px] text-center">난이도</th>
+                <th className="p-3 w-[160px] text-center">카테고리</th>
+                <th className="p-3 w-[100px] text-center">정답률</th>
               </tr>
             </thead>
             <tbody>
               {problems.map((problem) => (
                 <tr
                   key={problem.id}
-                  className="hover:bg-gray-50 border-b border-gray-200 cursor-pointer text-sm"
+                  className="hover:bg-gray-50 border-b border-gray-100 cursor-pointer"
                 >
-                  <td className="p-3 w-[50px] text-center pr-2">
+                  <td className="p-3 text-center">
                     {user && problem.solved && (
-                      <FaCheck className="text-blue-500 mx-auto" />
+                      <Check className="w-4 h-4 text-blue-500 mx-auto" />
                     )}
                   </td>
-                  <td className="p-3 w-[60px] text-center">{problem.id}</td>
-                  <td className="p-3 w-[300px] text-left">
+
+                  <td className="p-3 text-center">{problem.id}</td>
+                  <td className="p-3 text-left">
                     <Link
                       to={`/codingtest/${problem.id}`}
-                      className="hover:underline text-blue-600"
+                      className="text-blue-600 hover:underline"
                     >
                       {problem.title}
                     </Link>
                   </td>
-                  <td className="p-3 w-[100px] text-center">
+                  <td className="p-3 text-center">
                     <span
-                      className={`text-xs px-2 py-1 rounded font-semibold inline-block ${getLevelClass(
+                      className={`text-xs px-2 py-1 rounded font-medium inline-block ${getLevelClass(
                         problem.level
                       )}`}
                     >
                       Lv.{problem.level}
                     </span>
                   </td>
-                  <td className="p-3 w-[160px] text-center">
-                    {problem.category || "-"}
-                  </td>
-                  <td className="p-3 w-[100px] text-center">
+                  <td className="p-3 text-center">{problem.category || "-"}</td>
+                  <td className="p-3 text-center">
                     {(parseFloat(problem.correct_rate) || 0).toFixed(1)}%
                   </td>
                 </tr>
@@ -300,7 +303,7 @@ const CodingTestPage = () => {
         </div>
 
         {/* 페이지네이션 */}
-        <div className="flex justify-center mt-4 gap-2">
+        <div className="flex justify-center mt-6 gap-2">
           {Array.from({ length: totalPages }, (_, i) => (
             <button
               key={i}
@@ -315,8 +318,10 @@ const CodingTestPage = () => {
                 });
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
-              className={`px-3 py-1 rounded-md border ${
-                page === i + 1 ? "bg-green-600 text-white" : "hover:bg-gray-200"
+              className={`px-3 py-1.5 rounded-md border text-sm ${
+                page === i + 1
+                  ? "bg-green-600 text-white"
+                  : "hover:bg-gray-100 text-gray-700"
               }`}
             >
               {i + 1}
