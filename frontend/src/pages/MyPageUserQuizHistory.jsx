@@ -60,7 +60,6 @@ const MyPageUserQuizHistory = () => {
       </div>
       <div className="flex-1 p-6 max-w-6xl mx-auto">
         <h2 className="text-xl font-semibold mt-4 flex items-center gap-2">
-          <ScrollText size={20} className="text-green-600" />
           사용자 퀴즈 풀이 내역
         </h2>
 

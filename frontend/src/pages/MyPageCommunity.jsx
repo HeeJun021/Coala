@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { getMyPosts, getMyComments } from "../api/boardApi";
 import {
-  FileText,
   CalendarClock,
 } from "lucide-react";
 
@@ -68,7 +67,6 @@ const MyPageCommunity = () => {
 
       <div className="flex-1 p-6 max-w-6xl mx-auto">
         <h2 className="text-xl font-semibold mt-4 flex items-center gap-2">
-          <FileText size={20} className="text-green-600" />
           커뮤니티 활동 내역
         </h2>
 

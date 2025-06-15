@@ -43,15 +43,17 @@ const MyPageSetting = () => {
         <div className="flex min-h-screen">
             <div className="w-[250px]">
             </div>
-            <div className="flex-1 p-6 ml-10">
-                <header className="p-6">
-                    <h1 className="text-2xl font-bold text-left">개인정보 보호 설정</h1>
-                </header>
+            <div className="flex-1 p-6 flex justify-center">
+                <div className="flex-1 p-6 max-w-4xl mx-auto">
+                    <header className="p-6">
+                        <h1 className="text-2xl font-bold text-left">개인정보 보호 설정</h1>
+                    </header>
 
-                <main className="flex flex-col items-start gap-6">
-                    <PrivacyCard settings={settings} onSave={handleSaveSettings} />
-                    <NotificationCard settings={settings} onSave={handleSaveSettings} />
-                </main>
+                    <main className="flex flex-col items-start gap-6">
+                        <PrivacyCard settings={settings} onSave={handleSaveSettings} />
+                        <NotificationCard settings={settings} onSave={handleSaveSettings} />
+                    </main>
+                </div>
             </div>
         </div>
     );

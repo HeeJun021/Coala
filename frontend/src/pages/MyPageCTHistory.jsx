@@ -56,7 +56,7 @@ const MyPageCTHistory = () => {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <div className="w-[250px]" />
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-6 max-w-6xl mx-auto">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">코딩 테스트 제출 내역</h2>
 
         <div className="bg-white shadow-md rounded-lg p-6">
