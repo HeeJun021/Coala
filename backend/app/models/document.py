@@ -9,7 +9,8 @@ class ProjectDocument(Base):
     doc_id = Column(Integer, primary_key=True, index=True)
     project_id = Column(Integer, ForeignKey("projects.project_id", ondelete="CASCADE"))
     title = Column(String(255), nullable=False, default="새 문서")
-    content = Column(Text, nullable=True)
+    content = Column(Text, nullable=True, default="")
+    created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     project = relationship("Project", back_populates="documents")

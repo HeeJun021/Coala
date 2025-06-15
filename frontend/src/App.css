@@ -52,9 +52,22 @@
   animation: fadeIn 0.4s ease-in-out;
 }
 
-
 .cm-gutters {
   background-color: #f5f5f5 !important;
   color: #888 !important;
   border-right: 1px solid #ddd !important;
 }
+
+mark[data-color] {
+  padding: 0 2px;
+  border-radius: 2px;
+}
+/* ✅ Highlight 색상 스타일 */
+mark[data-color="#facc15"] { background-color: #facc15 !important; }
+mark[data-color="#fda4af"] { background-color: #fda4af !important; }
+mark[data-color="#86efac"] { background-color: #86efac !important; }
+mark[data-color="#93c5fd"] { background-color: #93c5fd !important; }
+mark[data-color="#d8b4fe"] { background-color: #d8b4fe !important; }
+mark[data-color="#e5e7eb"] { background-color: #e5e7eb !important; }
+mark[data-color="#f87171"] { background-color: #f87171 !important; }
+mark[data-color="#fdba74"] { background-color: #fdba74 !important; }

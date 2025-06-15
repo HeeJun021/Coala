@@ -18,6 +18,7 @@ def create_document(project_id: int, doc: DocumentCreate, db: Session = Depends(
     db.add(new_doc)
     db.commit()
     db.refresh(new_doc)
+    print("✅ 생성된 문서 정보:", new_doc.project_id, new_doc.doc_id)  # ✅ 확인용
     return new_doc
 
 # 🔹 문서 상세 조회

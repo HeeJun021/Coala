@@ -8,7 +8,7 @@ import { updateProject, getMyProjects } from "../../api/projectApi";
 import { getErds } from "../../api/erd/erdApi";
 import { getMyTasks } from "../../api/taskApi";
 import ErdListPanel from "../erd/list/ErdListPanel";
-import DocumentWrapperPage from "./DocumentWrapperPage"; // ✅ 문서 전환 관리용 컴포넌트
+import DocsListPanel from "./DocsListPanel";
 
 console.log("🧪 타입 확인:", typeof DocumentWrapperPage);
 
@@ -214,52 +214,51 @@ const ProjectWidgetTabs = ({ project, onNameChange }) => {
     }
   };
 
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case "overview":
-        return (
-          <ProjectDetailPanel
-            project={currentProject}
-            onUpdate={handleUpdate}
-            onNameChange={onNameChange}
-          />
-        );
-      case "erd":
-        return (
-          <ErdListPanel
-            project={currentProject}
-            erds={erds}
-            onRefresh={loadErds}
-            onSelect={() => {}}
-          />
-        );
-      case "memo":
-        return <MemoTab />;
-      case "calendar":
-        return (
-          <TaskCalendarView
-            tasks={tasks}
-            projects={[currentProject]}
-            onTaskClick={() => {}}
-          />
-        );
-      case "tasks":
-        return <ProjectTasksTab project={currentProject} />;
-      case "timeline":
-        return <TimelineWidget project={currentProject} />;
-      case "docs":
-        return <DocumentWrapperPage projectId={currentProject.project_id} />;
-      default:
-        return (
-          <div className="p-10 text-gray-500 text-sm">
-            <p>
-              🚧 `{WIDGET_TABS.find((t) => t.key === activeTab)?.label}` 탭은
-              준비 중입니다.
-            </p>
-          </div>
-        );
-    }
-  };
+const renderTabContent = () => {
+  switch (activeTab) {
+    case "overview":
+      return (
+        <ProjectDetailPanel
+          project={currentProject}
+          onUpdate={handleUpdate}
+          onNameChange={onNameChange}
+        />
+      );
+    case "erd":
+      return (
+        <ErdListPanel
+          project={currentProject}
+          erds={erds}
+          onRefresh={loadErds}
+          onSelect={() => {}}
+        />
+      );
+    case "memo":
+      return <MemoTab />;
+    case "calendar":
+      return (
+        <TaskCalendarView
+          tasks={tasks}
+          projects={[currentProject]}
+          onTaskClick={() => {}}
+        />
+      );
+    case "tasks":
+      return <ProjectTasksTab project={currentProject} />;
+    case "timeline":
+      return <TimelineWidget project={currentProject} />;
+    case "docs":
+      return <DocsListPanel project={currentProject} />;
+    default:
+      return (
+        <div className="p-10 text-gray-500 text-sm">
+          <p>
+            🚧 `{WIDGET_TABS.find((t) => t.key === activeTab)?.label}` 탭은 준비 중입니다.
+          </p>
+        </div>
+      );
+  }
+};
 
   return (
     <div>
