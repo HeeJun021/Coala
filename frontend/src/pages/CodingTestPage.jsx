@@ -115,7 +115,7 @@ const CodingTestPage = () => {
         <div className="mb-6">
           {/* 코딩 테스트 타이틀 + 아이콘 */}
           <div className="flex items-center gap-2 mb-2">
-            <FileCode className="w-7 h-7 text-green-600" />
+            <FileCode className="w-8 h-8 text-green-600" />
             <h1 className="text-4xl font-extrabold text-gray-800 tracking-tight">
               코딩 테스트
             </h1>
