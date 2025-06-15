@@ -14,6 +14,8 @@ class DocumentUpdate(DocumentBase):
 
 class DocumentResponse(DocumentBase):
     doc_id: int
+    project_id: int
+    created_at: datetime
     updated_at: datetime
 
     class Config:

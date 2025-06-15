@@ -78,7 +78,7 @@ import SelfCodingTemplatePage from "./pages/SelfCodingTemplatePage";
 
 // 팀프로젝트
 import TeamProjectPage from "./pages/TeamProjectPage";
-import DocumentWrapperPage from "./components/project/DocumentWrapperPage";
+import ProjectDocPage from "./pages/ProjectDocPage";
 
 
 // ERD UI
@@ -217,9 +217,9 @@ const App = () => {
                     <Route path="community" element={<MyPageCommunity />} />
                   </Route>
 
-                  <Route path="/team-project" element={<TeamProjectPage />}>
-                    <Route path="/team-project/:projectId/docs" element={<DocumentWrapperPage />} />
-                  </Route>
+                  <Route path="/team-project/:id/doc/:docId" element={<ProjectDocPage />} />
+                  <Route path="/team-project" element={<TeamProjectPage />} />
+                  <Route path="/team-project/:id" element={<TeamProjectPage />} />
 
                   <Route path="/board/:boardType" element={<BoardPage />} />
                   <Route path="/board/:boardType/write" element={<BoardWritePage />} />

@@ -6,13 +6,11 @@ import InboxTab from "../components/project/InboxTab";
 import ProjectWidgetTabs from "../components/project/ProjectWidgetTabs";
 import ProjectCreateModal from "../components/project/ProjectCreateModal";
 import { getMyProjects } from "../api/projectApi";
-import { useLocation } from "react-router-dom";
+import { useLocation, Outlet } from "react-router-dom";
 
 const TeamProjectPage = () => {
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState(
-    location.state?.tab || "dashboard"
-  );
+  const [activeTab, setActiveTab] = useState(location.state?.tab || "dashboard");
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [projects, setProjects] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -22,7 +20,6 @@ const TeamProjectPage = () => {
       const projectList = await getMyProjects();
       setProjects(projectList || []);
     } catch (err) {
-      console.error("프로젝트 목록 가져오기 실패", err);
       setProjects([]);
     }
   }, []);
@@ -30,6 +27,13 @@ const TeamProjectPage = () => {
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
+
+  useEffect(() => {
+    if (projects.length > 0 && !selectedProjectId) {
+      setSelectedProjectId(projects[0].project_id);
+      setActiveTab("overview");
+    }
+  }, [projects, selectedProjectId]);
 
   useEffect(() => {
     if (location.state?.tab) {
@@ -51,15 +55,20 @@ const TeamProjectPage = () => {
   };
 
   const renderTabContent = () => {
+    if (projects.length === 0) {
+      return <div className="p-6 text-gray-500">참여 중인 프로젝트가 없습니다.</div>;
+    }
+
     const selectedProject = projects.find(
       (p) => p.project_id === selectedProjectId
     );
 
+    if (!selectedProject) {
+      return <div className="p-6 text-gray-500">프로젝트를 선택하세요.</div>;
+    }
+
     switch (activeTab) {
       case "overview":
-        if (!selectedProject) {
-          return <p className="text-gray-500">프로젝트를 선택하세요.</p>;
-        }
         return (
           <ProjectWidgetTabs
             key={selectedProjectId}
@@ -79,7 +88,11 @@ const TeamProjectPage = () => {
       case "inbox":
         return <InboxTab projects={projects} />;
       default:
-        return <DashboardTab projects={projects} />;
+        return (
+          <div className="p-6 text-gray-400">
+            지원되지 않는 탭입니다: {activeTab}
+          </div>
+        );
     }
   };
 
@@ -100,6 +113,7 @@ const TeamProjectPage = () => {
             onCreated={handleProjectCreated}
           />
         )}
+        <Outlet />
       </main>
     </div>
   );
