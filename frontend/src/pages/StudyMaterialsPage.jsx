@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { dracula } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { useAuth } from "../context/AuthContext";
-import { FaQuestionCircle } from "react-icons/fa";
+import { HelpCircle } from "lucide-react";
 import StudyMaterialsGuideModal from "../components/StudyMaterialsGuideModal";
 
 const parseStyleString = (styleString) => {
@@ -22,6 +22,7 @@ const parseStyleString = (styleString) => {
       .filter(Boolean)
   );
 };
+
 
 const StudyMaterialsPage = () => {
   const location = useLocation();
@@ -44,6 +45,24 @@ const StudyMaterialsPage = () => {
   const [correctStatus, setCorrectStatus] = useState({});
   const [quizIndices, setQuizIndices] = useState([]);
 const [isGuideOpen, setIsGuideOpen] = useState(false);
+const [showGuideTooltip, setShowGuideTooltip] = useState(false);
+
+useEffect(() => {
+  const savedScrollY = localStorage.getItem("study_scroll_position");
+  if (savedScrollY) {
+    setTimeout(() => {
+      window.scrollTo({ top: parseInt(savedScrollY, 10), behavior: "auto" });
+      localStorage.removeItem("study_scroll_position");
+    }, 100); // 콘텐츠 렌더링 기다리기
+  } else {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+}, []);
+
+useEffect(() => {
+  const seen = localStorage.getItem("study_guide_seen");
+  if (seen !== "true") setShowGuideTooltip(true);
+}, []);
 
   useEffect(() => {
     setFadeIn(false);
@@ -81,6 +100,12 @@ const [isGuideOpen, setIsGuideOpen] = useState(false);
     fetchContent();
     return () => clearTimeout(timeout);
   }, [category, materialId, exampleId]);
+
+  const handleGuideClick = () => {
+  setIsGuideOpen(true);
+  setShowGuideTooltip(false);
+  localStorage.setItem("study_guide_seen", "true");
+};
 
   const formatCodeContent = (content) => {
     return content.replace(/<br>/g, "\n").replace(/\\n/g, "\n");
@@ -168,7 +193,7 @@ const [isGuideOpen, setIsGuideOpen] = useState(false);
         <div className="text-red-500">{error}</div>
       ) : studyContent ? (
         <>  
-        <div className="flex justify-between items-center mb-6">
+        <div className="relative flex justify-between items-center mb-6">
           <h1 className="text-5xl font-bold text-gray-900 mb-10">
             {studyContent.title}
             {isCompleted && (
@@ -178,13 +203,16 @@ const [isGuideOpen, setIsGuideOpen] = useState(false);
             )}
           </h1>
            {/* 가이드 버튼 */}
-  <button
-    onClick={() => setIsGuideOpen(true)}
-    className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 transition"
-  >
-    <FaQuestionCircle className="text-lg" />
-    가이드
-  </button>
+<button
+  onClick={handleGuideClick}
+  className="absolute top-4 right-4 text-gray-500 hover:text-black"
+  title="가이드 보기"
+>
+  <HelpCircle size={24} />
+  {showGuideTooltip && (
+    <div className="absolute top-[-2px] right-[-6px] w-[7px] h-[7px] bg-rose-600 rounded-full shadow-sm" />
+  )}
+</button>
 </div>
 
           <p className="text-xl text-gray-700 leading-relaxed mb-6">
@@ -255,49 +283,61 @@ const [isGuideOpen, setIsGuideOpen] = useState(false);
 <div className="flex gap-2 mt-4">
   {showCodeTestButton(category) && (
     <button
-      onClick={() =>
-        navigate(
-          `/codetest?code=${encodeURIComponent(section.content)}&language=${encodeURIComponent(
-            category
-          )}&title=${encodeURIComponent(
-            studyContent.title
-          )}&problem_description=${encodeURIComponent(section.problem_description || "")}`
-        )
-      }
-      className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
-    >
-      코드 테스트 →
-    </button>
+  onClick={() => {
+    localStorage.setItem("study_scroll_position", window.scrollY);
+    navigate(
+      `/codetest?code=${encodeURIComponent(section.content)}&language=${encodeURIComponent(
+        category
+      )}&title=${encodeURIComponent(
+        studyContent.title
+      )}&problem_description=${encodeURIComponent(section.problem_description || "")}&category=${encodeURIComponent(category)}&${
+        materialId ? `id=${encodeURIComponent(materialId)}` : `exampleId=${encodeURIComponent(exampleId)}`
+      }`
+    );
+  }}
+  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+>
+  코드 테스트 →
+</button>
   )}
 
-      {showTerminalButton(category, studyContent.title, section.content) ? (
-        <button
-          onClick={() =>
-            navigate(
-              `/terminal?language=${encodeURIComponent(category)}&code=${encodeURIComponent(
-                section.content
-              )}&title=${encodeURIComponent(
-                studyContent.title
-              )}&problem_description=${encodeURIComponent(section.problem_description || "")}`
-            )
-          }
-          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
-        >
-          터미널 실습 →
-        </button>
-      ) : (
-        category?.toLowerCase() === "javascript" &&
-        (section.content.includes("<html>") || section.content.includes("<body>")) && (
-          <button
-            onClick={() => window.alert("❗ HTML/DOM 코드가 포함된 학습자료는 실행할 수 없습니다.")}
-            className="bg-gray-400 text-white px-4 py-2 rounded cursor-not-allowed"
-          >
-            실행 불가
-          </button>
-        )
-      )}
-    </div>
-  </div>
+  {showTerminalButton(category, studyContent.title, section.content) ? (
+    <button
+  onClick={() => {
+    localStorage.setItem("study_scroll_position", window.scrollY); // ✅ 스크롤 위치 저장
+    navigate(
+      `/terminal?language=${encodeURIComponent(category)}&code=${encodeURIComponent(
+        section.content
+      )}&title=${encodeURIComponent(
+        studyContent.title
+      )}&problem_description=${encodeURIComponent(
+        section.problem_description || ""
+      )}&category=${encodeURIComponent(category)}&${
+        materialId
+          ? `id=${encodeURIComponent(materialId)}`
+          : `exampleId=${encodeURIComponent(exampleId)}`
+      }`
+    );
+  }}
+  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+>
+  터미널 실습 →
+</button>
+  ) : (
+    category?.toLowerCase() === "javascript" &&
+    (section.content.includes("<html>") || section.content.includes("<body>")) && (
+      <button
+        onClick={() =>
+          window.alert("❗ HTML/DOM 코드가 포함된 학습자료는 실행할 수 없습니다.")
+        }
+        className="bg-gray-400 text-white px-4 py-2 rounded cursor-not-allowed"
+      >
+        실행 불가
+      </button>
+    )
+  )}
+</div>
+</div>
 )}
                       {section.type === "quiz" && section.content?.question && (
                         <div className="bg-gray-900 text-white p-6 rounded-lg shadow-lg w-full max-w-3xl mt-6 mx-auto">

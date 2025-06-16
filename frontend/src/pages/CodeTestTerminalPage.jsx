@@ -169,7 +169,7 @@ const CodeTestTerminalPage = () => {
               초기화
             </button>
             <button
-              className="px-4 py-2 bg-blue-500 text-white rounded"
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
               onClick={handleRun}
             >
               코드 실행
