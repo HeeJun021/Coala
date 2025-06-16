@@ -89,7 +89,10 @@ const Sidebar = () => {
   const handleMouseLeave = () => setIsHovering(false);
 
   const handleMaterialClick = (materialId, lang) => {
-    if (selectedMaterialId === String(materialId)) return;
+    if (selectedMaterialId === String(materialId)) {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  return;
+ }
     setSelectedMaterialId(String(materialId));
     setSelectedExampleId("");
     setSelectedLanguage(lang);
@@ -99,7 +102,10 @@ const Sidebar = () => {
   };
 
   const handleExampleClick = (exampleId, lang) => {
-    if (selectedExampleId === String(exampleId)) return;
+    if (selectedExampleId === String(exampleId)) {
+   window.scrollTo({ top: 0, behavior: "smooth" });
+   return;
+ }
     setSelectedExampleId(String(exampleId));
     setSelectedMaterialId("");
     setSelectedLanguage(lang);
