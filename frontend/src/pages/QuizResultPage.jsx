@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getQuizResult } from "../api/quizApi";
-import { ShieldCheck, Lightbulb } from "lucide-react";
+import { ShieldCheck, Lightbulb, ChevronLeft } from "lucide-react";
 
 const QuizResultPage = ({ userData }) => {
   const { quizId } = useParams();
@@ -37,7 +37,17 @@ const QuizResultPage = ({ userData }) => {
 
   return (
     <div className="bg-white min-h-screen py-10 px-4">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto relative">
+
+        {/* ⬅️ 뒤로가기 버튼 */}
+        <button
+          className="absolute top-0 left-0 flex items-center gap-1 text-gray-600 hover:text-gray-800 text-sm"
+          onClick={() => navigate(-1)}
+        >
+          <ChevronLeft className="w-5 h-5" />
+          뒤로가기
+        </button>
+
         <h2 className="text-3xl font-bold text-center mb-4 text-gray-900">
           {quizResult.title}
         </h2>
@@ -45,20 +55,20 @@ const QuizResultPage = ({ userData }) => {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-2">
             {quizResult.quiz_type === "test" ? (
-            <ShieldCheck size={20} className="text-blue-500" />
+              <ShieldCheck size={20} className="text-blue-500" />
             ) : (
-            <Lightbulb size={20} className="text-yellow-400" />
+              <Lightbulb size={20} className="text-yellow-400" />
             )}
             <p className="text-lg text-gray-800">
-          <strong>퀴즈 유형:</strong>{" "}
-          {quizResult.quiz_type === "test" ? "퀴즈 테스트" : "연습 퀴즈"}
+              <strong>퀴즈 유형:</strong>{" "}
+              {quizResult.quiz_type === "test" ? "퀴즈 테스트" : "연습 퀴즈"}
+            </p>
+          </div>
+          <p className="text-sm text-gray-500 mt-1">
+            <strong>제출 시간:</strong>{" "}
+            {new Date(quizResult.submitted_at).toLocaleString()}
           </p>
-      </div>
-    <p className="text-sm text-gray-500 mt-1">
-    <strong>제출 시간:</strong>{" "}
-    {new Date(quizResult.submitted_at).toLocaleString()}
-  </p>
-</div>
+        </div>
 
         <div className="space-y-6">
           {quizResult.questions.map((q, index) => (
@@ -75,13 +85,15 @@ const QuizResultPage = ({ userData }) => {
 
               <div className="pl-4">
                 <p className="text-lg font-semibold text-gray-900 mb-2">
-                  문제 {index + 1}({q.question_type?.toUpperCase()})
+                  문제 {index + 1} ({q.question_type?.toUpperCase()})
                 </p>
                 <p className="text-gray-800 mb-3">{q.question_text}</p>
 
                 <div className="mb-2 text-sm">
                   <span className="font-medium text-gray-700">제출한 정답:</span>{" "}
-                  <span className={q.is_correct ? "text-green-600" : "text-red-600"}>
+                  <span
+                    className={q.is_correct ? "text-green-600" : "text-red-600"}
+                  >
                     {q.user_answer}
                   </span>
                 </div>
@@ -122,7 +134,7 @@ const QuizResultPage = ({ userData }) => {
 
         <div className="mt-10 flex justify-center gap-4">
           <button
-            className="px-6 py-2 rounded-lg border border-navbar text-navbar font-semibold hover:bg-[#f1f9f1] transition"
+            className="px-6 py-2 bg-green-600 text-white rounded-xl shadow-md hover:bg-green-700 transition-all"
             onClick={() => navigate(`/quizpage?mode=${quizResult.quiz_type}`)}
           >
             다시 풀기

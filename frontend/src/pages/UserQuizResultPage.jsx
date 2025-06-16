@@ -100,7 +100,7 @@ const UserQuizResultPage = ({ userData }) => {
         {/* 하단 버튼 */}
         <div className="mt-10 flex justify-center gap-4">
           <button
-            className="px-6 py-2 rounded-lg border border-navbar text-navbar font-semibold hover:bg-[#f1f9f1] transition"
+            className="px-6 py-2 bg-green-600 text-white rounded-xl shadow-md hover:bg-green-700 transition-all"
             onClick={() => navigate(`/user-quiz-solve/${quizResult.userquiz_id}`)}
           >
             다시 풀기

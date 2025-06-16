@@ -56,7 +56,7 @@ const Navbar = () => {
     {
       label: "자율코딩",
       path: "/self-coding",
-      children: ["파일 탐색기", "Github"],
+      children: ["코드 에디터", "Github"],
     },
     {
       label: "코딩테스트",
@@ -71,7 +71,7 @@ const Navbar = () => {
     {
       label: "게시판",
       path: "/board",
-      children: ["자유 게시판", "코드 게시판", "프로젝트 모집"],
+      children: ["자유 게시판", "프로젝트 모집", "코드 게시판",],
     },
     {
       label: "마이페이지",
@@ -93,7 +93,7 @@ const Navbar = () => {
           <span className="text-2xl font-semibold text-green-700">Coala</span>
         </Link>
 
-        <div className="grid grid-cols-7 w-[1050px] text-center">
+        <div className="grid grid-cols-7 w-[1050px] pr-2 text-center">
           {menuItems.map((item, idx) => (
             <div
               key={idx}
@@ -181,7 +181,7 @@ const Navbar = () => {
 
       {/* 드롭다운 메뉴 */}
       <div
-        className={`fixed top-[70px] pr-4 left-0 w-full bg-white border-b shadow-md z-40 overflow-hidden transition-all duration-300 ${
+        className={`fixed top-[70px] pr-6 left-0 w-full bg-white border-b shadow-md z-40 overflow-hidden transition-all duration-300 ${
           hoverIndex !== null
             ? "max-h-[250px] py-6 opacity-100"
             : "max-h-0 opacity-0"
@@ -226,7 +226,7 @@ const Navbar = () => {
 
 
                   if (item.label === "자율코딩") {
-                    if (child === "파일 탐색기") {
+                    if (child === "코드 에디터") {
                       return (
                         <span
                           key={i}
@@ -300,6 +300,25 @@ const Navbar = () => {
                     );
                   }
 
+                  if (item.label === "게시판") {
+                    let link = "";
+                    if (child === "자유 게시판") link = "/board/free";
+                    if (child === "프로젝트 모집") link = "/board/project";
+                    if (child === "코드 게시판") link = "/board/code";
+                    if (link) {
+                      return (
+                        <Link
+                          key={i}
+                          to={link}
+                          className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
+                            hoverIndex === idx ? "" : "opacity-50"
+                          }`}
+                        >
+                          {child}
+                        </Link>
+                      );
+                    }
+                  }                  
                   
                   if (item.label === "프로젝트") {
                     let link = "/team-project";

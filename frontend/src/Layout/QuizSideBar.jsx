@@ -57,7 +57,7 @@ const QuizSideBar = () => {
           }`}
           onClick={() => handleMenuClick("user")}
         >
-          퀴즈 만들어보기
+          퀴즈 만들기
         </div>
       </div>
     </div>
