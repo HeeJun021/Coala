@@ -3,7 +3,14 @@ import { useNavigate, useParams } from "react-router-dom";
 import { deleteBoard } from "../api/boardApi";
 import { likeBoard, unlikeBoard } from "../api/likeApi";
 import { reportBoard } from "../api/reportApi";
-import ApplyModal from "../components/ApplyModal"; // ✅ 모달 컴포넌트 import
+import ApplyModal from "../components/ApplyModal";
+
+import {
+  Heart,
+  AlertCircle,
+  Edit,
+  Trash2,
+} from "lucide-react";
 
 const ProjectBoardDetail = ({ post, user }) => {
   const navigate = useNavigate();
@@ -11,7 +18,7 @@ const ProjectBoardDetail = ({ post, user }) => {
 
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.like_count || 0);
-  const [showApplyModal, setShowApplyModal] = useState(false); // ✅ 모달 상태 추가
+  const [showApplyModal, setShowApplyModal] = useState(false);
 
   const isAuthor = user?.user_id === post.user_id;
 
@@ -90,18 +97,35 @@ const ProjectBoardDetail = ({ post, user }) => {
 
       {/* 액션 버튼 */}
       <div className="flex items-center gap-4 border-t pt-4 mb-8">
-        <button onClick={handleLike} className="flex items-center gap-1 text-red-500">
-          {liked ? "❤️" : "🤍"} <span className="text-sm">{likeCount}</span>
+        <button onClick={handleLike} className="text-red-500">
+          <Heart
+            size={20}
+            fill={liked ? "currentColor" : "none"}
+            stroke="currentColor"
+          />
         </button>
-        <button onClick={handleReport} className="text-sm text-gray-500 underline">
+        <span className="text-sm">{likeCount}명 좋아요</span>
+        <button
+          onClick={handleReport}
+          className="text-gray-500 flex items-center gap-1 text-sm"
+        >
+          <AlertCircle size={16} className="text-gray-500" />
           신고
         </button>
         {isAuthor && (
           <>
-            <button onClick={handleEdit} className="text-sm text-yellow-600">
+            <button
+              onClick={handleEdit}
+              className="text-yellow-600 flex items-center gap-1 text-sm"
+            >
+              <Edit size={16} className="text-yellow-600" />
               수정
             </button>
-            <button onClick={handleDelete} className="text-sm text-red-600">
+            <button
+              onClick={handleDelete}
+              className="text-red-600 flex items-center gap-1 text-sm"
+            >
+              <Trash2 size={16} className="text-red-600" />
               삭제
             </button>
           </>
@@ -113,21 +137,21 @@ const ProjectBoardDetail = ({ post, user }) => {
         {isAuthor ? (
           <button
             onClick={() => navigate(`/board/${boardType}/applicants/${postId}`)}
-            className="px-4 py-2 bg-blue-500 text-white rounded-md"
+            className="px-4 py-2 bg-green-600 text-white rounded-md"
           >
             지원자 보기
           </button>
         ) : (
           <button
             onClick={() => setShowApplyModal(true)}
-            className="px-4 py-2 bg-green-500 text-white rounded-md"
+            className="px-4 py-2 bg-green-600 text-white rounded-md"
           >
             참여 신청하기
           </button>
         )}
       </div>
 
-      {/* ✅ ApplyModal 표시 */}
+      {/* ApplyModal 표시 */}
       {showApplyModal && (
         <ApplyModal
           onClose={() => setShowApplyModal(false)}

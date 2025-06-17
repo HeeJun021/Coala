@@ -99,7 +99,7 @@ const ProjectApplicantsPage = () => {
                     handleStatusChange(applicant.applicant_id, "수락")
                   }
                   disabled={loadingId === applicant.applicant_id}
-                  className="px-4 py-2 bg-green-500 text-white rounded disabled:opacity-50"
+                  className="px-4 py-2 bg-green-600 text-white rounded disabled:opacity-50"
                 >
                   수락
                 </button>
@@ -108,7 +108,7 @@ const ProjectApplicantsPage = () => {
                     handleStatusChange(applicant.applicant_id, "거절")
                   }
                   disabled={loadingId === applicant.applicant_id}
-                  className="px-4 py-2 bg-red-500 text-white rounded disabled:opacity-50"
+                  className="px-4 py-2 bg-red-600 text-white rounded disabled:opacity-50"
                 >
                   거절
                 </button>

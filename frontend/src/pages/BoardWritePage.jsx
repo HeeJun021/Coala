@@ -9,9 +9,7 @@ const BoardWritePage = () => {
   const { user } = useAuth();
   const { boardType } = useParams();
   const navigate = useNavigate();
-
   const [recruitLimit, setRecruitLimit] = useState(""); // ✅ 모집 인원 수
-  const editorRef = useRef();
   const location = useLocation();
   const [title, setTitle] = useState(location.state?.codeTitle || "");
   const [content, setContent] = useState("");
@@ -157,7 +155,7 @@ const BoardWritePage = () => {
         <div className="flex gap-2">
           <button
             type="submit"
-            className="px-4 py-2 bg-green-500 text-white rounded-md"
+            className="px-4 py-2 bg-green-600 text-white rounded-md"
           >
             등록하기
           </button>

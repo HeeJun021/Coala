@@ -5,6 +5,13 @@ import CommentEditor from "../components/CommentEditor";
 import apiClient from "../api/apiClient";
 import { useAuth } from "../context/AuthContext";
 import UserNameWithProfile from "../components/UserNameWithProfile";
+import {
+  Heart,
+  Edit,
+  Trash2,
+  AlertCircle,
+  Reply,
+} from "lucide-react";
 
 const BoardDetailTemplate = ({
   boardName,
@@ -36,7 +43,7 @@ const BoardDetailTemplate = ({
   handleReplyCancel,
   handleCommentReport,
   handleReplyReport,
-  commentType = "basic", // "basic", "code", "none"
+  commentType = "basic",
 }) => {
   const { user: currentUser } = useAuth();
 
@@ -62,7 +69,6 @@ const BoardDetailTemplate = ({
         withCredentials: true,
       });
       alert("코드가 성공적으로 가져왔습니다!");
-      // 디렉토리 갱신을 위해 이벤트 디스패치
       window.dispatchEvent(new Event("refreshDirectory"));
     } catch (err) {
       console.error("코드 가져오기 실패:", err);
@@ -72,26 +78,21 @@ const BoardDetailTemplate = ({
 
   return (
     <div className="max-w-4xl mx-auto p-8 bg-white min-h-screen">
-      {/* 작성자 정보 */}
       <div className="flex items-center gap-2 mb-4 text-gray-600 text-sm">
         <span>작성자:</span>
-          {post?.author_id ? (
-            <UserNameWithProfile
-              userId={post.author_id}
-              nickname={post.nickname || post.author_nickname || "작성자"}
-            />
-          ) : (
-            <span className="font-semibold">{post.author_nickname}</span>
-          )}    
+        {post?.author_id ? (
+          <UserNameWithProfile
+            userId={post.author_id}
+            nickname={post.nickname || post.author_nickname || "작성자"}
+          />
+        ) : (
+          <span className="font-semibold">{post.author_nickname}</span>
+        )}
       </div>
 
-      {/* 제목 */}
       <h2 className="text-2xl font-semibold mb-4">{post.title}</h2>
-
-      {/* 본문 */}
       <p className="mb-6 whitespace-pre-line">{post.content}</p>
 
-      {/* 코드 미리보기 */}
       {post.code && (
         <div className="mb-6 relative">
           <div className="flex justify-between items-center mb-2">
@@ -117,72 +118,34 @@ const BoardDetailTemplate = ({
         </div>
       )}
 
-      {/* 좋아요, 신고 */}
-      <div className="flex items-center gap-3 mb-4">
-        <button onClick={handleLike} className="text-red-500 text-2xl">
-          {liked ? "❤️" : "🤍"}
-        </button>
-        <span className="text-sm">{likeCount}명 좋아요</span>
-        <button
-          className="text-sm text-gray-500 underline"
-          onClick={handleReport}
-        >
+      <div className="flex items-center gap-4 text-sm text-gray-600 mt-4">
+        {/* 좋아요 아이콘 + 카운트 */}
+        <div className="flex items-center gap-1 text-red-500 cursor-pointer" onClick={handleLike}>
+          <Heart size={18} fill={liked ? "currentColor" : "none"} stroke="currentColor" />
+          <span className="text-gray-700">{likeCount}명 좋아요</span>
+        </div>
+
+        {/* 신고 */}
+        <button onClick={handleReport} className="flex items-center gap-1 text-gray-500 hover:underline">
+          <AlertCircle size={16} />
           신고
         </button>
+
+        {/* 수정/삭제 (작성자만) */}
+        {isAuthor && (
+          <>
+            <button onClick={handleEdit} className="flex items-center gap-1 text-yellow-600 hover:underline">
+              <Edit size={16} />
+              수정
+            </button>
+            <button onClick={handleDelete} className="flex items-center gap-1 text-red-600 hover:underline">
+              <Trash2 size={16} />
+              삭제
+            </button>
+          </>
+        )}
       </div>
 
-      {/* 수정/삭제 버튼 */}
-      {isAuthor && (
-        <div className="flex gap-2 mb-6">
-          <button
-            className="px-3 py-1 bg-yellow-400 text-white rounded"
-            onClick={handleEdit}
-          >
-            수정
-          </button>
-          <button
-            className="px-3 py-1 bg-red-500 text-white rounded"
-            onClick={handleDelete}
-          >
-            삭제
-          </button>
-        </div>
-      )}
-
-      {/* 댓글 작성 */}
-      {commentType !== "none" && (
-        <>
-          <h3 className="text-lg font-semibold mb-2">댓글 작성</h3>
-          {commentType === "code" ? (
-            <CommentEditor onSubmit={safeHandleCommentSubmit} />
-          ) : (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const content = e.target.comment.value.trim();
-                if (!content) return alert("내용을 입력하세요.");
-                safeHandleCommentSubmit(content);
-                e.target.comment.value = "";
-              }}
-              className="mt-4"
-            >
-              <textarea
-                name="comment"
-                placeholder="댓글을 입력하세요"
-                className="w-full border p-2 h-24"
-              />
-              <button
-                type="submit"
-                className="mt-2 px-4 py-2 bg-green-500 text-white rounded-md"
-              >
-                댓글 등록
-              </button>
-            </form>
-          )}
-        </>
-      )}
-
-      {/* 댓글 목록 */}
       {commentType !== "none" && parentComments.length > 0 && (
         <div className="mt-8">
           <h3 className="text-lg font-semibold mb-2">댓글 목록</h3>
@@ -207,7 +170,7 @@ const BoardDetailTemplate = ({
                       <p className="text-sm">{c.content}</p>
                     )}
                   </div>
-                  <div className="flex gap-2 text-xs ml-4">
+                  <div className="flex gap-2 text-xs ml-4 items-center">
                     {editingId === c.comment_id ? (
                       <>
                         <button
@@ -225,42 +188,39 @@ const BoardDetailTemplate = ({
                       </>
                     ) : (
                       <>
-                        <button
-                          className="text-blue-500"
+                        <Edit
+                          size={16}
+                          className="text-blue-500 cursor-pointer"
                           onClick={() => {
                             setEditingId(c.comment_id);
                             setEditContent(c.content);
                           }}
-                        >
-                          수정
-                        </button>
-                        <button
-                          className="text-red-500"
+                        />
+                        <Trash2
+                          size={16}
+                          className="text-red-500 cursor-pointer"
                           onClick={() => handleCommentDelete(c.comment_id)}
-                        >
-                          삭제
-                        </button>
-                        <button
-                          className="text-gray-500"
+                        />
+                        <Reply
+                          size={16}
+                          className="text-gray-500 cursor-pointer"
                           onClick={() => {
                             setReplyTargetId(c.comment_id);
                             setReplyContent("");
                           }}
-                        >
-                          답글
-                        </button>
-                        <button
-                          className="text-gray-400"
+                        />
+                        <AlertCircle
+                          size={16}
+                          className="text-gray-400 cursor-pointer"
                           onClick={() => handleCommentReport(c.comment_id)}
-                        >
-                          신고
-                        </button>
-                        <button
-                          className="text-sm text-red-500"
+                        />
+                        <Heart
+                          size={16}
+                          fill={commentLikes[c.comment_id]?.liked ? "currentColor" : "none"}
+                          stroke="currentColor"
+                          className="text-red-500 cursor-pointer"
                           onClick={() => handleCommentLike(c.comment_id)}
-                        >
-                          {commentLikes[c.comment_id]?.liked ? "❤️" : "🤍"}
-                        </button>
+                        />
                         <span className="text-xs">
                           {commentLikes[c.comment_id]?.count || 0}
                         </span>
@@ -304,7 +264,7 @@ const BoardDetailTemplate = ({
                           <UserNameWithProfile userId={r.user_id} nickname={r.nickname} />
                         )}
                       </div>
-                      <div className="flex justify-between">
+                      <div className="flex justify-between items-center">
                         {editingId === r.comment_id ? (
                           <>
                             <input
@@ -331,34 +291,32 @@ const BoardDetailTemplate = ({
                         ) : (
                           <>
                             <p>↳ {r.content}</p>
-                            <div className="ml-2 flex gap-2 text-xs">
-                              <button
-                                className="text-blue-500"
+                            <div className="ml-2 flex gap-2 text-xs items-center">
+                              <Edit
+                                size={16}
+                                className="text-blue-500 cursor-pointer"
                                 onClick={() => {
                                   setEditingId(r.comment_id);
                                   setEditContent(r.content);
                                 }}
-                              >
-                                수정
-                              </button>
-                              <button
-                                className="text-red-500"
+                              />
+                              <Trash2
+                                size={16}
+                                className="text-red-500 cursor-pointer"
                                 onClick={() => handleCommentDelete(r.comment_id)}
-                              >
-                                삭제
-                              </button>
-                              <button
-                                className="text-gray-400"
+                              />
+                              <AlertCircle
+                                size={16}
+                                className="text-gray-400 cursor-pointer"
                                 onClick={() => handleReplyReport(r.comment_id)}
-                              >
-                                신고
-                              </button>
-                              <button
-                                className="text-sm text-red-500"
+                              />
+                              <Heart
+                                size={16}
+                                fill={commentLikes[r.comment_id]?.liked ? "currentColor" : "none"}
+                                stroke="currentColor"
+                                className="text-red-500 cursor-pointer"
                                 onClick={() => handleCommentLike(r.comment_id)}
-                              >
-                                {commentLikes[r.comment_id]?.liked ? "❤️" : "🤍"}
-                              </button>
+                              />
                               <span className="text-xs">
                                 {commentLikes[r.comment_id]?.count || 0}
                               </span>
@@ -372,6 +330,40 @@ const BoardDetailTemplate = ({
             ))}
           </ul>
         </div>
+      )}
+
+            {commentType !== "none" && (
+        <>
+        <div className="pt-6 mt-6 border-t border-gray-200">
+          <h3 className="text-lg font-semibold mb-2">댓글 작성</h3>
+          {commentType === "code" ? (
+            <CommentEditor onSubmit={safeHandleCommentSubmit} />
+          ) : (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const content = e.target.comment.value.trim();
+                if (!content) return alert("내용을 입력하세요.");
+                safeHandleCommentSubmit(content);
+                e.target.comment.value = "";
+              }}
+              className="mt-"
+            >
+              <textarea
+                name="comment"
+                placeholder="댓글을 입력하세요"
+                className="w-full border p-2 h-24"
+              />
+              <button
+                type="submit"
+                className="mt-2 px-4 py-2 bg-green-600 text-white rounded-md"
+              >
+                댓글 등록
+              </button>
+            </form>
+          )}
+          </div>
+        </>
       )}
     </div>
   );

@@ -1,138 +1,93 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
-import { EditorContent } from "@tiptap/react";
-import { Editor } from "@tiptap/core";
+// 파일: src/components/project/TiptapEditorWithPagination.jsx
+
+import React, { useEffect, useState } from "react";
+import { Editor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import TextStyle from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
 import CustomHighlight from "../extensions/CustomHighlight";
-import { AlignLeft, AlignCenter, AlignRight } from "lucide-react";
+import { AlignLeft, AlignCenter, AlignRight, Save } from "lucide-react";
+import { updateDocument } from "../../api/documentApi";
 import "../../styles/A4EditorLayout.css";
 
-const PAGE_HEIGHT_PX = 1122;
-
-const extensions = [
-  StarterKit.configure({ highlight: false }),
-  Underline,
-  TextStyle,
-  Color,
-  CustomHighlight.configure({ multicolor: true }),
-  TextAlign.configure({ types: ["heading", "paragraph"] }),
+const highlightColors = [
+  "#e5e7eb", "#facc15", "#fda4af", "#86efac",
+  "#93c5fd", "#d8b4fe", "#f87171", "#fdba74",
 ];
 
-const TiptapEditorWithPagination = () => {
-  const [pageContents, setPageContents] = useState(["<p>내용을 입력해보세요...</p>"]);
-  const editorRefs = useRef([]);
+const TiptapEditorWithPagination = ({ projectId, docId, title, content }) => {
+  const [editor, setEditor] = useState(null);
 
-  // ✅ 줄 기반 + 높이 기준 분할
-  const splitContentIntoPages = useCallback((html) => {
-    const container = document.createElement("div");
-    container.style.position = "absolute";
-    container.style.visibility = "hidden";
-    container.style.top = "-9999px";
-    container.style.left = "-9999px";
-    container.style.width = "794px";
-    container.style.padding = "40px";
-    container.style.boxSizing = "border-box";
-    container.style.lineHeight = "1.8";
-    container.style.fontSize = "16px";
-    container.style.fontFamily = "sans-serif";
-    document.body.appendChild(container);
-
-    const lines = html
-      .replace(/<\/p>|<br>|<\/div>/gi, "\n")
-      .replace(/<[^>]+>/g, "")
-      .split("\n")
-      .filter((line) => line.trim() !== "");
-
-    const pages = [];
-    let currentPage = [];
-
-    container.innerHTML = "";
-
-    lines.forEach((line) => {
-      const div = document.createElement("div");
-      div.textContent = line;
-      div.style.marginBottom = "8px";
-      div.style.lineHeight = "1.8";
-      div.style.fontSize = "16px";
-      div.style.fontFamily = "sans-serif";
-
-      container.appendChild(div);
-
-      if (container.offsetHeight > PAGE_HEIGHT_PX) {
-        pages.push(currentPage.join(""));
-        currentPage = [`<div>${line}</div>`];
-        container.innerHTML = div.outerHTML;
-      } else {
-        currentPage.push(`<div>${line}</div>`);
-      }
-    });
-
-    if (currentPage.length > 0) {
-      pages.push(currentPage.join(""));
-    }
-
-    document.body.removeChild(container);
-    return pages;
-  }, []);
-
-  // ✅ 페이지 내용 변경 → editor 전부 재생성
   useEffect(() => {
-    editorRefs.current = pageContents.map((content) => {
-      return new Editor({
-        extensions,
+    if (content && content !== "<p>불러오는 중...</p>") {
+      const newEditor = new Editor({
+        extensions: [
+          StarterKit.configure({ highlight: false }),
+          Underline,
+          TextStyle,
+          Color,
+          CustomHighlight.configure({ multicolor: true }),
+          TextAlign.configure({ types: ["heading", "paragraph"] }),
+        ],
         content,
-        onUpdate: () => {
-          const allHTML = editorRefs.current.map((e) => e.getHTML()).join("");
-          const newPages = splitContentIntoPages(allHTML);
-          if (JSON.stringify(newPages) !== JSON.stringify(pageContents)) {
-            setPageContents(newPages);
-          }
-        },
       });
-    });
-  }, [pageContents, splitContentIntoPages]);
+      setEditor(newEditor);
+    }
+  }, [content]);
 
-  const highlightColors = [
-    "#e5e7eb", "#facc15", "#fda4af", "#86efac",
-    "#93c5fd", "#d8b4fe", "#f87171", "#fdba74",
-  ];
+  const handleSaveDocument = async () => {
+    try {
+      if (!editor) return;
+      const fullHTML = editor.getHTML();
 
-  const activeEditor = editorRefs.current[0] || null;
-  if (!activeEditor) return <div className="text-center py-10 text-gray-400">에디터 로딩 중...</div>;
+      if (!fullHTML || fullHTML === "<p>불러오는 중...</p>") {
+        alert("내용을 입력한 후 저장해주세요.");
+        return;
+      }
+
+      console.log("💾 저장 데이터:", { title, content: fullHTML });
+
+      await updateDocument(projectId, docId, {
+        title: title || "",
+        content: fullHTML,
+      });
+
+      alert("✅ 문서가 저장되었습니다!");
+    } catch (error) {
+      console.error("문서 저장 실패:", error.response?.data || error);
+      alert("문서 저장에 실패했습니다.");
+    }
+  };
+
+  if (!editor) {
+    return <div className="text-center py-10 text-gray-400">에디터 로딩 중...</div>;
+  }
 
   return (
     <div className="editor-container">
       {/* 툴바 */}
-      <div className="editor-toolbar mb-6">
+      <div className="editor-toolbar mb-6 flex justify-between items-center">
         <div className="flex flex-wrap items-center gap-2 text-sm">
-          <button onClick={() => activeEditor.chain().focus().toggleBold().run()}
-            className={`p-1 px-2 rounded hover:bg-gray-200 ${activeEditor.isActive("bold") ? "bg-green-100 text-green-600 font-bold" : ""}`}
-            title="굵게">B</button>
-          <button onClick={() => activeEditor.chain().focus().toggleItalic().run()}
-            className={`p-1 px-2 rounded hover:bg-gray-200 ${activeEditor.isActive("italic") ? "bg-green-100 text-green-600 italic" : ""}`}
-            title="기울임">I</button>
-          <button onClick={() => activeEditor.chain().focus().toggleUnderline().run()}
-            className={`p-1 px-2 rounded hover:bg-gray-200 ${activeEditor.isActive("underline") ? "bg-green-100 text-green-600 underline" : ""}`}
-            title="밑줄">U</button>
+          <button onClick={() => editor.chain().focus().toggleBold().run()}
+            className={`p-1 px-2 rounded hover:bg-gray-200 ${editor.isActive("bold") ? "bg-green-100 text-green-600 font-bold" : ""}`}>B</button>
+          <button onClick={() => editor.chain().focus().toggleItalic().run()}
+            className={`p-1 px-2 rounded hover:bg-gray-200 ${editor.isActive("italic") ? "bg-green-100 text-green-600 italic" : ""}`}>I</button>
+          <button onClick={() => editor.chain().focus().toggleUnderline().run()}
+            className={`p-1 px-2 rounded hover:bg-gray-200 ${editor.isActive("underline") ? "bg-green-100 text-green-600 underline" : ""}`}>U</button>
 
-          <button onClick={() => activeEditor.chain().focus().setTextAlign("left").run()}
-            className={`p-1 rounded hover:bg-gray-200 ${activeEditor.isActive({ textAlign: "left" }) ? "bg-green-100 text-green-600" : ""}`}
-            title="왼쪽 정렬"><AlignLeft size={18} /></button>
-          <button onClick={() => activeEditor.chain().focus().setTextAlign("center").run()}
-            className={`p-1 rounded hover:bg-gray-200 ${activeEditor.isActive({ textAlign: "center" }) ? "bg-green-100 text-green-600" : ""}`}
-            title="가운데 정렬"><AlignCenter size={18} /></button>
-          <button onClick={() => activeEditor.chain().focus().setTextAlign("right").run()}
-            className={`p-1 rounded hover:bg-gray-200 ${activeEditor.isActive({ textAlign: "right" }) ? "bg-green-100 text-green-600" : ""}`}
-            title="오른쪽 정렬"><AlignRight size={18} /></button>
+          <button onClick={() => editor.chain().focus().setTextAlign("left").run()}
+            className={`p-1 rounded hover:bg-gray-200 ${editor.isActive({ textAlign: "left" }) ? "bg-green-100 text-green-600" : ""}`}><AlignLeft size={18} /></button>
+          <button onClick={() => editor.chain().focus().setTextAlign("center").run()}
+            className={`p-1 rounded hover:bg-gray-200 ${editor.isActive({ textAlign: "center" }) ? "bg-green-100 text-green-600" : ""}`}><AlignCenter size={18} /></button>
+          <button onClick={() => editor.chain().focus().setTextAlign("right").run()}
+            className={`p-1 rounded hover:bg-gray-200 ${editor.isActive({ textAlign: "right" }) ? "bg-green-100 text-green-600" : ""}`}><AlignRight size={18} /></button>
 
           <select
-            onChange={(e) => activeEditor.chain().focus().setMark("textStyle", { fontSize: e.target.value }).run()}
+            onChange={(e) => editor.chain().focus().setMark("textStyle", { fontSize: e.target.value }).run()}
             defaultValue=""
             className="border text-sm rounded px-1 py-0.5"
-            title="글자 크기"
           >
             <option value="">크기</option>
             <option value="12px">12px</option>
@@ -144,32 +99,36 @@ const TiptapEditorWithPagination = () => {
           <div className="flex items-center gap-4 ml-2">
             <label className="flex items-center gap-1">
               <span className="text-gray-600 text-xs">글자색</span>
-              <input type="color" onChange={(e) => activeEditor.chain().focus().setColor(e.target.value).run()}
-                className="w-6 h-6 cursor-pointer border rounded" title="글자 색상" />
+              <input type="color" onChange={(e) => editor.chain().focus().setColor(e.target.value).run()}
+                className="w-6 h-6 cursor-pointer border rounded" />
             </label>
             <div className="flex items-center gap-1">
               <span className="text-gray-600 text-xs">배경색</span>
               <div className="flex gap-1">
                 {highlightColors.map((color) => (
                   <button key={color}
-                    onClick={() => activeEditor.chain().focus().toggleHighlight({ color }).run()}
+                    onClick={() => editor.chain().focus().toggleHighlight({ color }).run()}
                     className="w-5 h-5 rounded border hover:scale-110 transition"
-                    style={{ backgroundColor: color }}
-                    title={color} />
+                    style={{ backgroundColor: color }} />
                 ))}
               </div>
             </div>
           </div>
         </div>
+
+        <button
+          onClick={handleSaveDocument}
+          className="flex items-center gap-2 bg-green-600 text-white text-sm px-4 py-1.5 rounded hover:bg-green-700 transition"
+        >
+          <Save size={16} />
+          저장하기
+        </button>
       </div>
 
-      {/* 페이지 출력 */}
-      {editorRefs.current.map((editor, i) => (
-        <div key={i} className="editor-page">
-          <EditorContent editor={editor} />
-          <div className="text-sm text-center text-gray-400 mt-4">- {i + 1} 페이지 -</div>
-        </div>
-      ))}
+      {/* 에디터 영역 */}
+      <div className="editor-page">
+        <EditorContent editor={editor} />
+      </div>
     </div>
   );
 };

@@ -6,23 +6,27 @@ import InboxTab from "../components/project/InboxTab";
 import ProjectWidgetTabs from "../components/project/ProjectWidgetTabs";
 import ProjectCreateModal from "../components/project/ProjectCreateModal";
 import { getMyProjects } from "../api/projectApi";
-import { useLocation, Outlet, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 const TeamProjectPage = () => {
   const location = useLocation();
-  const { projectId } = useParams();
-  const [activeTab, setActiveTab] = useState(location.state?.tab || "dashboard");
-  const [selectedProjectId, setSelectedProjectId] = useState(projectId || null);
+  const navigate = useNavigate();
+  const { projectId: paramProjectId } = useParams();
+
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [subTab, setSubTab] = useState(null);
+  const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [projects, setProjects] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [tempProject, setTempProject] = useState(null); // Temporary project state
+  const [tempProject, setTempProject] = useState(null); // 생성 직후 접근 용도
 
   const fetchProjects = useCallback(async () => {
     try {
       const projectList = await getMyProjects();
       setProjects(projectList || []);
-      return projectList; // Return the fetched projects
+      return projectList;
     } catch (err) {
+      console.error("❌ 프로젝트 목록 가져오기 실패:", err);
       setProjects([]);
       return [];
     }
@@ -33,31 +37,35 @@ const TeamProjectPage = () => {
   }, [fetchProjects]);
 
   useEffect(() => {
-    if (location.state?.projectId) {
-      setSelectedProjectId(location.state.projectId);
-      setActiveTab(location.state.tab || "overview");
-    } else if (projectId) {
-      setSelectedProjectId(projectId);
-      setActiveTab(location.state?.tab || "overview");
-    }
-  }, [location.state, projectId]);
+    const tab = location.state?.tab || "overview";
+    const sub = location.state?.subTab || null;
+    const pid = location.state?.projectId || paramProjectId;
+
+    setActiveTab(tab);
+    setSubTab(sub);
+    setSelectedProjectId(pid);
+  }, [location.state, paramProjectId]);
 
   const handleProjectSelect = (projectId) => {
-    setSelectedProjectId(projectId);
-    setActiveTab("overview");
-    setTempProject(null); // Clear temp project when selecting another
+    navigate(`/team-project/${projectId}`, {
+      state: {
+        tab: "overview",
+        subTab: null,
+        projectId: projectId,
+      },
+    });
   };
 
   const handleProjectCreated = async (newProject) => {
-    setTempProject(newProject); // Store new project temporarily
-    const projectList = await fetchProjects(); // Wait for projects to update
+    setTempProject(newProject);
+    const updatedList = await fetchProjects();
     setIsModalOpen(false);
     if (newProject?.project_id) {
-      // Verify the new project exists in the fetched list
-      if (projectList.some(p => p.project_id === newProject.project_id)) {
+      const exists = updatedList.some(p => p.project_id === newProject.project_id);
+      if (exists) {
         handleProjectSelect(newProject.project_id);
       } else {
-        console.error("New project not found in updated list");
+        console.warn("✅ 프로젝트 생성됨, 그러나 리스트에 없음");
       }
     }
   };
@@ -67,22 +75,33 @@ const TeamProjectPage = () => {
       return <div className="p-6 text-gray-500">참여 중인 프로젝트가 없습니다.</div>;
     }
 
-    // Use tempProject if available, otherwise find from projects
     const selectedProject = tempProject || projects.find(
-      (p) => p.project_id === selectedProjectId
+      (p) => String(p.project_id) === String(selectedProjectId)
     );
 
-    if (!selectedProject && activeTab === "overview") {
-      return <div className="p-6 text-gray-500">프로젝트를 선택하세요.</div>;
+    const normalizedSubTab = subTab === "document" ? "docs" : subTab;
+    const normalizedTab = activeTab === "document" ? "docs" : activeTab;
+
+    if (!selectedProject) {
+      return (
+        <DashboardTab
+          projects={projects}
+          onProjectSelect={handleProjectSelect}
+          setShowCreateProjectModal={setIsModalOpen}
+        />
+      );
     }
 
-    switch (activeTab) {
+    switch (normalizedTab) {
       case "overview":
+      case "erd":
+      case "docs":
         return (
           <ProjectWidgetTabs
-            key={selectedProjectId || tempProject?.project_id}
+            key={`${selectedProject.project_id}-${normalizedSubTab || "overview"}`}
             project={selectedProject}
             onNameChange={() => fetchProjects()}
+            defaultTab={normalizedSubTab || normalizedTab}
           />
         );
       case "dashboard":
@@ -123,7 +142,6 @@ const TeamProjectPage = () => {
             onCreated={handleProjectCreated}
           />
         )}
-        <Outlet />
       </main>
     </div>
   );

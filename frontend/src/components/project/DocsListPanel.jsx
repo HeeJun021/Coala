@@ -7,7 +7,7 @@ import {
   deleteDocument,
 } from "../../api/documentApi";
 import { useNavigate } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { FilePlus } from "lucide-react";
 
 const DocsListPanel = ({ project }) => {
   const projectId = project?.project_id;
@@ -29,7 +29,6 @@ const DocsListPanel = ({ project }) => {
     try {
       const newDoc = await createDocument(projectId, { title, description });
       await fetchDocs();
-      // ✅ doc_id로 navigate
       navigate(`/team-project/${projectId}/doc/${newDoc.doc_id}`);
     } catch (err) {
       console.error("문서 생성 실패", err);
@@ -53,22 +52,27 @@ const DocsListPanel = ({ project }) => {
   }, [fetchDocs]);
 
   return (
-    <div className="p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-      {docs.map((doc) => (
-        <DocCard
-          key={doc.doc_id} // ✅ key 수정 완료
-          doc={doc}
-          onDelete={() => handleDelete(doc.doc_id)}
-        />
-      ))}
+    <>
+      <div className="p-6 flex justify-center">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {docs.map((doc) => (
+            <DocCard
+              key={doc.doc_id}
+              doc={doc}
+              onDelete={() => handleDelete(doc.doc_id)}
+            />
+          ))}
 
-      <button
-        onClick={() => setShowCreateModal(true)}
-        className="flex flex-col justify-center items-center border border-dashed border-gray-400 rounded-lg hover:border-blue-500 hover:bg-blue-50 py-10"
-      >
-        <Plus size={28} className="text-blue-500" />
-        <span className="mt-2 text-sm text-blue-600">새 문서 만들기</span>
-      </button>
+          {/* ERD 스타일과 동일한 추가 버튼 */}
+          <div
+            onClick={() => setShowCreateModal(true)}
+            className="w-[340px] h-[200px] border border-dashed border-gray-400 rounded-2xl flex flex-col justify-center items-center text-blue-500 hover:border-blue-500 hover:bg-blue-50 cursor-pointer transition"
+          >
+            <FilePlus className="w-8 h-8 mb-2" />
+            <span className="text-sm font-medium">새 문서 만들기</span>
+          </div>
+        </div>
+      </div>
 
       {showCreateModal && (
         <CreateDocModal
@@ -76,7 +80,7 @@ const DocsListPanel = ({ project }) => {
           onCreate={handleCreate}
         />
       )}
-    </div>
+    </>
   );
 };
 
