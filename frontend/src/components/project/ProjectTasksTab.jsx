@@ -3,6 +3,7 @@ import { getMyTasks, createTask, updateTask, deleteTask } from "../../api/taskAp
 import TaskCalendarView from "./TaskCalendarView";
 import MemoTab from "./MemoTab";
 import { getProjectMembers } from "../../api/projectApi";
+import { ClipboardList } from "lucide-react";
 
 const sections = [
   "최근 배정된 작업",
@@ -215,7 +216,10 @@ const [viewMode] = useState("list");
     <div className="flex max-w-[1400px] mx-auto px-6 py-8">
       <div className="flex-1">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold">{project?.name} 작업</h1>
+          <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
+  <ClipboardList className="w-6 h-6 text-gray-500" />
+  {project?.name} 작업
+</h1>
           <div className="flex gap-4 mt-4 border-b pb-2">
           </div>
           <button

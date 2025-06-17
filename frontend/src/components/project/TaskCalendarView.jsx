@@ -6,7 +6,7 @@ import { updateTask } from "../../api/taskApi";
 import { CalendarDays, Users } from "lucide-react";
 import { colorPalette, getRandomColor, getTextColor } from "../../utils/colorUtils";
 
-const TaskCalendarView = ({ tasks = [], projects = [], onTaskClick, Blacksmith }) => {
+const TaskCalendarView = ({ tasks = [], projects = [], onTaskClick, title }) => {
   const [selectedTask, setSelectedTask] = useState(null);
   const [calendarEvents, setCalendarEvents] = useState([]);
   const [isAddingCollaborator, setIsAddingCollaborator] = useState(false);
@@ -181,9 +181,9 @@ const calendarRef = useRef(null);
       )}
 
       <h2 className="text-2xl font-bold mb-4 text-gray-800 px-6 flex items-center gap-2">
-        <CalendarDays size={20} className="text-gray-600" />
-        내 작업 캘린더
-      </h2>
+  <CalendarDays size={20} className="text-blue-500" />
+  {title || "내 작업 캘린더"}
+  </h2>
 
       <FullCalendar
         ref={calendarRef}
