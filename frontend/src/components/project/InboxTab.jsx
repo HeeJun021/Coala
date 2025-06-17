@@ -93,7 +93,7 @@ const InboxTab = ({ projects = [] }) => {
             onClick={() => setFilter(key)}
             className={`px-4 py-1.5 rounded-full text-sm font-medium transition border ${
               filter === key
-                ? "bg-blue-600 text-white border-blue-600"
+                ? "bg-green-600 text-white border-green-600"
                 : "text-gray-700 border-gray-300 hover:bg-gray-100"
             }`}
           >
