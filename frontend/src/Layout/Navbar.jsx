@@ -298,6 +298,24 @@ const Navbar = () => {
                         {child}
                       </Link>
                     );
+                  }                
+                  
+                  if (item.label === "프로젝트") {
+                    let link = "/team-project";
+                    let tab = "";
+                    if (child === "대시보드") tab = "dashboard";
+                    if (child === "내 작업") tab = "my-tasks";
+                    return (
+                      <span
+                        key={i}
+                        onClick={() => navigate(link, { state: { tab } })}
+                        className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
+                          hoverIndex === idx ? "" : "opacity-50"
+                        }`}
+                      >
+                        {child}
+                      </span>
+                    );
                   }
 
                   if (item.label === "게시판") {
@@ -318,25 +336,7 @@ const Navbar = () => {
                         </Link>
                       );
                     }
-                  }                  
-                  
-                  if (item.label === "프로젝트") {
-                    let link = "/team-project";
-                    let tab = "";
-                    if (child === "대시보드") tab = "dashboard";
-                    if (child === "내 작업") tab = "my-tasks";
-                    return (
-                      <span
-                        key={i}
-                        onClick={() => navigate(link, { state: { tab } })}
-                        className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
-                          hoverIndex === idx ? "" : "opacity-50"
-                        }`}
-                      >
-                        {child}
-                      </span>
-                    );
-                  }
+                  }  
 
                   if (item.label === "마이페이지") {
                     let link = "";

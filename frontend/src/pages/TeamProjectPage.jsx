@@ -29,17 +29,10 @@ const TeamProjectPage = () => {
   }, [fetchProjects]);
 
   useEffect(() => {
-    if (projects.length > 0 && !selectedProjectId) {
-      setSelectedProjectId(projects[0].project_id);
-      setActiveTab("overview");
-    }
-  }, [projects, selectedProjectId]);
-
-  useEffect(() => {
     if (location.state?.tab) {
       setActiveTab(location.state.tab);
     }
-  }, [location.state]);
+  }, [location.state?.tab]);
 
   const handleProjectSelect = (projectId) => {
     setSelectedProjectId(projectId);
@@ -62,10 +55,6 @@ const TeamProjectPage = () => {
     const selectedProject = projects.find(
       (p) => p.project_id === selectedProjectId
     );
-
-    if (!selectedProject) {
-      return <div className="p-6 text-gray-500">프로젝트를 선택하세요.</div>;
-    }
 
     switch (activeTab) {
       case "overview":
