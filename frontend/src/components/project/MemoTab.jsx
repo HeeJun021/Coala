@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { getMyMemos, createMemo, updateMemo, deleteMemo } from "../../api/taskApi";
+import { StickyNote } from "lucide-react";
 
 const MemoTab = ({ projectId = "1210447408078814" }) => {
   const [memos, setMemos] = useState([]);
@@ -230,7 +231,11 @@ const MemoTab = ({ projectId = "1210447408078814" }) => {
   return (
     <div className="flex w-full h-screen font-sans">
       <div className="w-[250px] bg-gray-100 border-r border-gray-200 p-4 overflow-y-auto">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">메모</h2>
+        <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+  <StickyNote className="w-5 h-5 text-yellow-400" />
+  메모
+</h2>
+
         {memos.length === 0 ? (
           <p className="text-sm text-gray-500">메모가 없습니다.</p>
         ) : (

@@ -236,13 +236,14 @@ const renderTabContent = () => {
     case "memo":
       return <MemoTab />;
     case "calendar":
-      return (
-        <TaskCalendarView
-          tasks={tasks}
-          projects={[currentProject]}
-          onTaskClick={() => {}}
-        />
-      );
+  return (
+    <TaskCalendarView
+      tasks={tasks}
+      projects={[currentProject]}
+      onTaskClick={() => {}}
+      title={`${currentProject.name} 캘린더`}
+    />
+  );
     case "tasks":
       return <ProjectTasksTab project={currentProject} />;
     case "timeline":
