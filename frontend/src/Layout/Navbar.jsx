@@ -29,7 +29,11 @@ const Navbar = () => {
     try {
       const materials = await fetchStudyMaterials(language);
       if (materials.length > 0) {
-        const firstMaterial = materials[0];
+        // id=2를 맨 위로 정렬
+        const sortedMaterials = materials.sort((a, b) => 
+          a.material_id === 2 ? -1 : b.material_id === 2 ? 1 : 0
+        );
+        const firstMaterial = sortedMaterials[0];
         navigate(
           `/StudyMaterialsPage?category=${encodeURIComponent(language)}&id=${firstMaterial.material_id}`
         );
@@ -71,7 +75,7 @@ const Navbar = () => {
     {
       label: "게시판",
       path: "/board",
-      children: ["자유 게시판", "프로젝트 모집", "코드 게시판",],
+      children: ["자유 게시판", "프로젝트 모집", "코드 게시판"],
     },
     {
       label: "마이페이지",
@@ -108,10 +112,14 @@ const Navbar = () => {
                         languages[0]?.language
                       );
                       if (materials.length > 0) {
+                        // id=2를 맨 위로 정렬
+                        const sortedMaterials = materials.sort((a, b) => 
+                          a.material_id === 2 ? -1 : b.material_id === 2 ? 1 : 0
+                        );
                         navigate(
                           `/StudyMaterialsPage?category=${encodeURIComponent(
                             languages[0]?.language
-                          )}&id=${materials[0].material_id}`
+                          )}&id=${sortedMaterials[0].material_id}`
                         );
                       }
                     } catch {
@@ -224,7 +232,6 @@ const Navbar = () => {
                     );
                   }
 
-
                   if (item.label === "자율코딩") {
                     if (child === "코드 에디터") {
                       return (
@@ -329,8 +336,8 @@ const Navbar = () => {
                           key={i}
                           to={link}
                           className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
-                            hoverIndex === idx ? "" : "opacity-50"
-                          }`}
+                          hoverIndex === idx ? "" : "opacity-50"
+                        }`}
                         >
                           {child}
                         </Link>
@@ -349,8 +356,8 @@ const Navbar = () => {
                           key={i}
                           to={link}
                           className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
-                            hoverIndex === idx ? "" : "opacity-50"
-                          }`}
+                          hoverIndex === idx ? "" : "opacity-50"
+                        }`}
                         >
                           {child}
                         </Link>

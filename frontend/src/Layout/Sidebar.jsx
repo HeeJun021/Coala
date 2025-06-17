@@ -53,7 +53,12 @@ const Sidebar = () => {
             fetch(`http://localhost:8000/api/materials/${lang.language}`, { credentials: "include" }),
             fetch(`http://localhost:8000/api/examples/${lang.language}`, { credentials: "include" }),
           ]);
-          matMap[lang.language] = await matRes.json();
+          let materials = await matRes.json();
+          // id=2를 맨 위로 정렬
+          materials = materials.sort((a, b) => 
+            a.material_id === 2 ? -1 : b.material_id === 2 ? 1 : 0
+          );
+          matMap[lang.language] = materials;
           exMap[lang.language] = await exRes.json();
 
           if (
@@ -90,9 +95,9 @@ const Sidebar = () => {
 
   const handleMaterialClick = (materialId, lang) => {
     if (selectedMaterialId === String(materialId)) {
-  window.scrollTo({ top: 0, behavior: "smooth" });
-  return;
- }
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     setSelectedMaterialId(String(materialId));
     setSelectedExampleId("");
     setSelectedLanguage(lang);
@@ -103,9 +108,9 @@ const Sidebar = () => {
 
   const handleExampleClick = (exampleId, lang) => {
     if (selectedExampleId === String(exampleId)) {
-   window.scrollTo({ top: 0, behavior: "smooth" });
-   return;
- }
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     setSelectedExampleId(String(exampleId));
     setSelectedMaterialId("");
     setSelectedLanguage(lang);
