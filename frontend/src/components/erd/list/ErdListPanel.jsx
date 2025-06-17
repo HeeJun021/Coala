@@ -3,8 +3,10 @@ import ErdCard from "./ErdCard";
 import CreateErdModal from "./CreateErdModal";
 import { createErd } from "../../../api/erd/erdApi";
 import { FolderPlus } from "lucide-react";
+import { useNavigate } from "react-router-dom"; // 상단에 추가
 
 const ErdListPanel = ({ erds, onSelect, onRefresh, project }) => {
+  const navigate = useNavigate();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const safeErds = [...(erds || [])].reverse(); // 최신 순 정렬
   const projectId = project?.project_id;
@@ -61,7 +63,7 @@ const ErdListPanel = ({ erds, onSelect, onRefresh, project }) => {
             <ErdCard
               key={erd.erd_id}
               erd={erd}
-              onSelect={onSelect}
+              onSelect={() => navigate(`/erd/${erd.erd_id}/${projectId}`)}
               onDelete={onRefresh}
               project={project}
             />

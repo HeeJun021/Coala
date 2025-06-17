@@ -14,6 +14,8 @@ import Toast from "../components/Toast";
 const ErdPage = () => {
   const { erdId } = useParams();
 
+  const [projectId, setProjectId] = useState(null);
+
   // 🧱 상태: UI 관련
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isPlacing, setIsPlacing] = useState(false);
@@ -48,7 +50,7 @@ const ErdPage = () => {
       const data = await getErdDetail(erdId);
 
       setErdName(data.name ?? "이름 없음");
-
+      setProjectId(data.project_id); 
       console.log("📦 ERD 상세 데이터", data);
 
       // ✅ 테이블 + 컬럼 구조 파싱
@@ -219,6 +221,7 @@ CREATE TABLE users (
         {/* 상단 헤더 */}
         <div className="shrink-0">
           <ErdHeader
+            projectId={projectId}
             projectName={erdName}
             erdId={erdId}
             onEditName={(newName) => setErdName(newName)}

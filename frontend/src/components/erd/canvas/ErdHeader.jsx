@@ -21,6 +21,7 @@ import CodeConvertHeaderPanel from "../CodeConvertHeaderPanel";
 import { commitErd, updateErdName } from "../../../api/erd/erdDetailApi";
 
 const ErdHeader = ({
+  projectId,
   projectName,
   erdId,
   onEditName,
@@ -98,7 +99,6 @@ const ErdHeader = ({
       return;
     }
 
-    // ✅ 캡처 전 transform 제거 + 위치 보정
     const originalTransform = transformedRoot.style.transform;
     transformedRoot.style.transform = "none";
 
@@ -121,7 +121,6 @@ const ErdHeader = ({
       el.style.top = `${y * zoom}px`;
     });
 
-    // ✅ 캡처 범위 계산
     let minX = Infinity,
       minY = Infinity,
       maxX = -Infinity,
@@ -165,7 +164,6 @@ const ErdHeader = ({
       console.error("❌ 이미지 저장 오류:", err);
       alert("이미지 저장 중 오류가 발생했습니다.");
     } finally {
-      // ✅ 위치 원복
       transformedRoot.style.transform = originalTransform;
       adjustedTables.forEach(({ el, originalLeft, originalTop }) => {
         el.style.left = originalLeft;
@@ -177,15 +175,16 @@ const ErdHeader = ({
   return (
     <>
       <div className="w-full bg-[#252836] text-white shadow-md border-b border-gray-700 py-4">
-        {/* 💡 전체 헤더 컨테이너 */}
         <div className="max-w-7xl mx-auto px-4 flex flex-col gap-3">
-          {/* 🔤 프로젝트 이름 + 수정 버튼 */}
           {mode !== "codegen" && (
             <div className="flex items-center justify-between gap-4">
-              {/* ⬅️ 왼쪽: 뒤로가기 버튼 + 제목 + 수정 */}
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => navigate(-1)}
+                  onClick={() =>
+                    navigate(`/team-project/${projectId}`, {
+                      state: { tab: "overview", subTab: "erd", projectId }, // 수정: subTab과 projectId 추가
+                    })
+                  }
                   className="text-white hover:text-gray-300 flex items-center gap-1"
                 >
                   <svg
@@ -213,14 +212,12 @@ const ErdHeader = ({
                 </button>
               </div>
 
-              {/* ➡️ 오른쪽: 가이드 보기 버튼 */}
               <div>
                 <button
                   onClick={handleOpenGuide}
                   className="relative text-sm text-gray-400 hover:text-white flex items-center gap-1"
                 >
                   <HelpCircle size={18} className="text-gray-300" />
-
                   {showDot && (
                     <div
                       className="absolute top-0.5 -right-2.5 w-[8px] h-[8px] bg-rose-600 rounded-full shadow-md"
@@ -232,7 +229,6 @@ const ErdHeader = ({
             </div>
           )}
 
-          {/* 🧱 버튼 영역 */}
           {mode === "codegen" ? (
             <CodeConvertHeaderPanel
               onBack={() => setMode("default")}
@@ -295,7 +291,6 @@ const ErdHeader = ({
                 Redo
               </button>
 
-              {/* 🔍 줌 */}
               <div className="flex items-center gap-1 ml-4">
                 <button
                   onClick={() => handleZoom("out")}
@@ -317,7 +312,6 @@ const ErdHeader = ({
           )}
         </div>
 
-        {/* ✅ 이름 수정 모달 */}
         {isEditModalOpen && (
           <EditErdNameModal
             initialName={projectName}
@@ -338,11 +332,10 @@ const ErdHeader = ({
         {isExportModalOpen && (
           <ExportSqlModal
             erdId={erdId}
-            onClose={() => setIsExportModalOpen(false)} // 패널 내에서 닫기 버튼 연결
-            erdCanvasId="erd-canvas" // ← 캔버스 div에 id 지정해줘야 함
+            onClose={() => setIsExportModalOpen(false)}
+            erdCanvasId="erd-canvas"
           />
         )}
-        {/* ✅ 가이드 모달 */}
         {isGuideOpen && (
           <ErdGuideModal
             isOpen={isGuideOpen}

@@ -6,12 +6,13 @@ import InboxTab from "../components/project/InboxTab";
 import ProjectWidgetTabs from "../components/project/ProjectWidgetTabs";
 import ProjectCreateModal from "../components/project/ProjectCreateModal";
 import { getMyProjects } from "../api/projectApi";
-import { useLocation, Outlet } from "react-router-dom";
+import { useLocation, Outlet, useParams } from "react-router-dom";
 
 const TeamProjectPage = () => {
   const location = useLocation();
+  const { projectId } = useParams(); // URL에서 projectId 가져오기
   const [activeTab, setActiveTab] = useState(location.state?.tab || "dashboard");
-  const [selectedProjectId, setSelectedProjectId] = useState(null);
+  const [selectedProjectId, setSelectedProjectId] = useState(projectId || null);
   const [projects, setProjects] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -29,10 +30,14 @@ const TeamProjectPage = () => {
   }, [fetchProjects]);
 
   useEffect(() => {
-    if (location.state?.tab) {
-      setActiveTab(location.state.tab);
+    if (location.state?.projectId) {
+      setSelectedProjectId(location.state.projectId);
+      setActiveTab(location.state.tab || "overview");
+    } else if (projectId) {
+      setSelectedProjectId(projectId);
+      setActiveTab(location.state?.tab || "overview");
     }
-  }, [location.state?.tab]);
+  }, [location.state, projectId]);
 
   const handleProjectSelect = (projectId) => {
     setSelectedProjectId(projectId);
@@ -62,6 +67,7 @@ const TeamProjectPage = () => {
           <ProjectWidgetTabs
             key={selectedProjectId}
             project={selectedProject}
+            onNameChange={() => fetchProjects()} // 프로젝트 이름 변경 시 새로고침
           />
         );
       case "dashboard":

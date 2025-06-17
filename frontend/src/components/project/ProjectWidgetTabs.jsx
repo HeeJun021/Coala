@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import ProjectDetailPanel from "./ProjectDetailPanel";
 import MemoTab from "./MemoTab";
 import TaskCalendarView from "./TaskCalendarView";
@@ -9,8 +10,6 @@ import { getErds } from "../../api/erd/erdApi";
 import { getMyTasks } from "../../api/taskApi";
 import ErdListPanel from "../erd/list/ErdListPanel";
 import DocsListPanel from "./DocsListPanel";
-
-console.log("🧪 타입 확인:", typeof DocumentWrapperPage);
 
 const WIDGET_TABS = [
   { key: "overview", label: "개요" },
@@ -25,8 +24,10 @@ const WIDGET_TABS = [
 ];
 
 const ProjectWidgetTabs = ({ project, onNameChange }) => {
-  const [activeTab, setActiveTab] = useState("overview");
-  const [enabledTabs, setEnabledTabs] = useState(["overview"]);
+  const location = useLocation();
+  const initialTab = location.state?.subTab ?? location.state?.tab ?? "overview"; // subTab 우선
+  const [activeTab, setActiveTab] = useState(initialTab);
+  const [enabledTabs, setEnabledTabs] = useState(["overview", "erd"]);
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [currentProject, setCurrentProject] = useState(project);
   const [erds, setErds] = useState([]);
@@ -37,14 +38,17 @@ const ProjectWidgetTabs = ({ project, onNameChange }) => {
 
   useEffect(() => {
     if (!project) return;
-    const widgets = project.widgets || {};
-    const widgetOrder = project.widget_order || ["overview"];
+    const widgets = project.widgets || { erd: true };
+    const widgetOrder = project.widget_order || ["overview", "erd"];
     const orderedTabs = ["overview"];
     widgetOrder.forEach((key) => {
       if (key !== "overview" && widgets[key]) {
         orderedTabs.push(key);
       }
     });
+    if (!orderedTabs.includes("erd")) {
+      orderedTabs.push("erd");
+    }
     setEnabledTabs(orderedTabs);
     setCurrentProject(project);
   }, [project]);
@@ -61,10 +65,10 @@ const ProjectWidgetTabs = ({ project, onNameChange }) => {
     };
   }, []);
 
-  const handleAddTab = async (key) => {
+  const handleAddTab = useCallback(async (key) => {
     if (enabledTabs.includes(key)) return;
     try {
-      const updatedWidgets = { ...currentProject.widgets, [key]: true };
+      const updatedWidgets = { ...currentProject.widgets, [key]: true, erd: true };
       const updatedOrder = [...enabledTabs, key];
       await updateProject(currentProject.project_id, {
         name: currentProject.name,
@@ -83,10 +87,10 @@ const ProjectWidgetTabs = ({ project, onNameChange }) => {
       alert("위젯 추가에 실패했습니다.");
     }
     setShowAddMenu(false);
-  };
+  }, [currentProject, enabledTabs]);
 
   const handleDragStart = (e, tab) => {
-    if (tab === "overview") return;
+    if (tab === "overview" || tab === "erd") return;
     setDraggedTab(tab);
     e.dataTransfer.setData("text/plain", tab);
   };
@@ -134,7 +138,7 @@ const ProjectWidgetTabs = ({ project, onNameChange }) => {
   };
 
   const handleDropTrash = async () => {
-    if (!draggedTab || draggedTab === "overview") return;
+    if (!draggedTab || draggedTab === "overview" || draggedTab === "erd") return;
     const newTabs = enabledTabs.filter((tab) => tab !== draggedTab);
     const updatedWidgets = { ...currentProject.widgets, [draggedTab]: false };
 
@@ -198,14 +202,17 @@ const ProjectWidgetTabs = ({ project, onNameChange }) => {
       );
       if (updatedProject) {
         setCurrentProject(updatedProject);
-        const widgets = updatedProject.widgets || {};
-        const widgetOrder = updatedProject.widget_order || ["overview"];
+        const widgets = updatedProject.widgets || { erd: true };
+        const widgetOrder = updatedProject.widget_order || ["overview", "erd"];
         const orderedTabs = ["overview"];
         widgetOrder.forEach((key) => {
           if (key !== "overview" && widgets[key]) {
             orderedTabs.push(key);
           }
         });
+        if (!orderedTabs.includes("erd")) {
+          orderedTabs.push("erd");
+        }
         setEnabledTabs(orderedTabs);
       }
       loadTasks();
@@ -214,52 +221,62 @@ const ProjectWidgetTabs = ({ project, onNameChange }) => {
     }
   };
 
-const renderTabContent = () => {
-  switch (activeTab) {
-    case "overview":
-      return (
-        <ProjectDetailPanel
-          project={currentProject}
-          onUpdate={handleUpdate}
-          onNameChange={onNameChange}
-        />
-      );
-    case "erd":
-      return (
-        <ErdListPanel
-          project={currentProject}
-          erds={erds}
-          onRefresh={loadErds}
-          onSelect={() => {}}
-        />
-      );
-    case "memo":
-      return <MemoTab />;
-    case "calendar":
-  return (
-    <TaskCalendarView
-      tasks={tasks}
-      projects={[currentProject]}
-      onTaskClick={() => {}}
-      title={`${currentProject.name} 캘린더`}
-    />
-  );
-    case "tasks":
-      return <ProjectTasksTab project={currentProject} />;
-    case "timeline":
-      return <TimelineWidget project={currentProject} />;
-    case "docs":
-      return <DocsListPanel project={currentProject} />;
-    default:
-      return (
-        <div className="p-10 text-gray-500 text-sm">
-          <p>
-            🚧 `{WIDGET_TABS.find((t) => t.key === activeTab)?.label}` 탭은 준비 중입니다.
-          </p>
-        </div>
-      );
-  }
-};
+  useEffect(() => {
+    if (!enabledTabs.includes(activeTab)) {
+      if (activeTab === "erd") {
+        handleAddTab("erd");
+      } else {
+        setActiveTab("overview");
+      }
+    }
+  }, [activeTab, enabledTabs, handleAddTab]);
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "overview":
+        return (
+          <ProjectDetailPanel
+            project={currentProject}
+            onUpdate={handleUpdate}
+            onNameChange={onNameChange}
+          />
+        );
+      case "erd":
+        return (
+          <ErdListPanel
+            project={currentProject}
+            erds={erds}
+            onRefresh={loadErds}
+            onSelect={() => {}}
+          />
+        );
+      case "memo":
+        return <MemoTab />;
+      case "calendar":
+        return (
+          <TaskCalendarView
+            tasks={tasks}
+            projects={[currentProject]}
+            onTaskClick={() => {}}
+            title={`${currentProject.name} 캘린더`}
+          />
+        );
+      case "tasks":
+        return <ProjectTasksTab project={currentProject} />;
+      case "timeline":
+        return <TimelineWidget project={currentProject} />;
+      case "docs":
+        return <DocsListPanel project={currentProject} />;
+      default:
+        return (
+          <div className="p-10 text-gray-500 text-sm">
+            <p>
+              🚧 `{WIDGET_TABS.find((t) => t.key === activeTab)?.label}` 탭은 준비 중입니다.
+            </p>
+          </div>
+        );
+    }
+  };
 
   return (
     <div>
@@ -270,19 +287,16 @@ const renderTabContent = () => {
             return (
               <button
                 key={tab}
-                draggable={tab !== "overview"}
+                draggable={tab !== "overview" && tab !== "erd"}
                 onDragStart={(e) => handleDragStart(e, tab)}
                 onDragOver={(e) => handleDragOver(e, tab)}
                 onDrop={(e) => handleDrop(e, tab)}
                 onClick={() => setActiveTab(tab)}
                 className={`mr-4 text-sm font-medium border-b-2 min-w-[50px] px-2 py-1
-    ${
-      activeTab === tab
-        ? "border-blue-600 text-blue-600"
-        : "border-transparent text-gray-500 hover:text-blue-600"
-    }
-    cursor-pointer  // ✅ 수정됨
-  `}
+                  ${activeTab === tab
+                    ? "border-blue-600 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-blue-600"
+                  } cursor-pointer`}
               >
                 <span className="whitespace-nowrap">{label}</span>
               </button>
