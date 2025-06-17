@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useLocation } from "react-router-dom";
 import ProjectDetailPanel from "./ProjectDetailPanel";
 import MemoTab from "./MemoTab";
 import TaskCalendarView from "./TaskCalendarView";
@@ -23,10 +22,8 @@ const WIDGET_TABS = [
   { key: "timeline", label: "타임라인" },
 ];
 
-const ProjectWidgetTabs = ({ project, onNameChange }) => {
-  const location = useLocation();
-  const initialTab = location.state?.subTab ?? location.state?.tab ?? "overview"; // subTab 우선
-  const [activeTab, setActiveTab] = useState(initialTab);
+const ProjectWidgetTabs = ({ project, onNameChange, defaultTab = "overview" }) => {
+  const [activeTab, setActiveTab] = useState(defaultTab);
   const [enabledTabs, setEnabledTabs] = useState(["overview", "erd"]);
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [currentProject, setCurrentProject] = useState(project);
@@ -35,6 +32,11 @@ const ProjectWidgetTabs = ({ project, onNameChange }) => {
   const [draggedTab, setDraggedTab] = useState(null);
   const [isOverTrash, setIsOverTrash] = useState(false);
   const addMenuRef = useRef(null);
+
+  // ✅ 핵심: defaultTab이 바뀌면 activeTab 업데이트
+  useEffect(() => {
+    setActiveTab(defaultTab);
+  }, [defaultTab]);
 
   useEffect(() => {
     if (!project) return;
@@ -95,10 +97,6 @@ const ProjectWidgetTabs = ({ project, onNameChange }) => {
     e.dataTransfer.setData("text/plain", tab);
   };
 
-  const handleDragOver = (e, tab) => {
-    e.preventDefault();
-  };
-
   const handleDrop = async (e, targetTab) => {
     e.preventDefault();
     if (draggedTab && targetTab !== "overview" && draggedTab !== targetTab) {
@@ -128,13 +126,10 @@ const ProjectWidgetTabs = ({ project, onNameChange }) => {
     setDraggedTab(null);
   };
 
+  // ✅ ESLint 오류 수정: 정의 누락됐던 함수 추가
   const handleDragOverTrash = (e) => {
     e.preventDefault();
     setIsOverTrash(true);
-  };
-
-  const handleDragLeaveTrash = () => {
-    setIsOverTrash(false);
   };
 
   const handleDropTrash = async () => {
@@ -194,50 +189,13 @@ const ProjectWidgetTabs = ({ project, onNameChange }) => {
     }
   }, [project, loadErds, loadTasks]);
 
-  const handleUpdate = async () => {
-    try {
-      const projects = await getMyProjects();
-      const updatedProject = projects.find(
-        (p) => p.project_id === currentProject.project_id
-      );
-      if (updatedProject) {
-        setCurrentProject(updatedProject);
-        const widgets = updatedProject.widgets || { erd: true };
-        const widgetOrder = updatedProject.widget_order || ["overview", "erd"];
-        const orderedTabs = ["overview"];
-        widgetOrder.forEach((key) => {
-          if (key !== "overview" && widgets[key]) {
-            orderedTabs.push(key);
-          }
-        });
-        if (!orderedTabs.includes("erd")) {
-          orderedTabs.push("erd");
-        }
-        setEnabledTabs(orderedTabs);
-      }
-      loadTasks();
-    } catch (err) {
-      console.error("프로젝트 업데이트 실패", err);
-    }
-  };
-
-  useEffect(() => {
-    if (!enabledTabs.includes(activeTab)) {
-      if (activeTab === "erd") {
-        handleAddTab("erd");
-      } else {
-        setActiveTab("overview");
-      }
-    }
-  }, [activeTab, enabledTabs, handleAddTab]);
-
   const renderTabContent = () => {
     switch (activeTab) {
       case "overview":
         return (
           <ProjectDetailPanel
             project={currentProject}
-            onUpdate={handleUpdate}
+            onUpdate={loadTasks}
             onNameChange={onNameChange}
           />
         );
@@ -289,7 +247,7 @@ const ProjectWidgetTabs = ({ project, onNameChange }) => {
                 key={tab}
                 draggable={tab !== "overview" && tab !== "erd"}
                 onDragStart={(e) => handleDragStart(e, tab)}
-                onDragOver={(e) => handleDragOver(e, tab)}
+                onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => handleDrop(e, tab)}
                 onClick={() => setActiveTab(tab)}
                 className={`mr-4 text-sm font-medium border-b-2 min-w-[50px] px-2 py-1
@@ -305,8 +263,9 @@ const ProjectWidgetTabs = ({ project, onNameChange }) => {
 
           <div
             className="relative"
-            onDragOver={handleDragOverTrash}
-            onDragLeave={handleDragLeaveTrash}
+            onDragOver={(e) => e.preventDefault()}
+            onDragEnter={handleDragOverTrash}
+            onDragLeave={() => setIsOverTrash(false)}
             onDrop={handleDropTrash}
           >
             <button

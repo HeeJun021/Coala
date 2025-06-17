@@ -26,7 +26,7 @@ const CommentEditor = ({ onSubmit }) => {
       <div className="flex gap-2 mt-2">
         <button
           type="submit"
-          className="px-4 py-2 bg-green-500 text-white rounded-md"
+          className="px-4 py-2 bg-green-700 text-white rounded-md"
         >
           댓글 등록
         </button>

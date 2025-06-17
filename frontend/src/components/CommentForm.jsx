@@ -28,7 +28,7 @@ const CommentForm = ({ onSubmit, placeholder = "댓글을 입력하세요", init
         placeholder={placeholder}
         className="bg-white mb-2"
       />
-      <button type="submit" className="px-4 py-2 bg-green-500 text-white rounded-md mt-2">
+      <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded-md mt-2">
         작성
       </button>
     </form>

@@ -105,7 +105,7 @@ const BoardEditPage = () => {
         <div className="flex gap-2">
           <button
             type="submit"
-            className="px-4 py-2 bg-green-500 text-white rounded-md"
+            className="px-4 py-2 bg-green-600 text-white rounded-md"
           >
             저장
           </button>

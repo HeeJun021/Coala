@@ -80,7 +80,6 @@ import SelfCodingTemplatePage from "./pages/SelfCodingTemplatePage";
 import TeamProjectPage from "./pages/TeamProjectPage";
 import ProjectDocPage from "./pages/ProjectDocPage";
 
-
 // ERD UI
 import ErdPage from "./pages/ErdPage";
 

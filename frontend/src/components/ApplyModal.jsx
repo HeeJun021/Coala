@@ -85,7 +85,7 @@ const ApplyModal = ({ onClose, projectId, user }) => {
           </button>
           <button
             onClick={handleSubmit}
-            className="px-4 py-2 bg-green-500 text-white rounded"
+            className="px-4 py-2 bg-green-600 text-white rounded"
             disabled={isSubmitting}
           >
             {isSubmitting ? "신청 중..." : "신청하기"}
