@@ -101,7 +101,7 @@ const BoardDetailTemplate = ({
             </span>
             <button
               onClick={handleImportCode}
-              className="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+              className="text-sm bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
             >
               코드 가져오기
             </button>
