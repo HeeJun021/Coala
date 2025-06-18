@@ -43,7 +43,7 @@ const TiptapEditorWithPagination = ({ projectId, docId, title, content }) => {
       const fullHTML = editor.getHTML();
 
       if (!fullHTML || fullHTML === "<p>불러오는 중...</p>") {
-        alert("내용을 입력한 후 저장해주세요.");
+        console.log("내용을 입력해주세요.")
         return;
       }
 
@@ -54,10 +54,8 @@ const TiptapEditorWithPagination = ({ projectId, docId, title, content }) => {
         content: fullHTML,
       });
 
-      alert("✅ 문서가 저장되었습니다!");
     } catch (error) {
       console.error("문서 저장 실패:", error.response?.data || error);
-      alert("문서 저장에 실패했습니다.");
     }
   };
 
@@ -118,7 +116,7 @@ const TiptapEditorWithPagination = ({ projectId, docId, title, content }) => {
 
         <button
           onClick={handleSaveDocument}
-          className="flex items-center gap-2 bg-green-600 text-white text-sm px-4 py-1.5 rounded hover:bg-green-700 transition"
+          className="flex items-center gap-2 bg-green-600 ml-12 text-white text-sm px-4 py-1.5 rounded hover:bg-green-700 transition"
         >
           <Save size={16} />
           저장하기

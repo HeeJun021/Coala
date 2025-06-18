@@ -281,18 +281,18 @@ const SelfCodingSidebar = ({
         <div className="mt-auto flex flex-col items-center gap-0">
           {/* 가이드 보기 버튼 */}
           <div className="w-full relative pb-4">
-  <button
-    title="가이드 보기"
-    onClick={handleGuideClick}
-    className="w-full h-12 flex items-center justify-center text-[20px] text-gray-500 hover:text-black relative"
-    style={{ marginBottom: "0.25rem" }}
-  >
-    <HelpCircle size={24} className="text-gray-500" />
-    {showGuideTooltip && (
-      <div className="absolute top-[5px] right-[-6px] w-[7px] h-[7px] bg-rose-600 rounded-full shadow-sm" />
-    )}
-  </button>
-</div>
+            <button
+              title="가이드 보기"
+              onClick={handleGuideClick}
+              className="w-full h-12 flex items-center justify-center text-[20px] text-gray-500 hover:text-black relative"
+              style={{ marginBottom: "0.25rem" }}
+            >
+              <HelpCircle size={24} className="text-gray-500" />
+              {showGuideTooltip && (
+                <div className="absolute top-[5px] right-[-6px] w-[7px] h-[7px] bg-rose-600 rounded-full shadow-sm" />
+              )}
+            </button>
+          </div>
 
           {/* 설정 버튼 */}
           <div

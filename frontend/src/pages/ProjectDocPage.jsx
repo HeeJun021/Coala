@@ -42,9 +42,7 @@ const ProjectDocPage = () => {
       await updateDocument(projectId, docId, { title: tempTitle });
       setDocTitle(tempTitle);
       setEditingTitle(false);
-      alert("제목이 저장되었습니다.");
     } catch (err) {
-      alert("제목 저장 실패");
       console.error(err);
     }
   };
