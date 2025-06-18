@@ -188,7 +188,7 @@ def get_quiz_result(quiz_id: int, user_id: int, db: Session = Depends(get_db)):
             "is_correct": detail.is_correct,
             "explanation": question.explanation or ""
         })
-    print(f"✅ [DEBUG] 최종 반환 데이터: {question_results}")
+    print(f"[DEBUG] 최종 반환 데이터: {question_results}")
     return {
         "quiz_id": quiz.quiz_id,
         "title": quiz.title,

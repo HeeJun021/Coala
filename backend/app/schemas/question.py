@@ -28,3 +28,4 @@ class QuestionResult(BaseModel):
     user_answer: str
     correct_answer: str
     is_correct: bool
+    explanation: Optional[str] = None
