@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import DocCard from "./DocCard";
 import CreateDocModal from "./CreateDocModal";
+import AlertModal from "../AlertModal";
 import {
   getDocuments,
   createDocument,
@@ -14,6 +15,9 @@ const DocsListPanel = ({ project }) => {
   const navigate = useNavigate();
   const [docs, setDocs] = useState([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
+
+  const [deleteTargetDocId, setDeleteTargetDocId] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false); 
 
   const fetchDocs = useCallback(async () => {
     if (!projectId) return;
@@ -36,14 +40,21 @@ const DocsListPanel = ({ project }) => {
     }
   };
 
-  const handleDelete = async (docId) => {
-    if (!window.confirm("정말 삭제하시겠습니까?")) return;
+  const confirmDelete = (docId) => {
+    setDeleteTargetDocId(docId);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirmed = async () => {
     try {
-      await deleteDocument(projectId, docId);
+      await deleteDocument(projectId, deleteTargetDocId);
       await fetchDocs();
     } catch (err) {
       console.error("문서 삭제 실패", err);
       alert("삭제에 실패했습니다.");
+    } finally {
+      setShowDeleteModal(false);
+      setDeleteTargetDocId(null);
     }
   };
 
@@ -59,7 +70,7 @@ const DocsListPanel = ({ project }) => {
             <DocCard
               key={doc.doc_id}
               doc={doc}
-              onDelete={() => handleDelete(doc.doc_id)}
+              onDelete={() => confirmDelete(doc.doc_id)}
             />
           ))}
 
@@ -80,6 +91,18 @@ const DocsListPanel = ({ project }) => {
           onCreate={handleCreate}
         />
       )}
+
+      {/* 삭제 확인 모달 */}
+      <AlertModal
+        isOpen={showDeleteModal}
+        isConfirm
+        message="정말 삭제하시겠습니까?"
+        onConfirm={handleDeleteConfirmed}
+        onCancel={() => {
+          setShowDeleteModal(false);
+          setDeleteTargetDocId(null);
+        }}
+      />
     </>
   );
 };

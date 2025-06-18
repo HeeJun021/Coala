@@ -18,7 +18,7 @@ const AlertModal = ({ isOpen, message, onConfirm, onCancel, isConfirm = false })
           )}
           <button
             onClick={onConfirm}
-            className="px-4 py-1.5 rounded bg-accent text-white hover:bg-navbar transition"
+            className="px-4 py-1.5 rounded bg-green-600 text-white hover:bg-green-700 transition"
           >
             확인
           </button>
