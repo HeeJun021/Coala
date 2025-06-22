@@ -406,9 +406,10 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
               {isMine ? (
                 <div className="w-full flex justify-end items-end gap-1">
                   <div className="flex flex-col items-end text-[10px] text-gray-500 min-w-[40px]">
-                    {msg.read_count < room.participants.length && (
-                      <span>{room.participants.length - msg.read_count}</span>
-                    )}
+                    {/* 읽음 수 표시 제거 */}
+                    {/* {msg.read_count < room.participants.length && (
+    <span>{room.participants.length - msg.read_count}</span>
+  )} */}
                     {isLastOfBundleOrLastMessage && <span>{currentTime}</span>}
                   </div>
                   {msg.message_type === "project_invite" && (
@@ -663,11 +664,12 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
                     )}
 
                     <div className="flex flex-col items-end justify-end text-[10px] leading-tight h-full mb-0.5">
-                      {msg.read_count < room.participants.length && (
-                        <span className="text-yellow-600 font-semibold">
-                          {room.participants.length - msg.read_count}
-                        </span>
-                      )}
+                      {/* 읽음 수 표시 제거 */}
+                      {/* {msg.read_count < room.participants.length && (
+    <span className="text-yellow-600 font-semibold">
+      {room.participants.length - msg.read_count}
+    </span>
+  )} */}
                       {isLastOfBundle && (
                         <span className="text-gray-500">{currentTime}</span>
                       )}
