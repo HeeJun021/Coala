@@ -1,10 +1,11 @@
-import React from "react";
+import React, {useState} from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { dracula } from "react-syntax-highlighter/dist/esm/styles/prism";
 import CommentEditor from "../components/CommentEditor";
 import apiClient from "../api/apiClient";
 import { useAuth } from "../context/AuthContext";
 import UserNameWithProfile from "../components/UserNameWithProfile";
+import AlertModal from "../components/AlertModal";
 import {
   Heart,
   Edit,
@@ -12,6 +13,7 @@ import {
   AlertCircle,
   Reply,
 } from "lucide-react";
+
 
 const BoardDetailTemplate = ({
   boardName,
@@ -46,6 +48,8 @@ const BoardDetailTemplate = ({
   commentType = "basic",
 }) => {
   const { user: currentUser } = useAuth();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
 
   if (!post) return <div className="p-8">로딩 중...</div>;
 
@@ -59,7 +63,6 @@ const BoardDetailTemplate = ({
 
   const handleImportCode = async () => {
     if (!currentUser) {
-      alert("로그인이 필요합니다.");
       return;
     }
 
@@ -68,11 +71,11 @@ const BoardDetailTemplate = ({
         params: { user_id: currentUser.user_id },
         withCredentials: true,
       });
-      alert("코드가 성공적으로 가져왔습니다!");
+      setModalMessage("코드가 성공적으로 복사되었습니다!");
+      setIsModalOpen(true);
       window.dispatchEvent(new Event("refreshDirectory"));
     } catch (err) {
       console.error("코드 가져오기 실패:", err);
-      alert("코드 가져오기에 실패했습니다.");
     }
   };
 
@@ -365,6 +368,11 @@ const BoardDetailTemplate = ({
           </div>
         </>
       )}
+      <AlertModal
+        isOpen={isModalOpen}
+        message={modalMessage}
+        onConfirm={() => setIsModalOpen(false)}
+      />
     </div>
   );
 };

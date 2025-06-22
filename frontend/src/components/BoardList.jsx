@@ -75,7 +75,7 @@ const BoardList = ({ boardType }) => {
           <thead>
             <tr className="border-b border-gray-300 bg-white text-gray-700">
               <th className="p-3 font-medium w-[15%]">게시일</th>
-              <th className="p-3 font-medium text-left">제목</th>
+              <th className="p-3 font-medium text-center">제목</th>
               <th className="p-3 font-medium w-[15%]">사진첨부</th>
               {boardType === BOARD_TYPES.PROJECT ? (
                 <th className="p-3 font-medium w-[15%]">모집인원</th>
