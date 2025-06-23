@@ -1,7 +1,12 @@
-// ✅ Asana 스타일: 날짜순 그룹 + 완료 여부 + 작업 생성자 포함 수신함
+// ✅ Asana 스타일: 날짜순 그룹 + 완료 여부 + 작업 생성자 포함 수신함 (Lucide 아이콘 적용)
 import React, { useState, useEffect } from "react";
 import { getMyTasks } from "../../api/taskApi";
 import { getProjectActivity } from "../../api/projectApi";
+import {
+  ClipboardList,
+  ClipboardCheck,
+  ScrollText,
+} from "lucide-react";
 
 const formatDateLabel = (date) => {
   const today = new Date();
@@ -44,7 +49,8 @@ const InboxTab = ({ projects = [] }) => {
           projectId: task.project_id,
           completed: task.completed,
           creator: task.creator_nickname || "시스템",
-          projectName: projects.find((p) => p.project_id === task.project_id)?.name || "알 수 없음",
+          projectName:
+            projects.find((p) => p.project_id === task.project_id)?.name || "알 수 없음",
         }));
 
         const activityNotifications = projectActivity.flat().map((activity) => ({
@@ -55,7 +61,8 @@ const InboxTab = ({ projects = [] }) => {
           projectId: activity.project_id,
           completed: false,
           creator: activity.actor_nickname || "시스템",
-          projectName: projects.find((p) => p.project_id === activity.project_id)?.name || "알 수 없음",
+          projectName:
+            projects.find((p) => p.project_id === activity.project_id)?.name || "알 수 없음",
         }));
 
         const all = [...taskNotifications, ...activityNotifications].sort(
@@ -118,13 +125,25 @@ const InboxTab = ({ projects = [] }) => {
                     className="flex justify-between items-start group hover:bg-gray-50 rounded-lg px-4 py-3 border border-gray-100"
                   >
                     <div className="flex items-start gap-3">
-                      <div className="text-lg pt-0.5">
-                        {n.type === "task" ? (n.completed ? "✅" : "📋") : "📜"}
+                      <div className="pt-0.5">
+                        {n.type === "task" ? (
+                          n.completed ? (
+                            <ClipboardCheck className="w-5 h-5 text-green-600" />
+                          ) : (
+                            <ClipboardList className="w-5 h-5 text-blue-600" />
+                          )
+                        ) : (
+                          <ScrollText className="w-5 h-5 text-purple-600" />
+                        )}
                       </div>
                       <div>
-                        <p className={`text-sm font-medium ${
-                          n.completed ? "line-through text-gray-400" : "text-gray-800"
-                        }`}>{n.content}</p>
+                        <p
+                          className={`text-sm font-medium ${
+                            n.completed ? "line-through text-gray-400" : "text-gray-800"
+                          }`}
+                        >
+                          {n.content}
+                        </p>
                         <p className="text-xs text-gray-500">
                           프로젝트: {n.projectName} • 생성자: {n.creator}
                         </p>
@@ -148,7 +167,8 @@ const InboxTab = ({ projects = [] }) => {
       )}
 
       <div className="mt-16 text-center text-sm text-gray-400 hover:underline cursor-pointer">
-        모든 알림 보관</div>
+        모든 알림 보관
+      </div>
     </div>
   );
 };
