@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { initRootCodeFolder } from "../api/codeApi";
 import { getLanguages } from "../api/languageApi";
 import { fetchStudyMaterials } from "../api/studyMaterialsApi";
+import { Leaf } from "lucide-react";
 
 const Navbar = () => {
   const { user, handleLogout } = useAuth();
@@ -75,7 +76,7 @@ const Navbar = () => {
     {
       label: "게시판",
       path: "/board",
-      children: ["자유 게시판", "프로젝트 모집", "코드 게시판"],
+      children: ["자유 게시판", "프로젝트 모집", "코드 공유 게시판"],
     },
     {
       label: "마이페이지",
@@ -97,7 +98,7 @@ const Navbar = () => {
           <span className="text-2xl font-semibold text-green-700">Coala</span>
         </Link>
 
-        <div className="grid grid-cols-7 w-[1050px] pr-2 text-center">
+        <div className="grid grid-cols-7 w-[1050px] pr-2 ml-16 text-center">
           {menuItems.map((item, idx) => (
             <div
               key={idx}
@@ -160,7 +161,16 @@ const Navbar = () => {
         <div className="flex items-center gap-4">
           {user ? (
             <>
+              {/* 닉네임 왼쪽으로 살짝 밀기 */}
               <span className="text-sm text-gray-700">{user.nickname}님</span>
+
+              {/* 유칼립투스 잎 표시 */}
+              <span className="flex items-center gap-1 text-sm text-green-700 font-semibold">
+                <Leaf size={16} className="text-green-600" />
+                {user.eucalyptus_balance ?? 0}
+              </span>
+
+              {/* 로그아웃 버튼 */}
               <button
                 onClick={logoutAndRedirect}
                 className="text-sm bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition"
@@ -329,7 +339,7 @@ const Navbar = () => {
                     let link = "";
                     if (child === "자유 게시판") link = "/board/free";
                     if (child === "프로젝트 모집") link = "/board/project";
-                    if (child === "코드 게시판") link = "/board/code";
+                    if (child === "코드 공유 게시판") link = "/board/code";
                     if (link) {
                       return (
                         <Link
