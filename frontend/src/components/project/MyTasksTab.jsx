@@ -1,8 +1,21 @@
 import React, { useEffect, useRef, useState } from "react";
-import { getMyTasks, createTask, updateTask, deleteTask } from "../../api/taskApi";
+import {
+  getMyTasks,
+  createTask,
+  updateTask,
+  deleteTask,
+} from "../../api/taskApi";
 import TaskCalendarView from "./TaskCalendarView";
 import MemoTab from "./MemoTab";
 import { getMyProjects, getProjectMembers } from "../../api/projectApi";
+import {
+  ClipboardEdit,
+  CalendarCheck,
+  FolderKanban,
+  Users,
+  Activity,
+  FileText,
+} from "lucide-react";
 
 const sections = [
   "최근 배정된 작업",
@@ -80,7 +93,10 @@ const MyTasksTab = ({ projects: propProjects }) => {
       if (slideRef.current && !slideRef.current.contains(event.target)) {
         setSelectedTask(null);
       }
-      if (collaboratorRef.current && !collaboratorRef.current.contains(event.target)) {
+      if (
+        collaboratorRef.current &&
+        !collaboratorRef.current.contains(event.target)
+      ) {
         setIsAddingCollaborator(false);
       }
     };
@@ -110,7 +126,12 @@ const MyTasksTab = ({ projects: propProjects }) => {
             task.status !== "완료됨"
           );
         case "다가오는 일정":
-          return due && task.status !== "완료됨" && due > today && due <= startOfNextWeek;
+          return (
+            due &&
+            task.status !== "완료됨" &&
+            due > today &&
+            due <= startOfNextWeek
+          );
         case "완료":
           return task.status === "완료됨";
         case "마감일 지남":
@@ -151,10 +172,13 @@ const MyTasksTab = ({ projects: propProjects }) => {
     try {
       const taskData = {
         ...updatedData,
-        status: updatedData.status || (updatedData.due_date ? "예정" : "완료됨"),
+        status:
+          updatedData.status || (updatedData.due_date ? "예정" : "완료됨"),
       };
       const res = await updateTask(taskId, taskData);
-      setTasks((prev) => prev.map((task) => (task.task_id === res.task_id ? res : task)));
+      setTasks((prev) =>
+        prev.map((task) => (task.task_id === res.task_id ? res : task))
+      );
       setSelectedTask(res);
     } catch (err) {
       console.error("Failed to update task:", err);
@@ -167,7 +191,9 @@ const MyTasksTab = ({ projects: propProjects }) => {
       const updatedStatus = task.status === "완료됨" ? "예정" : "완료됨";
       const updatedTask = { ...task, status: updatedStatus };
       const res = await updateTask(task.task_id, updatedTask);
-      setTasks((prev) => prev.map((t) => (t.task_id === res.task_id ? res : t)));
+      setTasks((prev) =>
+        prev.map((t) => (t.task_id === res.task_id ? res : t))
+      );
       if (selectedTask && selectedTask.task_id === task.task_id) {
         setSelectedTask(res);
       }
@@ -238,7 +264,11 @@ const MyTasksTab = ({ projects: propProjects }) => {
                     : "border-transparent text-gray-500 hover:text-blue-600"
                 }`}
               >
-                {tab === "list" ? "목록" : tab === "calendar" ? "캘린더" : "메모"}
+                {tab === "list"
+                  ? "목록"
+                  : tab === "calendar"
+                  ? "캘린더"
+                  : "메모"}
               </button>
             ))}
           </div>
@@ -290,7 +320,9 @@ const MyTasksTab = ({ projects: propProjects }) => {
                               key={task.task_id}
                               onClick={() => handleTaskClick(task)}
                               className={`hover:bg-gray-50 cursor-pointer border-t ${
-                                selectedTask?.task_id === task.task_id ? "bg-blue-50" : ""
+                                selectedTask?.task_id === task.task_id
+                                  ? "bg-blue-50"
+                                  : ""
                               }`}
                             >
                               <td className="px-4 py-2">
@@ -302,18 +334,31 @@ const MyTasksTab = ({ projects: propProjects }) => {
                                   onClick={(e) => e.stopPropagation()}
                                 />
                               </td>
-                              <td className="px-4 py-2 font-medium">{task.title}</td>
-                              <td className="px-4 py-2 text-gray-600">{task.start_date || "-"}</td>
-                              <td className="px-4 py-2 text-gray-600">{task.due_date || "-"}</td>
-                              <td className="px-4 py-2 text-gray-600">
-                                {task.collaborators?.map((c) => c.nickname).join(", ") || "-"}
+                              <td className="px-4 py-2 font-medium">
+                                {task.title}
                               </td>
-                              <td className="px-4 py-2 text-gray-600">{task.project_name || "-"}</td>
+                              <td className="px-4 py-2 text-gray-600">
+                                {task.start_date || "-"}
+                              </td>
+                              <td className="px-4 py-2 text-gray-600">
+                                {task.due_date || "-"}
+                              </td>
+                              <td className="px-4 py-2 text-gray-600">
+                                {task.collaborators
+                                  ?.map((c) => c.nickname)
+                                  .join(", ") || "-"}
+                              </td>
+                              <td className="px-4 py-2 text-gray-600">
+                                {task.project_name || "-"}
+                              </td>
                             </tr>
                           ))
                         ) : (
                           <tr>
-                            <td colSpan="6" className="px-4 py-2 text-gray-500 text-center">
+                            <td
+                              colSpan="6"
+                              className="px-4 py-2 text-gray-500 text-center"
+                            >
                               이 섹션에 작업이 없습니다.
                             </td>
                           </tr>
@@ -329,7 +374,11 @@ const MyTasksTab = ({ projects: propProjects }) => {
 
         {viewMode === "calendar" && (
           <div className="mt-6">
-            <TaskCalendarView tasks={tasks} projects={projects} onTaskClick={handleTaskClick} />
+            <TaskCalendarView
+              tasks={tasks}
+              projects={projects}
+              onTaskClick={handleTaskClick}
+            />
           </div>
         )}
 
@@ -351,79 +400,113 @@ const MyTasksTab = ({ projects: propProjects }) => {
                   ×
                 </button>
               </div>
-              <input
-                type="text"
-                placeholder="작업 이름"
-                value={newTask.title}
-                onChange={(e) =>
-                  setNewTask((prev) => ({ ...prev, title: e.target.value }))
-                }
-                className="w-full border rounded px-3 py-2 text-sm mb-2"
-                autoFocus
-              />
-              <div className="flex gap-2 mb-2">
+              <div className="flex flex-col mb-2">
+                <label className="text-sm font-medium text-gray-800 mb-1 flex items-center gap-1">
+                  <ClipboardEdit className="w-4 h-4 text-blue-600" />
+                  작업 이름
+                </label>
                 <input
-                  type="date"
-                  value={newTask.start_date}
+                  type="text"
+                  placeholder="작업 이름 입력"
+                  value={newTask.title}
                   onChange={(e) =>
-                    setNewTask((prev) => ({
-                      ...prev,
-                      start_date: e.target.value,
-                    }))
+                    setNewTask((prev) => ({ ...prev, title: e.target.value }))
                   }
-                  className="border rounded px-3 py-1 text-sm"
-                  placeholder="시작일"
+                  className="w-full border rounded px-3 py-2 text-sm"
+                  autoFocus
                 />
-                <input
-                  type="date"
-                  value={newTask.due_date}
-                  onChange={(e) =>
-                    setNewTask((prev) => ({
-                      ...prev,
-                      due_date: e.target.value,
-                    }))
-                  }
-                  className="border rounded px-3 py-1 text-sm"
-                  placeholder="마감일"
-                />
-                <select
-                  value={newTask.project_id}
-                  onChange={(e) =>
-                    setNewTask((prev) => ({
-                      ...prev,
-                      project_id: e.target.value,
-                    }))
-                  }
-                  className="border rounded px-3 py-1 text-sm"
-                >
-                  <option value="">프로젝트 선택</option>
-                  {projects.map((proj) => (
-                    <option key={proj.project_id} value={proj.project_id}>
-                      {proj.name}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  multiple
-                  value={newTask.collaborator_ids}
-                  onChange={(e) =>
-                    setNewTask((prev) => ({
-                      ...prev,
-                      collaborator_ids: Array.from(
-                        e.target.selectedOptions,
-                        (option) => parseInt(option.value)
-                      ),
-                    }))
-                  }
-                  className="border rounded px-3 py-1 text-sm h-[100px]"
-                >
-                  {members.map((member) => (
-                    <option key={member.user_id} value={member.user_id}>
-                      {member.nickname}
-                    </option>
-                  ))}
-                </select>
               </div>
+
+              <div className="flex flex-col gap-4 mb-4">
+                <div className="flex gap-2">
+                  <div className="flex flex-col flex-1">
+                    <label className="text-sm font-medium text-gray-800 mb-1 flex items-center gap-1">
+                      <CalendarCheck className="w-4 h-4 text-green-600" />
+                      시작일
+                    </label>
+                    <input
+                      type="date"
+                      value={newTask.start_date}
+                      onChange={(e) =>
+                        setNewTask((prev) => ({
+                          ...prev,
+                          start_date: e.target.value,
+                        }))
+                      }
+                      className="border rounded px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div className="flex flex-col flex-1">
+                    <label className="text-sm font-medium text-gray-800 mb-1 flex items-center gap-1">
+                      <CalendarCheck className="w-4 h-4 text-red-600" />
+                      마감일
+                    </label>
+                    <input
+                      type="date"
+                      value={newTask.due_date}
+                      onChange={(e) =>
+                        setNewTask((prev) => ({
+                          ...prev,
+                          due_date: e.target.value,
+                        }))
+                      }
+                      className="border rounded px-3 py-2 text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col">
+                  <label className="text-sm font-medium text-gray-800 mb-1 flex items-center gap-1">
+                    <FolderKanban className="w-4 h-4 text-indigo-600" />
+                    프로젝트 선택
+                  </label>
+                  <select
+                    value={newTask.project_id}
+                    onChange={(e) =>
+                      setNewTask((prev) => ({
+                        ...prev,
+                        project_id: e.target.value,
+                      }))
+                    }
+                    className="border rounded px-3 py-2 text-sm"
+                  >
+                    <option value="">프로젝트 선택</option>
+                    {projects.map((proj) => (
+                      <option key={proj.project_id} value={proj.project_id}>
+                        {proj.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex flex-col">
+                  <label className="text-sm font-medium text-gray-800 mb-1 flex items-center gap-1">
+                    <Users className="w-4 h-4 text-yellow-600" />
+                    참여자 선택
+                  </label>
+                  <select
+                    multiple
+                    value={newTask.collaborator_ids}
+                    onChange={(e) =>
+                      setNewTask((prev) => ({
+                        ...prev,
+                        collaborator_ids: Array.from(
+                          e.target.selectedOptions,
+                          (option) => parseInt(option.value)
+                        ),
+                      }))
+                    }
+                    className="border rounded px-3 py-2 text-sm h-[100px]"
+                  >
+                    {members.map((member) => (
+                      <option key={member.user_id} value={member.user_id}>
+                        {member.nickname}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
               <button
                 onClick={handleAddTask}
                 className="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
@@ -454,6 +537,7 @@ const MyTasksTab = ({ projects: propProjects }) => {
               작업 삭제
             </button>
           </div>
+
           <div className="mb-6 flex items-center gap-2">
             <input
               type="checkbox"
@@ -473,14 +557,21 @@ const MyTasksTab = ({ projects: propProjects }) => {
               autoFocus
             />
           </div>
+
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div>
-              <p className="text-sm text-gray-500 mb-1">📅 시작일</p>
+              <label className="text-sm font-medium text-gray-800 mb-1 flex items-center gap-1">
+                <CalendarCheck className="w-4 h-4 text-green-600" />
+                시작일
+              </label>
               <input
                 type="date"
                 value={selectedTask.start_date || ""}
                 onChange={(e) => {
-                  const newTask = { ...selectedTask, start_date: e.target.value };
+                  const newTask = {
+                    ...selectedTask,
+                    start_date: e.target.value,
+                  };
                   setSelectedTask(newTask);
                   handleUpdateTask(selectedTask.task_id, newTask);
                 }}
@@ -488,7 +579,10 @@ const MyTasksTab = ({ projects: propProjects }) => {
               />
             </div>
             <div>
-              <p className="text-sm text-gray-500 mb-1">📅 마감일</p>
+              <label className="text-sm font-medium text-gray-800 mb-1 flex items-center gap-1">
+                <CalendarCheck className="w-4 h-4 text-red-600" />
+                마감일
+              </label>
               <input
                 type="date"
                 value={selectedTask.due_date || ""}
@@ -501,11 +595,17 @@ const MyTasksTab = ({ projects: propProjects }) => {
               />
             </div>
             <div>
-              <p className="text-sm text-gray-500 mb-1">📖 프로젝트</p>
+              <label className="text-sm font-medium text-gray-800 mb-1 flex items-center gap-1">
+                <FolderKanban className="w-4 h-4 text-indigo-600" />
+                프로젝트
+              </label>
               <select
                 value={selectedTask.project_id || ""}
                 onChange={(e) => {
-                  const newTask = { ...selectedTask, project_id: e.target.value };
+                  const newTask = {
+                    ...selectedTask,
+                    project_id: e.target.value,
+                  };
                   setSelectedTask(newTask);
                   handleUpdateTask(selectedTask.task_id, newTask);
                 }}
@@ -520,12 +620,21 @@ const MyTasksTab = ({ projects: propProjects }) => {
               </select>
             </div>
             <div>
-              <p className="text-sm text-gray-500 mb-1">🚦 상태</p>
-              <p className="text-base font-medium">{selectedTask.status || "없음"}</p>
+              <label className="text-sm font-medium text-gray-800 mb-1 flex items-center gap-1">
+                <Activity className="w-4 h-4 text-gray-700" />
+                상태
+              </label>
+              <p className="text-base font-medium">
+                {selectedTask.status || "없음"}
+              </p>
             </div>
           </div>
+
           <div className="mb-6 relative">
-            <p className="text-sm text-gray-500 mb-1">👥 참여자</p>
+            <label className="text-sm font-medium text-gray-800 mb-1 flex items-center gap-1">
+              <Users className="w-4 h-4 text-yellow-600" />
+              참여자
+            </label>
             <div className="flex flex-wrap gap-2 mb-2">
               {selectedTask.collaborators?.length > 0 ? (
                 selectedTask.collaborators.map((user) => (
@@ -543,7 +652,9 @@ const MyTasksTab = ({ projects: propProjects }) => {
                   </div>
                 ))
               ) : (
-                <span className="text-sm text-gray-600">참여자가 없습니다.</span>
+                <span className="text-sm text-gray-600">
+                  참여자가 없습니다.
+                </span>
               )}
               <button
                 onClick={() => setIsAddingCollaborator(true)}
@@ -561,7 +672,9 @@ const MyTasksTab = ({ projects: propProjects }) => {
                   members
                     .filter(
                       (member) =>
-                        !selectedTask.collaborators?.some((c) => c.user_id === member.user_id)
+                        !selectedTask.collaborators?.some(
+                          (c) => c.user_id === member.user_id
+                        )
                     )
                     .map((member) => (
                       <div
@@ -578,12 +691,19 @@ const MyTasksTab = ({ projects: propProjects }) => {
               </div>
             )}
           </div>
+
           <div>
-            <h3 className="text-sm font-semibold mb-2">📄 설명</h3>
+            <label className="text-sm font-medium mb-2 flex items-center gap-1 text-gray-800">
+              <FileText className="w-4 h-4 text-blue-600" />
+              설명
+            </label>
             <textarea
               value={selectedTask.description || ""}
               onChange={(e) => {
-                const newTask = { ...selectedTask, description: e.target.value };
+                const newTask = {
+                  ...selectedTask,
+                  description: e.target.value,
+                };
                 setSelectedTask(newTask);
                 handleUpdateTask(selectedTask.task_id, newTask);
               }}

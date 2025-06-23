@@ -3,7 +3,16 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { updateTask } from "../../api/taskApi";
-import { CalendarDays, Users } from "lucide-react";
+
+import {
+  CalendarDays,
+  CalendarCheck,
+  FolderKanban,
+  Palette,
+  Users,
+  FileText,
+} from "lucide-react";
+
 import { colorPalette, getRandomColor, getTextColor } from "../../utils/colorUtils";
 
 const TaskCalendarView = ({ tasks = [], projects = [], onTaskClick, title }) => {
@@ -248,181 +257,199 @@ const calendarRef = useRef(null);
       />
 
       {selectedTask && (
-        <div
-          ref={slideRef}
-          className="w-[500px] bg-white border-l shadow-xl p-6 fixed right-0 top-0 h-full overflow-y-auto transition-transform duration-300 transform translate-x-0 z-50" // z-index 20 -> 50으로 변경
+  <div
+    ref={slideRef}
+    className="w-[500px] bg-white border-l shadow-xl p-6 fixed right-0 top-0 h-full overflow-y-auto transition-transform duration-300 transform translate-x-0 z-50"
+  >
+    <div className="flex justify-between items-center mb-6">
+      <button
+        onClick={() => setSelectedTask(null)}
+        className="text-gray-500 hover:text-black text-2xl"
+      >
+        ×
+      </button>
+      <button
+        onClick={() => {
+          if (window.confirm("정말 이 작업을 삭제하시겠습니까?")) {
+            setSelectedTask(null);
+          }
+        }}
+        className="text-red-500 hover:text-red-700 text-sm font-medium"
+      >
+        작업 삭제
+      </button>
+    </div>
+
+    <div className="mb-6">
+      <input
+        type="text"
+        value={selectedTask.title}
+        onChange={(e) => {
+          const newTask = { ...selectedTask, title: e.target.value };
+          setSelectedTask(newTask);
+          handleUpdateTask(selectedTask.task_id, newTask);
+        }}
+        className="text-xl font-semibold border-none focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-2 py-1 w-full"
+        autoFocus
+      />
+    </div>
+
+    <div className="grid grid-cols-2 gap-4 mb-6">
+      <div>
+        <label className="text-sm font-medium text-gray-800 mb-1 flex items-center gap-1">
+          <CalendarCheck className="w-4 h-4 text-green-600" />
+          시작일
+        </label>
+        <input
+          type="date"
+          value={selectedTask.start_date || ""}
+          onChange={(e) => {
+            const newTask = { ...selectedTask, start_date: e.target.value };
+            setSelectedTask(newTask);
+            handleUpdateTask(selectedTask.task_id, newTask);
+          }}
+          className="text-base font-medium border-none focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-2 py-1"
+        />
+      </div>
+      <div>
+        <label className="text-sm font-medium text-gray-800 mb-1 flex items-center gap-1">
+          <CalendarCheck className="w-4 h-4 text-red-600" />
+          마감일
+        </label>
+        <input
+          type="date"
+          value={selectedTask.due_date || ""}
+          onChange={(e) => {
+            const newTask = { ...selectedTask, due_date: e.target.value };
+            setSelectedTask(newTask);
+            handleUpdateTask(selectedTask.task_id, newTask);
+          }}
+          className="text-base font-medium border-none focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-2 py-1"
+        />
+      </div>
+      <div>
+        <label className="text-sm font-medium text-gray-800 mb-1 flex items-center gap-1">
+          <FolderKanban className="w-4 h-4 text-indigo-600" />
+          프로젝트
+        </label>
+        <select
+          value={selectedTask.project_id || ""}
+          onChange={(e) => {
+            const newTask = { ...selectedTask, project_id: e.target.value };
+            setSelectedTask(newTask);
+            handleUpdateTask(selectedTask.task_id, newTask);
+          }}
+          className="text-base font-medium border-none focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-2 py-1"
         >
-          <div className="flex justify-between items-center mb-6">
+          <option value="">프로젝트 없음</option>
+          {projects.map((p) => (
+            <option key={p.project_id} value={p.project_id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className="text-sm font-medium text-gray-800 mb-1 flex items-center gap-1">
+          <Palette className="w-4 h-4 text-pink-600" />
+          색상
+        </label>
+        <select
+          value={selectedTask.color || ""}
+          onChange={(e) => handleColorChange(e.target.value)}
+          className="text-base font-medium border-none focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-2 py-1 w-full"
+        >
+          <option value="">랜덤 색상</option>
+          {colorPalette.map((color) => (
+            <option
+              key={color}
+              value={color}
+              style={{
+                backgroundColor: color,
+                color: getTextColor(color),
+              }}
+            >
+              {color}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+
+    <div className="mb-6 relative">
+      <label className="text-sm font-medium text-gray-800 mb-1 flex items-center gap-1">
+        <Users className="w-4 h-4 text-yellow-600" />
+        참여자
+      </label>
+      <div className="flex flex-wrap gap-2 mb-2">
+        {selectedTask.collaborators?.map((user) => (
+          <div
+            key={user.user_id}
+            className="flex items-center bg-gray-100 text-gray-800 text-sm rounded px-2 py-1"
+          >
+            {user.nickname}
             <button
-              onClick={() => setSelectedTask(null)}
-              className="text-gray-500 hover:text-black text-2xl"
+              onClick={() => handleRemoveCollaborator(user.user_id)}
+              className="ml-1 text-gray-500 hover:text-red-500"
             >
               ×
             </button>
-            <button
-              onClick={() => {
-                if (window.confirm("정말 이 작업을 삭제하시겠습니까?")) {
-                  setSelectedTask(null);
-                }
-              }}
-              className="text-red-500 hover:text-red-700 text-sm font-medium"
-            >
-              작업 삭제
-            </button>
           </div>
-          <div className="mb-6">
-            <input
-              type="text"
-              value={selectedTask.title}
-              onChange={(e) => {
-                const newTask = { ...selectedTask, title: e.target.value };
-                setSelectedTask(newTask);
-                handleUpdateTask(selectedTask.task_id, newTask);
-              }}
-              className="text-xl font-semibold border-none focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-2 py-1 w-full"
-              autoFocus
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div>
-              <p className="text-sm text-gray-500 mb-1">📅 시작일</p>
-              <input
-                type="date"
-                value={selectedTask.start_date || ""}
-                onChange={(e) => {
-                  const newTask = {
-                    ...selectedTask,
-                    start_date: e.target.value,
-                  };
-                  setSelectedTask(newTask);
-                  handleUpdateTask(selectedTask.task_id, newTask);
-                }}
-                className="text-base font-medium border-none focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-2 py-1"
-              />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-1">📅 마감일</p>
-              <input
-                type="date"
-                value={selectedTask.due_date || ""}
-                onChange={(e) => {
-                  const newTask = {
-                    ...selectedTask,
-                    due_date: e.target.value,
-                  };
-                  setSelectedTask(newTask);
-                  handleUpdateTask(selectedTask.task_id, newTask);
-                }}
-                className="text-base font-medium border-none focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-2 py-1"
-              />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-1">📁 프로젝트</p>
-              <select
-                value={selectedTask.project_id || ""}
-                onChange={(e) => {
-                  const newTask = {
-                    ...selectedTask,
-                    project_id: e.target.value,
-                  };
-                  setSelectedTask(newTask);
-                  handleUpdateTask(selectedTask.task_id, newTask);
-                }}
-                className="text-base font-medium border-none focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-2 py-1"
-              >
-                <option value="">프로젝트 없음</option>
-                {projects.map((p) => (
-                  <option key={p.project_id} value={p.project_id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-1">🎨 색상</p>
-              <select
-                value={selectedTask.color || ""}
-                onChange={(e) => handleColorChange(e.target.value)}
-                className="text-base font-medium border-none focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-2 py-1 w-full"
-              >
-                <option value="">랜덤 색상</option>
-                {colorPalette.map((color) => (
-                  <option key={color} value={color} style={{ backgroundColor: color, color: getTextColor(color) }}>
-                    {color}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div className="mb-6 relative">
-            <p className="text-sm text-gray-500 mb-1 flex items-center gap-1">
-              <Users size={14} className="text-gray-500" />
-              참여자
-            </p>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {selectedTask.collaborators?.map((user) => (
-                <div
-                  key={user.user_id}
-                  className="flex items-center bg-gray-100 text-gray-800 text-sm rounded px-2 py-1"
-                >
-                  {user.nickname}
-                  <button
-                    onClick={() => handleRemoveCollaborator(user.user_id)}
-                    className="ml-1 text-gray-500 hover:text-red-500"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-              <button
-                onClick={() => setIsAddingCollaborator(true)}
-                className="text-sm text-blue-500 hover:underline"
-              >
-                + 참여자 추가
-              </button>
-            </div>
-            {isAddingCollaborator && (
+        ))}
+        <button
+          onClick={() => setIsAddingCollaborator(true)}
+          className="text-sm text-blue-500 hover:underline"
+        >
+          + 참여자 추가
+        </button>
+      </div>
+      {isAddingCollaborator && (
+        <div
+          ref={collaboratorRef}
+          className="absolute z-10 bg-white border rounded shadow-lg p-2 max-h-40 overflow-y-auto"
+        >
+          {members
+            .filter(
+              (member) =>
+                !selectedTask.collaborators?.some(
+                  (c) => c.user_id === member.user_id
+                )
+            )
+            .map((member) => (
               <div
-                ref={collaboratorRef}
-                className="absolute z-10 bg-white border rounded shadow-lg p-2 max-h-40 overflow-y-auto"
+                key={member.user_id}
+                onClick={() => handleAddCollaborator(member)}
+                className="px-2 py-1 hover:bg-gray-100 cursor-pointer text-sm"
               >
-                {members
-                  .filter(
-                    (member) =>
-                      !selectedTask.collaborators?.some(
-                        (c) => c.user_id === member.user_id
-                      )
-                  )
-                  .map((member) => (
-                    <div
-                      key={member.user_id}
-                      onClick={() => handleAddCollaborator(member)}
-                      className="px-2 py-1 hover:bg-gray-100 cursor-pointer text-sm"
-                    >
-                      {member.nickname}
-                    </div>
-                  ))}
+                {member.nickname}
               </div>
-            )}
-          </div>
-          <div>
-            <h3 className="text-sm text-gray-500 mb-1">📄 설명</h3>
-            <textarea
-              value={selectedTask.description || ""}
-              onChange={(e) => {
-                const newTask = {
-                  ...selectedTask,
-                  description: e.target.value,
-                };
-                setSelectedTask(newTask);
-                handleUpdateTask(selectedTask.task_id, newTask);
-              }}
-              className="w-full border-none focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-3 py-2 text-base h-32"
-              placeholder="설명을 입력하세요..."
-            />
-          </div>
+            ))}
         </div>
       )}
+    </div>
+
+    <div>
+      <label className="text-sm font-medium text-gray-800 mb-2 flex items-center gap-1">
+        <FileText className="w-4 h-4 text-blue-600" />
+        설명
+      </label>
+      <textarea
+        value={selectedTask.description || ""}
+        onChange={(e) => {
+          const newTask = {
+            ...selectedTask,
+            description: e.target.value,
+          };
+          setSelectedTask(newTask);
+          handleUpdateTask(selectedTask.task_id, newTask);
+        }}
+        className="w-full border-none focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-3 py-2 text-base h-32"
+        placeholder="설명을 입력하세요..."
+      />
+    </div>
+  </div>
+)}
+
     </div>
   );
 };
