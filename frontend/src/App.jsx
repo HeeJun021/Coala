@@ -77,7 +77,7 @@ import SelfCodingPage from "./pages/selfcoding/SelfCodingPage";
 import SelfCodingTemplatePage from "./pages/selfcoding/SelfCodingTemplatePage";
 
 // 팀프로젝트
-import TeamProjectPage from "./pages/TeamProject/TeamProjectPage";
+import TeamProjectPage from "./pages/project/TeamProjectPage";
 import ProjectDocPage from "./pages/ProjectDocPage";
 
 // ERD UI
