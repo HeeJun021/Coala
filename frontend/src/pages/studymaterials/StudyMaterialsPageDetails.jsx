@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { fetchStudyMaterialById } from "../api/studyMaterialsApi";
+import { fetchStudyMaterialById } from "../../api/studyMaterialsApi";
 
 const StudyMaterialsPageDetails = () => {
   const { language, id } = useParams();

@@ -4,7 +4,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import JSONB
 from app.database import Base
 from app.models.language import Language
-from app.models.exampleread import examplereads as examplereads  # ✅ ORM 클래스로 불러오기
+from app.models.exampleread_models import examplereads as examplereads  # ✅ ORM 클래스로 불러오기
 
 class StudyExample(Base):
     __tablename__ = "study_example"

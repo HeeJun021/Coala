@@ -2,15 +2,15 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import Optional
 from app.database import get_db
-from app.models.study_materials import StudyMaterials
-from app.models.studymaterialread import studymaterialreads
+from app.models.study_materials_models import StudyMaterials
+from app.models.studymaterialread_models import studymaterialreads
 from app.models.language import Language
-from app.schemas.study_materials import StudyMaterialResponse
+from app.schemas.study_materials_schema import StudyMaterialResponse
 from app.models.user import User
 from app.dependencies.auth import get_current_user
 from fastapi import status
 from sqlalchemy.exc import IntegrityError
-from app.models.studymaterialread import studymaterialreads as StudyMaterialRead
+from app.models.studymaterialread_models import studymaterialreads as StudyMaterialRead
 from fastapi import status
 
 router = APIRouter()

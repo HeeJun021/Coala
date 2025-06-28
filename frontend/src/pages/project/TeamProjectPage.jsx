@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
-import ProjectSidebar from "../components/project/ProjectSidebar";
-import DashboardTab from "../components/project/DashboardTab";
-import MyTasksTab from "../components/project/MyTasksTab";
-import InboxTab from "../components/project/InboxTab";
-import ProjectWidgetTabs from "../components/project/ProjectWidgetTabs";
-import ProjectCreateModal from "../components/project/ProjectCreateModal";
-import { getMyProjects } from "../api/projectApi";
+import ProjectSidebar from "../../components/project/ProjectSidebar";
+import DashboardTab from "../../components/project/DashboardTab";
+import MyTasksTab from "../../components/project/MyTasksTab";
+import InboxTab from "../../components/project/InboxTab";
+import ProjectWidgetTabs from "../../components/project/ProjectWidgetTabs";
+import ProjectCreateModal from "../../components/project/ProjectCreateModal";
+import { getMyProjects } from "../../api/projectApi";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 const TeamProjectPage = () => {

@@ -2,9 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { dracula } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import { HelpCircle } from "lucide-react";
-import StudyMaterialsGuideModal from "../components/StudyMaterialsGuideModal";
+import StudyMaterialsGuideModal from "../../components/studymaterials/StudyMaterialsGuideModal";
 
 const parseStyleString = (styleString) => {
   if (!styleString) return {};

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import ProjectCreateModal from "./ProjectCreateModal";
 import { getMyProjects } from "../../api/projectApi";
 import { LayoutDashboard, ListTodo, Inbox, Plus } from "lucide-react";
-import ProjectGuideModal from "../ProjectGuideModal";
+import ProjectGuideModal from "./ProjectGuideModal";
 import { HelpCircle } from "lucide-react";
 
 const ProjectSidebar = ({

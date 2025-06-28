@@ -11,10 +11,10 @@ from app.routers import document
 
 # ✅ 모델 불러오기
 from app.models import (
+    study_example_models,
+    study_materials_models,
     user,
     email_verification,
-    study_materials,
-    study_example,
     question,
     language,
     user, project_models, task_models

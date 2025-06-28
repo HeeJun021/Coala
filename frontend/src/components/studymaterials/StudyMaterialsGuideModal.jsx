@@ -15,22 +15,22 @@ import {
 
 // Import images dynamically
 const images = [
-  require("../assets/studymaterialsguide/1.png"),
-  require("../assets/studymaterialsguide/2.png"),
-  require("../assets/studymaterialsguide/3.png"),
-  require("../assets/studymaterialsguide/4.png"),
-  require("../assets/studymaterialsguide/5.png"),
-  require("../assets/studymaterialsguide/6.png"),
-  require("../assets/studymaterialsguide/7.png"),
-  require("../assets/studymaterialsguide/8.png"),
-  require("../assets/studymaterialsguide/9.png"),
-  require("../assets/studymaterialsguide/10.png"),
-  require("../assets/studymaterialsguide/11.png"),
-  require("../assets/studymaterialsguide/12.png"),
-  require("../assets/studymaterialsguide/13.png"),
-  require("../assets/studymaterialsguide/14.png"),
-  require("../assets/studymaterialsguide/15.png"),
-  require("../assets/studymaterialsguide/16.png")
+  require("../../assets/studymaterialsguide/1.png"),
+  require("../../assets/studymaterialsguide/2.png"),
+  require("../../assets/studymaterialsguide/3.png"),
+  require("../../assets/studymaterialsguide/4.png"),
+  require("../../assets/studymaterialsguide/5.png"),
+  require("../../assets/studymaterialsguide/6.png"),
+  require("../../assets/studymaterialsguide/7.png"),
+  require("../../assets/studymaterialsguide/8.png"),
+  require("../../assets/studymaterialsguide/9.png"),
+  require("../../assets/studymaterialsguide/10.png"),
+  require("../../assets/studymaterialsguide/11.png"),
+  require("../../assets/studymaterialsguide/12.png"),
+  require("../../assets/studymaterialsguide/13.png"),
+  require("../../assets/studymaterialsguide/14.png"),
+  require("../../assets/studymaterialsguide/15.png"),
+  require("../../assets/studymaterialsguide/16.png")
 ];
 
 const guideSections = {

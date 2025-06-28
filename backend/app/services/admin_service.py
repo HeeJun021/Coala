@@ -4,8 +4,8 @@ from datetime import date, datetime, timedelta
 from app.models.user import User
 from app.models.board import PostReport, CommentReport, Post, Comment, PostLike
 from app.models.language import Language
-from app.models.study_materials import StudyMaterials
-from app.models.studymaterialread import studymaterialreads
+from app.models.study_materials_models import StudyMaterials
+from app.models.studymaterialread_models import studymaterialreads
 from sqlalchemy.types import Date
 from app.schemas.board import PostResponse
 

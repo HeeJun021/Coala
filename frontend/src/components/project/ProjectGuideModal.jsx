@@ -19,14 +19,14 @@ import {
 
 // Import images dynamically
 const images = [
-  require("../assets/projectguide/1.png"),
-  require("../assets/projectguide/2.png"),
-  require("../assets/projectguide/3.png"),
-  require("../assets/projectguide/4.png"),
-  require("../assets/projectguide/5.png"),
-  require("../assets/projectguide/6.png"),
-  require("../assets/projectguide/7.png"),
-  require("../assets/projectguide/8.png"),
+  require("../../assets/projectguide/1.png"),
+  require("../../assets/projectguide/2.png"),
+  require("../../assets/projectguide/3.png"),
+  require("../../assets/projectguide/4.png"),
+  require("../../assets/projectguide/5.png"),
+  require("../../assets/projectguide/6.png"),
+  require("../../assets/projectguide/7.png"),
+  require("../../assets/projectguide/8.png"),
 ];
 
 const guideSections = {

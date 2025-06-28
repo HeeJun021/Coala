@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import Optional
 from app.database import get_db
-from app.models.study_example import StudyExample
+from app.models.study_example_models import StudyExample
 from app.models.language import Language
-from app.models.exampleread import examplereads
+from app.models.exampleread_models import examplereads
 from app.models.user import User
 from app.dependencies.auth import get_current_user  # ✅ JWT 인증 유틸 불러오기
 from sqlalchemy.exc import IntegrityError

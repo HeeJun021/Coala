@@ -30,10 +30,10 @@ import BoardManagementDetailPage from "./admin/BoardManagementDetailPage";
 import { ChatSocketProvider } from "./context/ChatSocketContext";
 
 // 학습자료
-import StudyMaterialsPage from "./pages/StudyMaterialsPage";
-import StudyMaterialsPageDetails from "./pages/StudyMaterialsPageDetails";
-import CodeTestPage from "./pages/CodeTestPage";
-import CodeTestTerminalPage from "./pages/CodeTestTerminalPage";
+import StudyMaterialsPage from "./pages/studymaterials/StudyMaterialsPage";
+import StudyMaterialsPageDetails from "./pages/studymaterials/StudyMaterialsPageDetails";
+import CodeTestPage from "./pages/studymaterials/CodeTestPage";
+import CodeTestTerminalPage from "./pages/studymaterials/CodeTestTerminalPage";
 
 // 퀴즈
 import QuizPage from "./pages/quiz/QuizPage";
@@ -77,7 +77,7 @@ import SelfCodingPage from "./pages/selfcoding/SelfCodingPage";
 import SelfCodingTemplatePage from "./pages/selfcoding/SelfCodingTemplatePage";
 
 // 팀프로젝트
-import TeamProjectPage from "./pages/TeamProjectPage";
+import TeamProjectPage from "./pages/TeamProject/TeamProjectPage";
 import ProjectDocPage from "./pages/ProjectDocPage";
 
 // ERD UI

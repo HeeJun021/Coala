@@ -11,7 +11,7 @@ import "codemirror/mode/python/python";
 
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus, prism } from "react-syntax-highlighter/dist/esm/styles/prism";
-import apiClient from "../api/apiClient";
+import apiClient from "../../api/apiClient";
 
 const CodeTestPage = () => {
   const location = useLocation();
