@@ -1,7 +1,7 @@
 import React from "react";
-import { updateProfileImage } from "../api/userApi"; // 프로필 이미지 변경 API
-import { EucalyptusActions } from "../constants/eucalyptusActions";
-import { getCurrentUser } from "../api/authApi";
+import { updateProfileImage } from "../../api/userApi"; // 프로필 이미지 변경 API
+import { EucalyptusActions } from "../../constants/eucalyptusActions";
+import { getCurrentUser } from "../../api/authApi";
 
 const profileImages = [
   "/assets/koala.jpg",

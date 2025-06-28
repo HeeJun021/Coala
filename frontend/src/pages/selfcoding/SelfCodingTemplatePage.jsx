@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../Layout/Navbar";
+import Navbar from "../../Layout/Navbar";
 
 const templates = [
   { name: "HTML + CSS + JS", emoji: "🌐", description: "기본 웹 페이지용 정적 템플릿", category: "frontend", id: "vanilla" },

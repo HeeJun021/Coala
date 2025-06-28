@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { updateUserInfo } from '../api/userApi';
+import { updateUserInfo } from '../../api/userApi';
 import RatingProgressBar from './RatingProgressBar';
 import SelectProfileModal from './SelectProfileModal'; 
 

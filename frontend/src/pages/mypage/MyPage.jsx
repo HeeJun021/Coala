@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
-import MyPageSidebar from '../Layout/MyPageSideBar';
-import { getCurrentUser } from '../api/authApi';
+import MyPageSidebar from '../../Layout/MyPageSideBar';
+import { getCurrentUser } from '../../api/authApi';
 
 const MyPage = ({ userData, setUserData }) => {
   useEffect(() => {

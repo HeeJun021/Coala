@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { getUserQuizDetail, submitUserQuiz } from "../api/userQuizApi";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { getQuizDetails, submitQuiz } from "../../api/quizApi";
 
-const UserQuizSolvePage = ({ userData }) => {
+const QuizSolvePage = ({ userData }) => {
   const { quizId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const mode = queryParams.get("mode") || "practice";
 
   const [quizData, setQuizData] = useState(null);
   const [answers, setAnswers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const userId = userData?.user_id;
 
@@ -18,8 +21,9 @@ const UserQuizSolvePage = ({ userData }) => {
     const fetchQuiz = async () => {
       try {
         if (!quizId) throw new Error("퀴즈 ID가 없습니다.");
-        const response = await getUserQuizDetail(quizId);
-        console.log("✅ 사용자 퀴즈 데이터:", response);
+
+        const response = await getQuizDetails(quizId);
+        console.log("✅ 퀴즈 데이터 가져오기 성공:", response);
 
         if (!response || !response.questions || response.questions.length === 0) {
           throw new Error("퀴즈 데이터에 질문이 없습니다.");
@@ -28,12 +32,12 @@ const UserQuizSolvePage = ({ userData }) => {
         setQuizData(response);
         setAnswers(
           response.questions.map((q) => ({
-            questionId: q.userquestion_id,
+            questionId: q.question_id,
             userAnswer: "",
           }))
         );
-      } catch (err) {
-        console.error("🚨 퀴즈 데이터 로딩 실패:", err);
+      } catch (error) {
+        console.error("🚨 퀴즈 데이터 로딩 실패:", error);
         setError("퀴즈 데이터를 불러오는 중 오류가 발생했습니다.");
       } finally {
         setLoading(false);
@@ -44,41 +48,48 @@ const UserQuizSolvePage = ({ userData }) => {
   }, [quizId]);
 
   const handleAnswerChange = (questionId, value) => {
-    setAnswers((prev) =>
-      prev.map((a) =>
-        a.questionId === questionId ? { ...a, userAnswer: value } : a
-      )
-    );
+    setAnswers((prevAnswers) => {
+      const updatedAnswers = [...prevAnswers];
+      const index = updatedAnswers.findIndex((a) => a.questionId === questionId);
+
+      if (index !== -1) {
+        updatedAnswers[index].userAnswer = value;
+      } else {
+        updatedAnswers.push({ questionId, userAnswer: value });
+      }
+
+      return updatedAnswers;
+    });
   };
 
-  const handleSubmit = async () => {
+  const handleSubmitQuiz = async () => {
     try {
+      if (!quizData || !quizData.questions) {
+        throw new Error("퀴즈 데이터가 없습니다.");
+      }
+
       if (!userId) {
         alert("로그인이 필요합니다.");
         return;
       }
 
-      const missing = answers.find((a) => !a.userAnswer.trim());
-      if (missing) {
-        alert("모든 문제에 답해주세요.");
+      const missingAnswers = quizData.questions.filter(
+        (q) =>
+          !answers.some((a) => a.questionId === q.question_id && a.userAnswer !== "")
+      );
+
+      if (missingAnswers.length > 0) {
+        alert("모든 문제에 답변해야 합니다.");
         return;
       }
 
       setSubmitting(true);
-      const payload = {
-        user_id: userId,
-        userquiz_id: parseInt(quizId),
-        answers: answers.map((a) => ({
-          question_id: a.questionId,
-          user_answer: a.userAnswer,
-        })),
-      };
-      const result = await submitUserQuiz(payload);
-      console.log("✅ 제출 결과:", result);
+      const result = await submitQuiz(quizId, userId, mode, answers);
+      console.log("✅ 퀴즈 제출 결과:", result);
 
-      navigate(`/user-quiz-result/${result.uq_submission_id}`);
-    } catch (err) {
-      console.error("🚨 제출 실패:", err);
+      navigate(`/quiz-result/${quizId}`);
+    } catch (error) {
+      console.error("🚨 퀴즈 제출 오류:", error);
       alert("퀴즈 제출 중 오류가 발생했습니다.");
     } finally {
       setSubmitting(false);
@@ -95,32 +106,27 @@ const UserQuizSolvePage = ({ userData }) => {
           {quizData.title}
         </h2>
 
-        {quizData.content && (
-          <p className="text-gray-700 text-center text-lg mb-8 whitespace-pre-wrap">
-            {quizData.content}
-          </p>
-        )}
-
         <div className="space-y-6">
-          {quizData.questions.map((q, index) => (
+          {quizData.questions.map((question, index) => (
             <div
-              key={q.userquestion_id}
+              key={question.question_id}
               className="border border-gray-200 shadow-sm rounded-xl p-6"
             >
               <p className="text-lg font-bold text-gray-900 mb-2">
                 문제 {index + 1}
               </p>
-              <p className="text-gray-800 mb-4">{q.question_text}</p>
+              <p className="text-gray-800 mb-4">{question.question_text}</p>
 
               {/* OX 문제 */}
-              {q.question_type === 1 && (
+              {question.question_type === 1 && (
                 <div className="flex gap-4">
-                  {["O", "X"].map((opt) => (
+                  {["O", "X"].map((value) => (
                     <label
-                      key={opt}
-                      className={`flex items-center gap-2 px-4 py-2 border rounded-full cursor-pointer
+                      key={value}
+                      className={`flex items-center gap-2 px-4 py-2 border rounded-full cursor-pointer 
                       ${
-                        answers.find((a) => a.questionId === q.userquestion_id)?.userAnswer === opt
+                        answers.find((a) => a.questionId === question.question_id)?.userAnswer ===
+                        value
                           ? "bg-[#A7DA9B] text-white"
                           : "bg-gray-100"
                       }`}
@@ -128,28 +134,30 @@ const UserQuizSolvePage = ({ userData }) => {
                       <input
                         type="radio"
                         className="hidden"
-                        name={`q-${q.userquestion_id}`}
-                        value={opt}
+                        name={`q-${question.question_id}`}
+                        value={value}
                         checked={
-                          answers.find((a) => a.questionId === q.userquestion_id)?.userAnswer === opt
+                          answers.find((a) => a.questionId === question.question_id)?.userAnswer ===
+                          value
                         }
-                        onChange={() => handleAnswerChange(q.userquestion_id, opt)}
+                        onChange={() => handleAnswerChange(question.question_id, value)}
                       />
-                      {opt}
+                      {value}
                     </label>
                   ))}
                 </div>
               )}
 
               {/* 객관식 문제 */}
-              {q.question_type === 2 && q.choices && (
+              {question.question_type === 2 && (
                 <div className="space-y-2">
-                  {q.choices.map((choice, idx) => (
+                  {question.choices.map((choice, idx) => (
                     <label
                       key={idx}
-                      className={`block px-4 py-2 border rounded-lg cursor-pointer
+                      className={`block px-4 py-2 border rounded-lg cursor-pointer 
                       ${
-                        answers.find((a) => a.questionId === q.userquestion_id)?.userAnswer === choice
+                        answers.find((a) => a.questionId === question.question_id)?.userAnswer ===
+                        choice
                           ? "bg-[#A7DA9B] text-white"
                           : "bg-gray-100"
                       }`}
@@ -157,13 +165,13 @@ const UserQuizSolvePage = ({ userData }) => {
                       <input
                         type="radio"
                         className="hidden"
-                        name={`q-${q.userquestion_id}`}
+                        name={`q-${question.question_id}`}
                         value={choice}
                         checked={
-                          answers.find((a) => a.questionId === q.userquestion_id)?.userAnswer ===
+                          answers.find((a) => a.questionId === question.question_id)?.userAnswer ===
                           choice
                         }
-                        onChange={() => handleAnswerChange(q.userquestion_id, choice)}
+                        onChange={() => handleAnswerChange(question.question_id, choice)}
                       />
                       {choice}
                     </label>
@@ -172,17 +180,15 @@ const UserQuizSolvePage = ({ userData }) => {
               )}
 
               {/* 단답형 문제 */}
-              {q.question_type === 3 && (
+              {question.question_type === 3 && (
                 <input
                   type="text"
-                  className="w-full mt-2 border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#A7DA9B]"
                   placeholder="정답을 입력하세요"
+                  className="w-full mt-2 border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#A7DA9B]"
                   value={
-                    answers.find((a) => a.questionId === q.userquestion_id)?.userAnswer || ""
+                    answers.find((a) => a.questionId === question.question_id)?.userAnswer || ""
                   }
-                  onChange={(e) =>
-                    handleAnswerChange(q.userquestion_id, e.target.value)
-                  }
+                  onChange={(e) => handleAnswerChange(question.question_id, e.target.value)}
                 />
               )}
             </div>
@@ -192,7 +198,7 @@ const UserQuizSolvePage = ({ userData }) => {
         <div className="flex justify-center mt-10">
           <button
             className="px-6 py-2 border border-navbar text-navbar font-semibold rounded-lg hover:bg-[#f1f9f1] transition"
-            onClick={handleSubmit}
+            onClick={handleSubmitQuiz}
             disabled={submitting}
           >
             {submitting ? "제출 중..." : "퀴즈 제출하기"}
@@ -203,4 +209,4 @@ const UserQuizSolvePage = ({ userData }) => {
   );
 };
 
-export default UserQuizSolvePage;
+export default QuizSolvePage;

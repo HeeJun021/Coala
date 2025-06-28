@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import Navbar from "../Layout/Navbar";
-import SelfCodingSidebar from "../components/selfcoding/SelfCodingSidebar";
-import SelfCodingPanel from "../components/selfcoding/SelfCodingPanel";
-import SelfCodingEditorPanel from "../components/selfcoding/SelfCodingEditorPanel";
-import SelfCodingPreviewPanel from "../components/selfcoding/SelfCodingPreviewPanel";
-import { templateDescriptions, templateFiles, getLanguageExtension } from "../data/templateData";
-import "../index.css";
+import Navbar from "../../Layout/Navbar";
+import SelfCodingSidebar from "../../components/selfcoding/SelfCodingSidebar";
+import SelfCodingPanel from "../../components/selfcoding/SelfCodingPanel";
+import SelfCodingEditorPanel from "../../components/selfcoding/SelfCodingEditorPanel";
+import SelfCodingPreviewPanel from "../../components/selfcoding/SelfCodingPreviewPanel";
+import { templateDescriptions, templateFiles, getLanguageExtension } from "../../data/templateData";
+import "../../index.css";
 import Split from "react-split";
-import { getCurrentUser, checkGithubConnection } from "../api/authApi";
-import { getRootCodeFolder, updateCodeFile, getChildFolders, getCodesInFolder } from "../api/codeApi";
+import { getCurrentUser, checkGithubConnection } from "../../api/authApi";
+import { getRootCodeFolder, updateCodeFile, getChildFolders, getCodesInFolder } from "../../api/codeApi";
 
 const SelfCodingPage = () => {
   const location = useLocation();

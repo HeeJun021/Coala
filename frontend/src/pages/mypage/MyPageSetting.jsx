@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import MyPageSidebar from '../Layout/MyPageSideBar';
-import PrivacyCard from '../components/PrivacyCard';
-import NotificationCard from '../components/NotificationCard';
+import PrivacyCard from '../../components/mypage/PrivacyCard';
+import NotificationCard from '../../components/NotificationCard';
 
 const MyPageSetting = () => {
     const { userData } = useOutletContext();

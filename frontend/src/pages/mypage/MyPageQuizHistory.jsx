@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
-import { getUserQuizHistory } from "../api/quizApi";
+import { getUserQuizHistory } from "../../api/quizApi";
 import {
   ScrollText,
   Target,

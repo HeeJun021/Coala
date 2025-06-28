@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { createQuiz } from "../api/quizApi";
-import QuizSideBar from "../Layout/QuizSideBar";
+import { createQuiz } from "../../api/quizApi";
+import QuizSideBar from "../../Layout/QuizSideBar";
 import { CircleCheck, FileText, ListChecks, HelpCircle } from "lucide-react";
-import QuizGuideModal from "../components/quiz/QuizGuideModal";
+import QuizGuideModal from "../../components/quiz/QuizGuideModal";
 
 const TestQuiz = () => {
   const [loading, setLoading] = useState(false);

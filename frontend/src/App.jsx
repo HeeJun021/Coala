@@ -36,21 +36,21 @@ import CodeTestPage from "./pages/CodeTestPage";
 import CodeTestTerminalPage from "./pages/CodeTestTerminalPage";
 
 // 퀴즈
-import QuizPage from "./pages/QuizPage";
-import QuizSolvePage from "./pages/QuizSolvePage";
-import QuizResultPage from "./pages/QuizResultPage";
-import CreateUserQuiz from "./pages/CreateUserQuiz";
-import UserQuizSolvePage from "./pages/UserQuizSolvePage";
-import UserQuizResultPage from "./pages/UserQuizResultPage";
+import QuizPage from "./pages/quiz/QuizPage";
+import QuizSolvePage from "./pages/quiz/QuizSolvePage";
+import QuizResultPage from "./pages/quiz/QuizResultPage";
+import CreateUserQuiz from "./pages/quiz/CreateUserQuiz";
+import UserQuizSolvePage from "./pages/quiz/UserQuizSolvePage";
+import UserQuizResultPage from "./pages/quiz/UserQuizResultPage";
 
 // 마이페이지
-import MyPage from "./pages/MyPage";
-import MyPageModify from "./pages/MyPageModify";
-import MyPageSetting from "./pages/MyPageSetting";
-import MyPageQuizHistory from "./pages/MyPageQuizHistory";
-import MyPageUserQuizHistory from "./pages/MyPageUserQuizHistory";
-import MyPageCTHistory from "./pages/MyPageCTHistory";
-import MyPageCommunity from "./pages/MyPageCommunity";
+import MyPage from "./pages/mypage/MyPage";
+import MyPageModify from "./pages/mypage/MyPageModify";
+import MyPageSetting from "./pages/mypage/MyPageSetting";
+import MyPageQuizHistory from "./pages/mypage/MyPageQuizHistory";
+import MyPageUserQuizHistory from "./pages/mypage/MyPageUserQuizHistory";
+import MyPageCTHistory from "./pages/mypage/MyPageCTHistory";
+import MyPageCommunity from "./pages/mypage/MyPageCommunity";
 
 // 인증
 import Signup from "./pages/Signup";
@@ -73,8 +73,8 @@ import BoardEditPage from "./pages/BoardEditPage";
 import ProjectApplicantsPage from "./pages/ProjectApplicantsPage";
 
 // 자율학습
-import SelfCodingPage from "./pages/SelfCodingPage";
-import SelfCodingTemplatePage from "./pages/SelfCodingTemplatePage";
+import SelfCodingPage from "./pages/selfcoding/SelfCodingPage";
+import SelfCodingTemplatePage from "./pages/selfcoding/SelfCodingTemplatePage";
 
 // 팀프로젝트
 import TeamProjectPage from "./pages/TeamProjectPage";

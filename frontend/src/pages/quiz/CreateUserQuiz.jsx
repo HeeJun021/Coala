@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { createUserQuiz } from "../api/userQuizApi";
-import UserQuizDialog from "../components/UserQuizDialog";
-import { Plus, Trash2 } from "lucide-react";
+import { createUserQuiz } from "../../api/userQuizApi";
+import UserQuizDialog from "../../components/quiz/UserQuizDialog";
+import { Trash2 } from "lucide-react";
 
 const CreateUserQuiz = ({ userData }) => {
   const [quizTitle, setQuizTitle] = useState("");

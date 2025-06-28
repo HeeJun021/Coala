@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { getAllUserQuizzes } from "../api/userQuizApi";
-import QuizSideBar from "../Layout/QuizSideBar";
+import { getAllUserQuizzes } from "../../api/userQuizApi";
+import QuizSideBar from "../../Layout/QuizSideBar";
 import { FaSearch, FaTimes } from "react-icons/fa";
 import { HelpCircle } from "lucide-react";
-import QuizGuideModal from "../components/quiz/QuizGuideModal";
+import QuizGuideModal from "../../components/quiz/QuizGuideModal";
 
 const UserQuiz = ({ userData }) => {
   const navigate = useNavigate();

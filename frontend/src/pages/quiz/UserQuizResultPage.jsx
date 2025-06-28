@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getUserQuizResult } from "../api/userQuizApi";
+import { getUserQuizResult } from "../../api/userQuizApi";
 
 const UserQuizResultPage = ({ userData }) => {
   const { uq_submission_id } = useParams();

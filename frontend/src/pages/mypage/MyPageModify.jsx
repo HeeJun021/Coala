@@ -1,9 +1,9 @@
 import React from 'react';
 import { useOutletContext } from 'react-router-dom';
-import ProfileCard from '../components/ProfileCard';
-import InfoCard from '../components/InfoCard';
-import DeleteAccountDialog from '../components/DeleteAccountDialog';
-import { deleteUser, logoutUser } from '../api/authApi';
+import ProfileCard from '../../components/mypage/ProfileCard';
+import InfoCard from '../../components/mypage/InfoCard';
+import DeleteAccountDialog from '../../components/mypage/DeleteAccountDialog';
+import { deleteUser, logoutUser } from '../../api/authApi';
 
 const MyPageModify = () => {
   const { userData, setUserData } = useOutletContext();

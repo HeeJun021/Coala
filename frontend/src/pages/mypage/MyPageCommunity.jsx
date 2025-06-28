@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
-import { getMyPosts, getMyComments } from "../api/boardApi";
+import { getMyPosts, getMyComments } from "../../api/boardApi";
 import {
   CalendarClock,
 } from "lucide-react";

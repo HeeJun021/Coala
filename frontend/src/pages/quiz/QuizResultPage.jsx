@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getQuizResult } from "../api/quizApi";
+import { getQuizResult } from "../../api/quizApi";
 import { ShieldCheck, Lightbulb, ChevronLeft } from "lucide-react";
 
 const QuizResultPage = ({ userData }) => {
