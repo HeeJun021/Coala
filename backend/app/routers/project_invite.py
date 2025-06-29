@@ -47,7 +47,7 @@ def reject_project_invitation(
     current_user: User = Depends(get_current_user),
 ):
     # 요청방 찾기 (초대방, 1:1)
-    from app.models.chat import ChatRoom, ChatRoomParticipant
+    from app.models.chat_models import ChatRoom, ChatRoomParticipant
 
     invite_room = (
         db.query(ChatRoom)

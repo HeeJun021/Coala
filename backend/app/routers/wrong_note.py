@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models.coding_tests import WrongNote, CodingTestSubmissions
-from app.schemas.coding_tests import WrongNoteCreate, WrongNoteResponse, WrongNoteUpdate
+from app.models.coding_tests_models import WrongNote, CodingTestSubmissions
+from app.schemas.coding_tests_schema import WrongNoteCreate, WrongNoteResponse, WrongNoteUpdate
 from datetime import datetime
 from fastapi import Path
 

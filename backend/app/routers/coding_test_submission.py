@@ -3,10 +3,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from typing import Dict
-from app.models.coding_tests import CorrectSubmissionStats, CodingTestSubmissions, CodingTestSubmissions, CodingTests
+from app.models.coding_tests_models import CorrectSubmissionStats, CodingTestSubmissions, CodingTestSubmissions, CodingTests
 from fastapi import APIRouter, Depends, HTTPException
 from app.database import get_db
-from app.schemas.coding_tests import SubmissionTitleUpdate, SubmissionStatsResponse
+from app.schemas.coding_tests_schema import SubmissionTitleUpdate, SubmissionStatsResponse
 from app.routers.auth import get_current_user
 from sqlalchemy import func
 from pytz import timezone  # ⬅️ 추가

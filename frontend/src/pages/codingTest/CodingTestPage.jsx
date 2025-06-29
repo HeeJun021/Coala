@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { getCodingTestList } from "../api/codingTestApi";
-import { useAuth } from "../context/AuthContext";
+import { getCodingTestList } from "../../api/codingTestApi";
+import { useAuth } from "../../context/AuthContext";
 import {
   ListChecks,
   FileCode,

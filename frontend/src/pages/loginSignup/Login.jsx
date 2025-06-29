@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, ChevronLeft } from "lucide-react";
-import { loginUser } from "../api/authApi";
-import SocialLogin from "../components/SocialLogin"; // ✅ 추가
+import { loginUser } from "../../api/authApi";
+import SocialLogin from "../../components/SocialLogin"; // ✅ 추가
 
 const Login = () => {
   const [email, setEmail] = useState("");

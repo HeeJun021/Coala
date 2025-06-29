@@ -53,24 +53,24 @@ import MyPageCTHistory from "./pages/mypage/MyPageCTHistory";
 import MyPageCommunity from "./pages/mypage/MyPageCommunity";
 
 // 인증
-import Signup from "./pages/Signup";
-import Login from "./pages/Login";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
+import Signup from "./pages/loginSignup/Signup";
+import Login from "./pages/loginSignup/Login";
+import ForgotPassword from "./pages/loginSignup/ForgotPassword";
+import ResetPassword from "./pages/loginSignup/ResetPassword";
 
 // 코딩 테스트
-import CodingTestPage from "./pages/CodingTestPage";
-import CodingTestDetailPage from "./pages/CodingTestDetailPage";
-import CorrectSolutionsPage from "./pages/CorrectSolutionsPage";
-import MyCodingTestSubmissionsPage from "./pages/MyCodingTestSubmissionsPage";
+import CodingTestPage from "./pages/codingTest/CodingTestPage";
+import CodingTestDetailPage from "./pages/codingTest/CodingTestDetailPage";
+import CorrectSolutionsPage from "./pages/codingTest/CorrectSolutionsPage";
+import MyCodingTestSubmissionsPage from "./pages/codingTest/MyCodingTestSubmissionsPage";
 
 // 게시판
 import "@toast-ui/editor/dist/toastui-editor.css";
-import BoardPage from "./pages/BoardPage";
-import BoardDetailPage from "./pages/BoardDetailPage";
-import BoardWritePage from "./pages/BoardWritePage";
-import BoardEditPage from "./pages/BoardEditPage";
-import ProjectApplicantsPage from "./pages/ProjectApplicantsPage";
+import BoardPage from "./pages/board/BoardPage";
+import BoardDetailPage from "./pages/board/BoardDetailPage";
+import BoardWritePage from "./pages/board/BoardWritePage";
+import BoardEditPage from "./pages/board/BoardEditPage";
+import ProjectApplicantsPage from "./pages/board/ProjectApplicantsPage";
 
 // 자율학습
 import SelfCodingPage from "./pages/selfcoding/SelfCodingPage";
@@ -78,10 +78,10 @@ import SelfCodingTemplatePage from "./pages/selfcoding/SelfCodingTemplatePage";
 
 // 팀프로젝트
 import TeamProjectPage from "./pages/project/TeamProjectPage";
-import ProjectDocPage from "./pages/ProjectDocPage";
+import ProjectDocPage from "./pages/project/Doc/ProjectDocPage";
 
 // ERD UI
-import ErdPage from "./pages/ErdPage";
+import ErdPage from "./pages/erd/ErdPage";
 
 const observerError = /ResizeObserver loop completed/;
 window.addEventListener("error", (e) => {

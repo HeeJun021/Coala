@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import SubmissionStatsPanel from "../components/CodingTest/my_summit/SubmissionStatsPanel";
-import SubmissionListTable from "../components/CodingTest/my_summit/SubmissionListTable";
-import SubmissionStatsChart from "../components/CodingTest/my_summit/SubmissionStatsChart";
-import { getSubmissionStats, getAllSubmissionsByUser } from "../api/codingTestApi";
-import { useAuth } from "../context/AuthContext";
+import SubmissionStatsPanel from "../../components/CodingTest/my_summit/SubmissionStatsPanel";
+import SubmissionListTable from "../../components/CodingTest/my_summit/SubmissionListTable";
+import SubmissionStatsChart from "../../components/CodingTest/my_summit/SubmissionStatsChart";
+import { getSubmissionStats, getAllSubmissionsByUser } from "../../api/codingTestApi";
+import { useAuth } from "../../context/AuthContext";
 
 const MyCodingTestSubmissionsPage = () => {
   const [stats, setStats] = useState(null);

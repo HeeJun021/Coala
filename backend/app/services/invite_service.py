@@ -2,9 +2,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 from fastapi import HTTPException
 from app.models.project_models import Project, ProjectMembers
-from app.models.notification import Notification
+from app.models.notification_models import Notification
 from app.models.user import User
-from app.models.chat import ChatRoom, ChatRoomParticipant, ChatMessage
+from app.models.chat_models import ChatRoom, ChatRoomParticipant, ChatMessage
 from sqlalchemy.dialects.postgresql import insert
 from app.models.user import UserFollow
 from typing import Optional

@@ -3,9 +3,9 @@ from typing import List
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.database import get_db
-from app.models.gpt import GptSession, GptMessage
+from app.models.gpt_models import GptSession, GptMessage
 from app.models.user import User
-from app.schemas.gpt import (
+from app.schemas.gpt_schema import (
     GptSessionCreate,
     GptMessageCreate,
     GptMessageResponse,

@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.models.erd import ErdTables, ErdColumns, ErdRelations
+from app.models.erd_models import ErdTables, ErdColumns, ErdRelations
 
 def export_erd_state_to_json(erd_id: int, db: Session) -> dict:
     # ✅ 1. 테이블 조회

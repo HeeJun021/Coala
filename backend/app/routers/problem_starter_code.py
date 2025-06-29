@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Path, Depends
 from sqlalchemy.orm import Session
-from app.schemas.coding_tests import ProblemStarterCodeResponse
-from app.models.coding_tests import problemstartercode
+from app.schemas.coding_tests_schema import ProblemStarterCodeResponse
+from app.models.coding_tests_models import problemstartercode
 from app.database import get_db
 
 router = APIRouter()

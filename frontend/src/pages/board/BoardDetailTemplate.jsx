@@ -1,10 +1,10 @@
 import React, {useState} from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { dracula } from "react-syntax-highlighter/dist/esm/styles/prism";
-import CommentEditor from "../components/CommentEditor";
+import CommentEditor from "../../components/board/Comment/CommentEditor";
 import apiClient from "../../api/apiClient";
 import { useAuth } from "../../context/AuthContext";
-import UserNameWithProfile from "../components/UserNameWithProfile";
+import UserNameWithProfile from "../../components/board/profcard/UserNameWithProfile";
 import AlertModal from "../../components/AlertModal";
 import {
   Heart,

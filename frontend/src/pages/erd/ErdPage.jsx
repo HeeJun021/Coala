@@ -4,12 +4,12 @@ import {
   getErdDetail,
   undoErdSnapshot,
   redoErdSnapshot,
-} from "../api/erd/erdDetailApi";
-import ErdHeader from "../components/erd/canvas/ErdHeader";
-import ErdListSidebar from "../components/erd/canvas/ErdListSidebar";
-import ErdCanvas from "../components/erd/canvas/ErdCanvas";
-import CodeGeneratorPanel from "../components/erd/CodeGeneratorPanel";
-import Toast from "../components/Toast";
+} from "../../api/erd/erdDetailApi";
+import ErdHeader from "../../components/erd/canvas/ErdHeader";
+import ErdListSidebar from "../../components/erd/canvas/ErdListSidebar";
+import ErdCanvas from "../../components/erd/canvas/ErdCanvas";
+import CodeGeneratorPanel from "../../components/erd/CodeGeneratorPanel";
+import Toast from "../../components/Toast";
 
 const ErdPage = () => {
   const { erdId } = useParams();
