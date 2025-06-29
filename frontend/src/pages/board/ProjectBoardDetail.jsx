@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { deleteBoard } from "../api/boardApi";
-import { likeBoard, unlikeBoard } from "../api/likeApi";
-import { reportBoard } from "../api/reportApi";
-import ApplyModal from "../components/ApplyModal";
+import { deleteBoard } from "../../api/boardApi";
+import { likeBoard, unlikeBoard } from "../../api/likeApi";
+import { reportBoard } from "../../api/reportApi";
+import ApplyModal from "../../components/ApplyModal";
 
 import {
   Heart,

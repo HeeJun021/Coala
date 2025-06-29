@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getBoardDetail, deleteBoard } from "../api/boardApi";
-import { getComments, createComment } from "../api/commentApi";
-import { likeBoard, unlikeBoard, checkLiked, likeComment, unlikeComment, checkCommentLiked } from "../api/likeApi";
-import { reportBoard, reportComment } from "../api/reportApi";
-import { useAuth } from "../context/AuthContext";
-import { deleteComment } from "../api/commentApi";
+import { getBoardDetail, deleteBoard } from "../../api/boardApi";
+import { getComments, createComment } from "../../api/commentApi";
+import { likeBoard, unlikeBoard, checkLiked, likeComment, unlikeComment, checkCommentLiked } from "../../api/likeApi";
+import { reportBoard, reportComment } from "../../api/reportApi";
+import { useAuth } from "../../context/AuthContext";
+import { deleteComment } from "../../api/commentApi";
 
 
 import CommonBoardDetail from "./CommonBoardDetail";

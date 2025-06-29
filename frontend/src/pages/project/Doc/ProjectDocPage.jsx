@@ -2,9 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import TiptapEditor from "../components/project/TiptapEditorWithPagination";
+import TiptapEditor from "../../../components/project/TiptapEditorWithPagination";
 import { ChevronLeft } from "lucide-react";
-import { getDocument, updateDocument } from "../api/documentApi";
+import { getDocument, updateDocument } from "../../../api/documentApi";
 
 const ProjectDocPage = () => {
   const { id, docId } = useParams();

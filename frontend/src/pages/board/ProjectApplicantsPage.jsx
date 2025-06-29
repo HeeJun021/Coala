@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   getProjectApplicants,
   updateApplicantStatus,
-} from "../api/boardApi";
+} from "../../api/boardApi";
 
 const ProjectApplicantsPage = () => {
   const { postId } = useParams();

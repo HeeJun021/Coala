@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import MiniProfileCard from "../../MiniProfileCard";
+import MiniProfileCard from "./MiniProfileCard";
 import useUserProfile from "../../../hooks/useUserProfile";
 
 const UserNameWithProfile = ({ userId, nickname }) => {

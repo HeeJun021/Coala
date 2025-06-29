@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getBoardDetail, updateBoard } from "../api/boardApi";
+import { getBoardDetail, updateBoard } from "../../api/boardApi";
 import { Editor } from "@toast-ui/react-editor";
 import "@toast-ui/editor/dist/toastui-editor.css";
 
