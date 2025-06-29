@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
-from app.schemas.question import QuestionResponse, QuestionResult
+from app.schemas.question_schema import QuestionResponse, QuestionResult
 
 class QuizBase(BaseModel):
     title: str

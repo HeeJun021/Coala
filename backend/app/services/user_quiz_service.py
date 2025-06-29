@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm import aliased
 from fastapi import HTTPException
 
-from app.models.user_quiz import (
+from app.models.user_quiz_models import (
     Userquizzes,
     Userquestions,
     Userquizassignments,
@@ -11,7 +11,7 @@ from app.models.user_quiz import (
     Userquizsubmissiondetails,
 )
 from app.models.user import User
-from app.schemas.user_quiz import (
+from app.schemas.user_quiz_schema import (
     UserQuizCreate,
     UserQuizCreateResponse,
     UserQuizDetail,

@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
-from app.models.question import Question
-from app.schemas.question import QuestionCreate, QuestionResponse
+from app.models.question_models import Question
+from app.schemas.question_schema import QuestionCreate, QuestionResponse
 
 def get_all_questions(db: Session):
     return db.query(Question).all()

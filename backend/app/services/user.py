@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
 from typing import Optional
 from app.models.user import User
-from app.models.eucalyptus_transaction import EucalyptusTransaction
+from app.models.eucalyptus_transaction_models import EucalyptusTransaction
 from app.schemas.user import UserUpdateSchema
 from app.schemas.eucalyptus_schema import RewardActionType, UseActionType
 from fastapi import HTTPException

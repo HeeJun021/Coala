@@ -8,7 +8,7 @@ from app.models.board import (
     ProjectApplicant
 )
 from app.models.user import User
-from app.models.code import Code, CodeFolder, CodeFolderMapping
+from app.models.code_models import Code, CodeFolder, CodeFolderMapping
 from app.schemas.board import (
     PostCreate, PostResponse,
     CommentCreate, CommentResponse,

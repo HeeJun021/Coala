@@ -2,9 +2,9 @@
 
 from sqlalchemy.orm import Session
 from typing import List
-from app.models.code import CodeFolder, Code, CodeFolderMapping
+from app.models.code_models import CodeFolder, Code, CodeFolderMapping
 from app.models.user import User
-from app.schemas.code import CodeCreate, CodeResponse, CodeUpdate
+from app.schemas.code_schema import CodeCreate, CodeResponse, CodeUpdate
 from datetime import datetime
 from fastapi import HTTPException
 

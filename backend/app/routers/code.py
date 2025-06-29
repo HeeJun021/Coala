@@ -5,9 +5,9 @@ from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
 from app.models.user import User
-from app.models.code import CodeFolderMapping
+from app.models.code_models import CodeFolderMapping
 from app.routers.auth import get_current_user
-from app.schemas.code import CodeFolderResponse, CodeFolderCreate, CodeCreate, CodeResponse, CodeUpdate, CodeTitleUpdate, FolderRename
+from app.schemas.code_schema import CodeFolderResponse, CodeFolderCreate, CodeCreate, CodeResponse, CodeUpdate, CodeTitleUpdate, FolderRename
 from app.services.code import (
     get_or_create_root_folder,
     create_child_folder,

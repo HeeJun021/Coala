@@ -1,9 +1,9 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
-from app.models.quiz import Quiz, QuizSetting, QuizAssignment
-from app.schemas.quiz import QuizResponse
-from app.schemas.question import QuestionResponse
-from app.models.question import Question
+from app.models.quiz_models import Quiz, QuizSetting, QuizAssignment
+from app.schemas.quiz_schema import QuizResponse
+from app.schemas.question_schema import QuestionResponse
+from app.models.question_models import Question
 from app.utils.quiz import check_answer 
 from app.services.user import reward_user_by_action
 from app.schemas.eucalyptus_schema import RewardActionType

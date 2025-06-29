@@ -1,8 +1,9 @@
+from app.services import question as question_service
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.services import admin_service, question as question_service
-from app.schemas.question import QuestionCreate
+from app.services import admin_service
+from app.schemas.question_schema import QuestionCreate
 from app.schemas.admin_user import UserDetailResponse, UserSummary
 from app.schemas.board import PostResponse
 from app.services.admin_service import get_user_detail_by_id, get_all_users_with_stats

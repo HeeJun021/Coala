@@ -4,10 +4,10 @@ from typing import List
 
 from app.database import get_db
 from app.services.quiz import get_all_quizzes, get_quiz, create_quiz
-from app.models.question import Question
-from app.models.quiz import Quiz, QuizSubmissions, QuizSubmissionDetails
-from app.schemas.quiz import QuizCreate, QuizResponse, QuizResultResponse, QuizSubmissionRequest
-from app.schemas.question import QuestionResult
+from app.models.question_models import Question
+from app.models.quiz_models import Quiz, QuizSubmissions, QuizSubmissionDetails
+from app.schemas.quiz_schema import QuizCreate, QuizResponse, QuizResultResponse, QuizSubmissionRequest
+from app.schemas.question_schema import QuestionResult
 from app.utils.quiz import check_answer 
 from app.models.user import User
 from app.schemas.eucalyptus_schema import RewardActionType
