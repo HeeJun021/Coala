@@ -5,9 +5,9 @@ from app.database import get_db
 from app.services import admin_service
 from app.schemas.question_schema import QuestionCreate
 from app.schemas.admin_user import UserDetailResponse, UserSummary
-from app.schemas.board import PostResponse
+from app.schemas.board_schema import PostResponse
 from app.services.admin_service import get_user_detail_by_id, get_all_users_with_stats
-from app.services import board_service
+from app.services import board
 from typing import List
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
@@ -70,7 +70,7 @@ def get_all_posts(board_type: str = Query(...), db: Session = Depends(get_db)):
 
 @router.delete("/posts/{post_id}", response_model=dict)
 def admin_delete_post(post_id: int, db: Session = Depends(get_db)):
-    board_service.delete_post(post_id, db)
+    board.delete_post(post_id, db)
     return {"message": "게시글이 삭제되었습니다."}
 
 # ✅ 학습자료 제목 + 완료 수 조회 라우터 추가

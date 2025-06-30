@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models.document import ProjectDocument
-from app.schemas.document import DocumentCreate, DocumentUpdate, DocumentResponse
+from app.models.document_models import ProjectDocument
+from app.schemas.document_schema import DocumentCreate, DocumentUpdate, DocumentResponse
 
 router = APIRouter(prefix="/projects", tags=["문서"])
 

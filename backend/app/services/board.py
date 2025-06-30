@@ -1,7 +1,7 @@
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
-from app.models.board import (
+from app.models.board_models import (
     Post, Comment,
     PostLike, CommentLike,
     PostReport, CommentReport,
@@ -9,7 +9,7 @@ from app.models.board import (
 )
 from app.models.user import User
 from app.models.code_models import Code, CodeFolder, CodeFolderMapping
-from app.schemas.board import (
+from app.schemas.board_schema import (
     PostCreate, PostResponse,
     CommentCreate, CommentResponse,
     PostLikeCreate, CommentLikeCreate,
