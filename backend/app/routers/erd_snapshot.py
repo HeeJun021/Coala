@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from sqlalchemy import text
 from app.database import get_db
-from app.models.erd import (
+from app.models.erd_models import (
     Erds,
     ErdSnapshot,
     ErdTables,
@@ -11,7 +11,7 @@ from app.models.erd import (
     ErdRelations,
     ErdActivityLogs,
 )
-from app.schemas.erd import SnapshotResponse  # ✅ 응답 스키마 추가
+from app.schemas.erd_schema import SnapshotResponse  # ✅ 응답 스키마 추가
 from app.routers.erd_detail import get_erd_detail
 from app.dependencies.auth import get_current_user
 from app.models.user import User

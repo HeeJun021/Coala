@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 
 from app.database import get_db
-from app.schemas.user_quiz import (
+from app.schemas.user_quiz_schema import (
     UserQuizCreate,
     UserQuizCreateResponse,
     UserQuizDetail,

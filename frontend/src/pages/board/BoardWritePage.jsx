@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { Editor } from "@toast-ui/react-editor";
-import { useAuth } from "../context/AuthContext";
-import { createBoard } from "../api/boardApi";
+import { useAuth } from "../../context/AuthContext";
+import { createBoard } from "../../api/boardApi";
 import "@toast-ui/editor/dist/toastui-editor.css";
 
 const BoardWritePage = () => {

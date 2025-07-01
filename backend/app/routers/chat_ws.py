@@ -5,7 +5,7 @@ from typing import Optional
 
 from app.services.connection_manager import ConnectionManager
 from app.database import get_db
-from app.models.chat import ChatMessage, ChatMessageRead
+from app.models.chat_models import ChatMessage, ChatMessageRead
 from app.dependencies.auth import get_user_from_token
 
 from starlette.datastructures import Headers

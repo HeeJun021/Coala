@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import MiniProfileCard from "./MiniProfileCard";
-import useUserProfile from "../hooks/useUserProfile";
+import useUserProfile from "../../../hooks/useUserProfile";
 
 const UserNameWithProfile = ({ userId, nickname }) => {
   const [showProfile, setShowProfile] = useState(false);

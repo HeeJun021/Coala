@@ -7,12 +7,12 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from typing import List, Optional
 from app.database import get_db
-from app.models.chat import ChatRoom, ChatRoomParticipant, ChatMessage, ChatMessageRead
+from app.models.chat_models import ChatRoom, ChatRoomParticipant, ChatMessage, ChatMessageRead
 from app.models.project_models import ProjectMembers  # 🔥 추가 필요
 from app.models.user import UserFollow
 from app.models.user import User
 from app.dependencies.auth import get_current_user
-from app.schemas.chat import (
+from app.schemas.chat_schema import (
     ChatRoomCreateRequest,
     ChatRoomCreateResponse,
     ChatParticipant,

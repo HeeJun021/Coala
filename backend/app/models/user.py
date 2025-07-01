@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, String, Boolean, Date, ForeignKey, TIMESTAMP, Text, event
 from sqlalchemy.orm import relationship, Session
 from app.database import Base
-from app.models.user_tier import UserTier
-from app.models.eucalyptus_transaction import EucalyptusTransaction
+from app.models.user_tier_models import UserTier
+from app.models.eucalyptus_transaction_models import EucalyptusTransaction
 from sqlalchemy.sql import func  # ✅ TIMESTAMP 기본값을 위한 `func.now()` 추가
 from app.schemas.eucalyptus_schema import ActionType
 

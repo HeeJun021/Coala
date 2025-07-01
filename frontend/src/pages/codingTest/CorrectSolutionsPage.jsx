@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { FaUserCircle } from "react-icons/fa";
 import { Eye, RotateCw } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import { useParams, useNavigate } from "react-router-dom";
-import { getCorrectSolutions, getCodingTestDetail } from "../api/codingTestApi";
+import { getCorrectSolutions, getCodingTestDetail } from "../../api/codingTestApi";
 import Editor from "react-simple-code-editor";
 import Prism from "prismjs";
 import "prismjs/components/prism-javascript";

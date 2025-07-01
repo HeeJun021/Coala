@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.database import get_db
-from app.models.erd import Erds, ErdTables
+from app.models.erd_models import Erds, ErdTables
 from app.models.user import User
-from app.schemas.erd import ErdCreate, ErdResponse
+from app.schemas.erd_schema import ErdCreate, ErdResponse
 from app.dependencies.auth import get_current_user
 from datetime import datetime
 

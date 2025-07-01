@@ -6,7 +6,7 @@ from app.database import get_db
 from typing import Optional
 from sqlalchemy import func
 from datetime import datetime
-from app.models.coding_tests import (
+from app.models.coding_tests_models import (
     CodingTests,
     CodingTestSubmissions,
     CodingTestCases,
@@ -18,7 +18,7 @@ from app.schemas.eucalyptus_schema import RewardActionType
 from app.models.user import User
 from app.utils.auth import get_current_user_object
 from app.routers.coding_test_submission import update_correct_stats
-from app.schemas.coding_tests import CodingTestSubmissionCreate, SolutionViewRequest
+from app.schemas.coding_tests_schema import CodingTestSubmissionCreate, SolutionViewRequest
 from app.services.coding_test_case_service import get_testcases
 from app.services.code_executor import run_code_against_testcases
 from app.services.user import reward_user_by_action

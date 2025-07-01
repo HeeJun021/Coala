@@ -1,13 +1,14 @@
+from fastapi import HTTPException
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func, desc, literal, text, literal_column, select, union_all, func, cast
+from sqlalchemy import func, desc, literal, text, literal_column, select, union_all, cast
 from datetime import date, datetime, timedelta
 from app.models.user import User
-from app.models.board import PostReport, CommentReport, Post, Comment, PostLike
+from app.models.board_models import PostReport, CommentReport, Post, Comment, PostLike
 from app.models.language import Language
 from app.models.study_materials_models import StudyMaterials
 from app.models.studymaterialread_models import studymaterialreads
 from sqlalchemy.types import Date
-from app.schemas.board import PostResponse
+from app.schemas.board_schema import PostResponse
 
 def get_dashboard_summary(db: Session) -> dict:
     user_count = db.query(func.count(User.user_id)).scalar()

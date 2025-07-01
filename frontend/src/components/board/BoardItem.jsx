@@ -1,6 +1,6 @@
 import React from "react";
 import { FaHeart, FaRegComment } from "react-icons/fa";
-import { BOARD_TYPES } from "../constants/boardConstants";
+import { BOARD_TYPES } from "../../constants/boardConstants";
 import { MdOutlinePhoto } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 

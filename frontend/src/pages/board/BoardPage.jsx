@@ -1,7 +1,7 @@
 import React from "react";
 import { useParams } from "react-router-dom";
-import BoardSidebar from "../components/BoardSidebar";
-import BoardList from "../components/BoardList";
+import BoardSidebar from "../../components/board/BoardSidebar";
+import BoardList from "../../components/board/BoardList";
 
 const BoardPage = () => {
   const { boardType } = useParams();

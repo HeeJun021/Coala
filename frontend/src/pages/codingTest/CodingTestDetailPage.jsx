@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useParams } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 
 // 🖍️ PrismJS (코드 하이라이트 + 라인 넘버)
 import Prism from "prismjs";
@@ -22,23 +22,23 @@ import {
   runCodeWithTestcases,
   submitCode,
   checkHasSolved,
-} from "../api/codingTestApi";
+} from "../../api/codingTestApi";
 
 // 🧩 컴포넌트
-import ResultModal from "../components/CodingTest/modal/ResultModal";
-import WrongNoteEditor from "../components/WrongNoteEditor";
+import ResultModal from "../../components/CodingTest/modal/ResultModal";
+import WrongNoteEditor from "../../components/WrongNoteEditor";
 
 // 🎨 스타일
 import "react-resizable/css/styles.css";
-import "../index.css";
+import "../../index.css";
 
 // 리팩토링 임포트
-import CodingTestHeader from "../components/CodingTest/CodingTestHeader";
-import CodingTestTabMenu from "../components/CodingTest/CodingTestTabMenu";
-import CodingTestProblemInfo from "../components/CodingTest/CodingTestProblemInfo";
-import CodingTestSubmissionList from "../components/CodingTest/CodingTestSubmissionList";
-import CodingTestEditorPanel from "../components/CodingTest/CodingTestEditorPanel";
-import CodingTestFooterButtons from "../components/CodingTest/CodingTestFooterButtons";
+import CodingTestHeader from "../../components/CodingTest/CodingTestHeader";
+import CodingTestTabMenu from "../../components/CodingTest/CodingTestTabMenu";
+import CodingTestProblemInfo from "../../components/CodingTest/CodingTestProblemInfo";
+import CodingTestSubmissionList from "../../components/CodingTest/CodingTestSubmissionList";
+import CodingTestEditorPanel from "../../components/CodingTest/CodingTestEditorPanel";
+import CodingTestFooterButtons from "../../components/CodingTest/CodingTestFooterButtons";
 
 const CodingTestDetailPage = () => {
   const { user } = useAuth();

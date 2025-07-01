@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.models.coding_tests import CodingTestCases
+from app.models.coding_tests_models import CodingTestCases
 
 def get_testcases(db: Session, test_id: int, type: str):
     query = db.query(CodingTestCases).filter(CodingTestCases.test_id == test_id)

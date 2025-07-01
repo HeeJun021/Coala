@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.routers.auth import get_current_user
 from app.services.code import get_codes_in_folder
-from app.models.code import CodeFolderMapping, Code  # ← 이 줄 추가
+from app.models.code_models import CodeFolderMapping, Code  # ← 이 줄 추가
 import re, traceback, tempfile, subprocess, shutil
 
 

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import CommentForm from "./CommentForm";
-import UserNameWithProfile from "../UserNameWithProfile"; // ✅ 경로는 실제 위치에 맞게 조정하세요
+import UserNameWithProfile from "../profcard/UserNameWithProfile"; // ✅ 경로는 실제 위치에 맞게 조정하세요
 
 const CommentItem = ({ comment, onReply, onEdit, onDelete, onReport }) => {
   const [isReplying, setIsReplying] = useState(false);

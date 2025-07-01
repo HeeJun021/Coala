@@ -4,8 +4,8 @@ import BoardItem from "./BoardItem";
 import BoardSearchBar from "./BoardSearchBar";
 import BoardSortDropdown from "./BoardSortDropdown";
 import Pagination from "./Pagination";
-import { BOARD_TYPES } from "../constants/boardConstants";
-import { getBoardList } from "../api/boardApi";
+import { BOARD_TYPES } from "../../constants/boardConstants";
+import { getBoardList } from "../../api/boardApi";
 
 const BoardList = ({ boardType }) => {
   const [posts, setPosts] = useState([]);

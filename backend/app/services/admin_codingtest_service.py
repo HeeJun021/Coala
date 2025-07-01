@@ -1,7 +1,7 @@
 # admin_codingtest_service.py
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
-from app.models.coding_tests import (
+from app.models.coding_tests_models import (
     CodingTests,
     CodingTestCases,
     CodingTestConstraints,

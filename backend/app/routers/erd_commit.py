@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import update
 from app.database import get_db
-from app.models.erd import Erds, ErdSnapshot, ErdActivityLogs
+from app.models.erd_models import Erds, ErdSnapshot, ErdActivityLogs
 from app.routers.erd_detail import get_erd_detail
 from app.dependencies.auth import get_current_user
 from app.models.user import User

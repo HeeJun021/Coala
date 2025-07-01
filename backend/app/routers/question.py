@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.database import get_db
 from app.services.question import get_all_questions, get_random_questions, get_question_by_id
-from app.schemas.question import QuestionResponse
+from app.schemas.question_schema import QuestionResponse
 
 router = APIRouter(
     prefix="/questions",

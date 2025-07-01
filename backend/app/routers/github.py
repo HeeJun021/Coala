@@ -4,7 +4,7 @@ from github import Github
 from app.database import get_db
 from app.models.user import User
 from app.models.social_login import SocialLogin
-from app.models.code import CodeFolder
+from app.models.code_models import CodeFolder
 from app.dependencies.auth import get_current_user
 from app.services.code import get_codes_in_folder, get_child_folders, get_code_by_id
 from pydantic import BaseModel

@@ -11,16 +11,16 @@ from app.routers import document
 
 # ✅ 모델 불러오기
 from app.models import (
-    study_example_models,
-    study_materials_models,
+    question_models,
     user,
     email_verification,
-    question,
+    study_materials_models,
+    study_example_models,
     language,
-    user, project_models, task_models
+    project_models, task_models
 )
 
-from app.models.eucalyptus_transaction import EucalyptusTransaction
+from app.models.eucalyptus_transaction_models import EucalyptusTransaction
 
 # ✅ 라우터 불러오기
 from app.routers import (
