@@ -95,7 +95,7 @@ const CreateQuestionDialog = ({ open, onClose, onCreate }) => {
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
       <div className="bg-white rounded-lg shadow-lg w-full max-w-xl p-6">
-        <h2 className="text-xl font-bold mb-4">📝 새 문제 만들기</h2>
+        <h2 className="text-xl font-bold mb-4">새 문제 만들기</h2>
 
         {/* 문제 유형 선택 */}
         <div className="flex gap-2 mb-4">

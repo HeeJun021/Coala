@@ -20,14 +20,14 @@ async def run_python_docker(encoded_code: str):
         )
         return container, None
     except Exception as e:
-        return None, f"❗ 실행 중 에러 발생: {str(e)}"
+        return None, f"실행 중 에러 발생: {str(e)}"
 
 async def read_logs(container, websocket):
     try:
         for log in container.logs(stream=True, stdout=True, stderr=True):
             await websocket.send_text(log.decode())
     except Exception as e:
-        await websocket.send_text(f"🔥 로그 읽기 에러: {str(e)}")
+        await websocket.send_text(f"로그 읽기 에러: {str(e)}")
 
 async def run_node_docker(encoded_code: str):
     try:
@@ -38,12 +38,12 @@ async def run_node_docker(encoded_code: str):
             if match:
                 code = match.group(1).strip()
             else:
-                return None, "❗ <script> 태그에서 코드 추출 실패"
+                return None, "<script> 태그에서 코드 추출 실패"
         else:
             code = raw_code
 
         if not code:
-            return None, "❗ 실행할 JavaScript 코드가 비어있습니다."
+            return None, "실행할 JavaScript 코드가 비어있습니다."
 
         jsdom_setup = """
         const { JSDOM } = require('jsdom');
@@ -65,4 +65,4 @@ async def run_node_docker(encoded_code: str):
         )
         return container, None
     except Exception as e:
-        return None, f"❗ 실행 중 에러 발생: {str(e)}"
+        return None, f"실행 중 에러 발생: {str(e)}"

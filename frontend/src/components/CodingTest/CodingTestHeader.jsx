@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft, HelpCircle } from "lucide-react";
-import CodingTestGuideModal from "./modal/CodingTestGuideModal"; // ✅ 모달 컴포넌트 import
+import CodingTestGuideModal from "./modal/CodingTestGuideModal"; // 모달 컴포넌트 import
 
 const CodingTestHeader = ({ title }) => {
   const [showDot, setShowDot] = useState(false);
-  const [isGuideOpen, setIsGuideOpen] = useState(false); // ✅ 모달 상태
+  const [isGuideOpen, setIsGuideOpen] = useState(false); // 모달 상태
 
   useEffect(() => {
     const seen = localStorage.getItem("codingtest_guide_seen");
@@ -13,13 +13,13 @@ const CodingTestHeader = ({ title }) => {
   }, []);
 
   const handleOpenGuide = () => {
-    setIsGuideOpen(true); // ✅ 모달 열기
+    setIsGuideOpen(true); // 모달 열기
     setShowDot(false);
     localStorage.setItem("codingtest_guide_seen", "true");
   };
 
   const handleCloseGuide = () => {
-    setIsGuideOpen(false); // ✅ 모달 닫기
+    setIsGuideOpen(false); // 모달 닫기
   };
 
   return (
@@ -52,7 +52,7 @@ const CodingTestHeader = ({ title }) => {
         </button>
       </header>
 
-      {/* ✅ 가이드 모달 렌더 */}
+      {/* 가이드 모달 렌더 */}
       {isGuideOpen && <CodingTestGuideModal isOpen={isGuideOpen} onClose={handleCloseGuide} />}
     </>
   );

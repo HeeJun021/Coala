@@ -10,11 +10,11 @@ from datetime import datetime
 
 router = APIRouter(prefix="/projects", tags=["ERD"])
 
-# ✅ 날짜 포맷 함수
+# 날짜 포맷 함수
 def format_dt(dt: datetime):
     return dt.strftime("%Y-%m-%d %H:%M") if dt else None
 
-# ✅ ERD 목록 조회
+# ERD 목록 조회
 @router.get("/{project_id}/erds", response_model=list[ErdResponse])
 def get_erd_list(project_id: int, db: Session = Depends(get_db)):
     results = (
@@ -37,7 +37,7 @@ def get_erd_list(project_id: int, db: Session = Depends(get_db)):
             project_id=row.Erds.project_id,
             name=row.Erds.name,
             description=row.Erds.description,
-            created_at=format_dt(row.Erds.created_at),  # ✅ 포맷 적용
+            created_at=format_dt(row.Erds.created_at),
             updated_at=format_dt(row.Erds.updated_at),
             last_editor_name=row.last_editor_name,
             table_count=row.table_count,
@@ -45,7 +45,7 @@ def get_erd_list(project_id: int, db: Session = Depends(get_db)):
         for row in results
     ]
 
-# ✅ ERD 생성
+# ERD 생성
 @router.post("/{project_id}/erds", response_model=ErdResponse)
 def create_erd(
     project_id: int,
@@ -68,13 +68,13 @@ def create_erd(
         project_id=new_erd.project_id,
         name=new_erd.name,
         description=new_erd.description,
-        created_at=format_dt(new_erd.created_at),  # ✅ 포맷 적용
+        created_at=format_dt(new_erd.created_at), 
         updated_at=format_dt(new_erd.updated_at),
         last_editor_name=current_user.nickname,
         table_count=0,
     )
 
-# ✅ ERD 삭제
+# ERD 삭제
 @router.delete("/{project_id}/erds/{erd_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_erd(
     project_id: int,

@@ -33,13 +33,12 @@ const ErdTableBox = ({
   setHoveredColumnId,
   tablePositionsRef,
 }) => {
-  // 🧱 테이블 기본 정보 (로컬)
+  // 테이블 기본 정보 (로컬)
   const [localName, setLocalName] = useState(tableName || "");
   const [localDesc, setLocalDesc] = useState(description || "");
   const [localColumns, setLocalColumns] = useState(() => columns || []);
-  const [originalColumns, setOriginalColumns] = useState(() => columns || []); // ✅ 스냅샷 기준값
+  const [originalColumns, setOriginalColumns] = useState(() => columns || []);
 
-  // ✅ 여기에 추가
   useEffect(() => {
     setLocalName(tableName || "");
   }, [tableName]);
@@ -53,13 +52,13 @@ const ErdTableBox = ({
     setOriginalColumns(columns || []);
   }, [columns]);
 
-  // 🧱 DOM 참조 및 위치 계산용
+  // DOM 참조 및 위치 계산용
   const tableRef = useRef(null);
   const offsetRef = useRef({ x: 0, y: 0 });
   const draggingRef = useRef(false);
   const columnPositionsRef = useRef({});
 
-  // 🧱 컬럼 드래그 상태
+  // 컬럼 드래그 상태
   const { dragIndex, hoverIndex, setHoverIndex, startDrag, endDrag } =
     useDragColumn();
   const generateTableUpdateData = (key, value) => {
@@ -85,7 +84,7 @@ const ErdTableBox = ({
 
     patchTable(erdId, id, updateData)
       .then(() => {
-        // ✅ 스냅샷 저장
+        // 스냅샷 저장
         onSnapshotRequest?.();
       })
       .catch((err) => {
@@ -111,7 +110,7 @@ const ErdTableBox = ({
     newCols.splice(to, 0, moved);
     setLocalColumns(newCols);
 
-    // ✅ 백엔드로 순서 업데이트 요청
+    // 백엔드로 순서 업데이트 요청
     try {
       const newColumnIds = newCols.map((c) => c.id); // 서버에 보낼 column_id 배열
       await reorderColumns(id, newColumnIds);
@@ -119,7 +118,7 @@ const ErdTableBox = ({
       console.error("컬럼 순서 변경 실패:", err);
     }
 
-    // ✅ 부모에게 업데이트 반영
+    // 부모에게 업데이트 반영
     onUpdate({
       id,
       x,
@@ -141,7 +140,7 @@ const ErdTableBox = ({
 
     if (!canvasRect) return;
 
-    // ✅ transform 보정 적용
+    // transform 보정 적용
     const adjustedLeft =
       (tableRect.left - canvasRect.left - panOffset.x) / zoom;
     const adjustedRight =
@@ -199,7 +198,7 @@ const ErdTableBox = ({
 
     e.stopPropagation();
 
-    // ✅ 드래그 기준점 위치 강제 업데이트
+    // 드래그 기준점 위치 강제 업데이트
     window.dispatchEvent(
       new CustomEvent("update-drag-origin", {
         detail: {
@@ -221,7 +220,7 @@ const ErdTableBox = ({
       const adjustedX = (e.clientX - canvasRect.left - panOffset.x) / zoom;
       const adjustedY = (e.clientY - canvasRect.top - panOffset.y) / zoom;
 
-      // ✅ 실시간 컬럼 좌표 계산 유지
+      // 실시간 컬럼 좌표 계산 유지
       if (tableRef.current) {
         const tableRect = tableRef.current.getBoundingClientRect();
         const columnElements =
@@ -250,8 +249,8 @@ const ErdTableBox = ({
         }
       }
 
-      // ✅ 선택된 경우 보정된 좌표 전달
-      // ✅ 선택된 테이블은 직접 움직이지 않음
+      // 선택된 경우 보정된 좌표 전달
+      // 선택된 테이블은 직접 움직이지 않음
       if (isSelected && onDragMove) {
         onDragMove(adjustedX, adjustedY);
       } else {
@@ -293,7 +292,7 @@ const ErdTableBox = ({
           onSnapshotRequest();
         }
 
-        // ✅ 이동 후 좌표 업데이트까지는 중앙(ErdCanvas)에서 따로 처리됨
+        // 이동 후 좌표 업데이트까지는 중앙(ErdCanvas)에서 따로 처리됨
       }
     };
 
@@ -341,7 +340,7 @@ const ErdTableBox = ({
           },
         ];
 
-        // ✅ 스냅샷 저장
+        // 스냅샷 저장
         onSnapshotRequest?.();
         return updated;
       });
@@ -374,7 +373,7 @@ const ErdTableBox = ({
       setLocalColumns((prev) => {
         const updated = prev.filter((_, i) => i !== index);
 
-        // ✅ 스냅샷 저장
+        // 스냅샷 저장
         onSnapshotRequest?.();
         return updated;
       });
@@ -397,9 +396,9 @@ const ErdTableBox = ({
         if (onClick) onClick();
       }}
       onMouseDown={(e) => {
-        e.stopPropagation(); // ✅ 캔버스 드래그 시작 방지
+        e.stopPropagation(); // 캔버스 드래그 시작 방지
       }}
-      // ✅ 아예 제거하거나 다음처럼 조건화
+      // 아예 제거하거나 다음처럼 조건화
       onMouseUp={undefined}
     >
       <div
@@ -414,8 +413,8 @@ const ErdTableBox = ({
         </button>
         <button
           onClick={async () => {
-            await onDelete?.(); // ❗ 삭제 완료 대기
-            onSnapshotRequest?.(); // ✅ 삭제된 이후 스냅샷 저장
+            await onDelete?.(); 
+            onSnapshotRequest?.();
           }}
           className="text-white hover:text-red-400 text-sm"
         >
@@ -472,7 +471,7 @@ const ErdTableBox = ({
             isHovering={hoverIndex === index}
             onPositionUpdate={(colId, el) => handleColumnPosUpdate(colId, el)}
             onClick={() => {
-              onColumnClick?.(col.column_id); // 이 부분도 col.id -> col.column_id로 바꾸는 게 안전함
+              onColumnClick?.(col.column_id); 
             }}
             isRelationMode={isAddingRelation}
             isRelationHover={isAddingRelation && hoveredColumnId === col.id}

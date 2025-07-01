@@ -1,4 +1,4 @@
-# ✅ 최적화된 코딩 테스트 라우터
+# 최적화된 코딩 테스트 라우터
 import random, json
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query
 from sqlalchemy.orm import Session, aliased
@@ -205,22 +205,22 @@ async def submit_coding_test(
     if not problem:
         raise HTTPException(status_code=404, detail="문제를 찾을 수 없습니다.")
 
-    # ✅ 전체 테스트케이스 실행
+    # 전체 테스트케이스 실행
     testcases = get_testcases(db, submission.test_id, type="all")
     results = await run_code_against_testcases(
         submission.code, submission.language, testcases
     )
 
-    # ✅ ⏱ 실행 시간 중 최대값
+    # ⏱ 실행 시간 중 최대값
     max_execution_time = max(r["execution_time"] for r in results)
-    # ✅ 💾 코드 길이 기준 메모리 사용량
+    # 코드 길이 기준 메모리 사용량
     memory_used = len(submission.code.encode("utf-8"))
 
-    # ✅ 타임리밋 및 메모리리밋 초과 검사
+    # 타임리밋 및 메모리리밋 초과 검사
     time_limit_exceeded = max_execution_time > problem.time_limit
     memory_limit_exceeded = memory_used > problem.memory_limit * 1024 * 1024  # MB → B
 
-    # ✅ 통과 여부 판정
+    # 통과 여부 판정
     passed_count = sum(1 for r in results if r["passed"])
     total_count = len(results)
     is_correct = (
@@ -240,7 +240,7 @@ async def submit_coding_test(
     )
     title = submission.title or f"제출 {submission_count + 1}"
 
-    # ✅ DB 저장
+    # DB 저장
     new_submission = CodingTestSubmissions(
         user_id=submission.user_id,
         test_id=submission.test_id,
@@ -258,7 +258,7 @@ async def submit_coding_test(
     db.commit()
     db.refresh(new_submission)
 
-    # ✅ 정답 보상 처리
+    # 정답 보상 처리
     rating_diff = 0
     eucalyptus_reward = 0
 
@@ -299,7 +299,7 @@ async def submit_coding_test(
         db.commit()
         db.refresh(user)
 
-    # 📊 통계 업데이트 비동기 처리
+    # 통계 업데이트 비동기 처리
     background_tasks.add_task(
         update_correct_stats, db=db, test_id=submission.test_id, is_correct=is_correct
     )

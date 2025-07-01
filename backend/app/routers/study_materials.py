@@ -81,10 +81,10 @@ def get_study_material_by_id(language: str, id: int, db: Session = Depends(get_d
 def mark_material_completed(
     material_id: int,
     db: Session = Depends(get_db),
-    current_user: Optional[User] = Depends(get_current_user)  # ✅ Optional 처리
+    current_user: Optional[User] = Depends(get_current_user)  #   Optional 처리
 ):
     if not current_user:
-        raise HTTPException(status_code=401, detail="로그인이 필요합니다.")  # ✅ 명확한 에러 응답
+        raise HTTPException(status_code=401, detail="로그인이 필요합니다.")  #   명확한 에러 응답
 
     try:
         db.add(StudyMaterialRead(user_id=current_user.user_id, material_id=material_id))

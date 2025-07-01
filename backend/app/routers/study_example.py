@@ -6,7 +6,7 @@ from app.models.study_example_models import StudyExample
 from app.models.language import Language
 from app.models.exampleread_models import examplereads
 from app.models.user import User
-from app.dependencies.auth import get_current_user  # ✅ JWT 인증 유틸 불러오기
+from app.dependencies.auth import get_current_user   
 from sqlalchemy.exc import IntegrityError
 from fastapi import status
 
@@ -16,7 +16,7 @@ router = APIRouter()
 def get_examples_by_language(
     language: str,
     db: Session = Depends(get_db),
-    current_user: Optional[User] = Depends(get_current_user)  # ✅ 로그인 사용자 (없으면 None)
+    current_user: Optional[User] = Depends(get_current_user)  
 ):
     """특정 언어의 예제 목록 조회 (로그인 시 완료 여부 포함)"""
     language_obj = db.query(Language).filter(Language.language == language).first()
@@ -34,7 +34,7 @@ def get_examples_by_language(
 
     result = []
     for example in examples:
-        # ✅ 정답 보정
+        # 정답 보정
         if example.sections:
             for section in example.sections:
                 if section.get("type") == "quiz":
@@ -91,7 +91,7 @@ def mark_example_as_completed(
         raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
 
     try:
-        # ✅ ORM 방식으로 학습 완료 기록
+        # ORM 방식으로 학습 완료 기록
         db.add(examplereads(user_id=current_user.user_id, example_id=example_id))
         db.commit()
     except IntegrityError:

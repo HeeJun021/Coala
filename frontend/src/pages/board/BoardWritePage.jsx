@@ -9,7 +9,7 @@ const BoardWritePage = () => {
   const { user } = useAuth();
   const { boardType } = useParams();
   const navigate = useNavigate();
-  const [recruitLimit, setRecruitLimit] = useState(""); // ✅ 모집 인원 수
+  const [recruitLimit, setRecruitLimit] = useState(""); 
   const location = useLocation();
   const [title, setTitle] = useState(location.state?.codeTitle || "");
   const [content, setContent] = useState("");
@@ -56,7 +56,7 @@ const BoardWritePage = () => {
     const ext = filename.includes(".") ? filename.split(".").pop() : "js";
     const codeLanguage = extMap[`.${ext}`] || "javascript";
 
-    // ✅ 숫자 변환 및 기본값 처리
+    // 숫자 변환 및 기본값 처리
     const recruitLimitNumber =
       boardType === "project" && recruitLimit !== ""
         ? parseInt(recruitLimit, 10)
@@ -70,10 +70,10 @@ const BoardWritePage = () => {
       user_id: user.user_id,
       code_filename: filename,
       code_language: codeLanguage,
-      recruit_limit: recruitLimitNumber, // ✅ 추가됨
+      recruit_limit: recruitLimitNumber,
     };
 
-    console.log("✅ 보내는 payload:", payload);
+    console.log("보내는 payload:", payload);
 
     try {
       await createBoard(payload);
@@ -111,7 +111,7 @@ const BoardWritePage = () => {
           required
         />
 
-        {/* ✅ 프로젝트 게시판일 때 모집 인원 수 입력 필드 표시 */}
+        {/* 프로젝트 게시판일 때 모집 인원 수 입력 필드 표시 */}
         {boardType === "project" && (
           <input
             type="number"

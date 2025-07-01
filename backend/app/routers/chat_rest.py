@@ -7,12 +7,12 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from typing import List, Optional
 from app.database import get_db
-from app.models.chat_models import ChatRoom, ChatRoomParticipant, ChatMessage, ChatMessageRead
-from app.models.project_models import ProjectMembers  # 🔥 추가 필요
+from app.models.chat import ChatRoom, ChatRoomParticipant, ChatMessage, ChatMessageRead
+from app.models.project_models import ProjectMembers
 from app.models.user import UserFollow
 from app.models.user import User
 from app.dependencies.auth import get_current_user
-from app.schemas.chat_schema import (
+from app.schemas.chat import (
     ChatRoomCreateRequest,
     ChatRoomCreateResponse,
     ChatParticipant,
@@ -31,7 +31,7 @@ from app.schemas.chat_schema import (
     ChatRoomArchiveToggleRequest,
     ChatRoomArchiveToggleResponse,
 )
-from app.schemas.user import UserSimpleInfo
+from app.schemas.user_schema import UserSimpleInfo
 
 from datetime import datetime
 
@@ -53,10 +53,10 @@ def create_chat_room(
     all_participants = set(data.participant_ids)
     all_participants.add(current_user.user_id)
 
-    # ✅ 1:1 여부 판별
+    # 1:1 여부 판별
     is_group = not (len(data.participant_ids) == 1)
 
-    # ✅ 채팅방 이름 생성
+    # 채팅방 이름 생성
     if not is_group:
         target_id = data.participant_ids[0]
         target_nickname = (
@@ -90,7 +90,7 @@ def create_chat_room(
         is_archived = False
 
         if user_id != current_user.user_id:
-            # ✅ 팔로우 여부 확인: user_id가 current_user를 팔로우했는가?
+            # 팔로우 여부 확인: user_id가 current_user를 팔로우했는가?
             is_following = (
                 db.query(UserFollow)
                 .filter_by(follower_id=user_id, following_id=current_user.user_id)
@@ -117,10 +117,10 @@ def create_chat_room(
         inviter_nickname = current_user.nickname
 
         if not is_group and len(invited_user_nicknames) == 1:
-            # ✅ 1:1 대화 메시지
+            # 1:1 대화 메시지
             system_text = f"{invited_user_nicknames[0]}님과의 채팅이 시작되었습니다."
         else:
-            # ✅ 그룹 대화 메시지
+            # 그룹 대화 메시지
             system_text = f"{inviter_nickname}님이 {', '.join(invited_user_nicknames)}님을 초대했습니다."
 
         system_msg = ChatMessage(
@@ -149,7 +149,7 @@ def get_chat_rooms(
             ChatRoom.room_name,
             ChatRoomParticipant.custom_room_name,
             ChatRoomParticipant.is_pinned,
-            ChatRoomParticipant.pinned_at,  # ✅ 추가
+            ChatRoomParticipant.pinned_at,
             ChatRoomParticipant.joined_at,
             ChatRoomParticipant.last_read_message_id,
         )
@@ -161,7 +161,7 @@ def get_chat_rooms(
         )
         .order_by(
             ChatRoomParticipant.is_pinned.desc(),
-            ChatRoomParticipant.pinned_at.desc().nullslast(),  # ✅ pinned_at 기준 정렬
+            ChatRoomParticipant.pinned_at.desc().nullslast(), 
         )
         .all()
     )
@@ -222,7 +222,7 @@ def get_chat_rooms(
             )
         )
 
-    # ✅ 고정되지 않은 채팅방만 후처리로 최신 메시지 정렬
+    # 고정되지 않은 채팅방만 후처리로 최신 메시지 정렬
     pinned = [c for c in chat_room_list if c.is_pinned]
     unpinned = sorted(
         [c for c in chat_room_list if not c.is_pinned],
@@ -260,7 +260,7 @@ def send_message(
         file_name=data.file_name,
         file_size=data.file_size,
         uploaded_at=data.uploaded_at,
-        message_metadata=data.message_metadata,  # ✅ 추가
+        message_metadata=data.message_metadata,
     )
     db.add(new_message)
     db.commit()
@@ -287,7 +287,7 @@ def send_message(
         file_size=new_message.file_size,
         uploaded_at=new_message.uploaded_at,
         sent_at=new_message.sent_at,
-        message_metadata=new_message.message_metadata,  # ✅ 응답에도 포함
+        message_metadata=new_message.message_metadata,
     )
 
 # 채팅 조회
@@ -348,7 +348,7 @@ def get_messages(
         # 🔍 기본값
         invite_status = None
 
-        # 🎯 초대 메시지인 경우 상태 조회
+        # 초대 메시지인 경우 상태 조회
         if msg.message_type == "project_invite":
             project_id = msg.message_metadata.get("project_id")
             if project_id:
@@ -378,7 +378,7 @@ def get_messages(
             sent_at=msg.sent_at,
             read_count=read_count_map.get(msg.message_id, 0),
             message_metadata=msg.message_metadata,
-            invite_status=invite_status,  # ✅ 여기에 추가!
+            invite_status=invite_status,
         ))
 
     return result
@@ -475,7 +475,7 @@ def leave_chat_room(
         system_text = f"{leaver_nick}님이 나갔습니다."
         system_msg = ChatMessage(
             room_id=room_id,
-            sender_id=current_user.user_id,  # ✅ 나간 사용자를 sender로 지정
+            sender_id=current_user.user_id, 
             message=system_text,
             message_type="system",
         )
@@ -516,7 +516,7 @@ def mark_message_as_read(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    # ✅ 참여 확인
+    # 참여 확인
     participant = (
         db.query(ChatRoomParticipant)
         .filter_by(room_id=room_id, user_id=current_user.user_id)
@@ -526,7 +526,7 @@ def mark_message_as_read(
     if not participant:
         raise HTTPException(status_code=403, detail="참여 중인 채팅방이 아닙니다.")
 
-    # ✅ 해당 room의 읽지 않은 메시지 중 last_read_message_id 이하 메시지 모두 가져오기
+    # 해당 room의 읽지 않은 메시지 중 last_read_message_id 이하 메시지 모두 가져오기
     messages_to_mark = (
         db.query(ChatMessage.message_id)
         .filter(
@@ -536,7 +536,7 @@ def mark_message_as_read(
         .all()
     )
 
-    # ✅ 중복 방지를 위해 upsert 수행 (PostgreSQL 전용)
+    # 중복 방지를 위해 upsert 수행 (PostgreSQL 전용)
     for (message_id,) in messages_to_mark:
         stmt = (
             insert(ChatMessageRead)
@@ -545,7 +545,7 @@ def mark_message_as_read(
         )
         db.execute(stmt)
 
-    # ✅ ChatRoomParticipants 기준 최신 메시지도 갱신
+    # ChatRoomParticipants 기준 최신 메시지도 갱신
     if (
         participant.last_read_message_id is None
         or data.last_read_message_id > participant.last_read_message_id
@@ -573,7 +573,7 @@ def toggle_chat_room_pin(
     if not participant:
         raise HTTPException(status_code=404, detail="채팅방에 참여 중이지 않습니다.")
 
-    # ✅ 상태 반전 및 시간 설정
+    # 상태 반전 및 시간 설정
     if participant.is_pinned:
         participant.is_pinned = False
         participant.pinned_at = None
@@ -605,10 +605,10 @@ def get_archived_chat_rooms(
         .join(ChatRoom, ChatRoomParticipant.room_id == ChatRoom.room_id)
         .filter(
             ChatRoomParticipant.user_id == current_user.user_id,
-            ChatRoomParticipant.is_archived == True,  # ✅ 보관된 방만
-            ChatRoomParticipant.is_deleted == False,  # ✅ 추가
+            ChatRoomParticipant.is_archived == True, 
+            ChatRoomParticipant.is_deleted == False,
         )
-        .order_by(ChatRoomParticipant.joined_at.desc())  # ✅ pinned 정렬 제거
+        .order_by(ChatRoomParticipant.joined_at.desc()) 
         .all()
     )
 
@@ -658,7 +658,7 @@ def get_archived_chat_rooms(
                 room_type=row.room_type,
                 is_group=row.is_group,
                 room_name=display_name,
-                is_pinned=False,  # ✅ 보관함엔 핀 X
+                is_pinned=False, 
                 joined_at=row.joined_at,
                 last_message=last_msg.message if last_msg else None,
                 last_message_time=last_msg.sent_at if last_msg else None,
@@ -721,7 +721,7 @@ def reject_chat_request(
     if participant.is_deleted:
         raise HTTPException(status_code=400, detail="이미 거절된 요청입니다.")
 
-    participant.is_deleted = True  # ✅ 요청함에서 숨김 처리
+    participant.is_deleted = True
     db.commit()
 
     return ChatRoomArchiveToggleResponse(
@@ -736,7 +736,7 @@ def get_chat_participants(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    # ✅ 현재 유저가 이 방에 참여 중인지 확인
+    # 현재 유저가 이 방에 참여 중인지 확인
     is_participant = (
         db.query(ChatRoomParticipant)
         .filter_by(room_id=room_id, user_id=current_user.user_id)
@@ -748,7 +748,7 @@ def get_chat_participants(
             status_code=403, detail="채팅방에 참여 중인 사용자만 조회할 수 있습니다."
         )
 
-    # ✅ 채팅방 참여자 정보 조회
+    # 채팅방 참여자 정보 조회
     users = (
         db.query(User)
         .join(ChatRoomParticipant, User.user_id == ChatRoomParticipant.user_id)

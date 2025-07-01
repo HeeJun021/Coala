@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { getAllSubmissionsByUser } from "../../api/codingTestApi";
-import { ChevronLeft, ChevronRight, CheckCircle, XCircle } from "lucide-react"; // ✅ 필요한 아이콘만
+import { ChevronLeft, ChevronRight, CheckCircle, XCircle } from "lucide-react"; 
 
 const MyPageCTHistory = () => {
   const navigate = useNavigate();

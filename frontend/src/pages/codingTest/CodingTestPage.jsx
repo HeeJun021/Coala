@@ -29,7 +29,7 @@ const getLevelClass = (level) => {
 };
 
 const CodingTestPage = () => {
-  const { user } = useAuth(); // ✅ 사용자 정보 가져오기
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [problems, setProblems] = useState([]);
@@ -55,7 +55,7 @@ const CodingTestPage = () => {
           status,
           category,
           sort,
-          ...(user?.user_id && { user_id: user.user_id }), // ✅ 조건부 user_id 전달
+          ...(user?.user_id && { user_id: user.user_id }),
         });
         setProblems(res.problems);
         setTotalCount(res.total);

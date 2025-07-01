@@ -22,14 +22,14 @@ const useUserProfile = (userId) => {
         const res = await apiClient.get(`/users/${userId}`);
 
         if (res?.data) {
-          console.log("✅ 사용자 정보 불러옴:", res.data);
+          console.log("사용자 정보 불러옴:", res.data);
           setUser(res.data);
         } else {
-          console.warn("⚠️ 사용자 정보 응답 없음 또는 비어 있음");
+          console.warn("사용자 정보 응답 없음 또는 비어 있음");
           setUser(null);
         }
       } catch (err) {
-        console.error("❌ 사용자 정보 요청 실패:", err);
+        console.error("사용자 정보 요청 실패:", err);
         setError(err);
         setUser(null);
       } finally {

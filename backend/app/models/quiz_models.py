@@ -18,12 +18,12 @@ class QuizSetting(Base):
     __tablename__ = "quizsetting"
 
     quiz_id = Column(Integer, ForeignKey("quizzes.quiz_id"), primary_key=True)
-    question_type = Column(Integer, ForeignKey("question_type.question_type"), primary_key=True)  # ✅ FK 수정
+    question_type = Column(Integer, ForeignKey("question_type.question_type"), primary_key=True)  # FK 수정
     difficulty = Column(Integer, nullable=False)
     question_count = Column(Integer, nullable=False)
 
     quiz = relationship("Quiz", back_populates="settings")
-    question_type_rel = relationship("QuestionType")  # ✅ FK 관계 추가
+    question_type_rel = relationship("QuestionType")  # FK 관계 추가
 
 class QuizAssignment(Base):
     __tablename__ = "quizassignment"
@@ -33,9 +33,9 @@ class QuizAssignment(Base):
     question_id = Column(Integer, ForeignKey("questions.question_id"), nullable=False)
 
     quiz = relationship("Quiz", back_populates="assignments")
-    question = relationship("Question")  # ✅ "Questions" → "Question"
+    question = relationship("Question")  # "Questions" → "Question"
 
-# ✅ 퀴즈 제출 정보 테이블
+# 퀴즈 제출 정보 테이블
 class QuizSubmissions(Base):
     __tablename__ = "quizsubmissions"  # 테이블명 확인
 
@@ -46,7 +46,7 @@ class QuizSubmissions(Base):
     correct_count = Column(Integer, default=0)
     submitted_at = Column(TIMESTAMP, server_default=func.now())
 
-    # ✅ QuizSubmissionDetails와 관계 설정
+    # QuizSubmissionDetails와 관계 설정
     details = relationship(
         "QuizSubmissionDetails",
         back_populates="submission",
@@ -54,7 +54,7 @@ class QuizSubmissions(Base):
     )
 
 
-# ✅ 개별 문제 제출 정보 테이블
+# 개별 문제 제출 정보 테이블
 class QuizSubmissionDetails(Base):
     __tablename__ = "quizsubmissiondetails"  # 테이블명 확인
 
@@ -64,13 +64,13 @@ class QuizSubmissionDetails(Base):
     user_answer = Column(Text, nullable=False)
     is_correct = Column(Boolean, nullable=False)
 
-    # ✅ QuizSubmissions과 연결 (부모 테이블)
+    # QuizSubmissions과 연결 (부모 테이블)
     submission = relationship(
         "QuizSubmissions",
         back_populates="details"
     )
 
-    # ✅ Question과 연결 (제출된 문제 정보)
+    # Question과 연결 (제출된 문제 정보)
     question = relationship(
         "Question",
         back_populates="submission_details"

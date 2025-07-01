@@ -101,7 +101,7 @@ def preview_html_by_code_id(
         "html_filename": html_code.title
     }
     
-# ✅ 실행 가능한 Python 경로 자동 탐색 함수
+# 실행 가능한 Python 경로 자동 탐색 함수
 def find_python_executable():
     # 우선순위 1: 직접 지정한 경로
     preferred_path = r"C:\Users\user\AppData\Local\Programs\Python\Python313\python.exe"
@@ -124,7 +124,7 @@ def preview_python_by_code_id(
     db: Session = Depends(get_db),
     user: dict = Depends(get_current_user),
 ):
-    # 🔍 코드 및 소유자 확인
+    # 코드 및 소유자 확인
     mapping = (
         db.query(CodeFolderMapping)
         .join(Code)
@@ -139,13 +139,13 @@ def preview_python_by_code_id(
         raise HTTPException(status_code=400, detail="Python 파일만 실행할 수 있습니다.")
 
     try:
-        # ✅ Python 실행 경로 탐색
+        # Python 실행 경로 탐색
         python_cmd = find_python_executable()
 
-        # ✅ 로그: 코드 내용 확인
+        # 로그: 코드 내용 확인
         print("✅ 실행할 코드:\n", code.content)
 
-        # ✅ 임시 파일에 utf-8로 저장
+        # 임시 파일에 utf-8로 저장
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False, encoding="utf-8") as temp_file:
             temp_file.write(code.content)
             temp_file.flush()
@@ -153,12 +153,12 @@ def preview_python_by_code_id(
 
         print(f"📄 Temp file path: {temp_path}")
 
-        # ✅ subprocess로 실행
+        # subprocess로 실행
         result = subprocess.run(
             [python_cmd, temp_path],
             capture_output=True,
             text=True,
-            encoding="utf-8",   # ✅ 필수!!
+            encoding="utf-8",
             timeout=5,
         )
 

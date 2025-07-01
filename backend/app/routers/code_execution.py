@@ -12,7 +12,7 @@ from app.services.coding_test_case_service import get_testcases
 router = APIRouter(prefix="/code-exec", tags=["Code Execution"])
 
 
-# ✅ REST API 방식 - 코딩 테스트용 채점 실행
+# REST API 방식 - 코딩 테스트용 채점 실행
 class CodeRequest(BaseModel):
     code: str
     language: str
@@ -39,7 +39,7 @@ async def run_code_with_testcases(
     return {"results": results}
 
 
-# ✅ WebSocket 방식 - 실시간 터미널 코드 실행
+# WebSocket 방식 - 실시간 터미널 코드 실행
 @router.websocket("/execute")
 async def execute_code_ws(websocket: WebSocket):
     await websocket.accept()

@@ -9,7 +9,7 @@ from app.models.user import User
 
 router = APIRouter(prefix="/projects", tags=["Projects"])
 
-# ✅ 1. 내 프로젝트 목록 조회
+# 1. 내 프로젝트 목록 조회
 @router.get("/my")
 def get_my_projects(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     projects = (
@@ -24,8 +24,8 @@ def get_my_projects(db: Session = Depends(get_db), current_user: User = Depends(
             "name": p.name,
             "description": p.description,
             "progress": p.progress,
-            "topic": p.topic,  # ✅ 이거 추가!
-            "tech_stack": p.tech_stack,  # ✅ 이거도 추가!
+            "topic": p.topic, 
+            "tech_stack": p.tech_stack, 
             "leader_id": (
                 db.query(ProjectMembers)
                 .filter(ProjectMembers.project_id == p.project_id, ProjectMembers.is_leader == True)
@@ -45,7 +45,7 @@ def get_my_projects(db: Session = Depends(get_db), current_user: User = Depends(
         for p in projects
     ]
 
-# ✅ 2. 프로젝트 팀원 목록 조회
+# 2. 프로젝트 팀원 목록 조회
 @router.get("/{project_id}/members")
 def get_project_members(project_id: int, db: Session = Depends(get_db)):
     members = (
@@ -60,13 +60,13 @@ def get_project_members(project_id: int, db: Session = Depends(get_db)):
             "nickname": m[0].nickname,
             "email": m[0].email,
             "is_leader": m[1],
-            "status": m[2],  # ✅ 추가
+            "status": m[2], 
         }
         for m in members
     ]
 
 
-# ✅ 3. 프로젝트 생성
+# 3. 프로젝트 생성
 @router.post("")
 def create_project(
     project_data: ProjectCreateRequest,
@@ -86,7 +86,7 @@ def create_project(
         project_id=new_project.project_id,
         user_id=current_user.user_id,
         is_leader=True,
-        status="accepted"  # ✅ 추가
+        status="accepted" 
     )
     db.add(member)
 
@@ -113,7 +113,7 @@ def create_project(
         "created_at": new_project.created_at
     }
 
-# ✅ 4. 프로젝트 수정
+# 4. 프로젝트 수정
 @router.patch("/{project_id}")
 def update_project(
     project_id: int,
@@ -164,7 +164,7 @@ def update_project(
     db.commit()
     return {"message": "Project updated successfully"}
 
-# ✅ 5. 멤버 추가
+# 5. 멤버 추가
 @router.post("/{project_id}/members")
 def add_project_member(
     project_id: int,
@@ -219,7 +219,7 @@ def add_project_member(
     db.commit()
     return {"message": "Member added successfully"}
 
-# ✅ 6. 멤버 방출
+# 6. 멤버 방출
 @router.delete("/{project_id}/members/{user_id}")
 def remove_project_member(
     project_id: int,
@@ -265,7 +265,7 @@ def remove_project_member(
     db.commit()
     return {"message": "Member removed successfully"}
 
-# ✅ 7. 팀장 권한 이전
+# 7. 팀장 권한 이전
 @router.post("/{project_id}/transfer-leader")
 def transfer_leader(
     project_id: int,
@@ -314,7 +314,7 @@ def transfer_leader(
     db.commit()
     return {"message": "Leadership transferred successfully"}
 
-# ✅ 8. 활동 기록 조회
+# 8. 활동 기록 조회
 @router.get("/{project_id}/activity")
 def get_project_activity(project_id: int, db: Session = Depends(get_db)):
     logs = (

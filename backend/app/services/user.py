@@ -12,7 +12,7 @@ from enum import Enum  # 꼭 추가되어 있어야 함
 def get_user_by_id(db: Session, user_id: str):
     return (
         db.query(User)
-        .options(joinedload(User.tier))  # ✅ UserTier 정보를 함께 로드
+        .options(joinedload(User.tier))  # UserTier 정보를 함께 로드
         .filter(User.user_id == user_id)
         .first()
     )
@@ -35,7 +35,7 @@ def reward_user_by_action(
     user: User,
     action: RewardActionType,
     db: Session,
-    amount: Optional[int] = None  # ✅ 선택적으로 외부에서 주입 가능
+    amount: Optional[int] = None  # 선택적으로 외부에서 주입 가능
 ) -> int:
     reward_table = {
         RewardActionType.quiz_correct: 10,
@@ -48,7 +48,7 @@ def reward_user_by_action(
     if reward is None:
         raise HTTPException(status_code=400, detail="유효하지 않은 보상 타입입니다.")
 
-    # ✅ 하루 누적 획득량 계산
+    # 하루 누적 획득량 계산
     today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     today_total = db.query(func.sum(EucalyptusTransaction.amount)).filter(
         EucalyptusTransaction.user_id == user.user_id,
@@ -59,7 +59,7 @@ def reward_user_by_action(
     if today_total + reward > 300:
         raise HTTPException(status_code=400, detail="오늘은 최대 300 유칼립투스까지만 획득할 수 있습니다.")
 
-    # ✅ 유칼립투스 지급
+    # 유칼립투스 지급
     user.eucalyptus_balance += reward
 
     db.add(EucalyptusTransaction(
@@ -73,7 +73,7 @@ def reward_user_by_action(
     return reward
 
 
-# 🌿 화폐 사용 (차감)
+# 화폐 사용 (차감)
 def use_eucalyptus_by_action(user: User, action: UseActionType, db: Session) -> int:
     cost_table = {
         UseActionType.change_profile_image: 30,
@@ -88,7 +88,7 @@ def use_eucalyptus_by_action(user: User, action: UseActionType, db: Session) -> 
 
     user.eucalyptus_balance -= cost
 
-    # ✅ enum이든 str이든 안전하게 처리
+    # enum이든 str이든 안전하게 처리
     action_str = action.value if isinstance(action, Enum) else str(action)
 
     db.add(EucalyptusTransaction(

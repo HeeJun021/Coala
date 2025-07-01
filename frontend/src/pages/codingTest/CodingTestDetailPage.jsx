@@ -1,20 +1,20 @@
-// 📦 React & 라이브러리
+// React & 라이브러리
 import React, { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
-// 🖍️ PrismJS (코드 하이라이트 + 라인 넘버)
+// PrismJS (코드 하이라이트 + 라인 넘버)
 import Prism from "prismjs";
 import "prismjs/components/prism-javascript";
 import "prismjs/components/prism-python";
 import "prismjs/components/prism-java";
 
-// 🔥 라인 넘버 플러그인
+// 라인 넘버 플러그인
 import "prismjs/plugins/line-numbers/prism-line-numbers.css";
 import "prismjs/plugins/line-numbers/prism-line-numbers.js";
 
-// 🔗 API
+// API
 import {
   getCodingTestDetail,
   getStarterCode,
@@ -24,11 +24,11 @@ import {
   checkHasSolved,
 } from "../../api/codingTestApi";
 
-// 🧩 컴포넌트
+// 컴포넌트
 import ResultModal from "../../components/CodingTest/modal/ResultModal";
 import WrongNoteEditor from "../../components/WrongNoteEditor";
 
-// 🎨 스타일
+// 스타일
 import "react-resizable/css/styles.css";
 import "../../index.css";
 
@@ -108,7 +108,7 @@ const CodingTestDetailPage = () => {
         if (user?.user_id && id) {
           const result = await checkHasSolved(id);
           if (result?.data && typeof result.data.hasSolved === "boolean") {
-            setHasSolvedBefore(result.data.hasSolved); // ✅ 여기서 추출
+            setHasSolvedBefore(result.data.hasSolved); // 여기서 추출
           } else {
             console.error("⚠️ 응답에 hasSolved 필드가 없습니다:", result);
             setHasSolvedBefore(false);
@@ -128,7 +128,7 @@ const CodingTestDetailPage = () => {
     if (!problem) return;
 
     setIsSubmitResult(false); // 제출 실행 결과가 아님
-    setIsRunning(true); // ✅ 실행 중 상태 시작
+    setIsRunning(true); // 실행 중 상태 시작
 
     try {
       const res = await runCodeWithTestcases(problem.id, code, language);
@@ -153,14 +153,14 @@ const CodingTestDetailPage = () => {
         },
       ]);
     } finally {
-      setIsRunning(false); // ✅ 실행 중 상태 종료
+      setIsRunning(false); 
     }
   };
 
   const handleResetCode = async () => {
     try {
       const starter = await getStarterCode(id, language);
-      const formattedCode = starter.code.replace(/\\n/g, "\n"); // 🔥 개행 처리
+      const formattedCode = starter.code.replace(/\\n/g, "\n");
       setCode(formattedCode);
     } catch (err) {
       console.error("초기화 실패:", err);
@@ -185,7 +185,7 @@ const CodingTestDetailPage = () => {
         setExecutionResults(res.all_cases);
       }
 
-      // 🎯 결과 모달은 1초 후 띄우기
+      // 결과 모달은 1초 후 띄우기
       setTimeout(() => {
         setResultData({
           isCorrect: res.is_correct,
@@ -233,7 +233,7 @@ const CodingTestDetailPage = () => {
             style={{
               width: "40px",
               height: "2px",
-              backgroundColor: hover ? "#607D8B" : "#B0BEC5", // 연한 회색 & 진한 회색
+              backgroundColor: hover ? "#607D8B" : "#B0BEC5", 
               borderRadius: "1px",
               transition: "background-color 0.2s",
             }}

@@ -30,7 +30,7 @@ class Post(Base):
 
     user = relationship("User", back_populates="posts")
     comments = relationship("Comment", back_populates="post", cascade="all, delete")
-    applicants = relationship("ProjectApplicant", back_populates="post", cascade="all, delete")  # ✅ 추가
+    applicants = relationship("ProjectApplicant", back_populates="post", cascade="all, delete")  
 
 class Comment(Base):
     __tablename__ = 'comments'
@@ -79,7 +79,7 @@ class CommentReport(Base):
     created_at = Column(DateTime, server_default=func.now())
 
 
-# ✅ 프로젝트 게시판 참여 신청자 테이블 추가
+# 프로젝트 게시판 참여 신청자 테이블 추가
 class ProjectApplicant(Base):
     __tablename__ = "project_applicants"
 

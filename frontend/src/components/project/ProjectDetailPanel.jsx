@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import InviteProjectMember from "./InviteProjectMember";
-import TagInput, { techStackOptions } from "../common/TagInput"; // 경로에 맞게 조정
+import TagInput, { techStackOptions } from "../common/TagInput";
 import {
   getProjectMembers,
   updateProject,
@@ -61,7 +61,7 @@ const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
   const handleInviteMember = async () => {
     if (selectedFriend) {
       try {
-        await sendProjectInvite(project.project_id, selectedFriend.id); // 🔁 초대 API 호출
+        await sendProjectInvite(project.project_id, selectedFriend.id); // 초대 API 호출
         setShowInviteModal(false);
         setSelectedFriend(null);
       } catch (err) {

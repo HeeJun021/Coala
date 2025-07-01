@@ -8,7 +8,7 @@ const DeleteAccountDialog = ({ isOpen, onClose, onConfirm }) => {
     return (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center">
             <div className="bg-[#D9E1E5] p-6 rounded-lg shadow-lg w-[400px]">
-                {/* 🐨 코알라 아이콘 */}
+                {/* 코알라 아이콘 */}
                 <div className="flex justify-center">
                     <img src="/koala-icon.png" alt="Koala" className="w-12 h-12 mb-4" />
                 </div>

@@ -1,4 +1,4 @@
-// 📁 src/components/project/TiptapEditorWithPagination.jsx
+// src/components/project/TiptapEditorWithPagination.jsx
 
 import React from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
@@ -41,7 +41,7 @@ const TiptapEditorWithPagination = ({ projectId, docId, title }) => {
         content: fullHTML,
       });
 
-      alert("✅ 문서가 저장되었습니다!");
+      alert("문서가 저장되었습니다!");
     } catch (error) {
       console.error("문서 저장 실패:", error.response?.data || error);
       alert("문서 저장에 실패했습니다.");

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import CommentForm from "./CommentForm";
-import UserNameWithProfile from "../profcard/UserNameWithProfile"; // ✅ 경로는 실제 위치에 맞게 조정하세요
+import UserNameWithProfile from "../profcard/UserNameWithProfile";
 
 const CommentItem = ({ comment, onReply, onEdit, onDelete, onReport }) => {
   const [isReplying, setIsReplying] = useState(false);
@@ -14,7 +14,7 @@ const CommentItem = ({ comment, onReply, onEdit, onDelete, onReport }) => {
           <div>
             <UserNameWithProfile
               userId={comment.user_id}
-              nickname={comment.nickname || "작성자"} // ✅ 댓글 작성자 표시
+              nickname={comment.nickname || "작성자"} // 댓글 작성자 표시
             />
             {comment.content}
           </div>

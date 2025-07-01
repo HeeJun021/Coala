@@ -28,15 +28,15 @@ class Project(Base):
     created_at = Column(Date, server_default=func.now())
     updated_at = Column(Date, server_default=func.now(), onupdate=func.now())
     widget_order = Column(JSON, nullable=True)  # 위젯 순서 저장
-    topic = Column(String(255), nullable=True)  # ✅ 주제(토픽)
-    tech_stack = Column(JSON, nullable=True)  # ✅ 기술 스택
+    topic = Column(String(255), nullable=True)  #   주제(토픽)
+    tech_stack = Column(JSON, nullable=True)  #   기술 스택
 
     members = relationship("ProjectMembers", back_populates="project")
     activity_logs = relationship("ProjectActivityLog", back_populates="project")
     widgets = relationship("ProjectWidgets", back_populates="project")
     erds = relationship("Erds", back_populates="project", cascade="all, delete-orphan")
     tasks = relationship("Tasks", back_populates="project", cascade="all, delete-orphan")
-    documents = relationship(  # ✅ 문서 다중 관계
+    documents = relationship(  #   문서 다중 관계
         "ProjectDocument",
         back_populates="project",
         cascade="all, delete-orphan"
@@ -49,7 +49,7 @@ class ProjectMembers(Base):
     project_id = Column(Integer, ForeignKey("projects.project_id", ondelete="CASCADE"))
     user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"))
     is_leader = Column(Boolean, default=False)
-    status = Column(String, default="pending")  # ✅ 여기 있음
+    status = Column(String, default="pending")  #   여기 있음
 
     project = relationship("Project", back_populates="members")
     user = relationship("User")

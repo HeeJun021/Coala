@@ -5,4 +5,4 @@ class LanguageResponse(BaseModel):
     language: str
 
     class Config:
-        from_attributes = True  # ✅ Pydantic v2에서 orm_mode 대신 사용
+        from_attributes = True  

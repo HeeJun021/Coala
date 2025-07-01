@@ -67,7 +67,7 @@ def create_child_folder(
     """
     user_id = user["user_id"]
 
-    # ✅ parent_folder_id가 있을 경우, 해당 폴더가 사용자 소유인지 확인
+    #   parent_folder_id가 있을 경우, 해당 폴더가 사용자 소유인지 확인
     if parent_folder_id is not None:
         parent = db.query(CodeFolder).filter(
             CodeFolder.folder_id == parent_folder_id,

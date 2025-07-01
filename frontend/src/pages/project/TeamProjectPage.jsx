@@ -65,7 +65,7 @@ const TeamProjectPage = () => {
       if (exists) {
         handleProjectSelect(newProject.project_id);
       } else {
-        console.warn("✅ 프로젝트 생성됨, 그러나 리스트에 없음");
+        console.warn("프로젝트 생성됨, 그러나 리스트에 없음");
       }
     }
   };

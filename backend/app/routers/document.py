@@ -18,7 +18,7 @@ def create_document(project_id: int, doc: DocumentCreate, db: Session = Depends(
     db.add(new_doc)
     db.commit()
     db.refresh(new_doc)
-    print("✅ 생성된 문서 정보:", new_doc.project_id, new_doc.doc_id)  # ✅ 확인용
+    print("생성된 문서 정보:", new_doc.project_id, new_doc.doc_id) 
     return new_doc
 
 # 🔹 문서 상세 조회
@@ -36,7 +36,7 @@ def update_document(project_id: int, doc_id: int, doc_update: DocumentUpdate, db
     if not doc:
         raise HTTPException(status_code=404, detail="문서를 찾을 수 없습니다.")
 
-    # ✅ None이 아닐 때만 덮어쓰기
+    # None이 아닐 때만 덮어쓰기
     if doc_update.title is not None:
         doc.title = doc_update.title
     if doc_update.content is not None:
@@ -46,7 +46,7 @@ def update_document(project_id: int, doc_id: int, doc_update: DocumentUpdate, db
     db.refresh(doc)
     return doc
 
-# 🔹 문서 삭제
+# 문서 삭제
 @router.delete("/{project_id}/docs/{doc_id}")
 def delete_document(project_id: int, doc_id: int, db: Session = Depends(get_db)):
     doc = db.query(ProjectDocument).filter(ProjectDocument.project_id == project_id, ProjectDocument.doc_id == doc_id).first()

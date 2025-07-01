@@ -62,7 +62,7 @@ mark[data-color] {
   padding: 0 2px;
   border-radius: 2px;
 }
-/* ✅ Highlight 색상 스타일 */
+/* Highlight 색상 스타일 */
 mark[data-color="#facc15"] { background-color: #facc15 !important; }
 mark[data-color="#fda4af"] { background-color: #fda4af !important; }
 mark[data-color="#86efac"] { background-color: #86efac !important; }

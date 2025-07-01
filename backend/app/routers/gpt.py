@@ -23,7 +23,7 @@ router = APIRouter()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
-# ✅ 1. 새 세션 + 첫 질문
+# 1. 새 세션 + 첫 질문
 @router.post("/sessions/new", response_model=GptSingleResponse)
 def create_gpt_session(
     request: GptSessionCreate,
@@ -57,7 +57,7 @@ def create_gpt_session(
         )
         answer = gpt_response.choices[0].message.content
     except Exception as e:
-        print("❌ GPT 예외 발생:", e)
+        print("GPT 예외 발생:", e)
         raise HTTPException(status_code=500, detail=f"GPT 응답 실패: {e}")
 
     gpt_msg = GptMessage(
@@ -68,10 +68,10 @@ def create_gpt_session(
     db.add(gpt_msg)
     db.commit()
 
-    return {"session_id": session.session_id, "response": answer}  # ✅ 추가
+    return {"session_id": session.session_id, "response": answer}  
 
 
-# ✅ 2. 기존 세션에 이어서 질문하기
+# 2. 기존 세션에 이어서 질문하기
 @router.post("/sessions/{session_id}/message", response_model=GptSingleResponse)
 def continue_gpt_session(
     session_id: int,
@@ -112,7 +112,7 @@ def continue_gpt_session(
         )
         answer = gpt_response.choices[0].message.content
     except Exception as e:
-        print("❌ GPT 예외 발생:", e)
+        print("GPT 예외 발생:", e)
         raise HTTPException(status_code=500, detail=f"GPT 응답 실패: {e}")
 
     gpt_msg = GptMessage(
@@ -125,10 +125,10 @@ def continue_gpt_session(
     session.updated_at = db.execute(text("SELECT CURRENT_TIMESTAMP")).scalar()
     db.commit()
 
-    return {"session_id": session.session_id, "response": answer}  # ✅ 반드시 포함
+    return {"session_id": session.session_id, "response": answer}  # 반드시 포함
 
 
-# ✅ 3. GPT 세션 목록 조회
+# 3. GPT 세션 목록 조회
 @router.get("/sessions", response_model=List[GptSessionListItem])
 def list_gpt_sessions(
     db: Session = Depends(get_db),
@@ -143,7 +143,7 @@ def list_gpt_sessions(
     return sessions
 
 
-# ✅ 4. GPT 세션 상세 조회
+# 4. GPT 세션 상세 조회
 @router.get("/sessions/{session_id}", response_model=GptSessionDetail)
 def get_gpt_session_detail(
     session_id: int,
@@ -158,7 +158,7 @@ def get_gpt_session_detail(
     return session
 
 
-# ✅ 5. GPT 세션 삭제
+# 5. GPT 세션 삭제
 @router.delete("/sessions/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_gpt_session(
     session_id: int,
@@ -176,7 +176,7 @@ def delete_gpt_session(
     return
 
 
-# ✅ 6. GPT 세션 제목 수정
+# 6. GPT 세션 제목 수정
 @router.patch("/sessions/{session_id}", status_code=200)
 def update_gpt_session_title(
     session_id: int,

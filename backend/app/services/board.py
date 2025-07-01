@@ -49,7 +49,7 @@ def get_posts(board_type: str, page: int, page_size: int, sort_order: str, db: S
         Post,
         func.coalesce(like_subq.c.like_count, 0).label("like_count"),
         func.coalesce(comment_subq.c.comment_count, 0).label("comment_count"),
-        func.coalesce(accepted_subq.c.accepted_count, 0).label("accepted_count")  # ✅ 모집 인원 필드 추가
+        func.coalesce(accepted_subq.c.accepted_count, 0).label("accepted_count")  #   모집 인원 필드 추가
     ).outerjoin(like_subq, Post.post_id == like_subq.c.post_id) \
     .outerjoin(comment_subq, Post.post_id == comment_subq.c.post_id) \
     .outerjoin(accepted_subq, Post.post_id == accepted_subq.c.post_id) \
@@ -71,7 +71,7 @@ def get_posts(board_type: str, page: int, page_size: int, sort_order: str, db: S
         post_data["like_count"] = like_count
         post_data["comment_count"] = comment_count
         post_data["accepted_count"] = accepted_count + 1
-        post_data["recruit_limit"] = post.recruit_limit  # ✅ Post 모델에서 바로 가져옴
+        post_data["recruit_limit"] = post.recruit_limit  #   Post 모델에서 바로 가져옴
         result.append(post_data)
 
 
@@ -104,8 +104,8 @@ def get_post(post_id: int, db: Session):
 
     post, nickname, like_count, comment_count, accepted_count = post_query
     result = PostResponse.model_validate(post).model_dump()
-    result["author_id"] = post.user_id           # ✅ 추가됨
-    result["nickname"] = nickname                # ✅ 추가됨
+    result["author_id"] = post.user_id           #   추가됨
+    result["nickname"] = nickname                #   추가됨
     result["like_count"] = like_count
     result["comment_count"] = comment_count
     result["accepted_count"] = accepted_count + 1
@@ -164,7 +164,7 @@ def delete_comment(comment_id: int, db: Session):
     db.commit()
 
 def get_comments(post_id: int, db: Session):
-    # 🧩 댓글 좋아요 수 서브쿼리
+    # 댓글 좋아요 수 서브쿼리
     like_subq = db.query(
         CommentLike.comment_id,
         func.count(CommentLike.user_id).label("like_count")
@@ -193,7 +193,7 @@ def get_comments(post_id: int, db: Session):
             parent_comment_id=comment.parent_comment_id,
             created_at=comment.created_at,
             updated_at=comment.updated_at,
-            like_count=like_count,  # ✅ 추가
+            like_count=like_count,  
         )
         for comment, nickname, like_count in results
     ]
@@ -266,13 +266,13 @@ def apply_to_project(post_id: int, data: ProjectApplicantCreate, db: Session):
     db.commit()
     db.refresh(new_applicant)
 
-    # ✅ 닉네임을 가져오기 위한 유저 조회 추가
+    # 닉네임을 가져오기 위한 유저 조회 추가
     user = db.query(User).filter(User.user_id == new_applicant.user_id).first()
 
     return ProjectApplicantResponse(
         applicant_id=new_applicant.applicant_id,
         user_id=new_applicant.user_id,
-        nickname=user.nickname,  # ✅ 이제 인식됩니다
+        nickname=user.nickname, 
         introduction=new_applicant.introduction,
         skills=new_applicant.skills.split(",") if new_applicant.skills else [],
         links=new_applicant.links,
@@ -413,7 +413,7 @@ def get_my_posts(user_id: int, db: Session) -> List[PostResponse]:
     return [PostResponse.model_validate(post).model_dump() for post in posts]
 
 def get_my_comments(user_id: int, db: Session) -> List[CommentResponse]:
-    # 🧩 좋아요 수 서브쿼리
+    # 좋아요 수 서브쿼리
     like_subq = (
         db.query(CommentLike.comment_id, func.count(CommentLike.user_id).label("like_count"))
         .group_by(CommentLike.comment_id)

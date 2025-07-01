@@ -3,7 +3,7 @@ from typing import Optional, List, Literal
 from datetime import date, datetime
 
 
-# ✅ 티어 정보 (내포용)
+#   티어 정보 (내포용)
 class UserTierBase(BaseModel):
     tier_id: int
     tier_name: str
@@ -13,7 +13,7 @@ class UserTierBase(BaseModel):
         from_attributes = True
 
 
-# ✅ 기본 유저 정보 스키마 (공통용)
+#   기본 유저 정보 스키마 (공통용)
 class UserBase(BaseModel):
     user_id: int
     nickname: str
@@ -32,7 +32,7 @@ class UserBase(BaseModel):
         from_attributes = True
 
 
-# ✅ 회원가입 요청용
+#   회원가입 요청용
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
@@ -40,7 +40,7 @@ class UserCreate(BaseModel):
     birth_date: Optional[date] = None
 
 
-# ✅ 회원정보 응답용 (자세한 프로필)
+#   회원정보 응답용 (자세한 프로필)
 class UserResponse(BaseModel):
     user_id: int
     email: str
@@ -61,14 +61,14 @@ class UserResponse(BaseModel):
         from_attributes = True
 
 
-# ✅ 사용자 정보 수정용
+#   사용자 정보 수정용
 class UserUpdateSchema(BaseModel):
     nickname: str
     bio: Optional[str] = None
     profile_image_url: Optional[str] = None
 
 
-# ✅ 간단 정보 (팔로우 목록 등에서 사용)
+#   간단 정보 (팔로우 목록 등에서 사용)
 class UserSimpleInfo(BaseModel):
     user_id: int
     nickname: str
@@ -77,7 +77,7 @@ class UserSimpleInfo(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
-# ✅ 프로필 이미지 변경 요청 (화폐 차감용)
+#   프로필 이미지 변경 요청 (화폐 차감용)
 class ProfileImageUpdateRequest(BaseModel):
     image_url: str
     action: Literal["change_profile_image"]  # 화폐 차감용

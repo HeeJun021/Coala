@@ -29,8 +29,8 @@ class ChatRoomListItem(BaseModel):
     last_message: Optional[str]
     last_message_time: Optional[datetime]
     unread_count: int
-    participants: List[ChatParticipant]  # ✅ 추가
-    message_metadata: Optional[Dict[str, Any]] = None  # ✅ 이거 추가
+    participants: List[ChatParticipant]  
+    message_metadata: Optional[Dict[str, Any]] = None  
 
 
 # 채팅 보내기 요청, 응답
@@ -38,10 +38,10 @@ class ChatMessageCreateRequest(BaseModel):
     message: Optional[str] = None
     message_type: str = "text"  # 'text', 'file', 'image'
     file_url: Optional[str] = None
-    file_name: Optional[str] = None          # ⬅️ 추가
-    file_size: Optional[int] = None          # ⬅️ 추가
-    uploaded_at: Optional[datetime] = None   # ⬅️ 추가
-    message_metadata: Optional[Dict[str, Any]] = None  # ✅ 추가
+    file_name: Optional[str] = None          
+    file_size: Optional[int] = None          
+    uploaded_at: Optional[datetime] = None   
+    message_metadata: Optional[Dict[str, Any]] = None   
 
 
 class ChatMessageCreateResponse(BaseModel):
@@ -51,28 +51,28 @@ class ChatMessageCreateResponse(BaseModel):
     message: Optional[str]
     message_type: str
     file_url: Optional[str]
-    file_name: Optional[str] = None          # ✅ 추가
-    file_size: Optional[int] = None          # ✅ 추가
-    uploaded_at: Optional[datetime] = None   # ✅ 추가
+    file_name: Optional[str] = None    
+    file_size: Optional[int] = None   
+    uploaded_at: Optional[datetime] = None  
     sent_at: datetime
-    message_metadata: Optional[Dict[str, Any]] = None  # ✅ 추가
+    message_metadata: Optional[Dict[str, Any]] = None 
 
 
 # 채팅 조회 스키마
 class ChatMessageItem(BaseModel):
     message_id: int
-    sender: UserSimpleInfo  # ✅ 통합 구조
+    sender: UserSimpleInfo   
     message: Optional[str]
     message_type: str
     file_url: Optional[str]
-    file_name: Optional[str] = None          # ✅ 추가
-    file_size: Optional[int] = None          # ✅ 추가
-    uploaded_at: Optional[datetime] = None   # ✅ 추가
+    file_name: Optional[str] = None      
+    file_size: Optional[int] = None        
+    uploaded_at: Optional[datetime] = None 
     sent_at: datetime
     read_count: int
     
-    message_metadata: Optional[Dict[str, Any]] = None  # ✅ 이 줄 추가!
-    invite_status: Optional[str] = None  # ✅ 'pending' | 'accepted' | 'rejected'
+    message_metadata: Optional[Dict[str, Any]] = None  
+    invite_status: Optional[str] = None  #  'pending' | 'accepted' | 'rejected'
 
 
 

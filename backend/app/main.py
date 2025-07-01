@@ -9,7 +9,7 @@ from app.routers import document
 
 
 
-# ✅ 모델 불러오기
+# 모델 불러오기
 from app.models import (
     question_models,
     user,
@@ -22,7 +22,7 @@ from app.models import (
 
 from app.models.eucalyptus_transaction_models import EucalyptusTransaction
 
-# ✅ 라우터 불러오기
+# 라우터 불러오기
 from app.routers import (
     chat_ws,
     follow,
@@ -79,7 +79,7 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-# ✅ CORS 설정
+# CORS 설정
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -87,8 +87,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# ✅ 라우터 등록
 
 # 라우터 등록
 app.include_router(board.router)
@@ -162,7 +160,7 @@ def read_root():
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    print("❌ [422 Validation Error]", exc.errors())  # ✅ 여기에 찍힘
+    print("[422 Validation Error]", exc.errors()) 
     return JSONResponse(
         status_code=422,
         content={"detail": exc.errors()},

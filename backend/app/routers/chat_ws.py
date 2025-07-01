@@ -17,11 +17,11 @@ manager = ConnectionManager()
 
 @router.websocket("/ws/chat")
 async def websocket_endpoint(websocket: WebSocket, db: Session = Depends(get_db)):
-    # ✅ room_id 쿼리 추출
+    # room_id 쿼리 추출
     room_id = websocket.query_params.get("room_id")
     room_id = int(room_id) if room_id else None
 
-    # ✅ access_token은 쿠키에서 추출
+    # access_token은 쿠키에서 추출
     headers = Headers(scope=websocket.scope)
     cookie_header = headers.get("cookie")
 
@@ -32,7 +32,7 @@ async def websocket_endpoint(websocket: WebSocket, db: Session = Depends(get_db)
         if "access_token" in cookies:
             token = cookies["access_token"].value
 
-    # ✅ 둘 중 하나라도 없으면 종료
+    # 둘 중 하나라도 없으면 종료
     if token is None:
         await websocket.close(code=1008)
         return
@@ -45,7 +45,7 @@ async def websocket_endpoint(websocket: WebSocket, db: Session = Depends(get_db)
     user_id = user.user_id
     await manager.connect(user_id, websocket)
 
-    # ✅ 여기 아래에 구분 로그 추가
+    # 여기 아래에 구분 로그 추가
     if room_id:
         print(f"💬 [채팅방 WS] user_id={user_id}, room_id={room_id} 연결됨")
     else:
@@ -56,7 +56,7 @@ async def websocket_endpoint(websocket: WebSocket, db: Session = Depends(get_db)
             data = await websocket.receive_json()
             event_type = data.get("type", "message")
 
-            # ✅ 과거 메시지 불러오기
+            # 과거 메시지 불러오기
             if event_type == "fetch_old_messages":
                 before = data.get("before")
                 limit = data.get("limit", 20)
@@ -97,12 +97,12 @@ async def websocket_endpoint(websocket: WebSocket, db: Session = Depends(get_db)
                 )
                 continue
 
-            # ✅ 읽음 처리
+            # 읽음 처리
             if event_type == "read":
                 message_id = data.get("message_id")
                 print(
                     f"📥 읽음 메시지 수신: user_id={user_id}, message_id={message_id}"
-                )  # ✅ 로그 찍기
+                )  # 로그 찍기
                 if not message_id:
                     await websocket.send_json({"error": "message_id는 필수입니다."})
                     continue
@@ -124,11 +124,11 @@ async def websocket_endpoint(websocket: WebSocket, db: Session = Depends(get_db)
                         {"room_id": room_id},
                     ).fetchall()
                     user_ids = [row[0] for row in participants]
-                    total_participants = len(user_ids)  # ✅ 총 참여자 수 계산
+                    total_participants = len(user_ids)  # 총 참여자 수 계산
 
                     print(f"📤 읽음 브로드캐스트 대상: {user_ids}")
 
-                    # ✅ 읽은 유저 ID 조회
+                    # 읽은 유저 ID 조회
                     read_user_ids = db.execute(
                         text(
                             "SELECT user_id FROM chatmessagereads WHERE message_id = :message_id"
@@ -137,10 +137,10 @@ async def websocket_endpoint(websocket: WebSocket, db: Session = Depends(get_db)
                     ).fetchall()
                     read_user_ids_list = list(set(row[0] for row in read_user_ids))
 
-                    # ✅ 읽지 않은 사람 수 계산
+                    # 읽지 않은 사람 수 계산
                     unread_count = total_participants - len(read_user_ids_list)
 
-                    # ✅ WebSocket 브로드캐스트
+                    # WebSocket 브로드캐스트
                     await manager.broadcast_all(
                         {
                             "type": "read",
@@ -152,12 +152,12 @@ async def websocket_endpoint(websocket: WebSocket, db: Session = Depends(get_db)
 
                 continue
 
-            # ✅ 메시지 전송
+            # 메시지 전송
             if event_type == "message":
                 message = data.get("message")
                 message_type = data.get("message_type", "text")
                 file_url = data.get("file_url")
-                 # ✅ 메시지 메타데이터 처리
+                 # 메시지 메타데이터 처리
                 message_metadata = None
                 if message_type == "project_invite":
                     message_metadata = {
@@ -186,7 +186,7 @@ async def websocket_endpoint(websocket: WebSocket, db: Session = Depends(get_db)
                 )
                 db.commit()
 
-                # ✅ 참여자 조회
+                # 참여자 조회
                 participants = db.execute(
                     text(
                         "SELECT user_id FROM chatroomparticipants WHERE room_id = :room_id"
@@ -196,14 +196,14 @@ async def websocket_endpoint(websocket: WebSocket, db: Session = Depends(get_db)
                 user_ids = [row[0] for row in participants]
                 total_participants = len(user_ids)
 
-                # ✅ 보낸 사람은 자동 읽음 처리됨 → 나머지가 unread 대상
+                # 보낸 사람은 자동 읽음 처리됨 → 나머지가 unread 대상
                 unread_count = total_participants - 1
 
-                # ✅ 로그
+                # 로그
                 print("[브로드캐스트 대상]", user_ids)
                 print(f"📨 메시지 unread_count = {unread_count}")
 
-                # ✅ 메시지 전송
+                # 메시지 전송
                 await manager.broadcast_to_room(
                     user_ids,
                     {

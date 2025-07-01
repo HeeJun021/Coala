@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
 
-# ✅ 문제 생성/수정용
+#   문제 생성/수정용
 class CodingTestBase(BaseModel):
     title: str
     description: str
@@ -19,7 +19,7 @@ class CodingTestCreate(CodingTestBase):
 class CodingTestUpdate(CodingTestBase):
     pass
 
-# ✅ 문제 조회 응답용
+#   문제 조회 응답용
 class CodingTestResponse(CodingTestBase):
     test_id: int
     created_at: datetime
@@ -28,7 +28,7 @@ class CodingTestResponse(CodingTestBase):
         "from_attributes": True
     }
 
-# ✅ 테스트케이스
+#   테스트케이스
 class CodingTestCaseBase(BaseModel):
     test_type: str
     example_input: str
@@ -48,7 +48,7 @@ class CodingTestCaseResponse(CodingTestCaseBase):
         "from_attributes": True
     }
 
-# ✅ 제약조건
+#   제약조건
 class CodingTestConstraintBase(BaseModel):
     variable_name: str
     min_value: Optional[int] = None
@@ -68,7 +68,7 @@ class CodingTestConstraintResponse(CodingTestConstraintBase):
         "from_attributes": True
     }
 
-# ✅ 스타터 코드
+#   스타터 코드
 class StarterCodeBase(BaseModel):
     language: str
     code: str
@@ -87,7 +87,7 @@ class StarterCodeResponse(StarterCodeBase):
         "from_attributes": True
     }
 
-# ✅ 통계 응답용
+#   통계 응답용
 class CodingTestStatsResponse(BaseModel):
     test_id: int
     total_submissions: int

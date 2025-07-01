@@ -14,7 +14,7 @@ export const getAllUserQuizzes = async (search = "", userId = null) => {
 };
 
 
-// ✅ 사용자 퀴즈 상세 조회
+// 사용자 퀴즈 상세 조회
 export const getUserQuizDetail = async (userquizId) => {
   try {
     const response = await apiClient.get(`/user-quiz/${userquizId}`);
@@ -24,7 +24,7 @@ export const getUserQuizDetail = async (userquizId) => {
   }
 };
 
-// ✅ 사용자 퀴즈 제출
+// 사용자 퀴즈 제출
 export const submitUserQuiz = async (payload) => {
   try {
     const response = await apiClient.post(`/user-quiz/submit`, payload);

@@ -74,7 +74,7 @@ const UserQuizSolvePage = ({ userData }) => {
         })),
       };
       const result = await submitUserQuiz(payload);
-      console.log("✅ 제출 결과:", result);
+      console.log("제출 결과:", result);
 
       navigate(`/user-quiz-result/${result.uq_submission_id}`);
     } catch (err) {

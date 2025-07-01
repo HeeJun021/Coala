@@ -36,7 +36,7 @@ const ExportSqlModal = ({ onClose, erdId }) => {
     fetchSql();
   }, [erdId, dbms]);
 
-  // ✅ DOM 반영 이후 정확하게 Prism 적용
+  // DOM 반영 이후 정확하게 Prism 적용
   useLayoutEffect(() => {
     if (codeRef.current) {
       setTimeout(() => {

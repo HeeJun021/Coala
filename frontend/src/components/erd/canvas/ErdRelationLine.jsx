@@ -12,7 +12,7 @@ const ErdRelationLine = ({
 }) => {
   if (!fromColumn || !toColumn) return null;
 
-  // ✅ 색상 변수 선언
+  // 색상 변수 선언
   const RELATION_COLOR = "#fb923c";
   const SELECTED_COLOR = "#60a5fa";
   const BACKGROUND_COLOR = "#1e1e2e";
@@ -96,7 +96,7 @@ const relationRight = isLeftToRightVisual ? relation_right : relation_left;
           r="5"
           stroke={symbolColor}
           strokeWidth={circleStrokeWidth}
-          fill={BACKGROUND_COLOR} // ✅ 항상 캔버스 배경색
+          fill={BACKGROUND_COLOR} 
         />
       );
     }

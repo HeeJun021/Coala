@@ -9,7 +9,7 @@ const ProjectApplicantsPage = () => {
   const { postId } = useParams();
   const navigate = useNavigate();
   const [applicants, setApplicants] = useState([]);
-  const [loadingId, setLoadingId] = useState(null); // ✅ 버튼 중복 방지용 상태
+  const [loadingId, setLoadingId] = useState(null);
 
   const fetchApplicants = async () => {
     try {

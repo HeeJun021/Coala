@@ -1,7 +1,7 @@
 import React from "react";
 import { Controlled as CodeMirror } from "react-codemirror2";
 
-// ✅ 필요한 모드 및 스타일 import
+// 필요한 모드 및 스타일 import
 import "codemirror/lib/codemirror.css";
 import "codemirror/theme/dracula.css";
 import "codemirror/mode/sql/sql";

@@ -34,7 +34,7 @@ def get_recent_reports(db: Session, limit: int = 10):
             PostReport.user_id,
             PostReport.created_at.label("created_at"),
             literal("게시글").label("report_type"),
-            PostReport.post_id.label("post_id")  # ✅ 게시글 ID 그대로
+            PostReport.post_id.label("post_id") 
         )
     )
 
@@ -45,7 +45,7 @@ def get_recent_reports(db: Session, limit: int = 10):
             CommentReport.user_id,
             CommentReport.created_at.label("created_at"),
             literal("댓글").label("report_type"),
-            Comment.post_id.label("post_id")  # ✅ 댓글 → 게시글 ID join으로 추출
+            Comment.post_id.label("post_id") 
         ).join(Comment, Comment.comment_id == CommentReport.comment_id)
     )
 
@@ -57,7 +57,7 @@ def get_recent_reports(db: Session, limit: int = 10):
         union_stmt.c.user_id,
         union_stmt.c.created_at,
         union_stmt.c.report_type,
-        union_stmt.c.post_id  # ✅ 포함된 post_id까지 함께
+        union_stmt.c.post_id  
     ).order_by(desc(union_stmt.c.created_at)).limit(limit)
 
     results = db.execute(stmt).mappings().all()
@@ -69,7 +69,7 @@ def get_recent_reports(db: Session, limit: int = 10):
             "reason": row["reason"],
             "reporter_id": row["user_id"],
             "created_at": row["created_at"],
-            "post_id": row["post_id"]  # ✅ 프론트에서 사용하는 postId
+            "post_id": row["post_id"]  
         }
         for row in results
     ]
@@ -78,7 +78,7 @@ def get_weekly_report_trend(db: Session):
     today = datetime.utcnow().date()
     seven_days_ago = today - timedelta(days=6)
 
-    # 📌 날짜별 게시글 신고 수
+    # 날짜별 게시글 신고 수
     post_counts = (
         db.query(
             cast(PostReport.created_at, Date).label("date"),
@@ -89,7 +89,7 @@ def get_weekly_report_trend(db: Session):
         .all()
     )
 
-    # 📌 날짜별 댓글 신고 수
+    # 날짜별 댓글 신고 수
     comment_counts = (
         db.query(
             cast(CommentReport.created_at, Date).label("date"),
@@ -100,7 +100,7 @@ def get_weekly_report_trend(db: Session):
         .all()
     )
 
-    # 📌 날짜별 합산
+    # 날짜별 합산
     date_to_count = {}
 
     for row in post_counts:
@@ -182,7 +182,7 @@ def get_user_detail_by_id(db: Session, user_id: int):
     # 3) 댓글 목록(제목 포함)
     comments = (
         db.query(Comment)
-        .options(joinedload(Comment.post))                # ← 여기!
+        .options(joinedload(Comment.post))    
         .filter(Comment.user_id == user_id)
         .order_by(Comment.created_at.desc())
         .all()
@@ -286,7 +286,7 @@ def get_study_material_summary_by_language(db: Session, language: str):
         for r in results
     ]
     
-# ✅ 학습자료 삭제
+# 학습자료 삭제
 def delete_study_material(db: Session, material_id: int):
     material = db.query(StudyMaterials).filter(StudyMaterials.material_id == material_id).first()
     if not material:

@@ -9,7 +9,7 @@ const ProjectInviteCard = ({ invite, isMine }) => {
 
   const projectId = invite.message_metadata?.project_id;
   const projectName = invite.message_metadata?.project_name || "알 수 없음";
-  const inviteStatus = invite.invite_status; // ✅ 백엔드에서 내려주는 값
+  const inviteStatus = invite.invite_status; 
 
   const handleAcceptInvite = async () => {
     try {
@@ -43,7 +43,7 @@ const ProjectInviteCard = ({ invite, isMine }) => {
         <div className="text-xs text-gray-500">초대 메시지를 보냈습니다.</div>
       ) : inviteStatus === "accepted" || accepted ? (
         <div className="text-sm text-green-600 font-medium">
-          ✅ 초대를 수락했습니다.
+          초대를 수락했습니다.
           <button
             onClick={() => navigate("/team-project")}
             className="mt-2 px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100"
@@ -52,7 +52,7 @@ const ProjectInviteCard = ({ invite, isMine }) => {
           </button>
         </div>
       ) : inviteStatus === "rejected" ? (
-        <div className="text-sm text-gray-500">❌ 초대를 거절했습니다.</div>
+        <div className="text-sm text-gray-500">초대를 거절했습니다.</div>
       ) : (
         !responded && (
           <div className="flex gap-2 mt-2">

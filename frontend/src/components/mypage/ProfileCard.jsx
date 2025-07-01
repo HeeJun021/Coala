@@ -5,7 +5,7 @@ import SelectProfileModal from './SelectProfileModal';
 
 const ProfileCard = ({ userData, setUserData }) => {
     const [isEditing, setIsEditing] = useState(false);
-    const [isModalOpen, setIsModalOpen] = useState(false); // ✅ 모달 상태
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const [formData, setFormData] = useState({
         nickname: userData.nickname,
@@ -81,7 +81,7 @@ const ProfileCard = ({ userData, setUserData }) => {
                             src={userData.profile_image_url}
                             alt="Profile"
                             className="w-20 h-20 rounded-md cursor-pointer transition duration-200 hover:brightness-75 border border-gray-300"
-                            onClick={() => setIsModalOpen(true)} // ✅ 모달 열기
+                            onClick={() => setIsModalOpen(true)}
                         />
                     </div>
                     <div>

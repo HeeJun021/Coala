@@ -135,8 +135,7 @@ const ChatListSettingsPanel = ({ user, onClose }) => {
         </div>
       </div>
 
-      {/* 🎨 배경화면 설정 모달 (설정창 내부에서만 보이도록) */}
-{/* 🎨 배경화면 설정 모달 (설정창 내부에 표시) */}
+{/* 배경화면 설정 모달 (설정창 내부에 표시) */}
 {showColorModal && (
   <div className="absolute inset-0 z-50">
     {/* 반투명 배경 (설정창 내부만 덮음) */}

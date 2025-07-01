@@ -15,7 +15,7 @@ import "codemirror/addon/hint/show-hint";
 import "codemirror/addon/hint/javascript-hint";
 import "codemirror/addon/hint/anyword-hint";
 
-// ✅ 커스텀 힌트 등록 함수
+// 커스텀 힌트 등록 함수
 import { registerCustomHints } from "../../utils/customHints";
 
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";

@@ -12,8 +12,8 @@ class ErdResponse(BaseModel):
     erd_id: int
     project_id: int
     name: str
-    description: Optional[str] = None  # ✅ 이게 지금 누락되어 있었음!
-    created_at: str  # ✅ datetime → str로 포맷된 형태 받음
+    description: Optional[str] = None  
+    created_at: str  
     updated_at: Optional[str]
     last_editor_name: Optional[str]
     table_count: int
@@ -32,7 +32,7 @@ class ErdColumnOut(BaseModel):
     is_not_null: bool
     default_value: Optional[str]
     column_order: int
-    description: Optional[str] = None  # ✅ 추가 필드!
+    description: Optional[str] = None  
 
     model_config = {"from_attributes": True}
 
@@ -53,8 +53,7 @@ class ErdForeignKeyColumnOut(BaseModel):
     table_id: int
     is_foreign: bool = True
 
-    
-# ✅ 관계 응답 객체
+ 
 class ErdRelationOut(BaseModel):
     relation_id: int
     source_table_id: int
@@ -63,7 +62,7 @@ class ErdRelationOut(BaseModel):
     target_column_id: Optional[int]
 
     participation_source: Literal["required", "optional"]
-    relation_type: Literal["1:1", "1:N"]  # ✅ 논리적 관계로 변경
+    relation_type: Literal["1:1", "1:N"]  
     participation_target: Literal["required", "optional"]
 
     auto_create_fk: bool
@@ -111,7 +110,7 @@ class ErdTableOut(BaseModel):
 
 # 속성 추가
 class ErdColumnCreate(BaseModel):
-    name: Optional[str] = ""  # ✅ 기본값 빈 문자열
+    name: Optional[str] = ""   
     data_type: Optional[str] = ""
     is_primary: bool = False
     is_foreign: bool = False
@@ -180,11 +179,11 @@ class ErdColumnUpdate(BaseModel):
     column_order: Optional[int] = None
 
 
-# ✅ 관계 수정용
+#   관계 수정용
 class ErdRelationUpdate(BaseModel):
     relation_id: int
     participation_source: Optional[Literal["required", "optional"]] = None
-    relation_type: Optional[Literal["1:1", "1:N"]] = None  # ✅ 논리적 관계 타입
+    relation_type: Optional[Literal["1:1", "1:N"]] = None  #   논리적 관계 타입
     participation_target: Optional[Literal["required", "optional"]] = None
     auto_create_fk: Optional[bool] = None
     cascade_delete: Optional[bool] = None

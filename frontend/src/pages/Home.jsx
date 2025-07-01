@@ -46,7 +46,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* ✅ 스크롤 도착 지점 */}
+      {/* 스크롤 도착 지점 */}
       <div ref={scrollRef} />
 
       {/* 학습자료 섹션 */}

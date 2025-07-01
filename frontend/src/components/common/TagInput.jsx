@@ -13,7 +13,7 @@ import {
   X,
 } from "lucide-react";
 
-// 👉 자동완성 + 아이콘 렌더링용 데이터
+// 자동완성 + 아이콘 렌더링용 데이터
 export const techStackOptions = [
   { label: "React", icon: <Atom size={16} className="text-cyan-500" /> },
   { label: "Next.js", icon: <Globe size={16} className="text-black" /> },
@@ -89,13 +89,13 @@ const TagInput = ({
     if (!label || tags.includes(label) || tags.length >= max) return;
     const updatedTags = [...tags, label];
     setTags(updatedTags);
-    onTagsChange?.(updatedTags); // 👈 호출
+    onTagsChange?.(updatedTags); 
   };
 
   const handleRemove = (index) => {
     const updatedTags = tags.filter((_, i) => i !== index);
     setTags(updatedTags);
-    onTagsChange?.(updatedTags); // 👈 호출
+    onTagsChange?.(updatedTags);
   };
 
   const handleInputChange = (e) => {

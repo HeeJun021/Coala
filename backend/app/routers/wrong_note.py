@@ -11,7 +11,7 @@ router = APIRouter(
     tags=["WrongNote"]
 )
 
-# ✅ 오답노트 작성 API
+#   오답노트 작성 API
 @router.post("/create", response_model=WrongNoteResponse)
 def create_wrong_note(note_data: WrongNoteCreate, db: Session = Depends(get_db)):
     # 제출이 존재하는지 확인
@@ -22,11 +22,11 @@ def create_wrong_note(note_data: WrongNoteCreate, db: Session = Depends(get_db))
     if not submission:
         raise HTTPException(status_code=404, detail="제출을 찾을 수 없습니다.")
 
-    # ✅ 필요 시 제출 제목 수정
+    #   필요 시 제출 제목 수정
     if note_data.note and submission.title is None:
         submission.title = "제출 제목 없음"  # or 기본값 유지
 
-    # ✅ 오답노트 저장
+    #   오답노트 저장
     new_note = WrongNote(
         user_id=note_data.user_id,
         ct_submission_id=note_data.ct_submission_id,
@@ -55,7 +55,7 @@ def get_wrong_note_by_submission(
         CodingTestSubmissions.ct_submission_id == submission_id
     ).first()
 
-    # ✅ dict로 응답을 커스터마이징 (title 포함)
+    #   dict로 응답을 커스터마이징 (title 포함)
     return {
         "note_id": note.note_id,
         "user_id": note.user_id,
@@ -69,7 +69,7 @@ def get_wrong_note_by_submission(
 
 
 
-# ✅ 오답노트 수정 API
+#   오답노트 수정 API
 @router.patch("/{note_id}", response_model=WrongNoteResponse)
 def update_wrong_note(
     note_id: int,

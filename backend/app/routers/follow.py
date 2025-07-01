@@ -4,14 +4,14 @@ from sqlalchemy.dialects.postgresql import insert
 from typing import List
 from sqlalchemy import delete
 from app.models.user import User, UserFollow
-from app.schemas.user import UserSimpleInfo
+from app.schemas.user_schema import UserSimpleInfo
 from app.database import get_db
 from app.dependencies.auth import get_current_user
 
 router = APIRouter(prefix="/follow", tags=["follow"])
 
 
-# ✅ 1. 팔로우 하기
+# 1. 팔로우 하기
 @router.post("/{user_id}", status_code=201)
 def follow_user(
     user_id: int,
@@ -37,7 +37,7 @@ def follow_user(
     return {"message": f"{user_id}번 유저를 팔로우했습니다."}
 
 
-# ✅ 2. 언팔로우 하기
+# 2. 언팔로우 하기
 @router.delete("/{user_id}", status_code=204)
 def unfollow_user(
     user_id: int,
@@ -57,7 +57,7 @@ def unfollow_user(
     return
 
 
-# ✅ 3. 내가 팔로우한 유저 목록 (팔로잉)
+# 3. 내가 팔로우한 유저 목록 (팔로잉)
 @router.get("/followings", response_model=list[UserSimpleInfo])
 def get_followings(
     current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
@@ -77,7 +77,7 @@ def get_followings(
     ]
 
 
-# ✅ 4. 나를 팔로우한 유저 목록 (팔로워)
+# 4. 나를 팔로우한 유저 목록 (팔로워)
 @router.get("/followers", response_model=list[UserSimpleInfo])
 def get_followers(
     current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
@@ -96,7 +96,7 @@ def get_followers(
         for u in followers
     ]
 
-# 🔍 전체 유저 검색 API
+# 전체 유저 검색 API
 @router.get("/search", response_model=list[UserSimpleInfo])
 def search_users(
     keyword: str = Query("", alias="keyword"),

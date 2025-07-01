@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // ✅ 네비게이션 추가
-import { requestEmailVerification, verifyEmail } from "../../api/userApi"; // ✅ 이메일 인증 관련 API
-import { registerUser } from "../../api/authApi"; // ✅ 회원가입 API
+import { useNavigate } from "react-router-dom"; // 네비게이션 추가
+import { requestEmailVerification, verifyEmail } from "../../api/userApi"; // 이메일 인증 관련 API
+import { registerUser } from "../../api/authApi"; // 회원가입 API
 import { ChevronLeft, User, Calendar, Mail, Lock } from "lucide-react";
 
 const Signup = () => {
@@ -42,7 +42,7 @@ const Signup = () => {
     }
   }, [timer]);
 
-  // ✅ 이메일 인증 요청 (백엔드 API 호출)
+  // 이메일 인증 요청 (백엔드 API 호출)
   const handleVerificationRequest = async () => {
     const fullEmail = `${email}@${selectedDomain}`;
     if (email && selectedDomain) {
@@ -56,7 +56,7 @@ const Signup = () => {
     }
   };
 
-  // ✅ 이메일 인증 확인 (백엔드 API 호출)
+  // 이메일 인증 확인 (백엔드 API 호출)
   const handleVerificationConfirm = async () => {
     const fullEmail = `${email}@${selectedDomain}`;
     try {
@@ -68,7 +68,7 @@ const Signup = () => {
     }
   };
 
-  // ✅ 비밀번호 유효성 검사
+  // 비밀번호 유효성 검사
   const handlePasswordChange = (e) => {
     const newPassword = e.target.value;
     setPassword(newPassword);
@@ -108,7 +108,7 @@ const Signup = () => {
         birth_date: birthDate,
       });
       alert("회원가입 성공!");
-      navigate("/login"); // ✅ 로그인 페이지로 이동
+      navigate("/login"); // 로그인 페이지로 이동
     } catch (error) {
       alert(error.message);
     }

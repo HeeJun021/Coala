@@ -34,21 +34,21 @@ const ErdCanvas = ({
 }) => {
   const canvasRef = useRef(null);
 
-  // 🧱 관계, 위치
+  // 관계, 위치
   const [columnPositions, setColumnPositions] = useState({});
 
-  // 🧱 관계 생성 상태
+  // 관계 생성 상태
   const [isAddingRelation, setIsAddingRelation] = useState(false);
   const [selectedRelationType, setSelectedRelationType] = useState(null);
   const [pendingFromColumnId, setPendingFromColumnId] = useState(null);
 
-  // 🧱 선택 상태
+  // 선택 상태
   const [selectedTableId, setSelectedTableId] = useState(null);
   const [selectedTableIds, setSelectedTableIds] = useState([]);
   const [selectedRelationId, setSelectedRelationId] = useState(null);
   const [selectedRelationIds, setSelectedRelationIds] = useState([]);
 
-  // 🧱 드래그 박스 선택
+  // 드래그 박스 선택
   const [selectionBox, setSelectionBox] = useState(null);
   const [isDraggingSelectionBox, setIsDraggingSelectionBox] = useState(false);
   const [wasDraggingSelectionBox, setWasDraggingSelectionBox] = useState(false);
@@ -61,10 +61,10 @@ const ErdCanvas = ({
   // 컬럼 호버 하이라이트
   const [hoveredColumnId, setHoveredColumnId] = useState(null);
 
-  // 🧱 도구 툴 드래그 여부
+  // 도구 툴 드래그 여부
   const [isToolDragging, setIsToolDragging] = useState(false);
 
-  // 🧱 드래그 원점, 시작 위치
+  // 드래그 원점, 시작 위치
   const dragStartRef = useRef(null);
   const dragOriginRef = useRef(null);
   const tablePositionsRef = useRef({});
@@ -82,7 +82,7 @@ useEffect(() => {
   return () => window.removeEventListener("keydown", handleKeyDown);
 }, [isPlacing, isAddingRelation, setIsPlacing, setIsAddingRelation]);
 
-  // 🧱 1. 드래그 시작
+  // 1. 드래그 시작
   const handleMouseDown = (e) => {
     if (e.button !== 0 || isToolDragging) return;
 
@@ -198,7 +198,7 @@ useEffect(() => {
       setSelectedRelationIds(relatedRelationIds);
     }
 
-    // ✅ 위치가 바뀐 테이블만 골라내기
+    // 위치가 바뀐 테이블만 골라내기
     let moved = false;
     const movedTables = [];
 
@@ -211,14 +211,14 @@ useEffect(() => {
 
       if (dx !== 0 || dy !== 0) {
         moved = true;
-        movedTables.push(t); // ✅ 위치가 실제로 바뀐 테이블만 모음
+        movedTables.push(t); // 위치가 실제로 바뀐 테이블만 모음
       }
 
       return t;
     });
 
     if (moved) {
-      // ✅ movedTables만 patch
+      // movedTables만 patch
       const updatePromises = movedTables.map((t) =>
         patchTable(erdId, t.id, {
           pos_x: Math.round(t.x),
@@ -229,7 +229,7 @@ useEffect(() => {
         console.error("🛑 테이블 위치 업데이트 실패:", err)
       );
 
-      // ✅ 전체 상태로 스냅샷 저장
+      // 전체 상태로 스냅샷 저장
       handleSnapshotSaveWithColumns(updatedTables, relations);
     }
 
@@ -373,7 +373,7 @@ useEffect(() => {
         return;
       }
 
-      // ✅ 백엔드 명세에 맞게 구성
+      // 백엔드 명세에 맞게 구성
       const relationData = {
         source_table_id,
         source_column_id,
@@ -405,7 +405,7 @@ useEffect(() => {
         );
       }
 
-      // 🧠 렌더링용 변환
+      // 렌더링용 변환
       const relationVisual =
         relation_type === "1:N"
           ? { relation_left: "bar", relation_right: "crow" }
@@ -435,7 +435,7 @@ useEffect(() => {
     setPendingFromColumnId(null);
   };
 
-  // 🧱 2. 선택된 테이블 일괄 이동
+  // 2. 선택된 테이블 일괄 이동
   const handleBatchUpdateTablePosition = (movedTableId, mouseX, mouseY) => {
     if (!dragOriginRef.current || !tablePositionsRef.current) return;
 
@@ -454,7 +454,6 @@ useEffect(() => {
 
     setTables(updatedTables);
 
-    // ✅ 💡 여기서 컬럼 좌표도 직접 강제로 갱신
     setTimeout(() => {
       const canvasRect = canvasRef.current?.getBoundingClientRect();
       if (!canvasRect) return;
@@ -551,7 +550,7 @@ useEffect(() => {
       let updatedRelations = relations;
       let changed = false;
 
-      // ✅ 테이블 삭제
+      // 테이블 삭제
       if (selectedTableIds.length > 0) {
         try {
           await deleteMultipleTables(erdId, selectedTableIds);
@@ -560,7 +559,6 @@ useEffect(() => {
             (t) => !selectedTableIds.includes(t.id)
           );
 
-          // ❌ 여기서 setTables 하지 말고 아래에서 한 번만
           setSelectedTableIds([]);
           changed = true;
         } catch (err) {
@@ -568,7 +566,7 @@ useEffect(() => {
         }
       }
 
-      // ✅ 관계 삭제
+      // 관계 삭제
       let serverRelationIds = [];
 
       if (selectedRelationIds.length > 0) {
@@ -580,14 +578,13 @@ useEffect(() => {
           try {
             await deleteMultipleRelations(erdId, serverRelationIds);
 
-            // ✅ FK 해제 처리 (수정된 부분)
             for (const relationId of serverRelationIds) {
               const deleted = relations.find(
                 (r) => r.relationId === relationId
               );
               if (deleted?.toColumnId) {
                 try {
-                  await unsetForeignKey(deleted.toColumnId); // ✅ FK 해제 대기
+                  await unsetForeignKey(deleted.toColumnId); 
                 } catch (err) {
                   console.error("❌ FK 해제 실패:", err);
                 }
@@ -617,7 +614,7 @@ useEffect(() => {
         }
       }
 
-      // ✅ 상태 변경된 경우에만 스냅샷 먼저 저장한 후 상태 반영
+      // 상태 변경된 경우에만 스냅샷 먼저 저장한 후 상태 반영
       if (changed) {
         console.log("📸 스냅샷 저장 시작");
         handleSnapshotSaveWithColumns(updatedTables, updatedRelations);
@@ -710,11 +707,11 @@ useEffect(() => {
       onClick={handleCanvasClick}
       onMouseDown={(e) => {
         handleMouseDown(e); // 기존 박스 선택
-        handlePanMouseDown(e); // ✅ 중간 클릭 이동
+        handlePanMouseDown(e); // 중간 클릭 이동
       }}
       onMouseMove={(e) => {
         handleMouseMove(e); // 기존 박스 선택
-        handlePanMouseMove(e); // ✅ 중간 클릭 이동
+        handlePanMouseMove(e); // 중간 클릭 이동
       }}
       onMouseUp={handleMouseUp}
       className={`relative w-full h-full bg-[#1e1e2f] overflow-hidden ${
@@ -811,7 +808,7 @@ useEffect(() => {
       {/* 고정 FloatingToolButton */}
       <FloatingToolButton
         erdId={erdId}
-        fetchErdDetail={fetchErdDetail} // ✅ 이 줄 추가
+        fetchErdDetail={fetchErdDetail}
         onAddTable={() => setIsPlacing(true)}
         onAddRelation={(type) => {
           setIsAddingRelation(true);

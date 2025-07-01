@@ -30,7 +30,7 @@ def accept_project_invite(
     if existing:
         raise HTTPException(status_code=400, detail="Already a project member")
 
-    # ✅ (먼저) 현재 프로젝트 멤버 ID 추출
+    #   (먼저) 현재 프로젝트 멤버 ID 추출
     members = (
         db.query(ProjectMembers).filter(ProjectMembers.project_id == project_id).all()
     )
@@ -47,14 +47,14 @@ def accept_project_invite(
     )
     db.flush()
 
-    # ✅ 수락 메시지 유형 변경
+    #   수락 메시지 유형 변경
     if message_id:
         db.query(ChatMessage).filter(ChatMessage.message_id == message_id).update(
             {"message_type": "project_invite_accepted"}
         )
         db.flush()
 
-    # ✅ 팀 프로젝트 멤버들끼리 자동 맞팔 추가
+    #   팀 프로젝트 멤버들끼리 자동 맞팔 추가
     for other_user_id in member_ids:
         if other_user_id != user.user_id:
             # 내가 상대를 팔로우
@@ -184,7 +184,7 @@ def send_project_invite(db: Session, sender: User, receiver_id: int, project_id:
     else:
         room_id = existing_room.room_id
 
-        # 🔁 6. 기존 방이 있는데 soft-deleted 상태라면 복구
+        # 6. 기존 방이 있는데 soft-deleted 상태라면 복구
         participants = (
             db.query(ChatRoomParticipant)
             .filter(

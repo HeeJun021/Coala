@@ -7,11 +7,11 @@ import UserQuiz from "./UserQuiz";
 const QuizPage = ({ userData }) => {
   const location = useLocation();
 
-  // ✅ 현재 URL에서 'category' 값 가져오기 (기본값: practice)
+  // 현재 URL에서 'category' 값 가져오기 (기본값: practice)
   const queryParams = new URLSearchParams(location.search);
   const currentCategory = queryParams.get("category") || "practice";
 
-  // ✅ URL에 따라 렌더링할 컴포넌트 결정
+  // URL에 따라 렌더링할 컴포넌트 결정
   const renderQuizComponent = () => {
     switch (currentCategory) {
       case "practice":

@@ -5,7 +5,7 @@ from app.models.language import Language
 
 router = APIRouter()
 
-@router.get("/languages")  # ✅ GET 요청이 /api/languages로 설정됨
+@router.get("/languages")  # GET 요청이 /api/languages로 설정됨
 def get_languages(db: Session = Depends(get_db)):
     """모든 프로그래밍 언어 목록 가져오기"""
     languages = db.query(Language).all()

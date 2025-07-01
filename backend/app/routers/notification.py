@@ -8,7 +8,7 @@ from app.models.user import User
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
 
-# ✅ 1. 알림 목록 조회 (최신순)
+# 1. 알림 목록 조회 (최신순)
 @router.get("", response_model=list[NotificationResponse])
 def get_notifications(
     db: Session = Depends(get_db),

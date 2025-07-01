@@ -14,7 +14,7 @@ from app.dependencies.auth import get_current_user
 
 router = APIRouter(tags=["ERD Actions"])
 
-# ✅ Undo: 마지막 변경을 되돌리기
+# Undo: 마지막 변경을 되돌리기
 @router.post("/erds/{erd_id}/__log_undo")
 def undo_last_erd_change(
     erd_id: int,
@@ -29,7 +29,7 @@ def undo_last_erd_change(
     )
 
     if not last_log:
-        print("❌ [UNDO] 되돌릴 수 있는 로그가 없습니다. erd_id =", erd_id)
+        print("[UNDO] 되돌릴 수 있는 로그가 없습니다. erd_id =", erd_id)
         raise HTTPException(status_code=400, detail="되돌릴 수 있는 로그가 없습니다.")
 
 
@@ -75,7 +75,7 @@ def undo_last_erd_change(
     return {"message": f"{last_log.log_id}번 로그가 되돌려졌습니다."}
 
 
-# ✅ Redo: 마지막 Undo를 다시 실행
+# Redo: 마지막 Undo를 다시 실행
 @router.post("/erds/{erd_id}/__log_redo")
 def redo_last_undone_change(
     erd_id: int,

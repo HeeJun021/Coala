@@ -104,7 +104,7 @@ const WrongNoteEditor = ({
       }
 
       // alert("오답노트 저장 완료!");
-      setIsEditing(false); // ✅ 저장 후 읽기 모드로 전환
+      setIsEditing(false); // 저장 후 읽기 모드로 전환
     } catch (err) {
       console.error("오답노트 저장 실패", err);
       alert("오답노트 저장 중 오류 발생");
@@ -377,13 +377,13 @@ const WrongNoteEditor = ({
               {existingNoteMap[selectedSubmission.submission_id] ? (
                 isEditing ? (
                   <>
-                    {/* ✅ 수정 모드: WYSIWYG 에디터 */}
+                    {/* 수정 모드: WYSIWYG 에디터 */}
                     <Editor
                       key="editable"
                       initialValue={noteContent}
-                      previewStyle="tab" // ✅ 탭 구조
-                      initialEditType="wysiwyg" // ✅ 처음부터 WYSIWYG 모드!
-                      hideModeSwitch={true} // ✅ 하단 탭 스위치 숨김
+                      previewStyle="tab" // 탭 구조
+                      initialEditType="wysiwyg"
+                      hideModeSwitch={true} 
                       height="600px"
                       theme="light"
                       usageStatistics={false}
@@ -415,20 +415,20 @@ const WrongNoteEditor = ({
                 ) : (
                   <>
                     <div className="rounded border border-gray-300 bg-white overflow-hidden">
-                      {/* ✅ 뷰어 모드: 읽기 전용 Markdown Preview */}
+                      {/* 뷰어 모드: 읽기 전용 Markdown Preview */}
                       <Editor
                         key="viewer"
                         initialValue={noteContent}
-                        previewStyle="tab" // ✅ 탭 구조 유지
-                        initialEditType="markdown" // ✅ Markdown 기반 (탭 구조니까)
-                        hideModeSwitch={true} // ✅ 하단 스위치 숨김
+                        previewStyle="tab" // 탭 구조 유지
+                        initialEditType="markdown" // Markdown 기반 (탭 구조니까)
+                        hideModeSwitch={true} // 하단 스위치 숨김
                         height="600px"
                         theme="light"
                         usageStatistics={false}
-                        toolbarItems={[]} // ✅ 툴바 없음
+                        toolbarItems={[]} // 툴바 없음
                         ref={editorRef}
-                        viewer={true} // ✅ 에디터 모드 (viewer 아님)
-                        readOnly={true} // ✅ 수정 불가
+                        viewer={true} // 에디터 모드 (viewer 아님)
+                        readOnly={true} // 수정 불가
                       />
                     </div>
                     <div className="flex justify-end mt-3 gap-2">
@@ -447,7 +447,7 @@ const WrongNoteEditor = ({
                 )
               ) : (
                 <>
-                  {/* ✅ 신규 작성: WYSIWYG 에디터 */}
+                  {/* 신규 작성: WYSIWYG 에디터 */}
                   <Editor
                     initialValue={noteContent}
                     previewStyle="tab"

@@ -3,11 +3,11 @@
 @tailwind utilities;
 @font-face {
   font-family: "JetBrains Mono";
-  src: url("./fonts/JetBrainsMono-Regular.ttf") format("truetype"); /* ✅ src 기준 상대경로 */
+  src: url("./fonts/JetBrainsMono-Regular.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
 }
-@import "prismjs/themes/prism-tomorrow.css"; /* 🔥 다크 테마 (or prism.css) */
+@import "prismjs/themes/prism-tomorrow.css"; 
 
 @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono&family=Fira+Code&display=swap");
 
@@ -59,7 +59,7 @@ body,
   border-radius: 4px;
 }
 
-/* ✅ 스크롤바 트랙 (배경) */
+/* 스크롤바 트랙 (배경) */
 .result-scrollbar::-webkit-scrollbar-track,
 .problem-info-scrollbar::-webkit-scrollbar-track,
 .editor-scrollbar::-webkit-scrollbar-track {
@@ -382,7 +382,7 @@ body {
   border-radius: 6px;
 }
 
-/* ✅ Tiptap 기본 스타일 강제 적용 */
+/* Tiptap 기본 스타일 강제 적용 */
 .ProseMirror {
   padding: 1rem;
   min-height: 300px;

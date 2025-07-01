@@ -29,13 +29,13 @@ class EucalyptusResponse(BaseModel):
     changed_amount: int
     
     
-# 💸 트랜잭션 생성 요청용 (내부 로직에서만 사용될 수도 있음)
+#   트랜잭션 생성 요청용 (내부 로직에서만 사용될 수도 있음)
 class EucalyptusTransactionCreate(BaseModel):
     user_id: int
     amount: int
     action: str
 
-# 💬 클라이언트 응답용
+#   클라이언트 응답용
 class EucalyptusTransactionOut(BaseModel):
     transaction_id: int
     user_id: int

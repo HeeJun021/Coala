@@ -25,11 +25,11 @@ const SnapshotHistoryModal = ({
   const handleCheckout = async (snapshotId) => {
     try {
       await checkoutSnapshot(erdId, snapshotId);
-      showToast("✅ 해당 스냅샷으로 이동했습니다.");
+      showToast("해당 스냅샷으로 이동했습니다.");
       await fetchErdDetail(erdId);
       onClose();
     } catch (error) {
-      showToast("❌ 스냅샷 체크아웃 실패");
+      showToast("스냅샷 체크아웃 실패");
       console.error(error);
     }
   };

@@ -210,12 +210,12 @@ def get_user_quiz_result_service(uq_submission_id: int, db: Session) -> UserQuiz
     if not quiz:
         raise HTTPException(status_code=404, detail="퀴즈 정보를 찾을 수 없습니다.")
 
-    # 🔥 서브미션 디테일 (question_text 기준으로만 저장됨)
+    # 서브미션 디테일 (question_text 기준으로만 저장됨)
     details = db.query(Userquizsubmissiondetails).filter(
         Userquizsubmissiondetails.uq_submission_id == uq_submission_id
     ).order_by(Userquizsubmissiondetails.seq).all()
 
-    # 🔥 질문 전체 불러와서 question_text 기준 매핑
+    # 질문 전체 불러와서 question_text 기준 매핑
     questions = db.query(Userquestions).all()
     question_map = {q.question_text: q for q in questions}
 

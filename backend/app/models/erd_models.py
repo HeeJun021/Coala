@@ -67,7 +67,7 @@ class ErdRelations(Base):
     target_table_id = Column(Integer, ForeignKey("erdtables.table_id", ondelete="CASCADE"), nullable=False)
     target_column_id = Column(Integer, ForeignKey("erdcolumns.column_id", ondelete="CASCADE"), nullable=True)
 
-    # ✅ 변경된 필드
+    # 변경된 필드
     participation_source = Column(String(10), nullable=False)
     relation_type = Column(String(5), nullable=False)
     participation_target = Column(String(10), nullable=False)
@@ -75,7 +75,7 @@ class ErdRelations(Base):
     auto_create_fk = Column(Boolean, default=True)
     cascade_delete = Column(Boolean, default=False)
 
-    # ✅ 관계 설정
+    # 관계 설정
     erd = relationship("Erds", back_populates="relations")
     source_table = relationship("ErdTables", foreign_keys=[source_table_id], back_populates="source_relations")
     target_table = relationship("ErdTables", foreign_keys=[target_table_id], back_populates="target_relations")
@@ -88,10 +88,10 @@ class ErdSnapshot(Base):
 
     snapshot_id = Column(Integer, primary_key=True, autoincrement=True)  # PostgreSQL IDENTITY 호환
     erd_id = Column(Integer, ForeignKey("erds.erd_id", ondelete="CASCADE"), nullable=False)
-    log_id = Column(Integer, ForeignKey("erdactivitylogs.log_id", ondelete="SET NULL"), nullable=True)  # ✅ 추가됨
+    log_id = Column(Integer, ForeignKey("erdactivitylogs.log_id", ondelete="SET NULL"), nullable=True)  # 추가됨
     state_json = Column(JSON, nullable=False)
     is_active = Column(Boolean, default=False)
-    source = Column(String(20), default="auto")  # ✅ 추가된 필드
+    source = Column(String(20), default="auto")  # 추가된 필드
     created_at = Column(DateTime, server_default=func.now())
 
     # 관계 설정 (역참조: 필요 시 사용 가능)
@@ -109,7 +109,7 @@ class ErdActivityLogs(Base):
     message = Column(Text)
     created_at = Column(TIMESTAMP, server_default=func.now())
     
-    # ✅ Undo/Redo 상태 관리용 필드
+    # Undo/Redo 상태 관리용 필드
     undone = Column(Boolean, default=False)
 
     erd = relationship("Erds", back_populates="activity_logs")
@@ -125,7 +125,7 @@ class ErdActivityLogDetails(Base):
     change_type = Column(String(20), nullable=False)
     target_type = Column(String(20), nullable=False)
     target_name = Column(String(100))
-    target_field = Column(String(50)) # ✅ 변경된 속성명 (예: name, data_type)
+    target_field = Column(String(50)) # 변경된 속성명 (예: name, data_type)
     before_value = Column(Text)
     after_value = Column(Text)
 

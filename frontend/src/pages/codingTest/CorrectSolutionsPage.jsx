@@ -65,7 +65,7 @@ const CorrectSolutionsPage = () => {
 
   return (
     <div className="w-full min-h-screen bg-white text-gray-900 flex flex-col">
-      {/* ✅ 상단 헤더 */}
+      {/* 상단 헤더 */}
       <header className="flex items-center justify-between bg-gray-100 px-6 py-4 border-b">
         <h1 className="text-xl font-bold">{problemTitle}</h1>
         <div className="flex gap-2">
@@ -87,7 +87,7 @@ const CorrectSolutionsPage = () => {
         </div>
       </header>
 
-      {/* ✅ 중간 필터 */}
+      {/* 중간 필터 */}
       <div className="flex flex-col items-center w-full max-w-4xl mx-auto">
         <div className="flex gap-2 mt-10 mb-2 self-start">
           <button
@@ -135,7 +135,7 @@ const CorrectSolutionsPage = () => {
         </div>
       </div>
 
-      {/* ✅ 풀이 목록 */}
+      {/* 풀이 목록 */}
       {loading ? (
         <p className="text-gray-500 text-center">불러오는 중...</p>
       ) : currentItems.length === 0 ? (
@@ -179,7 +179,7 @@ const CorrectSolutionsPage = () => {
             ))}
           </div>
 
-          {/* ✅ 페이지네이션 */}
+          {/* 페이지네이션 */}
           <div className="flex justify-center gap-2 mb-10">
             {Array.from({ length: totalPages }, (_, i) => (
               <button

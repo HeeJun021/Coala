@@ -31,7 +31,7 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
   const [previewImage, setPreviewImage] = useState(null);
   const [hoveredImageId, setHoveredImageId] = useState(null);
 
-  const [socketReady, setSocketReady] = useState(false); // ✅ 상태 추가
+  const [socketReady, setSocketReady] = useState(false); 
 
   const containerRef = useRef(null);
   const topRef = useRef(null);
@@ -48,7 +48,7 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
         setMessages((prev) => {
           const combined = append ? [...reversed, ...prev] : reversed;
 
-          // ✅ 중복 message_id 제거
+          // 중복 message_id 제거
           const uniqueMap = new Map();
           combined.forEach((msg) => {
             uniqueMap.set(msg.message_id, msg);
@@ -105,11 +105,11 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
             const newOffset = newTopMsg?.getBoundingClientRect().top ?? 0;
             const delta = newOffset - prevOffset;
 
-            // 🔒 깜빡임 방지: scrollBehavior 임시 비활성화
+            // 깜빡임 방지: scrollBehavior 임시 비활성화
             container.style.scrollBehavior = "auto";
             container.scrollTop += delta;
 
-            // 🔓 다시 부드럽게 설정
+            // 다시 부드럽게 설정
             setTimeout(() => {
               container.style.scrollBehavior = "smooth";
             }, 0);
@@ -139,11 +139,11 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
     const isFromOtherUser =
       lastMessage && lastMessage.sender_id !== user.user_id;
 
-    // ✅ 메시지 도착 후 DOM 그려지고 나서 읽음 전송
+    //메시지 도착 후 DOM 그려지고 나서 읽음 전송
     const timeout = setTimeout(() => {
       if (socket && socket.readyState === WebSocket.OPEN && isFromOtherUser) {
         console.log(
-          "📤 [읽음 전송] ChatRoomPanel → message_id:",
+          " [읽음 전송] ChatRoomPanel → message_id:",
           lastMessage.message_id
         );
         socket.send(
@@ -166,9 +166,9 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
     );
 
     socketRef.current.onopen = () => {
-      console.log("✅ [ChatRoom WS 연결됨] room_id:", room.id);
+      console.log("[ChatRoom WS 연결됨] room_id:", room.id);
 
-      setSocketReady(true); // ✅ 연결 완료 표시
+      setSocketReady(true); // 연결 완료 표시
     };
 
     socketRef.current.onmessage = (event) => {
@@ -177,7 +177,7 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
 
       if (data.type === "message" && data.room_id === room.id) {
         console.log(
-          "💬 [메시지 수신] room_id:",
+          " [메시지 수신] room_id:",
           data.room_id,
           "message_id:",
           data.message_id
@@ -193,7 +193,7 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
 
         if (data.sender_id !== user.user_id) {
           console.log(
-            "📤 [즉시 읽음 전송] 상대 메시지 감지됨 → message_id:",
+            " [즉시 읽음 전송] 상대 메시지 감지됨 → message_id:",
             data.message_id
           );
           socketRef.current.send(
@@ -209,7 +209,7 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
       if (data.type === "read") {
         const { message_id, unread_count } = data;
         console.log(
-          "✅ [읽음 수신] ChatRoomPanel → message_id:",
+          "[읽음 수신] ChatRoomPanel → message_id:",
           message_id,
           "unread_count:",
           unread_count
@@ -231,7 +231,7 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
     return () => {
       socketRef.current?.close();
     };
-  }, [room.id, room.participants.length, user.user_id]); // ✅ 여기 추가됨
+  }, [room.id, room.participants.length, user.user_id]);
 
   const handleSend = () => {
     if (!input.trim() || !socketRef.current) return;
@@ -386,7 +386,7 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
             return (
               <div
                 key={msg.message_id}
-                data-id={msg.message_id} // ✅ 이 줄만 추가!
+                data-id={msg.message_id} 
                 ref={isFirstMessage ? topRef : null}
                 className="text-center text-xs text-gray-500 my-2"
               >
@@ -398,7 +398,7 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
           return (
             <div
               key={msg.message_id}
-              data-id={msg.message_id} // ✅ 이 줄만 추가!
+              data-id={msg.message_id} 
               className={`flex w-full ${
                 isMine ? "justify-end" : "justify-start"
               }`}
@@ -720,9 +720,9 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
                   message_type: file.message_type,
                   message: "파일을 보냈습니다.",
                   file_url: file.file_url,
-                  file_name: file.file_name, // ✅ 추가
-                  file_size: file.file_size, // ✅ 추가
-                  uploaded_at: file.uploaded_at, // ✅ 추가 (유효기간 쓸 때 필요)
+                  file_name: file.file_name, 
+                  file_size: file.file_size, 
+                  uploaded_at: file.uploaded_at, 
                 });
               }
               await fetchMessages(0, false); // 메시지 새로고침

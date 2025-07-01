@@ -23,8 +23,8 @@ const StudyMaterialsPageDetails = () => {
   if (!data) return <div className="text-center mt-20 text-xl">로딩 중...</div>;
 
   return (
-      <div className="flex mt-32"> {/* ✅ Navbar와 겹치지 않도록 여백 추가 (mt-32) */}
-      <div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-lg flex-1"> {/* ✅ 본문 정렬 유지 */}
+      <div className="flex mt-32"> {/* Navbar와 겹치지 않도록 여백 추가 (mt-32) */}
+      <div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-lg flex-1"> {/* 본문 정렬 유지 */}
       {/* 제목 */}
       <h1 className="text-4xl font-bold mb-4 border-b pb-3">{data.title}</h1>
       

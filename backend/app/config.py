@@ -7,10 +7,10 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str
     DATABASE_URL: str
     SECRET_KEY: str
-    SESSION_COOKIE_NAME: str = "session_id"  # 기본값 설정 가능
-    ALGORITHM: str = "HS256"  # ✅ 이거 추가해야 함
+    SESSION_COOKIE_NAME: str = "session_id"
+    ALGORITHM: str = "HS256" 
     
 
-    model_config = SettingsConfigDict(env_file=".env", extra="allow")  # 🔥 추가 설정
+    model_config = SettingsConfigDict(env_file=".env", extra="allow")
 
 settings = Settings()

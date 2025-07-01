@@ -26,7 +26,7 @@ class GptMessageResponse(GptMessageBase):
     created_at: datetime
 
     class Config:
-        from_attributes = True  # ✅ Pydantic v2 방식
+        from_attributes = True  
 
 
 # ===== 세션 리스트 조회 응답 =====
@@ -38,7 +38,7 @@ class GptSessionListItem(BaseModel):
     updated_at: datetime
 
     class Config:
-        from_attributes = True  # ✅
+        from_attributes = True   
 
 
 # ===== 세션 상세 조회 (메시지 포함) =====
@@ -51,7 +51,7 @@ class GptSessionDetail(BaseModel):
     messages: List[GptMessageResponse]
 
     class Config:
-        from_attributes = True  # ✅
+        from_attributes = True  
 
 
 # ===== GPT 응답 본문 (단일 메시지) =====
@@ -60,6 +60,6 @@ class GptSingleResponse(BaseModel):
     response: str
 
 
-# 🔧 세션 제목 수정 요청 스키마
+#   세션 제목 수정 요청 스키마
 class GptSessionUpdateTitle(BaseModel):
     title: str

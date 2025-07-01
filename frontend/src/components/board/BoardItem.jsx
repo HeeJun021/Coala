@@ -12,7 +12,7 @@ const BoardItem = ({ post, boardType }) => {
   };
 
   
-  console.log("📦 post data:", post); // ← 이 줄 추가
+  console.log("📦 post data:", post);
 
   return (
     <tr

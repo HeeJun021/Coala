@@ -11,7 +11,7 @@ const AdminNavbar = ({ setUser }) => {
     setUser(null);            
     navigate("/");            
 
-    // 🔁 100ms 정도 지연 후 새로고침
+    // 100ms 정도 지연 후 새로고침
     setTimeout(() => {
       window.location.reload(); 
     }, 100);

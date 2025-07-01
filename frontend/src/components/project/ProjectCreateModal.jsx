@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { createProject } from "../../api/projectApi";
 
-// ✅ 모달 UI
+// 모달 UI
 const Modal = ({ onClose, title, children }) => {
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-30 flex items-center justify-center">
@@ -30,7 +30,7 @@ const Modal = ({ onClose, title, children }) => {
   );
 };
 
-// ✅ 위젯 아이콘 + 색상 정의
+// 위젯 아이콘 + 색상 정의
 const WIDGET_OPTIONS = [
   {
     key: "erd",

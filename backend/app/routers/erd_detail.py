@@ -78,9 +78,9 @@ def get_erd_detail(erd_id: int, db: Session = Depends(get_db)):
                 "source_column_id": r.source_column_id,
                 "target_table_id": r.target_table_id,
                 "target_column_id": r.target_column_id,
-                "participation_source": r.participation_source,  # ✅ 수정
-                "relation_type": r.relation_type,                # ✅ 수정
-                "participation_target": r.participation_target,  # ✅ 수정
+                "participation_source": r.participation_source,  
+                "relation_type": r.relation_type,               
+                "participation_target": r.participation_target,  
                 "auto_create_fk": r.auto_create_fk,
                 "cascade_delete": r.cascade_delete,
             }
@@ -104,7 +104,7 @@ def create_erd_table(erd_id: int, table: ErdTableCreate, db: Session = Depends(g
     db.commit()
     db.refresh(new_table)
     return {
-        "id": new_table.table_id,  # ✅ 프론트가 바로 사용 가능
+        "id": new_table.table_id, 
         "table_id": new_table.table_id,
         "name": new_table.name,
         "pos_x": new_table.pos_x,
@@ -247,7 +247,7 @@ def create_erd_relation(
         if not source_col or not target_col:
             raise HTTPException(status_code=404, detail="컬럼 또는 테이블 정보를 찾을 수 없습니다.")
 
-        # ✅ DB에 저장
+         
         new_relation = ErdRelations(
             erd_id=erd_id,
             source_table_id=relation.source_table_id,     # FK가 위치한 테이블
@@ -268,12 +268,12 @@ def create_erd_relation(
             if relation.relation_type == "1:N":
                 # FK는 무조건 target 쪽에 설정
                 target_col.is_foreign = True
-                db.add(target_col)  # ✅ 세션 반영 보장
+                db.add(target_col)  # 세션 반영 보장
                 fk_col = target_col
             else:
                 # 1:1 관계도 관행적으로 target 쪽에 FK 설정
                 target_col.is_foreign = True
-                db.add(target_col)  # ✅ 세션 반영 보장
+                db.add(target_col)  # 세션 반영 보장
                 fk_col = target_col
 
 
@@ -364,7 +364,7 @@ def sync_erd_changes(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    # ✅ 테이블 업데이트
+    # 테이블 업데이트
     for t in req.updated_tables or []:
         table = (
             db.query(ErdTables).filter_by(table_id=t.table_id, erd_id=erd_id).first()
@@ -375,7 +375,7 @@ def sync_erd_changes(
         for field, value in updates.items():
             setattr(table, field, value)
 
-    # ✅ 컬럼 업데이트
+    # 컬럼 업데이트
     for c in req.updated_columns or []:
         column = db.query(ErdColumns).filter_by(column_id=c.column_id).first()
         if not column:
@@ -384,7 +384,7 @@ def sync_erd_changes(
         for field, value in updates.items():
             setattr(column, field, value)
 
-    # ✅ 관계 업데이트
+    # 관계 업데이트
     for r in req.updated_relations or []:
         relation = (
             db.query(ErdRelations)

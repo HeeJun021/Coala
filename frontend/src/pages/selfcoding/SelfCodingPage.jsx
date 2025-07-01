@@ -15,7 +15,7 @@ const SelfCodingPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // ✅ URL state에서 전달된 panel 초기화
+  // URL state에서 전달된 panel 초기화
   const initialPanel = location.state?.panel || "explorer";
   const [activePanel, setActivePanel] = useState(initialPanel);
 
@@ -80,7 +80,7 @@ const SelfCodingPage = () => {
     const githubStatus = await checkGithubConnection();
     setIsGithubConnected(githubStatus.isConnected);
 
-    // ✅ location.state?.panel이 있으면 그걸 우선 적용
+    // location.state?.panel이 있으면 그걸 우선 적용
     const requestedPanel = location.state?.panel;
     if (requestedPanel) {
       setActivePanel(requestedPanel);

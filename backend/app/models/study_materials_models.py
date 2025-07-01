@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from sqlalchemy.dialects.postgresql import JSONB  # ✅ PostgreSQL JSONB 타입 사용
+from sqlalchemy.dialects.postgresql import JSONB   
 from app.database import Base
 from app.models.language import Language
 

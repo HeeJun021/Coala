@@ -15,6 +15,6 @@ def download_file(filename: str, original_name: str = Query(...)):
 
     return FileResponse(
         path=file_path,
-        filename=original_name,  # ✅ 브라우저가 저장할 이름
+        filename=original_name,  # 브라우저가 저장할 이름
         media_type="application/octet-stream"
     )

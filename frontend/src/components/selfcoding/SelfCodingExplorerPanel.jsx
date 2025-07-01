@@ -82,7 +82,7 @@ const SelfCodingExplorerPanel = ({
   });
 };
 
-// ✅ confirm 함수
+// confirm 함수
 const showConfirm = (message) => {
   return new Promise((resolve) => {
     setAlertModal({
@@ -375,7 +375,7 @@ const showConfirm = (message) => {
         if (contextMenu.targetId?.startsWith("folder-")) {
           const folderIdStr = contextMenu.targetId.replace("folder-", "");
           const folderId = parseInt(folderIdStr);
-          const updatedTree = structuredClone(folderTree); // ✅ 깊은 복사
+          const updatedTree = structuredClone(folderTree); 
           const targetNode = findFolderNode(updatedTree, folderId);
           if (targetNode) {
             targetNode.expanded = true;
@@ -566,7 +566,7 @@ const handleFolderToggle = async (node) => {
   }
 
   node.expanded = !node.expanded;
-  // 🟢 항상 새 객체로 만들어줘야 React가 변화 감지!
+  // 항상 새 객체로 만들어줘야 React가 변화 감지!
   setFolderTree({ ...folderTree });
   setFolders({ ...folderTree });
 };
@@ -713,7 +713,7 @@ const handleFolderToggle = async (node) => {
                       if (e.key === "Enter") {
                         const name = newItemName.trim();
                         if (!name) {
-                          console.log("이름 x"); // 나중에 모달이든 다이아로그든 띄우기
+                          console.log("이름 x"); 
                           return;
                         }
                         try {

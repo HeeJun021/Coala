@@ -8,7 +8,7 @@ from app.models.user import User
 router = APIRouter(prefix="/projects", tags=["ProjectInvites"])
 
 
-# ✅ 1. 프로젝트 초대 전송
+# 1. 프로젝트 초대 전송
 @router.post("/{project_id}/invite")
 def invite_user_to_project(
     project_id: int,
@@ -27,7 +27,7 @@ def invite_user_to_project(
     return {"message": "초대 요청이 전송되었습니다."}
 
 
-# ✅ 2. 프로젝트 초대 수락
+# 2. 프로젝트 초대 수락
 @router.post("/{project_id}/accept")
 def accept_project_invitation(
     project_id: int,

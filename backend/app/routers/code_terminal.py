@@ -20,7 +20,7 @@ async def websocket_endpoint(websocket: WebSocket):
             elif language == "javascript":
                 container, error = await run_node_docker(encoded_code)
             else:
-                await websocket.send_text(f"❌ 지원하지 않는 언어입니다: {language}")
+                await websocket.send_text(f"지원하지 않는 언어입니다: {language}")
                 continue
 
             if error:

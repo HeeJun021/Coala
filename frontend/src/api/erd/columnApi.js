@@ -2,10 +2,10 @@ import apiClient from "../apiClient";
 
 // end
 
-// ✅ 컬럼 생성
+// 컬럼 생성
 export const createColumn = async (tableId) => {
   const response = await apiClient.post(`/erds/tables/${tableId}/columns`, {
-    name: "",               // ✅ FastAPI에서 기본값과 맞춤
+    name: "",               // FastAPI에서 기본값과 맞춤
     data_type: "",
     is_primary: false,
     is_foreign: false,
@@ -32,7 +32,7 @@ export const deleteColumn = async (columnId) => {
   return response.data;
 };
 
-// ✅ 컬럼 순서 변경 API
+// 컬럼 순서 변경 API
 export const reorderColumns = async (tableId, orderedColumnIds) => {
   const response = await apiClient.put("/erds/columns/reorder", {
     table_id: tableId,
@@ -41,7 +41,7 @@ export const reorderColumns = async (tableId, orderedColumnIds) => {
   return response.data;
 };
 
-// ✅ 컬럼의 PK 설정/해제
+// 컬럼의 PK 설정/해제
 export const setColumnPrimaryKey = async (columnId, isPrimary) => {
   const response = await apiClient.patch(`/erds/columns/${columnId}/set-primary`, {
     is_primary: isPrimary,
@@ -49,7 +49,7 @@ export const setColumnPrimaryKey = async (columnId, isPrimary) => {
   return response.data;
 };
 
-// ✅ 컬럼의 FK 해제
+// 컬럼의 FK 해제
 export const unsetForeignKey = async (columnId) => {
   const res = await apiClient.patch(`/erds/columns/${columnId}/unset-foreign`);
   return res.data;

@@ -19,7 +19,7 @@ class StudyMaterialResponse(BaseModel):
     content: str
     language_id: int
     sections: List[Section]
-    is_completed: Optional[bool] = False  # ✅ 학습 완료 여부
+    is_completed: Optional[bool] = False   
 
     model_config = {
         "from_attributes": True

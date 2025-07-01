@@ -48,7 +48,7 @@ class QuizSubmissionRequest(BaseModel):
     mode: str
     answers: List[QuizAnswer]
     
-# ✅ 퀴즈 결과 응답 스키마
+#   퀴즈 결과 응답 스키마
 class QuizResultResponse(BaseModel):
     quiz_id: int
     title: str

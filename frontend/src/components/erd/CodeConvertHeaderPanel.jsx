@@ -10,7 +10,7 @@ const CodeConvertHeaderPanel = ({
 }) => {
   return (
     <div className="flex flex-col gap-2 w-full text-[15px]">
-      {/* ✅ 줄 1: 제목 + 돌아가기 */}
+      {/* 줄 1: 제목 + 돌아가기 */}
       <div className="flex items-center justify-between">
         <div className="text-[17px] font-semibold">
           <button
@@ -23,7 +23,7 @@ const CodeConvertHeaderPanel = ({
         </div>
       </div>
 
-      {/* ✅ 줄 2: 옵션 영역 */}
+      {/* 줄 2: 옵션 영역 */}
       <div className="flex flex-wrap items-start gap-x-8 gap-y-4 mt-2">
         {/* ERD 가져오기 */}
         <button

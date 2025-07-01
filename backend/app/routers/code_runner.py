@@ -62,7 +62,7 @@ async def run_code(data: dict):
     elif language.lower() == "javascript":
         # console.log() 자동 삽입
         if "console.log" not in code:
-            code += "\nconsole.log('✅ 코드 실행 완료');"
+            code += "\nconsole.log('코드 실행 완료');"
         result = subprocess.run(["node", "-e", code], capture_output=True, text=True)
         return {
             "output": result.stdout,
@@ -73,7 +73,7 @@ async def run_code(data: dict):
     elif language.lower() == "python":
         # print() 없는 경우 자동 추가
         if "print(" not in code:
-            code += "\nprint('✅ 코드 실행 완료')"
+            code += "\nprint('코드 실행 완료')"
         result = subprocess.run(["python", "-c", code], capture_output=True, text=True)
         return {
             "output": result.stdout,

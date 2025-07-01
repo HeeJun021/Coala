@@ -21,7 +21,7 @@ class QuestionResponse(QuestionBase):
     class Config:
         from_attributes = True
         
-# ✅ 개별 문제 결과 스키마
+#   개별 문제 결과 스키마
 class QuestionResult(BaseModel):
     question_id: int
     question_text: str

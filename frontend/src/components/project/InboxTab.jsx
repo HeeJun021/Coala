@@ -1,4 +1,4 @@
-// ✅ Asana 스타일: 날짜순 그룹 + 완료 여부 + 작업 생성자 포함 수신함 (Lucide 아이콘 적용)
+// Asana 스타일: 날짜순 그룹 + 완료 여부 + 작업 생성자 포함 수신함 (Lucide 아이콘 적용)
 import React, { useState, useEffect } from "react";
 import { getMyTasks } from "../../api/taskApi";
 import { getProjectActivity } from "../../api/projectApi";

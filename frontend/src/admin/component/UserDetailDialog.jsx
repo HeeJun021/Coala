@@ -8,8 +8,8 @@ const UserDetailDialog = ({ open, onClose, user, onUserDeleted }) => {
   const [activeTab, setActiveTab] = useState("신고 내역");
   const navigate = useNavigate();
 
-  console.log("🔍 사용자 상세 정보(user):", user);
-  console.log("📝 댓글 리스트(user.comments):", user?.comments);
+  console.log("사용자 상세 정보(user):", user);
+  console.log("댓글 리스트(user.comments):", user?.comments);
 
   if (!open || !user) return null;
 

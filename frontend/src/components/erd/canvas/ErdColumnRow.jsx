@@ -46,12 +46,12 @@ const ErdColumnRow = ({
         return {};
     }
   };
-  // ✅ onChange에서는 상태만 변경
+  // onChange에서는 상태만 변경
   const handleInputChange = (key, value) => {
     onChange(index, key, value);
   };
 
-  // ✅ onBlur에서만 PATCH 호출
+  // onBlur에서만 PATCH 호출
   const handleInputBlur = async (key, value) => {
     if (!column.column_id) return;
 
@@ -95,7 +95,7 @@ const ErdColumnRow = ({
     }
   }, [column.id, onPositionUpdate]);
 
-  // ✅ PK / FK 안전 처리 (isPrimaryKey / isForeignKey 또는 is_primary / is_foreign 모두 대응)
+  // PK / FK 안전 처리 (isPrimaryKey / isForeignKey 또는 is_primary / is_foreign 모두 대응)
   const isPK = column.isPrimaryKey ?? column.is_primary ?? false;
   const isFK = column.isForeignKey ?? column.is_foreign ?? false;
 
@@ -112,7 +112,7 @@ const ErdColumnRow = ({
           backgroundColor: isHovering ? "#3a3a4d" : "transparent",
           opacity: isDragging ? 0.5 : 1,
           cursor: "grab",
-          lineHeight: "24px", // ✅ 추가
+          lineHeight: "24px", 
         }}
         draggable
         onDragStart={onDragStart}
@@ -164,14 +164,14 @@ const ErdColumnRow = ({
           <select
             className="select-dark bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 text-sm text-white pl-2"
             style={{
-              width: "100px", // ✅ TIMESTAMP 길이에 맞춰 고정
+              width: "100px", 
               height: "24px",
               lineHeight: "22px",
               padding: "0",
               margin: "0",
               verticalAlign: "middle",
               textAlign: "center",
-              textAlignLast: "center", // ✅ 선택된 항목도 가운데 정렬
+              textAlignLast: "center", 
             }}
             value={column.dataType ?? ""}
             onChange={(e) => handleInputChange("dataType", e.target.value)}

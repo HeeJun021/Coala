@@ -35,7 +35,7 @@ const BoardDetailPage = () => {
     const fetchPost = async () => {
       try {
         const data = await getBoardDetail(postId);
-        console.log("🟩 게시글 데이터:", data);  // ✅ 이 줄 추가
+        console.log("🟩 게시글 데이터:", data); 
         setPost(data);
       } catch (err) {
         console.error("게시글 조회 실패:", err);
@@ -71,7 +71,7 @@ const BoardDetailPage = () => {
         await Promise.all(
           data.map(async (c) => {
             const { liked, count } = await checkCommentLiked(c.comment_id, user.user_id);
-            console.log(`댓글 ${c.comment_id} 좋아요 상태:`, liked, count);  // 🔥 여기 추가
+            console.log(`댓글 ${c.comment_id} 좋아요 상태:`, liked, count);  
             updatedLikes[c.comment_id] = { liked, count };
           })
         );

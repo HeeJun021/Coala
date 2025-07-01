@@ -21,7 +21,7 @@ router = APIRouter(
     tags=["Eucalyptus"]
 )
 
-# 🌿 유칼립투스 보상 획득
+# 유칼립투스 보상 획득
 @router.post("/reward", response_model=EucalyptusResponse)
 def reward_user(
     request: EucalyptusRewardRequest,
@@ -35,7 +35,7 @@ def reward_user(
     )
 
 
-# 🌿 유칼립투스 화폐 사용
+# 유칼립투스 화폐 사용
 @router.post("/use", response_model=EucalyptusResponse)
 def use_user_balance(
     request: EucalyptusUseRequest,

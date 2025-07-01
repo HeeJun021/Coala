@@ -30,7 +30,7 @@ def get_posts(
 ):
     return board.get_posts(board_type, page, page_size, sort_order, db)
 
-# ✅ 게시글 단건 조회
+# 게시글 단건 조회
 @router.get("/post/{post_id}")
 def get_post(post_id: int, db: Session = Depends(get_db)):
     post = board.get_post(post_id, db)
@@ -102,7 +102,7 @@ def unlike_comment(payload: CommentLikeCreate, db: Session = Depends(get_db)):
 def check_comment_liked(comment_id: int, user_id: int = Query(...), db: Session = Depends(get_db)):
     return board.check_comment_liked(comment_id, user_id, db)
 
-# ✅ 프로젝트 참여 신청
+# 프로젝트 참여 신청
 @router.post("/post/{post_id}/apply", response_model=ProjectApplicantResponse)
 def apply_project(post_id: int, payload: ProjectApplicantCreate, db: Session = Depends(get_db)):
     try:
@@ -110,7 +110,7 @@ def apply_project(post_id: int, payload: ProjectApplicantCreate, db: Session = D
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-# ✅ 프로젝트 신청자 목록 조회
+# 프로젝트 신청자 목록 조회
 @router.get("/post/{post_id}/applicants", response_model=List[ProjectApplicantResponse])
 def get_project_applicants(post_id: int, db: Session = Depends(get_db)):
     return get_applicants(post_id, db)

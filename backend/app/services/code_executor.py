@@ -26,7 +26,7 @@ TEMP_DIR = "/tmp/code-exec"
 os.makedirs(TEMP_DIR, exist_ok=True)
 
 
-# ✅ 코드 실행 함수
+#   코드 실행 함수
 async def execute_code(code: str, language: str, input_data: str = ""):
     if language not in LANGUAGE_CONFIG:
         return {
@@ -60,9 +60,9 @@ async def execute_code(code: str, language: str, input_data: str = ""):
         f'echo "{input_data}" | {config["run_cmd"]}',
     ]
 
-    print("🟡 [EXEC LOG] 언어:", language)
-    print("🟡 [EXEC LOG] 입력값:\n", input_data)
-    print("🟡 [EXEC LOG] 실행될 Docker 명령어:\n", " ".join(docker_cmd))
+    print("[EXEC LOG] 언어:", language)
+    print("[EXEC LOG] 입력값:\n", input_data)
+    print("[EXEC LOG] 실행될 Docker 명령어:\n", " ".join(docker_cmd))
 
     # 실행 시간 측정 시작
     start_time = time.time()
@@ -105,7 +105,7 @@ async def execute_code(code: str, language: str, input_data: str = ""):
     }
 
 
-# ✅ 테스트케이스별 코드 실행 및 비교
+# 테스트케이스별 코드 실행 및 비교
 async def run_code_against_testcases(code: str, language: str, testcases: list):
     results = []
 

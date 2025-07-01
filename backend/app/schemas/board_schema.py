@@ -8,10 +8,10 @@ class PostBase(BaseModel):
     board_type: str
     title: str
     content: str
-    code: Optional[str] = ""  # ✅ 빈 문자열 기본값
-    image_url: Optional[str] = ""  # ✅ 빈 문자열 기본값
+    code: Optional[str] = ""   
+    image_url: Optional[str] = ""  
     user_id: int
-    recruit_limit: Optional[int] = 1  # ✅ 기본 모집 인원 수
+    recruit_limit: Optional[int] = 1  
 
 
 class PostCreate(PostBase):
@@ -26,7 +26,7 @@ class PostResponse(PostBase):
     created_at: datetime
     updated_at: datetime
     author_nickname: Optional[str] = None
-    accepted_count: Optional[int] = 1  # ✅ 수락된 인원 기본값
+    accepted_count: Optional[int] = 1 
 
     model_config = {"from_attributes": True}
 
@@ -47,7 +47,7 @@ class CommentResponse(CommentBase):
     like_count: int
     created_at: datetime
     updated_at: datetime
-    nickname: Optional[str] = None  # ✅ 댓글 작성자 닉네임 추가
+    nickname: Optional[str] = None   
 
     model_config = {"from_attributes": True}
 

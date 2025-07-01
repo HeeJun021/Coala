@@ -12,7 +12,7 @@ class GptSession(Base):
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
 
-    # ✅ 클래스 이름 정확하게 사용
+    # 클래스 이름 정확하게 사용
     messages = relationship("GptMessage", back_populates="session", cascade="all, delete-orphan")
 
 
@@ -25,5 +25,5 @@ class GptMessage(Base):
     content = Column(Text, nullable=False)
     created_at = Column(TIMESTAMP, server_default=func.now())
 
-    # ✅ 클래스 이름 정확하게 사용
+    # 클래스 이름 정확하게 사용
     session = relationship("GptSession", back_populates="messages")

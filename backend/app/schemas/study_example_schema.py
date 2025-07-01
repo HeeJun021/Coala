@@ -10,7 +10,7 @@ class StudyExampleResponse(BaseModel):
     sections: Optional[List[Dict[str, Any]]] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
-    is_completed: Optional[bool] = False  # ✅ 추가해야 response_model로 쓰기 가능
+    is_completed: Optional[bool] = False  
 
     model_config = {
         "from_attributes": True

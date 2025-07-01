@@ -8,12 +8,12 @@ def generate_sql(tables, columns, relations, dbms):
     for col in columns:
         columns_by_table.setdefault(col.table_id, []).append(col)
 
-    # 2. 관계 정리: ✅ FK는 target 테이블에 생긴다고 가정
+    # 2. 관계 정리:   FK는 target 테이블에 생긴다고 가정
     fk_by_table = {}
     for rel in relations:
         if not rel.auto_create_fk:
             continue
-        fk_by_table.setdefault(rel.target_table_id, []).append(rel)  # ✅ target이 FK 갖는 쪽
+        fk_by_table.setdefault(rel.target_table_id, []).append(rel)  #   target이 FK 갖는 쪽
 
     # 3. 테이블 ID → 테이블 객체
     table_lookup = {table.table_id: table for table in tables}
@@ -52,7 +52,7 @@ def generate_sql(tables, columns, relations, dbms):
         if pk_cols:
             lines.append(f"  PRIMARY KEY ({', '.join(f'`{pk}`' for pk in pk_cols)})")
 
-        # FK 정의 (✅ target이 FK 가진 쪽임)
+        # FK 정의 (  target이 FK 가진 쪽임)
         for rel in table_relations:
             if not rel.target_column or not rel.source_column:
                 continue  # 필수 정보 빠졌으면 건너뜀
@@ -77,7 +77,7 @@ def generate_sql(tables, columns, relations, dbms):
 
     return "\n\n".join(sql_statements)
 
-# ✅ DBMS별 데이터 타입 매핑 함수는 그대로 사용
+#   DBMS별 데이터 타입 매핑 함수는 그대로 사용
 def map_data_type(data_type: str, dbms: str) -> str:
     type_map = {
         "postgres": {

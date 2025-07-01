@@ -146,7 +146,7 @@ useEffect(() => {
         });
         setIsCompleted(true);
       } catch (error) {
-        console.error("✅ 완료 처리 API 실패:", error);
+        console.error("완료 처리 API 실패:", error);
       }
     }
   };

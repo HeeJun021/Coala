@@ -60,7 +60,7 @@ const CodeTestTerminalPage = () => {
 
     socket.onopen = () => {
       termInstance.current.writeln(`📄 ${decodedTitle}`);
-      termInstance.current.writeln("✅ 서버와 연결되었습니다.");
+      termInstance.current.writeln("서버와 연결되었습니다.");
       if (isRunning) {
         sendCode();
       }

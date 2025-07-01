@@ -154,7 +154,7 @@ const App = () => {
                   <Route path="projects" element={<ProjectManagementPage />} />
                   <Route path="quizzes" element={<QuizManagementPage />} />
                   <Route path="codingtest" element={<CodingtestManagementPage />} />
-                  <Route path="codingtest/:testId" element={<AdminCodingTestDetailPage />} /> {/* ✅ 이 줄 추가 */}
+                  <Route path="codingtest/:testId" element={<AdminCodingTestDetailPage />} /> 
                   <Route path="board" element={<BoardManagementPage />} />
                   <Route path="users" element={<UserManagementPage />} />
                   <Route path="posts/:postId" element={<BoardManagementDetailPage />} />

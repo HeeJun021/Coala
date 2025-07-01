@@ -7,5 +7,5 @@ class studymaterialreads(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.user_id"))
-    material_id = Column(Integer, ForeignKey("study_materials.material_id"))  # ✅ 정확하게 일치시켜야 함
+    material_id = Column(Integer, ForeignKey("study_materials.material_id"))  
     read_at = Column(DateTime(timezone=True), server_default=func.now())

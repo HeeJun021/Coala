@@ -9,7 +9,7 @@ from app.database import get_db
 from app.schemas.coding_tests_schema import SubmissionTitleUpdate, SubmissionStatsResponse
 from app.routers.auth import get_current_user
 from sqlalchemy import func
-from pytz import timezone  # ⬅️ 추가
+from pytz import timezone
 
 router = APIRouter(
     prefix="/codingtestsubmissions",
@@ -57,7 +57,7 @@ def update_correct_stats(db: Session, test_id: int, is_correct: bool):
     db.commit()
 
 
-# ✅ 제출 제목 단독 수정 API
+# 제출 제목 단독 수정 API
 @router.patch("/{submission_id}/title")
 def update_submission_title(
     submission_id: int,
@@ -120,7 +120,7 @@ def get_submission_stats(db: Session = Depends(get_db), current_user: dict = Dep
     }
 
 
-    # ✅ 한국 시간 기준 오늘 날짜로 설정
+    # 한국 시간 기준 오늘 날짜로 설정
     KST = timezone("Asia/Seoul")
     today = datetime.now(KST).date()
     start_date = today - timedelta(days=6)

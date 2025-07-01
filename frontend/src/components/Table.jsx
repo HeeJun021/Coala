@@ -15,20 +15,20 @@ const Table = ({ rows, type, category }) => {
         </thead>
         <tbody>
           {rows.map((row) => {
-            const id = row.material_id || row.example_id; // ✅ Ensure correct ID mapping
+            const id = row.material_id || row.example_id; 
             return (
               <tr key={id} className="border-b">
                 <td className="p-2">{id}</td>
                 <td className="p-2">
                   <Link
-                    to={`/materials/${category.toLowerCase()}/${id}`} // ✅ Correct URL mapping
+                    to={`/materials/${category.toLowerCase()}/${id}`} 
                     className="text-blue-500 hover:underline"
                   >
                     {row.title}
                   </Link>
                 </td>
                 <td className="p-2 text-center">-</td>
-                <td className="p-2 text-center">{new Date(row.created_at).toLocaleDateString()}</td> {/* ✅ 등록일 출력 */}
+                <td className="p-2 text-center">{new Date(row.created_at).toLocaleDateString()}</td> {/* 등록일 출력 */}
               </tr>
             );
           })}

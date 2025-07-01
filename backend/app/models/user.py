@@ -3,7 +3,7 @@ from sqlalchemy.orm import relationship, Session
 from app.database import Base
 from app.models.user_tier_models import UserTier
 from app.models.eucalyptus_transaction_models import EucalyptusTransaction
-from sqlalchemy.sql import func  # ✅ TIMESTAMP 기본값을 위한 `func.now()` 추가
+from sqlalchemy.sql import func  #  TIMESTAMP 기본값을 위한 `func.now()` 추가
 from app.schemas.eucalyptus_schema import ActionType
 
 class User(Base):
@@ -24,8 +24,8 @@ class User(Base):
     github_access_token = Column(String, nullable=True)  # GitHub 액세스 토큰 추가
     eucalyptus_balance = Column(Integer, nullable=False, default=100)
     
-    created_at = Column(TIMESTAMP, server_default=func.now())  # ✅ `CURRENT_TIMESTAMP` → `func.now()`로 변경
-    updated_at = Column(TIMESTAMP, default=func.now(), onupdate=func.now())  # ✅ 수정된 시간 자동 업데이트
+    created_at = Column(TIMESTAMP, server_default=func.now())  # `CURRENT_TIMESTAMP` → `func.now()`로 변경
+    updated_at = Column(TIMESTAMP, default=func.now(), onupdate=func.now())  # 수정된 시간 자동 업데이트
     
      # 관계 설정
     tier = relationship("UserTier")  # User → UserTier 관계
@@ -54,7 +54,7 @@ class UserFollow(Base):
     )
     followed_at = Column(TIMESTAMP, server_default=func.now())
 
-# ✅ 자동으로 `tier_id` 업데이트
+# 자동으로 `tier_id` 업데이트
 @event.listens_for(User, "before_update")
 def update_tier_id(mapper, connection, target):
     session = Session.object_session(target)

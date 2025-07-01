@@ -23,4 +23,4 @@ class DocumentResponse(DocumentBase):
     created_at: datetime
     updated_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)  # ✅ v2 대응
+    model_config = ConfigDict(from_attributes=True)  

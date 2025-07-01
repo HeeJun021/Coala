@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
 import GptSessionItem from "./GptSessionItem";
 import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
-import { prism } from "react-syntax-highlighter/dist/esm/styles/prism"; // 🌈 밝은 Prism 스타일
-import "react-resizable/css/styles.css"; // 필수!
-import { ResizableBox } from "react-resizable"; // 상단에 추가했을 것
+import { prism } from "react-syntax-highlighter/dist/esm/styles/prism"; 
+import "react-resizable/css/styles.css"; 
+import { ResizableBox } from "react-resizable";
 import {
   ScrollText,
   Bot,
@@ -55,7 +55,7 @@ const AIChatPanel = ({ onClose }) => {
     if (bottomRef.current) {
       bottomRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages, streamingMessage]); // ✅ 여기에 streamingMessage 추가!
+  }, [messages, streamingMessage]); //streamingMessage 추가
 
   const loadSessions = async () => {
     const data = await fetchGptSessions();
@@ -95,7 +95,6 @@ const AIChatPanel = ({ onClose }) => {
         setActiveSessionId(response.session_id);
       }
 
-      // ✅ 스트리밍 처리 공통 적용
       const content = response.response;
       let i = 0;
       const interval = setInterval(() => {
@@ -170,7 +169,7 @@ const AIChatPanel = ({ onClose }) => {
     return parts;
   };
 
-  // ✅ 코드 블록 렌더링 함수 (스타일 적용 포함)
+  // 코드 블록 렌더링 함수 (스타일 적용 포함)
   const renderMessageContent = (content) => {
     const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
     const parts = [];
@@ -191,7 +190,7 @@ const AIChatPanel = ({ onClose }) => {
 
       parts.push(
         <div key={index + "-wrapper"} className="relative group mb-3">
-          {/* ✅ 상단 툴바 영역 */}
+          {/* 상단 툴바 영역 */}
           <div className="absolute top-0 left-0 w-full flex justify-between px-2 py-1 z-10">
             <button
               onClick={() => handleCopy(index, code)}
@@ -212,7 +211,7 @@ const AIChatPanel = ({ onClose }) => {
             </button>
           </div>
 
-          {/* ✅ 코드 박스 */}
+          {/* 코드 박스 */}
           <SyntaxHighlighter
             language={lang}
             style={prism}
@@ -264,7 +263,7 @@ const AIChatPanel = ({ onClose }) => {
       }}
       className="bg-white shadow-2xl rounded-xl overflow-hidden flex"
     >
-      {/* 👇 3단계: 펼치기 버튼은 이곳에 위치 */}
+      {/* 3단계: 펼치기 버튼은 이곳에 위치 */}
       {/* 열기 버튼 (좌측 고정 위치) */}
       {!sidebarVisible && (
         <div className="absolute left-0 top-1/2 transform -translate-y-1/2 z-40">

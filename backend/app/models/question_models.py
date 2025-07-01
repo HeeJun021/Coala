@@ -3,7 +3,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.database import Base  # DB 연결을 위한 Base import
 
-class QuestionType(Base):  # ✅ `question_type` 테이블 정의
+class QuestionType(Base):  # question_type` 테이블 정의
     __tablename__ = "question_type"
 
     question_type = Column(Integer, primary_key=True)  # OX, 단답형, 객관식
@@ -22,5 +22,5 @@ class Question(Base):
     created_at = Column(TIMESTAMP, server_default=func.now())  # 생성 시간
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())  # 수정 시간
 
-    # ✅ QuizSubmissionDetails에서 사용할 관계 설정 (quiz.py에서 참조 가능하도록 추가)
+    #  QuizSubmissionDetails에서 사용할 관계 설정 (quiz.py에서 참조 가능하도록 추가)
     submission_details = relationship("QuizSubmissionDetails", back_populates="question")

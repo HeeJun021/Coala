@@ -211,7 +211,7 @@ const TimelineWidget = ({ project }) => {
           behavior: "smooth",
         });
 
-        console.log("✅ 스크롤 이동됨:", scrollTarget);
+        console.log("스크롤 이동됨:", scrollTarget);
       });
     });
   };

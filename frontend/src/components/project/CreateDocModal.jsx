@@ -6,7 +6,7 @@ const CreateDocModal = ({ onClose, onCreate }) => {
 
   const handleCreate = () => {
     if (!title.trim()) return alert("문서 제목을 입력하세요.");
-    onCreate({ title }); // ✅ description 제거
+    onCreate({ title }); 
     onClose();
   };
 

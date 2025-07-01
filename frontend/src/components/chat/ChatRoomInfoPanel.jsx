@@ -213,7 +213,7 @@ const ChatRoomInfoPanel = ({ room, onBack, refreshRoom, onLeaveRoom }) => {
           </div>
         </div>
       )}
-      {/* ✅ 초대하기 모달: 이 위치가 맞습니다 */}
+      {/* 초대하기 모달: 이 위치가 맞습니다 */}
       {showInviteModal && (
         <NewChatModal
           onClose={() => setShowInviteModal(false)}

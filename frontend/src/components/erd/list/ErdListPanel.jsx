@@ -3,7 +3,7 @@ import ErdCard from "./ErdCard";
 import CreateErdModal from "./CreateErdModal";
 import { createErd } from "../../../api/erd/erdApi";
 import { FolderPlus } from "lucide-react";
-import { useNavigate } from "react-router-dom"; // 상단에 추가
+import { useNavigate } from "react-router-dom";
 
 const ErdListPanel = ({ erds, onSelect, onRefresh, project }) => {
   const navigate = useNavigate();

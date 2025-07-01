@@ -10,10 +10,10 @@ class ChatRoom(Base):
     room_id = Column(Integer, primary_key=True, index=True)
     room_type = Column(String(20), nullable=False)  # 'general', 'mentoring', 'team'
     is_group = Column(Boolean, default=False)
-    room_name = Column(String(100), nullable=True)  # ✅ 채팅방 이름
+    room_name = Column(String(100), nullable=True)  # 채팅방 이름
     created_at = Column(TIMESTAMP, server_default=func.now())
     
-     # ✅ 여기에 추가!
+     # 여기에 추가!
     project_id = Column(Integer, ForeignKey("projects.project_id", ondelete="SET NULL"), nullable=True)
 
 

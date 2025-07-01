@@ -16,26 +16,26 @@ const ErdPage = () => {
 
   const [projectId, setProjectId] = useState(null);
 
-  // 🧱 상태: UI 관련
+  // 상태: UI 관련
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isPlacing, setIsPlacing] = useState(false);
   const [tempTable, setTempTable] = useState(null);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [mode, setMode] = useState("default");
 
-  // 🧱 상태: ERD 데이터
+  // 상태: ERD 데이터
   const [tables, setTables] = useState([]);
   const [columns, setColumns] = useState([]);
   const [relations, setRelations] = useState([]);
 
-  // 🧱 상태: 코드 변환기
+  // 상태: 코드 변환기
   const [sqlQuery, setSqlQuery] = useState(
     "-- (자동 로딩 or 붙여넣기한 SQL 쿼리)"
   );
   const [language, setLanguage] = useState("Python");
   const [convertType, setConvertType] = useState("class");
 
-  // ✅ ERD 이름 상태
+  // ERD 이름 상태
   const [erdName, setErdName] = useState("");
 
   const [toastMessage, setToastMessage] = useState("");
@@ -44,7 +44,7 @@ const ErdPage = () => {
   setToastMessage(msg); // 시간 제어는 Toast 안에서
 }, []);
 
-  // 📦 ERD 상세 조회 함수
+  // ERD 상세 조회 함수
   const fetchErdDetail = useCallback(async () => {
     try {
       const data = await getErdDetail(erdId);
@@ -53,7 +53,7 @@ const ErdPage = () => {
       setProjectId(data.project_id); 
       console.log("📦 ERD 상세 데이터", data);
 
-      // ✅ 테이블 + 컬럼 구조 파싱
+      // 테이블 + 컬럼 구조 파싱
       const parsedTables = (data.tables || []).map((t) => ({
         id: t.table_id,
         x: t.pos_x,
@@ -67,13 +67,13 @@ const ErdPage = () => {
           dataType: c.data_type ?? "",
           isNullable: !c.is_not_null,
           isPrimaryKey: c.is_primary,
-          isForeignKey: c.is_foreign, // ✅ FK 표시
+          isForeignKey: c.is_foreign, 
           defaultValue: c.default_value ?? "",
           comment: c.description ?? "",
         })),
       }));
 
-      // ✅ 관계 파싱 (4개 속성 → relationType 조합)
+      // 관계 파싱 (4개 속성 → relationType 조합)
       const parsedRelations = (data.relations || []).map((r) => ({
         relationId: r.relation_id,
         fromColumnId: r.source_column_id,
@@ -85,10 +85,10 @@ const ErdPage = () => {
         relationType: `${r.relation_type}|${r.participation_source}|${r.participation_target}`, // UI에 필요 시
       }));
 
-      // ✅ 상태 세팅
+      // 상태 세팅
       setTables(parsedTables);
       setColumns(data.columns || []);
-      setRelations(parsedRelations); // ✅ 관계 반영됨
+      setRelations(parsedRelations); // 관계 반영됨
     } catch (err) {
       console.error("ERD 상세 조회 실패:", err);
     }
@@ -96,7 +96,7 @@ const ErdPage = () => {
 
   useEffect(() => {
     fetchErdDetail();
-  }, [erdId, fetchErdDetail]); // ✅ erdId 추가
+  }, [erdId, fetchErdDetail]); // erdId 추가
 
   const handleUndo = useCallback(async () => {
     try {
@@ -203,7 +203,7 @@ const ErdPage = () => {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [handleUndo, handleRedo]); // ✅ 의존성 추가
+  }, [handleUndo, handleRedo]);
 
   // 💡 샘플 SQL 쿼리 자동 삽입
   const handleFetchAutoSql = () => {
@@ -281,7 +281,7 @@ CREATE TABLE users (
         </div>
       </div>
 
-      {/* ✅ Toast 메시지 최상단에 표시 (레이아웃 바깥에 위치) */}
+      {/* Toast 메시지 최상단에 표시 (레이아웃 바깥에 위치) */}
       {toastMessage && (
         <Toast message={toastMessage} onClose={() => setToastMessage("")} />
       )}

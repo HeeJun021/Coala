@@ -22,7 +22,7 @@ const MainLayout = ({ children }) => {
 
       <main
   className={`content flex-1 min-h-screen ${
-    isHome || isTeamProject ? "px-0" : "px-0" // ← 기존 px-10 제거
+    isHome || isTeamProject ? "px-0" : "px-0"
   }`}
 >
         {children}

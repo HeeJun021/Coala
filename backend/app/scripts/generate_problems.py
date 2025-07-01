@@ -9,13 +9,13 @@
 # from openai import OpenAI
 # from openai._exceptions import RateLimitError, APIError
 
-# # ✅ .env 파일 로드 (환경 변수 자동 불러오기)
+# #   .env 파일 로드 (환경 변수 자동 불러오기)
 # load_dotenv()
 
-# # ✅ OpenAI API 키 가져오기
+# #   OpenAI API 키 가져오기
 # api_key = os.getenv("OPENAI_API_KEY")
 
-# # ✅ OpenAI 클라이언트 초기화
+# #   OpenAI 클라이언트 초기화
 # client = OpenAI(api_key=api_key)
 
 # def generate_problems(n=5, max_retries=3):
@@ -59,13 +59,13 @@
 #             return problems if isinstance(problems, list) else [problems]  # 리스트 형태로 변환
 #         except RateLimitError:
 #             retries += 1
-#             print(f"⚠️ API 사용량 초과! {retries}/{max_retries}회 재시도... (1분 대기)")
+#             print(f"API 사용량 초과! {retries}/{max_retries}회 재시도... (1분 대기)")
 #             time.sleep(60)  # 1분 대기 후 재시도
 #         except APIError as e:
-#             print(f"❌ OpenAI API 에러 발생: {e}")
+#             print(f"OpenAI API 에러 발생: {e}")
 #             return []
     
-#     print("❌ 최대 재시도 횟수를 초과했습니다. API 할당량이 모두 소진된 것 같습니다.")
+#     print("최대 재시도 횟수를 초과했습니다. API 할당량이 모두 소진된 것 같습니다.")
 #     return []  # 더 이상 시도하지 않고 빈 리스트 반환
 
 # def save_problem_to_db(db: Session, problem_data):
@@ -121,14 +121,14 @@
             
 #             problems = generate_problems(num_to_generate)
 #             if not problems:
-#                 print("❌ 문제 생성에 실패하여 중단합니다.")
+#                 print("문제 생성에 실패하여 중단합니다.")
 #                 break  # 문제가 생성되지 않으면 중단
             
 #             for problem in problems:
 #                 save_problem_to_db(db, problem)
 
 #             time.sleep(20)  # OpenAI API 과부하 방지를 위해 20초 대기
-#         print(f"✅ {n}개의 문제 생성 완료!")
+#         print(f"{n}개의 문제 생성 완료!")
 #     finally:
 #         db.close()
 

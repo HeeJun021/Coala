@@ -56,7 +56,7 @@ const SubmissionStatsChart = ({ weeklyData, difficultyData }) => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-      {/* 📈 주간 제출 추이 */}
+      {/* 주간 제출 추이 */}
       <div className="bg-white border rounded-xl shadow-md p-5 max-w-[600px] mx-auto w-full">
         <div className="flex items-center gap-2 mb-4">
           <CalendarClock className="text-green-600 w-5 h-5" />
@@ -87,7 +87,7 @@ const SubmissionStatsChart = ({ weeklyData, difficultyData }) => {
         </ResponsiveContainer>
       </div>
 
-      {/* 🧩 난이도별 정답 비율 */}
+      {/* 난이도별 정답 비율 */}
       <div className="bg-white border rounded-xl shadow-md p-5 max-w-[600px] mx-auto w-full">
         <div className="flex items-center gap-2 mb-4">
           <PieChartIcon className="text-yellow-600 w-5 h-5" />

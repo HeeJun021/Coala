@@ -29,11 +29,11 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [leaveTargetId, setLeaveTargetId] = useState(null);
 
-  const [showSearch, setShowSearch] = useState(false); // 🔍 검색창 표시 여부
+  const [showSearch, setShowSearch] = useState(false); // 검색창 표시 여부
   const [searchQuery, setSearchQuery] = useState(""); // 검색어
 
   const [showNewChat, setShowNewChat] = useState(false);
-  const [selectedRoom, setSelectedRoom] = useState(null); // ✅ 현재 선택된 채팅방
+  const [selectedRoom, setSelectedRoom] = useState(null); // 현재 선택된 채팅방
 
   const [showArchived, setShowArchived] = useState(false);
 
@@ -75,7 +75,7 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
       ["top-1 left-1", "top-1 right-1", "bottom-1 left-1", "bottom-1 right-1"],
     ];
 
-    // ✅ 1명만 있을 경우: 프로필 이미지 전체에 표시
+    // 1명만 있을 경우: 프로필 이미지 전체에 표시
     if (displayUsers.length === 1) {
       const onlyUser = displayUsers[0];
       const hasImage = onlyUser.profile_url?.trim();
@@ -96,7 +96,7 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
       );
     }
 
-    // ✅ 2~4명: 각 위치에 표시
+    // 2~4명: 각 위치에 표시
     const layout = layoutStyles[displayUsers.length - 2] || layoutStyles[2];
 
     return (

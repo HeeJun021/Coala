@@ -33,7 +33,7 @@ const ProjectWidgetTabs = ({ project, onNameChange, defaultTab = "overview" }) =
   const [isOverTrash, setIsOverTrash] = useState(false);
   const addMenuRef = useRef(null);
 
-  // ✅ 핵심: defaultTab이 바뀌면 activeTab 업데이트
+  // 핵심: defaultTab이 바뀌면 activeTab 업데이트
   useEffect(() => {
     setActiveTab(defaultTab);
   }, [defaultTab]);
@@ -126,7 +126,7 @@ const ProjectWidgetTabs = ({ project, onNameChange, defaultTab = "overview" }) =
     setDraggedTab(null);
   };
 
-  // ✅ ESLint 오류 수정: 정의 누락됐던 함수 추가
+  // ESLint 오류 수정: 정의 누락됐던 함수 추가
   const handleDragOverTrash = (e) => {
     e.preventDefault();
     setIsOverTrash(true);

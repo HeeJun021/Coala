@@ -39,13 +39,13 @@ export const deleteQuestion = async (questionId) => {
   }
 };
 
-// ✅ 사용자 전체 목록 조회
+// 사용자 전체 목록 조회
 export const fetchAdminUsers = async () => {
   const response = await apiClient.get("/admin/users");
   return response.data; // [{ user_id, nickname, email, created_at, post_count, comment_count, report_count }, ...]
 };
 
-// ✅ 사용자 상세 정보 조회
+// 사용자 상세 정보 조회
 export const fetchAdminUserDetail = async (userId) => {
   const response = await apiClient.get(`/admin/users/${userId}`);
   return response.data;
@@ -83,7 +83,7 @@ export const deleteAdminComment = async (commentId) => {
   return response.data;
 };
 
-// ✅ 언어별 학습자료 목록 및 완료 횟수 조회
+// 언어별 학습자료 목록 및 완료 횟수 조회
 export const fetchStudyMaterialSummary = async (language) => {
   const res = await apiClient.get("/admin/study-materials/summary", {
     params: { language },
@@ -91,7 +91,7 @@ export const fetchStudyMaterialSummary = async (language) => {
   return res.data;
 };
 
-// ✅ 학습자료 삭제
+// 학습자료 삭제
 export const deleteStudyMaterial = async (materialId) => {
   const res = await apiClient.delete(`/admin/study-materials/${materialId}`);
   return res.data;

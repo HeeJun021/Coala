@@ -22,12 +22,12 @@ const BoardSidebar = () => {
       className="absolute left-[33px] w-[260px] bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden z-40"
       style={{ top: "239px" }}
     >
-      {/* ✅ 상단 헤더 */}
+      {/* 상단 헤더 */}
       <div className="h-[56px] flex items-center px-6 bg-[#88C078] rounded-t-2xl shadow-sm">
         <h1 className="text-[18px] font-semibold text-black tracking-wide">게시판</h1>
       </div>
 
-      {/* ✅ 게시판 목록 */}
+      {/* 게시판 목록 */}
       <div className="divide-y divide-gray-100">
         {Object.entries(BOARD_LABELS).map(([key, label]) => (
           <div

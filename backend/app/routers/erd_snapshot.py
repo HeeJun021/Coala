@@ -11,7 +11,7 @@ from app.models.erd_models import (
     ErdRelations,
     ErdActivityLogs,
 )
-from app.schemas.erd_schema import SnapshotResponse  # ✅ 응답 스키마 추가
+from app.schemas.erd_schema import SnapshotResponse 
 from app.routers.erd_detail import get_erd_detail
 from app.dependencies.auth import get_current_user
 from app.models.user import User
@@ -19,9 +19,9 @@ from app.models.user import User
 router = APIRouter(prefix="/erds", tags=["ERD Snapshots"])
 
 
-# ✅ 공통 스냅샷 적용 함수
+# 공통 스냅샷 적용 함수
 def apply_snapshot_to_db(snapshot_data, erd_id, db: Session):
-    # ✅ 1. 기존 테이블 및 컬럼 삭제
+    # 1. 기존 테이블 및 컬럼 삭제
     existing_tables = db.query(ErdTables).filter_by(erd_id=erd_id).all()
     existing_table_ids = {t.table_id for t in existing_tables}
     snapshot_table_ids = {t["table_id"] for t in snapshot_data["tables"]}
@@ -32,12 +32,12 @@ def apply_snapshot_to_db(snapshot_data, erd_id, db: Session):
             db.delete(t)
     db.commit()
 
-    # ✅ 2. 테이블 + 컬럼 삽입
+    # 2. 테이블 + 컬럼 삽입
     for t_data in snapshot_data["tables"]:
         # 테이블 존재 여부 확인
         t = db.query(ErdTables).filter_by(table_id=t_data["table_id"]).first()
         if not t:
-            # 💥 강제 ID 삽입
+            # 강제 ID 삽입
             db.execute(
                 text(
                     """
@@ -62,7 +62,7 @@ def apply_snapshot_to_db(snapshot_data, erd_id, db: Session):
             t.pos_y = t_data["pos_y"]
         db.commit()
 
-        # 🔧 'columns' 키가 없는 경우 대비
+        # 'columns' 키가 없는 경우 대비
         columns = t_data.get("columns", [])
         existing_columns = (
             db.query(ErdColumns).filter_by(table_id=t_data["table_id"]).all()
@@ -112,7 +112,7 @@ def apply_snapshot_to_db(snapshot_data, erd_id, db: Session):
                     setattr(c, field, c_data[field])
         db.commit()
 
-    # ✅ 3. 관계 재삽입
+    # 3. 관계 재삽입
     db.query(ErdRelations).filter_by(erd_id=erd_id).delete()
     for r in snapshot_data["relations"]:
         db.execute(
@@ -155,7 +155,7 @@ def apply_snapshot_to_db(snapshot_data, erd_id, db: Session):
     db.commit()
 
 
-# ✅ 스냅샷 저장
+# 스냅샷 저장
 @router.post("/{erd_id}/snapshots")
 def create_erd_snapshot(
     erd_id: int,
@@ -168,7 +168,7 @@ def create_erd_snapshot(
 
     current = db.query(ErdSnapshot).filter_by(erd_id=erd_id, is_active=True).first()
     if current:
-        # ✅ 현재 snapshot만 비활성화
+        # 현재 snapshot만 비활성화
         db.query(ErdSnapshot).filter_by(erd_id=erd_id, is_active=True).update(
             {"is_active": False}
         )
@@ -180,8 +180,8 @@ def create_erd_snapshot(
         erd_id=erd_id,
         state_json=erd_detail_data,
         is_active=True,
-        log_id=None,  # ✅ 자동 저장은 로그 없음
-        source="auto",  # ✅ 명확하게 자동 저장임을 표시
+        log_id=None,  # 자동 저장은 로그 없음
+        source="auto",  # 명확하게 자동 저장임을 표시
     )
     db.add(snapshot)
     db.commit()
@@ -201,7 +201,7 @@ def create_erd_snapshot(
     return {"message": "스냅샷이 저장되었습니다.", "snapshot_id": snapshot.snapshot_id}
 
 
-# ✅ Undo
+# Undo
 @router.post("/{erd_id}/undo")
 def undo_erd_snapshot(
     erd_id: int,
@@ -236,7 +236,7 @@ def undo_erd_snapshot(
     }
 
 
-# ✅ Redo
+# Redo
 @router.post("/{erd_id}/redo")
 def redo_erd_snapshot(
     erd_id: int,
@@ -319,7 +319,7 @@ def get_committed_snapshots(
     if not erd:
         raise HTTPException(status_code=404, detail="ERD가 존재하지 않습니다.")
 
-    # ✅ 커밋된 스냅샷 + 로그 + 유저 join
+    # 커밋된 스냅샷 + 로그 + 유저 join
     results = (
         db.query(ErdSnapshot, ErdActivityLogs, User)
         .join(ErdActivityLogs, ErdSnapshot.log_id == ErdActivityLogs.log_id)

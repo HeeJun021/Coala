@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, ChevronLeft } from "lucide-react";
 import { loginUser } from "../../api/authApi";
-import SocialLogin from "../../components/SocialLogin"; // ✅ 추가
+import SocialLogin from "../../components/SocialLogin"; 
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -103,7 +103,7 @@ const Login = () => {
           <hr className="flex-grow border-gray-300" />
         </div>
 
-        {/* ✅ 소셜 로그인 버튼 */}
+        {/* 소셜 로그인 버튼 */}
         <SocialLogin />
       </div>
     </div>

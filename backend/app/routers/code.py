@@ -1,11 +1,11 @@
-# 📍 경로: app/routers/code_folder.py
+# 경로: app/routers/code_folder.py
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
 from app.models.user import User
-from app.models.code_models import CodeFolderMapping
+from app.models.code_models import CodeFolderMapping, Code
 from app.routers.auth import get_current_user
 from app.schemas.code_schema import CodeFolderResponse, CodeFolderCreate, CodeCreate, CodeResponse, CodeUpdate, CodeTitleUpdate, FolderRename
 from app.services.code import (
