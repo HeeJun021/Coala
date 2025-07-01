@@ -257,10 +257,28 @@ def upload_to_repo(repo_data: UploadRequest, user: User = Depends(get_current_us
     try:
         g = Github(user.github_access_token)
         repo = g.get_repo(repo_name)
-        
+        default_branch = repo.default_branch
+        print(f"🔍 Using default branch: {default_branch}")
+
+        # 중복 경로 필터링
+        filtered_paths = []
+        folder_ids = [int(p.replace("folder-", "")) for p in paths if p.startswith("folder-")]
+        for path in paths:
+            if path.startswith("code-"):
+                code_id = int(path.replace("code-", ""))
+                code = get_code_by_id(db, {"user_id": user.user_id}, code_id)
+                if code:
+                    # 코드의 상위 폴더가 folder_ids에 포함되어 있는지 확인
+                    parent_folder_id = code.folder_id  # 가정: Code 모델에 folder_id 속성이 있음
+                    if parent_folder_id not in folder_ids:
+                        filtered_paths.append(path)
+            else:
+                filtered_paths.append(path)
+        print(f"🔍 Filtered paths: {filtered_paths}")
+
         if destination_path:
             try:
-                repo.get_contents(destination_path)
+                repo.get_contents(destination_path, ref=default_branch)
                 print(f"🔍 Destination path exists: {destination_path}")
             except Exception:
                 print(f"🔍 Creating directory: {destination_path}")
@@ -268,7 +286,7 @@ def upload_to_repo(repo_data: UploadRequest, user: User = Depends(get_current_us
                     path=f"{destination_path}/.gitkeep",
                     message="Create directory with .gitkeep",
                     content="",
-                    branch="main"
+                    branch=default_branch
                 )
 
         with SESSION_LOCK:
@@ -283,14 +301,14 @@ def upload_to_repo(repo_data: UploadRequest, user: User = Depends(get_current_us
                     raise Exception("Upload cancelled")
             try:
                 try:
-                    existing_file = repo.get_contents(file_path, ref="main")
+                    existing_file = repo.get_contents(file_path, ref=default_branch)
                     print(f"🔍 File exists: {file_path}, updating with sha={existing_file.sha}")
                     repo.update_file(
                         path=file_path,
                         message=message,
                         content=content.encode('utf-8'),
                         sha=existing_file.sha,
-                        branch="main"
+                        branch=default_branch
                     )
                 except Exception:
                     print(f"🔍 File does not exist: {file_path}, creating new file")
@@ -298,7 +316,7 @@ def upload_to_repo(repo_data: UploadRequest, user: User = Depends(get_current_us
                         path=file_path,
                         message=message,
                         content=content.encode('utf-8'),
-                        branch="main"
+                        branch=default_branch
                     )
                 with SESSION_LOCK:
                     UPLOAD_SESSIONS[session_id]["uploaded_paths"].append(file_path)
@@ -338,7 +356,7 @@ def upload_to_repo(repo_data: UploadRequest, user: User = Depends(get_current_us
                 print(f"🔍 Processing child folder: {child_folder.folder_name} at {folder_path}/{child_folder.folder_name} (folder_id={child_folder.folder_id})")
                 upload_folder(child_folder.folder_id, folder_path)
 
-        for path in paths:
+        for path in filtered_paths:  # 수정: filtered_paths 사용
             print(f"🔍 Processing path: {path}")
             if path.startswith("folder-"):
                 folder_id = int(path.replace("folder-", ""))

@@ -20,7 +20,7 @@ const SelfCodingGitPanel = ({ isGithubConnected }) => {
   const [previewContent, setPreviewContent] = useState(null);
   const [destinationPath, setDestinationPath] = useState("");
   const [isUploading, setIsUploading] = useState(false);
-  const [setUploadedPaths] = useState([]);
+  const [uploadedPaths, setUploadedPaths] = useState([]);
   const [expandedRemotePaths, setExpandedRemotePaths] = useState([]);
   const [uploadSessionId, setUploadSessionId] = useState(null);
   const [menuVisible, setMenuVisible] = useState(false);
