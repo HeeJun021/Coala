@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import Literal
 from app.database import get_db
-from app.models.erd import Erds, ErdTables, ErdColumns, ErdRelations
-from app.schemas.user_schema import UserSimpleInfo
+from app.models.erd_models import Erds, ErdTables, ErdColumns, ErdRelations
+from app.schemas.user import UserSimpleInfo
 from app.dependencies.auth import get_current_user
 from app.services.erd_sql_generator import generate_sql
 

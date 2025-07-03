@@ -4,7 +4,7 @@ from sqlalchemy.dialects.postgresql import insert
 from typing import List
 from sqlalchemy import delete
 from app.models.user import User, UserFollow
-from app.schemas.user_schema import UserSimpleInfo
+from app.schemas.user import UserSimpleInfo
 from app.database import get_db
 from app.dependencies.auth import get_current_user
 
