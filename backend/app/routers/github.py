@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 from github import Github
 from app.database import get_db
 from app.models.user import User
-from app.models.social_login import SocialLogin
-from app.models.code_models import CodeFolder
+from app.models.social_login import SocialLogin  # 추가: SocialLogin 임포트
+from app.models.code_models import CodeFolder, CodeFolderMapping
 from app.dependencies.auth import get_current_user
 from app.services.code import get_codes_in_folder, get_child_folders, get_code_by_id
 from pydantic import BaseModel
@@ -41,6 +41,19 @@ class FolderCreateRequest(BaseModel):
 class FileDeleteRequest(BaseModel):
     repo_name: str
     path: str
+
+def get_folder_path(db: Session, folder_id: int, user_id: int) -> str:
+    path_parts = []
+    while folder_id:
+        folder = db.query(CodeFolder).filter(
+            CodeFolder.folder_id == folder_id,
+            CodeFolder.user_id == user_id
+        ).first()
+        if not folder:
+            break
+        path_parts.append(folder.folder_name)
+        folder_id = folder.parent_folder_id
+    return "/".join(reversed(path_parts))
 
 @router.get("/github/repos")
 def get_github_repos(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -103,13 +116,13 @@ def create_github_repo(
         print(f"GitHub user check failed: {user_check.status_code}, {user_check.text}")
         if user_check.status_code == 401:
             raise HTTPException(status_code=401, detail="GitHub 액세스 토큰이 유효하지 않습니다. 다시 연동해주세요.")
-        raise HTTPException(status_code=user_check.status_code, detail="GitHub 사용자 인증에 실패했습니다.")
+        raise HTTPException(status_code=user_check.status_code, detail="GitHub 사용자 인증에 실패했습니다.")  # 수정: user_work -> user_check
 
     create_headers = {
         "Authorization": f"Bearer {social_login.access_token}",
         "Accept": "application/vnd.github.v3+json"
     }
-    print(f"GitHub 저장소 생성 요청: token={social_login.access_token}, payload={request.dict()}")
+    print(f"🔍 GitHub 저장소 생성 요청: token={social_login.access_token}, payload={request.dict()}")
     payload = {
         "name": request.name,
         "description": request.description,
@@ -119,7 +132,7 @@ def create_github_repo(
     response = requests.post("https://api.github.com/user/repos", headers=create_headers, json=payload)
 
     if response.status_code != 201:
-        print(f"GitHub API 오류 응답: {response.status_code}, {response.text}")
+        print(f"🔍 GitHub API 오류 응답: {response.status_code}, {response.text}")
         try:
             error_detail = response.json().get("message", "알 수 없는 오류")
             if response.status_code == 404:
@@ -150,10 +163,10 @@ def get_repo_files(repo_name: str, user: User = Depends(get_current_user), db: S
         repo_name = "/".join(repo_name)
         
         if not repo_name or "/" not in repo_name:
-            print(f"Invalid repo_name: {repo_name}")
+            print(f"🔍 Invalid repo_name: {repo_name}")
             raise HTTPException(status_code=400, detail="Invalid repository name format. Expected 'owner/repo'.")
         
-        print(f"Fetching files for repo: {repo_name}, token: {user.github_access_token[:10]}...")
+        print(f"🔍 Fetching files for repo: {repo_name}, token: {user.github_access_token[:10]}...")
         
         g = Github(user.github_access_token)
         repo = g.get_repo(repo_name)
@@ -161,7 +174,7 @@ def get_repo_files(repo_name: str, user: User = Depends(get_current_user), db: S
         headers = {"Authorization": f"Bearer {user.github_access_token}"}
         user_response = requests.get("https://api.github.com/user", headers=headers)
         if user_response.status_code != 200:
-            print(f"Token validation failed: {user_response.status_code}, {user_response.text}")
+            print(f"🔍 Token validation failed: {user_response.status_code}, {user_response.text}")
             raise HTTPException(status_code=401, detail="Invalid GitHub access token.")
 
         def fetch_contents(path=""):
@@ -188,10 +201,10 @@ def get_repo_files(repo_name: str, user: User = Depends(get_current_user), db: S
             "html_url": f"https://github.com/{repo_name}",
             "contents": repo_structure
         }]
-        print(f"Fetched structure: {len(structure)} items, root={repo_short_name}")
+        print(f"🔍 Fetched structure: {len(structure)} items, root={repo_short_name}")
         return {"structure": structure}
     except Exception as e:
-        print(f"Error fetching repo files: {str(e)}")
+        print(f"🔍 Error fetching repo files: {str(e)}")
         raise HTTPException(status_code=404, detail=f"Failed to fetch repository files: {str(e)}")
 
 @router.get("/github/repos/files/content/{repo_name:path}/{file_path:path}")
@@ -209,7 +222,7 @@ def get_file_content(repo_name: str, file_path: str, user: User = Depends(get_cu
         repo_name = repo_name.split("/")[0:2]
         repo_name = "/".join(repo_name)
         
-        print(f"Fetching file content: repo={repo_name}, path={file_path}, token: {user.github_access_token[:10]}...")
+        print(f"🔍 Fetching file content: repo={repo_name}, path={file_path}, token: {user.github_access_token[:10]}...")
 
         if not repo_name or "/" not in repo_name:
             raise HTTPException(status_code=400, detail="Invalid repository name format. Expected 'owner/repo'.")
@@ -222,22 +235,22 @@ def get_file_content(repo_name: str, file_path: str, user: User = Depends(get_cu
         
         try:
             response = requests.get(raw_url, headers=headers)
-            print(f"Raw URL request: {raw_url}, status_code={response.status_code}")
+            print(f"🔍 Raw URL request: {raw_url}, status_code={response.status_code}")
             
             if response.status_code != 200:
-                print(f"GitHub Raw API error: {response.status_code}, {response.text}")
+                print(f"🔍 GitHub Raw API error: {response.status_code}, {response.text}")
                 raise HTTPException(status_code=response.status_code, detail=f"Failed to fetch file content: {response.text}")
             
             content = response.text
             content_length = len(content)
             content_preview = content[:100] if content_length > 0 else "Empty file"
-            print(f"File content fetched successfully: {file_path}, content_length={content_length}, content_preview={content_preview}...")
+            print(f"🔍 File content fetched successfully: {file_path}, content_length={content_length}, content_preview={content_preview}...")
             return {"content": content}
         except Exception as e:
-            print(f"Error fetching file content: {str(e)}")
+            print(f"🔍 Error fetching file content: {str(e)}")
             raise HTTPException(status_code=404, detail=f"Failed to fetch file content: {str(e)}")
     except Exception as e:
-        print(f"Error fetching file content: {str(e)}")
+        print(f"🔍 Error fetching file content: {str(e)}")
         raise HTTPException(status_code=404, detail=f"Failed to fetch file content: {str(e)}")
 
 @router.post("/github/repos/upload")
@@ -246,7 +259,7 @@ def upload_to_repo(repo_data: UploadRequest, user: User = Depends(get_current_us
     paths = repo_data.paths
     destination_path = repo_data.destination_path.strip("/")
     session_id = str(uuid.uuid4())
-    print(f"Upload request: repo={repo_name}, session_id={session_id}, paths={paths}, destination_path={destination_path}, user_id={user.user_id}")
+    print(f"🔍 Upload request: repo={repo_name}, session_id={session_id}, paths={paths}, destination_path={destination_path}, user_id={user.user_id}")
 
     if not repo_name or not paths:
         raise HTTPException(status_code=400, detail="Repository name and paths are required")
@@ -257,18 +270,20 @@ def upload_to_repo(repo_data: UploadRequest, user: User = Depends(get_current_us
     try:
         g = Github(user.github_access_token)
         repo = g.get_repo(repo_name)
-        
+        default_branch = repo.default_branch
+        print(f"🔍 Using default branch: {default_branch}")
+
         if destination_path:
             try:
-                repo.get_contents(destination_path)
-                print(f"Destination path exists: {destination_path}")
+                repo.get_contents(destination_path, ref=default_branch)
+                print(f"🔍 Destination path exists: {destination_path}")
             except Exception:
-                print(f"Creating directory: {destination_path}")
+                print(f"🔍 Creating directory: {destination_path}")
                 repo.create_file(
                     path=f"{destination_path}/.gitkeep",
                     message="Create directory with .gitkeep",
                     content="",
-                    branch="main"
+                    branch=default_branch
                 )
 
         with SESSION_LOCK:
@@ -279,54 +294,54 @@ def upload_to_repo(repo_data: UploadRequest, user: User = Depends(get_current_us
         def upload_file(file_path: str, content: str, message: str):
             with SESSION_LOCK:
                 if UPLOAD_SESSIONS.get(session_id, {}).get("cancelled", True):
-                    print(f"Upload cancelled for session: {session_id}, skipping file: {file_path}")
+                    print(f"🔍 Upload cancelled for session: {session_id}, skipping file: {file_path}")
                     raise Exception("Upload cancelled")
             try:
                 try:
-                    existing_file = repo.get_contents(file_path, ref="main")
-                    print(f"File exists: {file_path}, updating with sha={existing_file.sha}")
+                    existing_file = repo.get_contents(file_path, ref=default_branch)
+                    print(f"🔍 File exists: {file_path}, updating with sha={existing_file.sha}")
                     repo.update_file(
                         path=file_path,
                         message=message,
                         content=content.encode('utf-8'),
                         sha=existing_file.sha,
-                        branch="main"
+                        branch=default_branch
                     )
                 except Exception:
-                    print(f"File does not exist: {file_path}, creating new file")
+                    print(f"🔍 File does not exist: {file_path}, creating new file")
                     repo.create_file(
                         path=file_path,
                         message=message,
                         content=content.encode('utf-8'),
-                        branch="main"
+                        branch=default_branch
                     )
                 with SESSION_LOCK:
                     UPLOAD_SESSIONS[session_id]["uploaded_paths"].append(file_path)
             except Exception as e:
-                print(f"File upload error for {file_path}: {str(e)}")
+                print(f"🔍 File upload error for {file_path}: {str(e)}")
                 raise
 
         def upload_folder(folder_id: int, current_path: str):
             with SESSION_LOCK:
                 if UPLOAD_SESSIONS.get(session_id, {}).get("cancelled", True):
-                    print(f"Upload cancelled for session: {session_id}, skipping folder: {folder_id}")
+                    print(f"🔍 Upload cancelled for session: {session_id}, skipping folder: {folder_id}")
                     raise Exception("Upload cancelled")
             folder = db.query(CodeFolder).filter(
                 CodeFolder.folder_id == folder_id,
                 CodeFolder.user_id == user_dict["user_id"]
             ).first()
             if not folder:
-                print(f"Folder not found: folder_id={folder_id}")
+                print(f"🔍 Folder not found: folder_id={folder_id}")
                 raise HTTPException(status_code=404, detail=f"Folder with id {folder_id} not found")
 
             folder_name = folder.folder_name
             folder_path = f"{current_path}/{folder_name}" if current_path else folder_name
-            print(f"Uploading folder: {folder_name} at {folder_path}")
+            print(f"🔍 Uploading folder: {folder_name} at {folder_path}")
 
             codes = get_codes_in_folder(db, user_dict, folder_id)
             for code in codes:
                 file_path = f"{folder_path}/{code.title}"
-                print(f"Creating file: {file_path}")
+                print(f"🔍 Creating file: {file_path}")
                 upload_file(
                     file_path=file_path,
                     content=code.content or "",
@@ -335,23 +350,43 @@ def upload_to_repo(repo_data: UploadRequest, user: User = Depends(get_current_us
 
             child_folders = get_child_folders(db, user_dict, folder_id)
             for child_folder in child_folders:
-                print(f"Processing child folder: {child_folder.folder_name} at {folder_path}/{child_folder.folder_name} (folder_id={child_folder.folder_id})")
+                print(f"🔍 Processing child folder: {child_folder.folder_name} at {folder_path}/{child_folder.folder_name} (folder_id={child_folder.folder_id})")
                 upload_folder(child_folder.folder_id, folder_path)
 
         for path in paths:
-            print(f"Processing path: {path}")
+            print(f"🔍 Processing path: {path}")
             if path.startswith("folder-"):
                 folder_id = int(path.replace("folder-", ""))
                 upload_folder(folder_id, destination_path)
+                    
             elif path.startswith("code-"):
                 code_id = int(path.replace("code-", ""))
+                    
+                mapping = db.query(CodeFolderMapping).filter(CodeFolderMapping.code_id == code_id).first()
+                if mapping and f"folder-{mapping.folder_id}" in paths:
+                    print(f"🔍 Skipping code-{code_id} because its folder-{mapping.folder_id} is already selected")
+                    continue
+            
                 code = get_code_by_id(db, user_dict, code_id)
                 if not code:
                     raise HTTPException(status_code=404, detail=f"Code with id {code_id} not found")
-                file_path = f"{destination_path}/{code.title}" if destination_path else code.title
-                print(f"Creating file: {file_path}")
+
+                # 🔹 코드의 폴더 ID 조회
+                mapping = db.query(CodeFolderMapping).filter(CodeFolderMapping.code_id == code_id).first()
+                if not mapping:
+                    raise HTTPException(status_code=404, detail="Code의 폴더 정보를 찾을 수 없습니다.")
+
+                # 🔹 폴더 경로 역추적 함수 호출
+                folder_path = get_folder_path(db, mapping.folder_id, user.user_id)
+                
+                # 🔹 전체 경로 구성
+                if destination_path:
+                    full_path = f"{destination_path}/{folder_path}/{code.title}".strip("/")
+                else:
+                    full_path = f"{folder_path}/{code.title}".strip("/")
+
                 upload_file(
-                    file_path=file_path,
+                    file_path=full_path,
                     content=code.content or "",
                     message=f"Upload {code.title}"
                 )
@@ -364,7 +399,7 @@ def upload_to_repo(repo_data: UploadRequest, user: User = Depends(get_current_us
                 del UPLOAD_SESSIONS[session_id]
         return {"session_id": session_id, "uploaded_paths": uploaded_paths}
     except Exception as e:
-        print(f"Upload error: {str(e)}")
+        print(f"🔍 Upload error: {str(e)}")
         with SESSION_LOCK:
             if session_id in UPLOAD_SESSIONS:
                 del UPLOAD_SESSIONS[session_id]
@@ -373,54 +408,58 @@ def upload_to_repo(repo_data: UploadRequest, user: User = Depends(get_current_us
 @router.post("/github/repos/cancel-upload")
 def cancel_upload(cancel_data: CancelUploadRequest, user: User = Depends(get_current_user)):
     session_id = cancel_data.session_id
-    print(f"Cancelling upload: session_id={session_id}, repo={cancel_data.repo_name}")
+    print(f"🔍 Cancelling upload: session_id={session_id}, repo={cancel_data.repo_name}")
     with SESSION_LOCK:
         if session_id in UPLOAD_SESSIONS:
             UPLOAD_SESSIONS[session_id]["cancelled"] = True
-            print(f"Session marked as cancelled: {session_id}")
+            print(f"🔍 Session marked as cancelled: {session_id}")
             return {"message": f"Upload session {session_id} cancelled"}
         else:
-            print(f"No active session found for: {session_id}")
+            print(f"🔍 No active session found for: {session_id}")
             raise HTTPException(status_code=404, detail=f"No active upload session found for {session_id}")
 
 @router.post("/github/repos/folder/create")
 def create_folder(request: FolderCreateRequest, user: User = Depends(get_current_user)):
     repo_name = request.repo_name
-    folder_path = request.folder_path.strip("/")
-    print(f"Creating folder: repo={repo_name}, path={folder_path}, user_id={user.user_id}")
+    path = request.folder_path
+    print(f"🔍 Creating folder: repo={repo_name}, path={path}, user_id={user.user_id}")
 
     if not user.github_access_token:
         raise HTTPException(status_code=401, detail="GitHub 계정이 연동되지 않았습니다.")
 
-    if not repo_name or not folder_path:
-        raise HTTPException(status_code=400, detail="Repository name and folder path are required")
+    if not repo_name or not path:
+        raise HTTPException(status_code=400, detail="Repository name and path are required")
 
     try:
         g = Github(user.github_access_token)
         repo = g.get_repo(repo_name)
-        gitkeep_path = f"{folder_path}/.gitkeep"
-        try:
-            repo.get_contents(gitkeep_path)
-            print(f"Folder already exists: {folder_path}")
-            raise HTTPException(status_code=400, detail=f"Folder {folder_path} already exists")
-        except Exception:
-            repo.create_file(
-                path=gitkeep_path,
-                message=f"Create folder {folder_path}",
-                content="",
-                branch="main"
-            )
-            print(f"Folder created successfully: {folder_path}")
-        return {"message": f"Folder {folder_path} created successfully"}
+        default_branch = repo.default_branch  # 동적으로 기본 브랜치 가져오기
+        print(f"🔍 Using default branch: {default_branch}")
+
+        # 빈 .gitkeep 파일 생성하여 폴더 생성
+        repo.create_file(
+            path=f"{path}/.gitkeep",
+            message=f"Create folder {path}",
+            content="",
+            branch=default_branch  # 동적 브랜치 사용
+        )
+        print(f"🔍 Folder created: {path}")
+        return {"message": f"Successfully created folder {path}"}
     except Exception as e:
-        print(f"Error creating folder: {str(e)}")
-        raise HTTPException(status_code=400, detail=f"Failed to create folder: {str(e)}")
+        error_msg = str(e)
+        print(f"🔍 Error creating folder: {error_msg}")
+        if "Branch" in error_msg and "not found" in error_msg:
+            raise HTTPException(
+                status_code=400,
+                detail=f"기본 브랜치({default_branch})를 찾을 수 없습니다. GitHub 저장소 설정에서 기본 브랜치를 확인하세요: https://github.com/{repo_name}/settings/branches"
+            )
+        raise HTTPException(status_code=400, detail=f"Failed to create folder {path}: {error_msg}")
 
 @router.post("/github/repos/file/delete")
 def delete_file(request: FileDeleteRequest, user: User = Depends(get_current_user)):
     repo_name = request.repo_name
     path = request.path
-    print(f"Deleting file/folder: repo={repo_name}, path={path}, user_id={user.user_id}")
+    print(f"🔍 Deleting file/folder: repo={repo_name}, path={path}, user_id={user.user_id}")
 
     if not user.github_access_token:
         raise HTTPException(status_code=401, detail="GitHub 계정이 연동되지 않았습니다.")
@@ -434,21 +473,24 @@ def delete_file(request: FileDeleteRequest, user: User = Depends(get_current_use
     try:
         g = Github(user.github_access_token)
         repo = g.get_repo(repo_name)
-        contents = repo.get_contents(path)
+        default_branch = repo.default_branch  # 동적으로 기본 브랜치 가져오기
+        print(f"🔍 Using default branch: {default_branch}")
+        
+        contents = repo.get_contents(path, ref=default_branch)
         
         def delete_content(content):
             repo.delete_file(
                 path=content.path,
                 message=f"Delete {content.path}",
                 sha=content.sha,
-                branch="main"
+                branch=default_branch  # 동적 브랜치 사용
             )
-            print(f"Deleted: {content.path}")
+            print(f"🔍 Deleted: {content.path}")
 
         if isinstance(contents, list):
             for content in contents:
                 if content.type == "dir":
-                    sub_contents = repo.get_contents(content.path)
+                    sub_contents = repo.get_contents(content.path, ref=default_branch)
                     for sub_content in sub_contents:
                         delete_content(sub_content)
                 else:
@@ -456,8 +498,11 @@ def delete_file(request: FileDeleteRequest, user: User = Depends(get_current_use
         else:
             delete_content(contents)
         
-        print(f"Deletion successful: {path}")
+        print(f"🔍 Deletion successful: {path}")
         return {"message": f"Successfully deleted {path}"}
     except Exception as e:
-        print(f"Error deleting file/folder: {str(e)}")
-        raise HTTPException(status_code=400, detail=f"Failed to delete {path}: {str(e)}")
+        error_msg = str(e)
+        print(f"🔍 Error deleting file/folder: {error_msg}")
+        if "Branch" in error_msg and "not found" in error_msg:
+            raise HTTPException(status_code=400, detail=f"기본 브랜치({default_branch})를 찾을 수 없습니다. 저장소의 기본 브랜치를 확인하세요.")
+        raise HTTPException(status_code=400, detail=f"Failed to delete {path}: {error_msg}")

@@ -20,12 +20,18 @@ const SelfCodingGitPanel = ({ isGithubConnected }) => {
   const [previewContent, setPreviewContent] = useState(null);
   const [destinationPath, setDestinationPath] = useState("");
   const [isUploading, setIsUploading] = useState(false);
-  const [setUploadedPaths] = useState([]);
+  const [uploadedPaths, setUploadedPaths] = useState([]);
   const [expandedRemotePaths, setExpandedRemotePaths] = useState([]);
   const [uploadSessionId, setUploadSessionId] = useState(null);
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const [contextMenu, setContextMenu] = useState({ targetId: null, file: null });
+  const [reposError, setReposError] = useState(null);
+  const [fileViewError, setFileViewError] = useState(null);
+  const [isCreateFolderModalOpen, setIsCreateFolderModalOpen] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isOperationLoading, setIsOperationLoading] = useState(false);
 
   useEffect(() => {
     const loadRoot = async () => {
@@ -59,14 +65,13 @@ const SelfCodingGitPanel = ({ isGithubConnected }) => {
   useEffect(() => {
     if (isGithubConnected) {
       const fetchRepos = async () => {
-        setLoading(true);
         try {
           const res = await githubApi.getRepos();
           setRepos(Array.isArray(res.data) ? res.data : []);
-          setError(null);
+          setReposError(null);
         } catch (err) {
           console.error("Failed to fetch repos:", err);
-          setError(err.response?.data?.detail || "저장소 목록을 가져오지 못했습니다.");
+          setReposError(err.response?.data?.detail || "저장소 목록을 가져오지 못했습니다.");
           setRepos([]);
         } finally {
           setLoading(false);
@@ -185,7 +190,7 @@ const SelfCodingGitPanel = ({ isGithubConnected }) => {
   const handleRepoSelect = async (repo) => {
     if (!repo?.full_name) {
       console.error("Invalid repo selected:", repo);
-      setError("유효하지 않은 저장소입니다.");
+      setReposError("유효하지 않은 저장소입니다.");
       setRemoteRepoFiles([]);
       setSelectedRepo(null);
       setPreviewContent(null);
@@ -193,19 +198,28 @@ const SelfCodingGitPanel = ({ isGithubConnected }) => {
       setExpandedRemotePaths([]);
       return;
     }
+
     setSelectedRepo(repo);
     setPreviewContent(null);
     setDestinationPath("");
     setExpandedRemotePaths([]);
+    
     try {
       console.log("Requesting repo files for:", repo.full_name);
       const res = await githubApi.getRepoFiles(repo.full_name);
       console.log("Received repo files:", JSON.stringify(res.data.structure, null, 2));
       setRemoteRepoFiles(res.data.structure || []);
-      setError(null);
+      setFileViewError(null);
     } catch (err) {
-      console.error("Failed to fetch remote files:", err.response?.data || err.message);
-      setError("폴더나 파일을 찾을 수 없습니다.");
+      const apiError = err.response?.data?.detail || err.message;
+      console.error("Failed to fetch remote files:", apiError);
+      
+      if (apiError.includes("repository is empty")) {
+        setFileViewError("❗ 이 저장소는 비어 있습니다. 커밋된 파일이 없습니다.");
+      } else {
+        setFileViewError(apiError || "파일 목록을 불러올 수 없습니다.");
+      }
+
       setRemoteRepoFiles([]);
     }
   };
@@ -218,16 +232,11 @@ const SelfCodingGitPanel = ({ isGithubConnected }) => {
     console.log("File clicked:", file.name, "Repo:", selectedRepo?.full_name, "Path:", file.path);
     try {
       const res = await githubApi.getFileContent(selectedRepo.full_name, file.path);
-      console.log("Received response:", JSON.stringify(res.data, null, 2));
-      const content = res.data.content;
-      setPreviewContent(content || "Empty file: No content to display");
-      console.log("previewContent set:", content || "Empty file");
-      setError(null);
+      setPreviewContent(res.data.content || "Empty file: No content to display");
+      setFileViewError(null);
     } catch (err) {
-      console.error("Failed to fetch file content:", err.response?.data || err.message);
-      setError("파일을 찾을 수 없습니다.");
+      setFileViewError("❗ 파일 내용을 불러올 수 없습니다.");
       setPreviewContent(null);
-      console.log("Error set:", "파일을 찾을 수 없습니다.");
     }
   };
 
@@ -311,25 +320,122 @@ const SelfCodingGitPanel = ({ isGithubConnected }) => {
     }, 0);
   };
 
-  const handleCreateFolder = async () => {
-    if (!selectedRepo || !contextMenu.file) {
-      setError("저장소를 선택하세요.");
-      return;
-    }
-    const folderName = prompt("새 폴더 이름을 입력하세요:", "NewFolder");
-    if (!folderName || !folderName.trim()) return;
+  const CreateFolderModal = ({ newFolderName, setNewFolderName, isOperationLoading, setIsOperationLoading, error, setError, selectedRepo, contextMenu, setIsCreateFolderModalOpen, handleRepoSelect }) => {
+    const [isComposing, setIsComposing] = useState(false);
+    const inputRef = useRef(null);
 
-    try {
-      const parentPath = contextMenu.file.type === "dir" ? contextMenu.file.path : "";
-      const newPath = parentPath ? `${parentPath}/${folderName}` : folderName;
-      await githubApi.createFolder(selectedRepo.full_name, newPath);
-      setError(null);
-      handleRepoSelect(selectedRepo);
-      setMenuVisible(false);
-    } catch (err) {
-      console.error("Failed to create folder:", err);
-      setError(err.response?.data?.detail || "폴더 생성에 실패했습니다.");
+    useEffect(() => {
+      if (isCreateFolderModalOpen && inputRef.current) {
+        console.log("Focusing input field");
+        inputRef.current.focus();
+      }
+    }, [isCreateFolderModalOpen]);
+
+    const handleCreateFolder = async () => {
+      console.log("handleCreateFolder called, newFolderName:", newFolderName);
+      if (!selectedRepo || !contextMenu.file) {
+        setError("저장소를 선택하세요.");
+        console.log("Error: No repo or contextMenu.file selected");
+        return;
+      }
+      if (!newFolderName.trim()) {
+        setError("폴더 이름은 필수입니다.");
+        console.log("Error: newFolderName is empty");
+        return;
+      }
+      const invalidChars = /[\\:*?"<>|]/g;
+      if (newFolderName.match(invalidChars)) {
+        setError("폴더 이름에 유효하지 않은 문자가 포함되어 있습니다.");
+        console.log("Error: Invalid characters in folder name:", newFolderName);
+        return;
+      }
+
+      setIsOperationLoading(true);
+      try {
+        const parentPath = contextMenu.file.type === "dir" ? contextMenu.file.path : "";
+        const newPath = parentPath ? `${parentPath}/${newFolderName}` : newFolderName;
+        console.log("Sending create folder request:", { repo_name: selectedRepo.full_name, folder_path: newPath });
+        await githubApi.createFolder(selectedRepo.full_name, newPath);
+        console.log("Folder created successfully, resetting state");
+        setError(null);
+        setNewFolderName(""); // 성공 후 초기화
+        setIsCreateFolderModalOpen(false);
+        handleRepoSelect(selectedRepo);
+      } catch (err) {
+        console.error("Failed to create folder:", err);
+        const errorMsg =
+          err.response?.data?.detail ||
+          (err.response?.data && Array.isArray(err.response.data)
+            ? err.response.data.map(e => e.msg).join("; ")
+            : "폴더 생성에 실패했습니다.");
+        setError(errorMsg);
+        console.log("Error message set:", errorMsg);
+      } finally {
+        setIsOperationLoading(false);
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">새 폴더 생성</h3>
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">폴더 이름</label>
+            <input
+  ref={inputRef}
+  type="text"
+  value={newFolderName}
+  onChange={e => setNewFolderName(e.target.value)}
+  onCompositionStart={() => setIsComposing(true)}
+  onCompositionEnd={() => setIsComposing(false)}
+  onKeyDown={e => {
+    if (!isComposing && !e.nativeEvent.isComposing && e.key === "Enter" && !isOperationLoading && newFolderName.trim()) {
+      e.preventDefault();
+      handleCreateFolder();
     }
+  }}
+  className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+  placeholder="폴더 이름을 입력하세요"
+  disabled={isOperationLoading}
+/>
+
+          </div>
+          {error && (
+            <p className="text-red-500 text-sm">
+              {typeof error === "string" ? error : JSON.stringify(error)}
+            </p>
+          )}
+          <div className="flex justify-end space-x-2">
+            <button
+              onClick={() => {
+                console.log("Cancel clicked, resetting newFolderName");
+                setIsCreateFolderModalOpen(false);
+                setNewFolderName("");
+                setError(null);
+              }}
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition"
+              disabled={isOperationLoading}
+            >
+              취소
+            </button>
+            <button
+              onClick={handleCreateFolder}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+              disabled={isOperationLoading || !newFolderName.trim()}
+            >
+              {isOperationLoading ? (
+                <span className="flex items-center">
+                  <div className="loader border-t-2 border-white rounded-full w-4 h-4 animate-spin mr-2"></div>
+                  생성 중...
+                </span>
+              ) : (
+                "생성"
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const handleDelete = async () => {
@@ -337,23 +443,25 @@ const SelfCodingGitPanel = ({ isGithubConnected }) => {
       setError("삭제할 항목을 선택하세요.");
       return;
     }
-    if (!window.confirm(`"${contextMenu.file.name}"을(를) 삭제하시겠습니까?`)) return;
 
+    setIsOperationLoading(true);
     try {
       await githubApi.deleteFile(selectedRepo.full_name, contextMenu.file.path);
       setError(null);
+      setIsDeleteModalOpen(false);
       handleRepoSelect(selectedRepo);
-      setMenuVisible(false);
     } catch (err) {
       console.error("Failed to delete:", err);
       setError(err.response?.data?.detail || "삭제에 실패했습니다.");
+    } finally {
+      setIsOperationLoading(false);
     }
   };
 
   const ContextMenu = ({ position }) => {
     const handleClick = (label) => {
-      if (label === "새 폴더") handleCreateFolder();
-      if (label === "삭제") handleDelete();
+      if (label === "새 폴더") setIsCreateFolderModalOpen(true);
+      if (label === "삭제") setIsDeleteModalOpen(true);
       setMenuVisible(false);
     };
 
@@ -375,6 +483,44 @@ const SelfCodingGitPanel = ({ isGithubConnected }) => {
       </ul>
     );
   };
+
+  const DeleteModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">삭제 확인</h3>
+        <p className="text-sm text-gray-600 mb-4">
+          "{contextMenu.file?.name}"을(를) 삭제하시겠습니까?
+        </p>
+        {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
+        <div className="flex justify-end space-x-2">
+          <button
+            onClick={() => {
+              setIsDeleteModalOpen(false);
+              setError(null);
+            }}
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition"
+            disabled={isOperationLoading}
+          >
+            취소
+          </button>
+          <button
+            onClick={handleDelete}
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
+            disabled={isOperationLoading}
+          >
+            {isOperationLoading ? (
+              <span className="flex items-center">
+                <div className="loader border-t-2 border-white rounded-full w-4 h-4 animate-spin mr-2"></div>
+                삭제 중...
+              </span>
+            ) : (
+              "삭제"
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   const renderFolderNode = (node, depth = 0) => {
     const paddingLeft = depth * 20;
@@ -537,8 +683,8 @@ const SelfCodingGitPanel = ({ isGithubConnected }) => {
       <div className="flex-1 overflow-y-auto p-4 space-y-2">
         {loading ? (
           <p className="text-sm text-gray-500">저장소 목록을 불러오는 중...</p>
-        ) : error ? (
-          <p className="text-sm text-red-500">{error}</p>
+        ) : reposError ? (
+          <p className="text-sm text-red-500">{reposError}</p>
         ) : repos.length === 0 ? (
           <p className="text-sm text-gray-500">저장소가 없습니다.</p>
         ) : (
@@ -691,9 +837,9 @@ const SelfCodingGitPanel = ({ isGithubConnected }) => {
                   </div>
                   <div className="flex-1 overflow-y-auto p-3" data-testid="file-list">
                     <h5 className="text-sm font-semibold text-gray-700 mb-2">📁 저장소 파일 목록</h5>
-                    {error && (
+                    {fileViewError && (
                       <p className="text-sm text-red-500" data-testid="error-message">
-                        {error}
+                        {fileViewError}
                       </p>
                     )}
                     {renderRemoteFiles(remoteRepoFiles)}
@@ -782,6 +928,21 @@ const SelfCodingGitPanel = ({ isGithubConnected }) => {
         </div>
       </div>
       {menuVisible && <ContextMenu position={menuPosition} />}
+      {isCreateFolderModalOpen && (
+        <CreateFolderModal
+          newFolderName={newFolderName}
+          setNewFolderName={setNewFolderName}
+          isOperationLoading={isOperationLoading}
+          setIsOperationLoading={setIsOperationLoading}
+          error={error}
+          setError={setError}
+          selectedRepo={selectedRepo}
+          contextMenu={contextMenu}
+          setIsCreateFolderModalOpen={setIsCreateFolderModalOpen}
+          handleRepoSelect={handleRepoSelect}
+        />
+      )}
+      {isDeleteModalOpen && <DeleteModal />}
     </div>
   );
 };
