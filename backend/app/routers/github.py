@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 from github import Github
 from app.database import get_db
 from app.models.user import User
-from app.models.social_login import SocialLogin
-from app.models.code_models import CodeFolder
+from app.models.social_login import SocialLogin  # 추가: SocialLogin 임포트
+from app.models.code_models import CodeFolder, CodeFolderMapping
 from app.dependencies.auth import get_current_user
 from app.services.code import get_codes_in_folder, get_child_folders, get_code_by_id
 from pydantic import BaseModel
@@ -41,6 +41,19 @@ class FolderCreateRequest(BaseModel):
 class FileDeleteRequest(BaseModel):
     repo_name: str
     path: str
+
+def get_folder_path(db: Session, folder_id: int, user_id: int) -> str:
+    path_parts = []
+    while folder_id:
+        folder = db.query(CodeFolder).filter(
+            CodeFolder.folder_id == folder_id,
+            CodeFolder.user_id == user_id
+        ).first()
+        if not folder:
+            break
+        path_parts.append(folder.folder_name)
+        folder_id = folder.parent_folder_id
+    return "/".join(reversed(path_parts))
 
 @router.get("/github/repos")
 def get_github_repos(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -103,7 +116,7 @@ def create_github_repo(
         print(f"GitHub user check failed: {user_check.status_code}, {user_check.text}")
         if user_check.status_code == 401:
             raise HTTPException(status_code=401, detail="GitHub 액세스 토큰이 유효하지 않습니다. 다시 연동해주세요.")
-        raise HTTPException(status_code=user_check.status_code, detail="GitHub 사용자 인증에 실패했습니다.")
+        raise HTTPException(status_code=user_check.status_code, detail="GitHub 사용자 인증에 실패했습니다.")  # 수정: user_work -> user_check
 
     create_headers = {
         "Authorization": f"Bearer {social_login.access_token}",
@@ -260,22 +273,6 @@ def upload_to_repo(repo_data: UploadRequest, user: User = Depends(get_current_us
         default_branch = repo.default_branch
         print(f"🔍 Using default branch: {default_branch}")
 
-        # 중복 경로 필터링
-        filtered_paths = []
-        folder_ids = [int(p.replace("folder-", "")) for p in paths if p.startswith("folder-")]
-        for path in paths:
-            if path.startswith("code-"):
-                code_id = int(path.replace("code-", ""))
-                code = get_code_by_id(db, {"user_id": user.user_id}, code_id)
-                if code:
-                    # 코드의 상위 폴더가 folder_ids에 포함되어 있는지 확인
-                    parent_folder_id = code.folder_id  # 가정: Code 모델에 folder_id 속성이 있음
-                    if parent_folder_id not in folder_ids:
-                        filtered_paths.append(path)
-            else:
-                filtered_paths.append(path)
-        print(f"🔍 Filtered paths: {filtered_paths}")
-
         if destination_path:
             try:
                 repo.get_contents(destination_path, ref=default_branch)
@@ -356,20 +353,40 @@ def upload_to_repo(repo_data: UploadRequest, user: User = Depends(get_current_us
                 print(f"🔍 Processing child folder: {child_folder.folder_name} at {folder_path}/{child_folder.folder_name} (folder_id={child_folder.folder_id})")
                 upload_folder(child_folder.folder_id, folder_path)
 
-        for path in filtered_paths:  # 수정: filtered_paths 사용
+        for path in paths:
             print(f"🔍 Processing path: {path}")
             if path.startswith("folder-"):
                 folder_id = int(path.replace("folder-", ""))
                 upload_folder(folder_id, destination_path)
+                    
             elif path.startswith("code-"):
                 code_id = int(path.replace("code-", ""))
+                    
+                mapping = db.query(CodeFolderMapping).filter(CodeFolderMapping.code_id == code_id).first()
+                if mapping and f"folder-{mapping.folder_id}" in paths:
+                    print(f"🔍 Skipping code-{code_id} because its folder-{mapping.folder_id} is already selected")
+                    continue
+            
                 code = get_code_by_id(db, user_dict, code_id)
                 if not code:
                     raise HTTPException(status_code=404, detail=f"Code with id {code_id} not found")
-                file_path = f"{destination_path}/{code.title}" if destination_path else code.title
-                print(f"🔍 Creating file: {file_path}")
+
+                # 🔹 코드의 폴더 ID 조회
+                mapping = db.query(CodeFolderMapping).filter(CodeFolderMapping.code_id == code_id).first()
+                if not mapping:
+                    raise HTTPException(status_code=404, detail="Code의 폴더 정보를 찾을 수 없습니다.")
+
+                # 🔹 폴더 경로 역추적 함수 호출
+                folder_path = get_folder_path(db, mapping.folder_id, user.user_id)
+                
+                # 🔹 전체 경로 구성
+                if destination_path:
+                    full_path = f"{destination_path}/{folder_path}/{code.title}".strip("/")
+                else:
+                    full_path = f"{folder_path}/{code.title}".strip("/")
+
                 upload_file(
-                    file_path=file_path,
+                    file_path=full_path,
                     content=code.content or "",
                     message=f"Upload {code.title}"
                 )
@@ -404,35 +421,39 @@ def cancel_upload(cancel_data: CancelUploadRequest, user: User = Depends(get_cur
 @router.post("/github/repos/folder/create")
 def create_folder(request: FolderCreateRequest, user: User = Depends(get_current_user)):
     repo_name = request.repo_name
-    folder_path = request.folder_path.strip("/")
-    print(f"🔍 Creating folder: repo={repo_name}, path={folder_path}, user_id={user.user_id}")
+    path = request.folder_path
+    print(f"🔍 Creating folder: repo={repo_name}, path={path}, user_id={user.user_id}")
 
     if not user.github_access_token:
         raise HTTPException(status_code=401, detail="GitHub 계정이 연동되지 않았습니다.")
 
-    if not repo_name or not folder_path:
-        raise HTTPException(status_code=400, detail="Repository name and folder path are required")
+    if not repo_name or not path:
+        raise HTTPException(status_code=400, detail="Repository name and path are required")
 
     try:
         g = Github(user.github_access_token)
         repo = g.get_repo(repo_name)
-        gitkeep_path = f"{folder_path}/.gitkeep"
-        try:
-            repo.get_contents(gitkeep_path)
-            print(f"🔍 Folder already exists: {folder_path}")
-            raise HTTPException(status_code=400, detail=f"Folder {folder_path} already exists")
-        except Exception:
-            repo.create_file(
-                path=gitkeep_path,
-                message=f"Create folder {folder_path}",
-                content="",
-                branch="main"
-            )
-            print(f"🔍 Folder created successfully: {folder_path}")
-        return {"message": f"Folder {folder_path} created successfully"}
+        default_branch = repo.default_branch  # 동적으로 기본 브랜치 가져오기
+        print(f"🔍 Using default branch: {default_branch}")
+
+        # 빈 .gitkeep 파일 생성하여 폴더 생성
+        repo.create_file(
+            path=f"{path}/.gitkeep",
+            message=f"Create folder {path}",
+            content="",
+            branch=default_branch  # 동적 브랜치 사용
+        )
+        print(f"🔍 Folder created: {path}")
+        return {"message": f"Successfully created folder {path}"}
     except Exception as e:
-        print(f"🔍 Error creating folder: {str(e)}")
-        raise HTTPException(status_code=400, detail=f"Failed to create folder: {str(e)}")
+        error_msg = str(e)
+        print(f"🔍 Error creating folder: {error_msg}")
+        if "Branch" in error_msg and "not found" in error_msg:
+            raise HTTPException(
+                status_code=400,
+                detail=f"기본 브랜치({default_branch})를 찾을 수 없습니다. GitHub 저장소 설정에서 기본 브랜치를 확인하세요: https://github.com/{repo_name}/settings/branches"
+            )
+        raise HTTPException(status_code=400, detail=f"Failed to create folder {path}: {error_msg}")
 
 @router.post("/github/repos/file/delete")
 def delete_file(request: FileDeleteRequest, user: User = Depends(get_current_user)):
@@ -452,21 +473,24 @@ def delete_file(request: FileDeleteRequest, user: User = Depends(get_current_use
     try:
         g = Github(user.github_access_token)
         repo = g.get_repo(repo_name)
-        contents = repo.get_contents(path)
+        default_branch = repo.default_branch  # 동적으로 기본 브랜치 가져오기
+        print(f"🔍 Using default branch: {default_branch}")
+        
+        contents = repo.get_contents(path, ref=default_branch)
         
         def delete_content(content):
             repo.delete_file(
                 path=content.path,
                 message=f"Delete {content.path}",
                 sha=content.sha,
-                branch="main"
+                branch=default_branch  # 동적 브랜치 사용
             )
             print(f"🔍 Deleted: {content.path}")
 
         if isinstance(contents, list):
             for content in contents:
                 if content.type == "dir":
-                    sub_contents = repo.get_contents(content.path)
+                    sub_contents = repo.get_contents(content.path, ref=default_branch)
                     for sub_content in sub_contents:
                         delete_content(sub_content)
                 else:
@@ -477,5 +501,8 @@ def delete_file(request: FileDeleteRequest, user: User = Depends(get_current_use
         print(f"🔍 Deletion successful: {path}")
         return {"message": f"Successfully deleted {path}"}
     except Exception as e:
-        print(f"🔍 Error deleting file/folder: {str(e)}")
-        raise HTTPException(status_code=400, detail=f"Failed to delete {path}: {str(e)}")
+        error_msg = str(e)
+        print(f"🔍 Error deleting file/folder: {error_msg}")
+        if "Branch" in error_msg and "not found" in error_msg:
+            raise HTTPException(status_code=400, detail=f"기본 브랜치({default_branch})를 찾을 수 없습니다. 저장소의 기본 브랜치를 확인하세요.")
+        raise HTTPException(status_code=400, detail=f"Failed to delete {path}: {error_msg}")
