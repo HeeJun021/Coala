@@ -1,5 +1,5 @@
 from app.services import question as question_service
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, Query, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.services import admin_service
@@ -8,9 +8,35 @@ from app.schemas.admin_user import UserDetailResponse, UserSummary
 from app.schemas.board_schema import PostResponse
 from app.services.admin_service import get_user_detail_by_id, get_all_users_with_stats
 from app.services import board
-from typing import List
+from typing import List, Dict
+from pydantic import BaseModel
+from app.models.study_materials_models import StudyMaterials
+from app.models.study_example_models import StudyExample
+from app.models.language import Language
+import os
+from pathlib import Path
+import logging
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
+class Section(BaseModel):
+    type: str
+    content: str | List[Dict] | Dict
+    description: str | None = None
+    style: str | None = None
+    title: str | None = None
+    problem_description: str | None = None
+
+    model_config = {
+        "from_attributes": True
+    }
+
+class StudyMaterialCreate(BaseModel):
+    language_id: int
+    title: str
+    content: str
+    sections: List[Section]
 
 @router.get("/summary")
 def get_dashboard_summary(db: Session = Depends(get_db)):
@@ -73,12 +99,128 @@ def admin_delete_post(post_id: int, db: Session = Depends(get_db)):
     board.delete_post(post_id, db)
     return {"message": "게시글이 삭제되었습니다."}
 
-# 학습자료 제목 + 완료 수 조회 라우터 추가
 @router.get("/study-materials/summary")
 def get_study_material_summary(language: str, db: Session = Depends(get_db)):
-    return admin_service.get_study_material_summary_by_language(db, language)
+    language_obj = db.query(Language).filter(Language.language == language).first()
+    if not language_obj:
+        raise HTTPException(status_code=404, detail="해당 언어를 찾을 수 없습니다.")
+    
+    materials = db.query(StudyMaterials).filter(StudyMaterials.language_id == language_obj.language_id).all()
+    examples = db.query(StudyExample).filter(StudyExample.language_id == language_obj.language_id).all()
+    
+    result = [
+        {
+            "material_id": m.material_id,
+            "title": m.title,
+            "content": m.content,
+            "language_id": m.language_id,
+            "sections": m.sections,
+            "read_count": 0,
+            "is_example": False,
+        } for m in materials
+    ] + [
+        {
+            "example_id": e.example_id,
+            "title": e.title,
+            "content": e.content,
+            "language_id": e.language_id,
+            "sections": e.sections,
+            "read_count": 0,
+            "is_example": True,
+        } for e in examples
+    ]
+    
+    return result
 
-# 학습자료 삭제 라우터 추가
 @router.delete("/study-materials/{material_id}")
 def delete_study_material(material_id: int, db: Session = Depends(get_db)):
-    return admin_service.delete_study_material(db, material_id)
+    material = db.query(StudyMaterials).filter(StudyMaterials.material_id == material_id).first()
+    if not material:
+        raise HTTPException(status_code=404, detail="학습자료를 찾을 수 없습니다.")
+    db.delete(material)
+    db.commit()
+    return {"message": "학습자료가 성공적으로 삭제되었습니다."}
+
+@router.post("/upload/image", response_model=dict)
+async def upload_image(file: UploadFile = File(...)):
+    logging.info(f"이미지 업로드 요청: 파일명={file.filename}, 크기={file.size}, 타입={file.content_type}")
+    if not file.content_type.startswith("image/"):
+        logging.error("이미지 파일이 아님")
+        raise HTTPException(status_code=400, detail="이미지 파일만 업로드 가능")
+    if file.size > 5 * 1024 * 1024:
+        logging.error("파일 크기 초과")
+        raise HTTPException(status_code=400, detail="파일 크기는 5MB 이하여야 함")
+    upload_dir = Path("uploads/images")
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    file_path = upload_dir / file.filename
+    logging.info(f"이미지 저장 경로: {file_path}")
+    with file_path.open("wb") as buffer:
+        buffer.write(await file.read())
+    logging.info(f"이미지 업로드 성공: {file_path}")
+    return {"image_path": f"/uploads/images/{file.filename}"}
+
+@router.post("/study-materials/create", response_model=dict)
+def create_study_material(payload: StudyMaterialCreate, db: Session = Depends(get_db)):
+    table_name = "study_example" if payload.is_example else "study_materials"
+    sections_dict = [section.dict() for section in payload.sections]
+    query = f"""
+    INSERT INTO {table_name} (language_id, title, content, sections)
+    VALUES (:language_id, :title, :content, :sections)
+    RETURNING {'example_id' if payload.is_example else 'material_id'}
+    """
+    result = db.execute(query, {
+        "language_id": payload.language_id,
+        "title": payload.title,
+        "content": payload.content,
+        "sections": sections_dict
+    })
+    db.commit()
+    id_value = result.fetchone()[0]
+    return {"message": f"{'예제' if payload.is_example else '학습자료'}가 성공적으로 생성되었습니다.", "id": id_value}
+
+@router.put("/study-materials/{material_id}", response_model=dict)
+async def update_study_material(
+    material_id: int,
+    material_data: StudyMaterialCreate,
+    db: Session = Depends(get_db)
+):
+    material = db.query(StudyMaterials).filter(StudyMaterials.material_id == material_id).first()
+    if not material:
+        raise HTTPException(status_code=404, detail="학습자료를 찾을 수 없습니다.")
+    
+    material.title = material_data.title
+    material.content = material_data.content
+    material.language_id = material_data.language_id
+    material.sections = [section.dict() for section in material_data.sections]
+    db.commit()
+    db.refresh(material)
+    logging.info(f"학습자료 수정 성공: material_id={material_id}, sections={material.sections}")
+    return {"message": "학습자료가 성공적으로 수정되었습니다.", "material_id": material.material_id}
+
+@router.put("/examples/{example_id}", response_model=dict)
+async def update_study_example(
+    example_id: int,
+    example_data: StudyMaterialCreate,
+    db: Session = Depends(get_db)
+):
+    example = db.query(StudyExample).filter(StudyExample.example_id == example_id).first()
+    if not example:
+        raise HTTPException(status_code=404, detail="예제를 찾을 수 없습니다.")
+    
+    example.title = example_data.title
+    example.content = example_data.content
+    example.language_id = example_data.language_id
+    example.sections = [section.dict() for section in example_data.sections]
+    db.commit()
+    db.refresh(example)
+    logging.info(f"예제 수정 성공: example_id={example_id}, sections={example.sections}")
+    return {"message": "예제가 성공적으로 수정되었습니다.", "example_id": example.example_id}
+
+@router.delete("/examples/{example_id}", response_model=dict)
+async def delete_study_example(example_id: int, db: Session = Depends(get_db)):
+    example = db.query(StudyExample).filter(StudyExample.example_id == example_id).first()
+    if not example:
+        raise HTTPException(status_code=404, detail="예제를 찾을 수 없습니다.")
+    db.delete(example)
+    db.commit()
+    return {"message": "예제가 성공적으로 삭제되었습니다."}

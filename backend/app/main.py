@@ -79,6 +79,8 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
+app.mount("/uploads", StaticFiles(directory="Uploads"), name="uploads")
+
 # CORS 설정
 app.add_middleware(
     CORSMiddleware,
