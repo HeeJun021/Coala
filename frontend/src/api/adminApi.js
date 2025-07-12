@@ -1,4 +1,4 @@
-import apiClient from "./apiClient"; // 이미 존재하는 apiClient 사용
+import apiClient from "./apiClient";
 
 // 관리자 요약 정보 가져오기
 export const fetchAdminSummary = async () => {
@@ -42,25 +42,13 @@ export const deleteQuestion = async (questionId) => {
 // 사용자 전체 목록 조회
 export const fetchAdminUsers = async () => {
   const response = await apiClient.get("/admin/users");
-  return response.data; // [{ user_id, nickname, email, created_at, post_count, comment_count, report_count }, ...]
+  return response.data;
 };
 
 // 사용자 상세 정보 조회
 export const fetchAdminUserDetail = async (userId) => {
   const response = await apiClient.get(`/admin/users/${userId}`);
   return response.data;
-  /*
-  {
-    user_id,
-    nickname,
-    email,
-    created_at,
-    tier: { tier_id, tier_name, min_rating },
-    report_count,
-    posts: [{ post_id, title, board_type, created_at }, ...],
-    comments: [{ comment_id, content, post_id, created_at }, ...]
-  }
-  */
 };
 
 // 게시판 종류에 따라 전체 게시글 목록 조회
@@ -83,7 +71,7 @@ export const deleteAdminComment = async (commentId) => {
   return response.data;
 };
 
-// 언어별 학습자료 목록 및 완료 횟수 조회
+// 학습자료/예제 목록 조회
 export const fetchStudyMaterialSummary = async (language) => {
   const res = await apiClient.get("/admin/study-materials/summary", {
     params: { language },
@@ -91,8 +79,53 @@ export const fetchStudyMaterialSummary = async (language) => {
   return res.data;
 };
 
+// 학습자료 단일 조회
+export const fetchStudyMaterialById = async (language, materialId) => {
+  const res = await apiClient.get(`/api/materials/${language}/${materialId}`);
+  return res.data;
+};
+
+// 예제 목록 조회
+export const fetchStudyExamples = async (language) => {
+  const res = await apiClient.get(`/api/examples/${language}`);
+  return res.data;
+};
+
 // 학습자료 삭제
 export const deleteStudyMaterial = async (materialId) => {
   const res = await apiClient.delete(`/admin/study-materials/${materialId}`);
   return res.data;
+};
+
+// 학습자료 수정
+export const updateStudyMaterial = async (materialId, materialData) => {
+  try {
+    const response = await apiClient.put(`/admin/study-materials/${materialId}`, materialData);
+    return response.data;
+  } catch (error) {
+    console.error("학습자료 수정 실패:", error);
+    throw error;
+  }
+};
+
+// 예제 수정
+export const updateStudyExample = async (exampleId, exampleData) => {
+  try {
+    const response = await apiClient.put(`/admin/examples/${exampleId}`, exampleData);
+    return response.data;
+  } catch (error) {
+    console.error("예제 수정 실패:", error);
+    throw error;
+  }
+};
+
+// 예제 삭제
+export const deleteStudyExample = async (exampleId) => {
+  try {
+    const response = await apiClient.delete(`/admin/examples/${exampleId}`);
+    return response.data;
+  } catch (error) {
+    console.error("예제 삭제 실패:", error);
+    throw error;
+  }
 };

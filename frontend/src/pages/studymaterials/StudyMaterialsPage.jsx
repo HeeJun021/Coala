@@ -231,11 +231,12 @@ useEffect(() => {
                         />
                       )}
 
-                      {section.type === "image" && (
+{section.type === "image" && (
                         <img
                           className="mt-2 w-full max-w-2xl rounded-lg shadow-md mx-auto"
-                          src={section.content}
-                          alt="설명 이미지"
+                          src={`http://localhost:8000${section.content}`}
+                          alt={section.description || "설명 이미지"}
+                          onError={() => console.error(`Failed to load image: ${section.content}`)}
                         />
                       )}
 
