@@ -56,7 +56,7 @@ const Navbar = () => {
     {
       label: "퀴즈문제",
       path: "/quizpage",
-      children: ["연습 퀴즈", "테스트 퀴즈", "퀴즈 만들기"],
+      children: ["연습 퀴즈", "테스트 퀴즈", "퀴즈 만들기", "퀴즈 통계"],
     },
     {
       label: "자율코딩",
@@ -229,6 +229,7 @@ const Navbar = () => {
                     if (child === "연습 퀴즈") link = "/quizpage";
                     if (child === "테스트 퀴즈") link = "/quizpage?category=test";
                     if (child === "퀴즈 만들기") link = "/quizpage?category=user";
+                    if (child === "퀴즈 통계") link = "/quiz-stats"; 
                     return (
                       <Link
                         key={i}

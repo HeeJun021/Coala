@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createQuiz } from "../../api/quizApi";
+import { getLanguages } from "../../api/languageApi";
 import QuizSideBar from "../../Layout/QuizSideBar";
 import { CircleCheck, FileText, ListChecks, HelpCircle } from "lucide-react";
 import QuizGuideModal from "../../components/quiz/QuizGuideModal";
@@ -12,22 +13,8 @@ const PracticeQuiz = () => {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [showGuideTooltip, setShowGuideTooltip] = useState(false);
 
-  useEffect(() => {
-    const seen = localStorage.getItem("quiz_guide_seen");
-    if (seen !== "true") setShowGuideTooltip(true);
-  }, []);
-
-  const handleGuideClick = () => {
-    setIsGuideOpen(true);
-    setShowGuideTooltip(false);
-    localStorage.setItem("quiz_guide_seen", "true");
-  };
-
-  const difficultyMap = {
-    "Lv.1": 1,
-    "Lv.2": 2,
-    "Lv.3": 3,
-  };
+  const [languages, setLanguages] = useState([]);
+  const [languageId, setLanguageId] = useState(1);
 
   const [selectedTypes, setSelectedTypes] = useState({
     ox: false,
@@ -40,6 +27,35 @@ const PracticeQuiz = () => {
     short: { count: 5, difficulty: "Lv.1" },
     multiple: { count: 5, difficulty: "Lv.1" },
   });
+
+  const difficultyMap = {
+    "Lv.1": 1,
+    "Lv.2": 2,
+    "Lv.3": 3,
+  };
+
+  useEffect(() => {
+    const seen = localStorage.getItem("quiz_guide_seen");
+    if (seen !== "true") setShowGuideTooltip(true);
+  }, []);
+
+  const handleGuideClick = () => {
+    setIsGuideOpen(true);
+    setShowGuideTooltip(false);
+    localStorage.setItem("quiz_guide_seen", "true");
+  };
+
+  useEffect(() => {
+    const fetchLanguages = async () => {
+      const data = await getLanguages();
+      const filtered = data.filter((lang) => lang.language !== "Other");
+      setLanguages(filtered);
+      if (filtered.length > 0) {
+        setLanguageId(filtered[0].language_id);
+      }
+    };
+    fetchLanguages();
+  }, []);
 
   const handleTypeChange = (type) => {
     setSelectedTypes((prev) => ({
@@ -56,12 +72,18 @@ const PracticeQuiz = () => {
   };
 
   const handleStartQuiz = async () => {
+    if (!languageId) {
+      alert("문제 언어를 선택해주세요.");
+      return;
+    }
+
     setLoading(true);
     try {
       const quizPayload = {
         title: "사용자 연습 퀴즈",
         quiz_type: "practice",
         time_limit: null,
+        language_id: languageId,
         settings: Object.keys(selectedTypes)
           .filter((type) => selectedTypes[type])
           .map((type) => ({
@@ -76,7 +98,7 @@ const PracticeQuiz = () => {
         navigate(`/quizsolve/${newQuiz.quiz_id}`);
       }
     } catch (error) {
-      console.error("🚨 퀴즈 생성 실패:", error);
+      console.error("퀴즈 생성 실패:", error);
       alert("퀴즈 생성 중 오류가 발생했습니다.");
     } finally {
       setLoading(false);
@@ -104,22 +126,18 @@ const PracticeQuiz = () => {
     <div className="flex w-full">
       <QuizSideBar />
 
-      {/* 퀴즈 박스 */}
       <div className="flex-1 max-w-6xl pt-8 mt-8 mx-auto bg-white shadow-xl rounded-2xl border border-gray-300 p-7 relative">
+        <button
+          onClick={handleGuideClick}
+          className="absolute top-4 right-4 text-gray-500 hover:text-black"
+          title="가이드 보기"
+        >
+          <HelpCircle size={24} />
+          {showGuideTooltip && (
+            <div className="absolute top-[-2px] right-[-6px] w-[7px] h-[7px] bg-rose-600 rounded-full shadow-sm" />
+          )}
+        </button>
 
-        {/* 🟢 가이드 버튼 */}
-         <button
-            onClick={handleGuideClick}
-            className="absolute top-4 right-4 text-gray-500 hover:text-black"
-            title="가이드 보기"
-          >
-            <HelpCircle size={24} />
-            {showGuideTooltip && (
-              <div className="absolute top-[-2px] right-[-6px] w-[7px] h-[7px] bg-rose-600 rounded-full shadow-sm" />
-            )}
-          </button>
-
-        {/* 타이틀 */}
         <div className="mb-8">
           <h1 className="text-3xl font-extrabold text-gray-800 mb-4 tracking-wide">
             <span className="text-black">연습 퀴즈</span>
@@ -130,7 +148,22 @@ const PracticeQuiz = () => {
           </p>
         </div>
 
-        {/* 문제 유형 선택 */}
+        {/* 문제 언어 선택 */}
+        <div className="mb-8 max-w-xs">
+          <label className="text-sm font-semibold text-gray-700 block mb-2">문제 언어</label>
+          <select
+            className="w-full p-2 border rounded-lg"
+            value={languageId || ""}
+            onChange={(e) => setLanguageId(Number(e.target.value))}
+          >
+            {languages.map((lang) => (
+              <option key={lang.language_id} value={lang.language_id}>
+                {lang.language}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div className="mb-6">
           <h2 className="text-lg font-semibold mb-2 text-gray-700">문제 유형을 선택하세요.</h2>
           <div className="flex gap-4">
@@ -155,7 +188,6 @@ const PracticeQuiz = () => {
           </div>
         </div>
 
-        {/* 문제 설정 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
           {["ox", "short", "multiple"].map((type) => (
             <div
@@ -170,7 +202,6 @@ const PracticeQuiz = () => {
                 {getIcon(type)} {getLabel(type)}
               </h3>
 
-              {/* 문제 개수 */}
               <label className="block mb-3">
                 <span className="text-sm text-gray-600">문제 개수</span>
                 <select
@@ -189,7 +220,6 @@ const PracticeQuiz = () => {
                 </select>
               </label>
 
-              {/* 난이도 */}
               <label className="block">
                 <span className="text-sm text-gray-600">난이도</span>
                 <select
@@ -211,7 +241,6 @@ const PracticeQuiz = () => {
           ))}
         </div>
 
-        {/* 시작 버튼 */}
         <div className="flex pt-8 justify-end">
           <button
             className="px-6 py-2 bg-green-600 text-white rounded-xl shadow-md hover:bg-green-700 transition-all"
@@ -223,7 +252,6 @@ const PracticeQuiz = () => {
         </div>
       </div>
 
-      {/* 가이드 모달 */}
       {isGuideOpen && (
         <QuizGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
       )}

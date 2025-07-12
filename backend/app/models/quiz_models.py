@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, TIMESTAMP, Boolean, Text
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
+from app.models.language import Language
 from app.database import Base
 
 class Quiz(Base):
@@ -13,6 +14,10 @@ class Quiz(Base):
 
     settings = relationship("QuizSetting", back_populates="quiz")
     assignments = relationship("QuizAssignment", back_populates="quiz")
+
+    language_id = Column(Integer, ForeignKey("languages.language_id", ondelete="CASCADE"), nullable=False)
+
+    language = relationship("Language", backref="quizzes")  
 
 class QuizSetting(Base):
     __tablename__ = "quizsetting"

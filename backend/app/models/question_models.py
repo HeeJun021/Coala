@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Text, ARRAY, ForeignKey, TIMESTA
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.database import Base  # DB 연결을 위한 Base import
+from app.models.language import Language
 
 class QuestionType(Base):  # question_type` 테이블 정의
     __tablename__ = "question_type"
@@ -24,3 +25,6 @@ class Question(Base):
 
     #  QuizSubmissionDetails에서 사용할 관계 설정 (quiz.py에서 참조 가능하도록 추가)
     submission_details = relationship("QuizSubmissionDetails", back_populates="question")
+    
+    language_id = Column(Integer, ForeignKey("languages.language_id", ondelete="CASCADE"), nullable=False)
+    language = relationship("Language", backref="questions")

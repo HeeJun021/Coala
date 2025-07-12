@@ -1,9 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List
 
 from app.database import get_db
-from app.services.quiz import get_all_quizzes, get_quiz, create_quiz
+from app.services.quiz_service import (
+    get_all_quizzes,
+    get_quiz,
+    create_quiz,
+    submit_quiz_logic,
+    get_quiz_result_service,
+    get_user_quiz_history_service,
+    get_quiz_statistics
+)
 from app.models.question_models import Question
 from app.models.quiz_models import Quiz, QuizSubmissions, QuizSubmissionDetails
 from app.schemas.quiz_schema import QuizCreate, QuizResponse, QuizResultResponse, QuizSubmissionRequest
@@ -23,6 +31,10 @@ router = APIRouter(
 def get_all(db: Session = Depends(get_db)):
     return get_all_quizzes(db)
 
+@router.get("/stats")
+def get_quiz_stats(user_id: int = Query(...), db: Session = Depends(get_db)):
+    return get_quiz_statistics(user_id, db)
+
 @router.get("/{quiz_id}")
 def fetch_quiz(quiz_id: int, db: Session = Depends(get_db)):
     quiz = get_quiz(db, quiz_id)
@@ -34,197 +46,23 @@ def fetch_quiz(quiz_id: int, db: Session = Depends(get_db)):
 # 퀴즈 생성 API
 @router.post("/", response_model=QuizResponse)
 def create(quiz_data: QuizCreate, db: Session = Depends(get_db)):
-    return create_quiz(db, quiz_data.title, quiz_data.quiz_type, quiz_data.settings)
+    return create_quiz(
+        db=db,
+        title=quiz_data.title,
+        quiz_type=quiz_data.quiz_type,
+        language_id=quiz_data.language_id, 
+        settings=quiz_data.settings
+    )
 
 @router.post("/{quiz_id}/submit")
 def submit_quiz(quiz_id: int, submission_data: QuizSubmissionRequest, db: Session = Depends(get_db)):
-    """
-    퀴즈 제출 API
-    """
-    user_id = submission_data.user_id
-    mode = submission_data.mode  # mode 값 받기 (practice / test)
-    user_answers = submission_data.answers  # { "question_id": "user_answer" } 형태
+    return submit_quiz_logic(submission_data=submission_data, db=db)
 
-    # 1️⃣ 퀴즈 제출 정보 저장
-    submission = QuizSubmissions(
-        quiz_id=quiz_id,
-        user_id=user_id,
-        correct_count=0,  # 초기값 설정
-        rating_change=0
-    )
-    db.add(submission)
-    db.commit()  
-    db.refresh(submission)  # 커밋 후 ID 참조 가능
-
-    correct_count = 0  # 정답 개수
-    total_questions = len(user_answers)  # 전체 문제 개수
-    submission_details_list = []  # 한 번에 `commit()`할 리스트
-
-    # 제출된 문제 개별 검증
-    for answer in user_answers:
-        question_id = answer.question_id
-        user_answer = answer.user_answer
-
-        question = db.query(Question).filter(Question.question_id == question_id).first()
-
-        if not question:
-            continue  # 문제 없음 → 스킵
-
-        # 정답 비교 (문제 유형별 처리)
-        is_correct = check_answer(question, user_answer) or False  # `None` 방지
-
-        # 정답 카운트 증가
-        if is_correct:
-            correct_count += 1
-
-        #  제출 결과 저장 (리스트에 추가)
-        submission_details_list.append(QuizSubmissionDetails(
-            submission_id=submission.submission_id,
-            question_id=question_id,
-            user_answer=user_answer,
-            is_correct=is_correct
-        ))
-
-    # 모든 문제 추가 후 한 번만 `commit()` 실행
-    if submission_details_list:
-        db.add_all(submission_details_list)
-        submission.correct_count = correct_count  # 정답 개수 업데이트
-        db.commit()
-
-    # 퀴즈를 푸는 도중 나갔을 때 처리
-    else:
-        db.delete(submission)
-        db.commit()
-        return {"message": "퀴즈가 제출되지 않았습니다. 다시 풀어주세요."}
-
-    # 테스트 모드일 때 레이팅 반영
-    rating_change = 0
-    if mode == "test":
-        correct_rate = correct_count / total_questions
-        if correct_rate >= 1.0:
-            rating_change = 50
-        elif correct_rate >= 0.75:
-            rating_change = 25
-        elif correct_rate < 0.3:
-            rating_change = -30
-
-        # 사용자 레이팅 업데이트
-        user = db.query(User).filter(User.user_id == user_id).first()
-        user.rating += rating_change
-        submission.rating_change = rating_change
-        db.commit()
-        db.refresh(user)
-        db.refresh(submission)
-
-    if mode == "test":
-        try:
-            user = db.query(User).filter(User.user_id == user_id).first()
-            reward_user_by_action(user, RewardActionType.quiz_correct, db)
-            print("유칼립투스 보상 지급 완료 (테스트 모드)")
-        except HTTPException as e:
-            print(f"유칼립투스 보상 실패: {e.detail}")
-
-    return {
-        "message": "퀴즈 제출 완료",
-        "correct_count": correct_count,
-        "rating_change": rating_change if mode == "test" else None
-    }
-
-
-# 퀴즈 결과 가져오는 거임
 @router.get("/{quiz_id}/result/{user_id}", response_model=QuizResultResponse)
 def get_quiz_result(quiz_id: int, user_id: int, db: Session = Depends(get_db)):
-    """
-    특정 사용자가 제출한 퀴즈 결과 조회 API
-    """
-    
-    print(f"[DEBUG] quiz_id: {quiz_id}, user_id: {user_id}")
-    
-    # 1️⃣ 퀴즈 정보 조회
-    quiz = db.query(Quiz).filter(Quiz.quiz_id == quiz_id).first()
-    if not quiz:
-        print(f"[ERROR] 퀴즈 {quiz_id}를 찾을 수 없습니다.")
-        raise HTTPException(status_code=404, detail="퀴즈를 찾을 수 없습니다.")
-
-    print(f"[DEBUG] 퀴즈 정보 조회 성공: {quiz}")
-
-    # 2️⃣ 사용자의 제출 정보 조회
-    submission = (
-        db.query(QuizSubmissions)
-        .filter(QuizSubmissions.quiz_id == quiz_id, QuizSubmissions.user_id == user_id)
-        .first()
-    )
-    if not submission:
-        print(f"[ERROR] 사용자 {user_id}의 퀴즈 {quiz_id} 제출 기록이 없습니다.")
-        raise HTTPException(status_code=404, detail="제출된 퀴즈 결과를 찾을 수 없습니다.")
-
-    print(f"[DEBUG] 퀴즈 제출 정보 조회 성공: {submission}")
-
-    # 3️⃣ 문제별 정답 비교
-    submission_details = (
-        db.query(QuizSubmissionDetails)
-        .filter(QuizSubmissionDetails.submission_id == submission.submission_id)
-        .all()
-    )
-
-    if not submission_details:
-        print(f"[ERROR] 제출 ID {submission.submission_id}에 대한 상세 기록이 없습니다.")
-        raise HTTPException(status_code=404, detail="퀴즈 제출 상세 정보를 찾을 수 없습니다.")
-
-    print(f"[DEBUG] 제출된 문제 개수: {len(submission_details)}")
-    
-    question_results = []
-    for detail in submission_details:
-        question = db.query(Question).filter(Question.question_id == detail.question_id).first()
-        if not question:
-            print(f"[WARNING] 문제 ID {detail.question_id}를 찾을 수 없습니다. (스킵됨)")
-            continue  # 문제를 찾을 수 없으면 스킵
-
-        question_results.append({
-            "question_id": question.question_id,
-            "question_text": question.question_text,
-            "user_answer": detail.user_answer,
-            "correct_answer": question.correct_answer,
-            "is_correct": detail.is_correct,
-            "explanation": question.explanation or ""
-        })
-    print(f"[DEBUG] 최종 반환 데이터: {question_results}")
-    return {
-        "quiz_id": quiz.quiz_id,
-        "title": quiz.title,
-        "quiz_type": quiz.quiz_type,
-        "submitted_at": submission.submitted_at,
-        "questions": question_results,
-        "rating_change": submission.rating_change if quiz.quiz_type == "test" else None
-    }
+    return get_quiz_result_service(quiz_id, user_id, db)
 
 @router.get("/history/{user_id}")
 def get_user_quiz_history(user_id: int, db: Session = Depends(get_db)):
-    """
-    사용자의 푼 퀴즈 내역 조회 API
-    """
-    quiz_history = (
-        db.query(QuizSubmissions, Quiz)
-        .join(Quiz, QuizSubmissions.quiz_id == Quiz.quiz_id)
-        .filter(QuizSubmissions.user_id == user_id)
-        .order_by(QuizSubmissions.submitted_at.desc())
-        .all()
-    )
+    return get_user_quiz_history_service(user_id, db)
 
-    if not quiz_history:
-        return []
-
-    return [
-        {
-            "quiz_id": submission.quiz_id,
-            "title": quiz.title,
-            "quiz_type": quiz.quiz_type,
-            "correct_count": submission.correct_count,
-            "total_questions": db.query(QuizSubmissionDetails)
-                                 .filter(QuizSubmissionDetails.submission_id == submission.submission_id)
-                                 .count(),
-            "submitted_at": submission.submitted_at,
-            "rating_change": submission.rating_change 
-        }
-        for submission, quiz in quiz_history
-    ]

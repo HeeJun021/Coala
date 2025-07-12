@@ -67,3 +67,15 @@ export const getUserQuizHistory = async (userId) => {
     throw error;
   }
 };
+
+// 퀴즈 통계 api
+export const getQuizStats = async (userId) => {
+  try {
+    const response = await apiClient.get("/quizzes/stats", {
+      params: { user_id: userId },
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};

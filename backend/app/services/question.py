@@ -6,12 +6,15 @@ from app.schemas.question_schema import QuestionCreate, QuestionResponse
 def get_all_questions(db: Session):
     return db.query(Question).all()
 
-def get_random_questions(db: Session, count: int, types: list, difficulty: int):
+def get_random_questions(db: Session, count: int, types: list, difficulty: int, language_id: int):
     query = db.query(Question)
     if types:
         query = query.filter(Question.question_type.in_(types))
     if difficulty:
         query = query.filter(Question.difficulty == difficulty)
+    if language_id:
+        query = query.filter(Question.language_id == language_id)    
+    
     return query.order_by(func.random()).limit(count).all()
 
 def get_question_by_id(db: Session, question_id: int):
@@ -28,6 +31,7 @@ def create_question(db: Session, question_data: QuestionCreate) -> Question:
         difficulty=question_data.difficulty,
         correct_answer=question_data.correct_answer,
         explanation=question_data.explanation,
+        language_id=question_data.language_id,
     )
     db.add(new_question)
     db.commit()

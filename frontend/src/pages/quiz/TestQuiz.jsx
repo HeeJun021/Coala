@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createQuiz } from "../../api/quizApi";
+import { getLanguages } from "../../api/languageApi";
 import QuizSideBar from "../../Layout/QuizSideBar";
 import { CircleCheck, FileText, ListChecks, HelpCircle } from "lucide-react";
 import QuizGuideModal from "../../components/quiz/QuizGuideModal";
@@ -11,6 +12,9 @@ const TestQuiz = () => {
 
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [showGuideTooltip, setShowGuideTooltip] = useState(false);
+
+  const [languages, setLanguages] = useState([]);
+  const [languageId, setLanguageId] = useState(1);
 
   useEffect(() => {
     const seen = localStorage.getItem("quiz_guide_seen");
@@ -23,6 +27,18 @@ const TestQuiz = () => {
     localStorage.setItem("quiz_guide_seen", "true");
   };
 
+  useEffect(() => {
+    const fetchLanguages = async () => {
+      const data = await getLanguages();
+      const filtered = data.filter((lang) => lang.language !== "Other");
+      setLanguages(filtered);
+      if (filtered.length > 0) {
+        setLanguageId(filtered[0].language_id);
+      }
+    };
+    fetchLanguages();
+  }, []);
+
   const selectedTypes = {
     ox: true,
     short: true,
@@ -33,9 +49,10 @@ const TestQuiz = () => {
     setLoading(true);
     try {
       const quizPayload = {
-        title: "사용자 테스트 퀴즈",
+        title: "테스트 퀴즈",
         quiz_type: "test",
         time_limit: 30,
+        language_id: languageId,
         settings: Object.keys(selectedTypes).map((type) => ({
           question_type: type === "ox" ? 1 : type === "short" ? 2 : 3,
           difficulty: 3,
@@ -46,12 +63,9 @@ const TestQuiz = () => {
       const newQuiz = await createQuiz(quizPayload);
       if (newQuiz && newQuiz.quiz_id) {
         navigate(`/quizsolve/${newQuiz.quiz_id}?mode=test`);
-      } else {
-        alert("퀴즈 생성은 되었지만 ID를 찾을 수 없습니다.");
       }
     } catch (error) {
       console.error("퀴즈 생성 실패:", error);
-      alert("퀴즈 생성 중 오류가 발생했습니다.");
     } finally {
       setLoading(false);
     }
@@ -78,9 +92,7 @@ const TestQuiz = () => {
     <div className="flex w-full">
       <QuizSideBar />
 
-      {/* 퀴즈 카드 */}
       <div className="flex-1 max-w-6xl pt-8 mt-8 mx-auto bg-white shadow-xl rounded-2xl border border-gray-300 p-7 relative">
-        {/* 🟢 가이드 버튼 */}
         <button
           onClick={handleGuideClick}
           className="absolute top-4 right-4 text-gray-500 hover:text-black"
@@ -101,6 +113,22 @@ const TestQuiz = () => {
             자동으로 생성되는 <span className="font-medium text-gray-700">퀴즈 유형</span>을 확인하고
             <br /> 테스트를 시작해보세요!
           </p>
+        </div>
+
+        {/* 🟢 문제 언어 선택 */}
+        <div className="mb-8 max-w-xs">
+          <label className="text-sm font-semibold text-gray-700 block mb-2">문제 언어</label>
+          <select
+            className="w-full p-2 border rounded-lg"
+            value={languageId || ""}
+            onChange={(e) => setLanguageId(Number(e.target.value))}
+          >
+            {languages.map((lang) => (
+              <option key={lang.language_id} value={lang.language_id}>
+                {lang.language}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* 문제 유형 박스 */}

@@ -8,6 +8,7 @@ class QuestionBase(BaseModel):
     difficulty: int  # 1=쉬움, 2=보통, 3=어려움
     correct_answer: str
     explanation: Optional[str] = None
+    language_id: int 
 
 class QuestionCreate(QuestionBase):
     choices: Optional[List[str]] = None  # 객관식 & OX 문제만 선택지가 존재
@@ -15,6 +16,7 @@ class QuestionCreate(QuestionBase):
 class QuestionResponse(QuestionBase):
     question_id: int
     choices: Optional[List[str]] = None
+    language_id: int
     created_at: datetime
     updated_at: datetime
 

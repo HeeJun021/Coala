@@ -6,6 +6,7 @@ from app.schemas.question_schema import QuestionResponse, QuestionResult
 class QuizBase(BaseModel):
     title: str
     quiz_type: str  # 'practice' 또는 'test'
+    language_id: int
 
 class QuizCreate(QuizBase):
     settings: List[dict]  # [{"question_type": 1, "difficulty": 1, "question_count": 5}, ...]
@@ -14,6 +15,7 @@ class QuizResponse(BaseModel):
     quiz_id: int
     title: str
     quiz_type: str
+    language_id: int
     created_at: datetime
     questions: Optional[List[QuestionResponse]] = []
 
