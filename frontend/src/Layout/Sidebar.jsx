@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Library, BookOpenText, Code2, FileCheck } from "lucide-react";
 
+
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -54,12 +55,14 @@ const Sidebar = () => {
             fetch(`http://localhost:8000/api/examples/${lang.language}`, { credentials: "include" }),
           ]);
           let materials = await matRes.json();
-          // id=2를 맨 위로 정렬
-          materials = materials.sort((a, b) => 
-            a.material_id === 2 ? -1 : b.material_id === 2 ? 1 : 0
-          );
+          let examples = await exRes.json();
+
+          // order를 기준으로 정렬
+          materials = materials.sort((a, b) => a.order - b.order);
+          examples = examples.sort((a, b) => a.order - b.order);
+
           matMap[lang.language] = materials;
-          exMap[lang.language] = await exRes.json();
+          exMap[lang.language] = examples;
 
           if (
             lang.language === initialCategory &&

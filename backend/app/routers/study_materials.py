@@ -10,8 +10,6 @@ from app.models.user import User
 from app.dependencies.auth import get_current_user
 from fastapi import status
 from sqlalchemy.exc import IntegrityError
-from app.models.studymaterialread_models import studymaterialreads as StudyMaterialRead
-from fastapi import status
 
 router = APIRouter()
 
@@ -26,7 +24,7 @@ def get_study_materials(
     if not language_obj:
         raise HTTPException(status_code=404, detail="해당 언어를 찾을 수 없습니다.")
 
-    materials = db.query(StudyMaterials).filter(StudyMaterials.language_id == language_obj.language_id).all()
+    materials = db.query(StudyMaterials).filter(StudyMaterials.language_id == language_obj.language_id).order_by(StudyMaterials.order).all()
 
     completed_id_set = set()
     if current_user:
@@ -58,7 +56,6 @@ def get_study_materials(
 
     return result
 
-
 @router.get("/api/materials/{language}/{id}")
 def get_study_material_by_id(language: str, id: int, db: Session = Depends(get_db)):
     material = db.query(StudyMaterials).filter(StudyMaterials.material_id == id).first()
@@ -76,18 +73,17 @@ def get_study_material_by_id(language: str, id: int, db: Session = Depends(get_d
                         section["content"]["correct_answer"] = section["content"]["options"][0]
     return material
 
-
 @router.post("/api/study/material/{material_id}/complete", status_code=status.HTTP_204_NO_CONTENT)
 def mark_material_completed(
     material_id: int,
     db: Session = Depends(get_db),
-    current_user: Optional[User] = Depends(get_current_user)  #   Optional 처리
+    current_user: Optional[User] = Depends(get_current_user)
 ):
     if not current_user:
-        raise HTTPException(status_code=401, detail="로그인이 필요합니다.")  #   명확한 에러 응답
+        raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
 
     try:
-        db.add(StudyMaterialRead(user_id=current_user.user_id, material_id=material_id))
+        db.add(studymaterialreads(user_id=current_user.user_id, material_id=material_id))
         db.commit()
     except IntegrityError:
         db.rollback()
