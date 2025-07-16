@@ -13,7 +13,7 @@ class StudyExample(Base):
     language_id = Column(Integer, ForeignKey("languages.language_id", ondelete="CASCADE"), nullable=False)
     title = Column(String, nullable=False)
     content = Column(String, nullable=False)
-
+    order = Column(Integer, default=0)
     sections = Column(JSONB, nullable=False, default=[])
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())

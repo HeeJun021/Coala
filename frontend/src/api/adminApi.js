@@ -129,3 +129,36 @@ export const deleteStudyExample = async (exampleId) => {
     throw error;
   }
 };
+
+// 언어 수정 API
+export const updateLanguage = async (languageId, languageData) => {
+  try {
+    const response = await apiClient.put(`/admin/languages/${languageId}`, languageData);
+    return response.data;
+  } catch (error) {
+    console.error("언어 수정 실패:", error);
+    throw error;
+  }
+};
+
+// 언어 생성 API
+export const createLanguage = async (languageData) => {
+  try {
+    const response = await apiClient.post("/admin/languages/create", languageData);
+    return response.data;
+  } catch (error) {
+    console.error("언어 생성 실패:", error);
+    throw error;
+  }
+};
+
+// 언어 삭제 API
+export const deleteLanguage = async (languageId) => {
+  try {
+    const response = await apiClient.delete(`/admin/languages/${languageId}`);
+    return response.data;
+  } catch (error) {
+    console.error("언어 삭제 실패:", error);
+    throw error;
+  }
+};

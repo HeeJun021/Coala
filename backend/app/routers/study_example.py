@@ -16,14 +16,14 @@ router = APIRouter()
 def get_examples_by_language(
     language: str,
     db: Session = Depends(get_db),
-    current_user: Optional[User] = Depends(get_current_user)  
+    current_user: Optional[User] = Depends(get_current_user)
 ):
     """특정 언어의 예제 목록 조회 (로그인 시 완료 여부 포함)"""
     language_obj = db.query(Language).filter(Language.language == language).first()
     if not language_obj:
         raise HTTPException(status_code=404, detail="해당 언어를 찾을 수 없습니다.")
 
-    examples = db.query(StudyExample).filter(StudyExample.language_id == language_obj.language_id).all()
+    examples = db.query(StudyExample).filter(StudyExample.language_id == language_obj.language_id).order_by(StudyExample.order).all()
 
     completed_id_set = set()
     if current_user:
@@ -55,7 +55,6 @@ def get_examples_by_language(
         })
 
     return result
-
 
 @router.get("/api/examples/{language}/{example_id}")
 def get_study_example_by_id(
@@ -97,4 +96,4 @@ def mark_example_as_completed(
     except IntegrityError:
         db.rollback()
 
-    return  # 204 No Content
+    return
