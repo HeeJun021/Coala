@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { fetchStudyMaterialSummary, deleteStudyMaterial, fetchStudyMaterialById, fetchStudyExamples, updateStudyMaterial, updateStudyExample, deleteStudyExample } from "../api/adminApi";
+import { fetchStudyMaterialSummary, deleteStudyMaterial, fetchStudyMaterialById, fetchStudyExamples, updateStudyMaterial, updateStudyExample, deleteStudyExample, updateLanguage, createLanguage, deleteLanguage } from "../api/adminApi";
 import { fetchLanguages } from "../api/studyMaterialsApi";
 import { FaEllipsisV } from "react-icons/fa";
 import axios from "axios";
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 
 const StudyMaterialManagementPage = () => {
   const [materials, setMaterials] = useState([]);
@@ -20,6 +21,10 @@ const StudyMaterialManagementPage = () => {
     is_example: false,
   });
   const [error, setError] = useState("");
+  const [showLanguageForm, setShowLanguageForm] = useState(false);
+  const [editLanguageId, setEditLanguageId] = useState(null);
+  const [newLanguage, setNewLanguage] = useState("");
+  const [editLanguage, setEditLanguage] = useState("");
 
   const fetchMaterials = useCallback(async () => {
     try {
@@ -166,6 +171,7 @@ const StudyMaterialManagementPage = () => {
         title: formData.title,
         content: formData.content,
         sections: formData.sections,
+        is_example: formData.is_example,
       };
       console.log("제출 payload:", JSON.stringify(payload, null, 2));
       if (isEditMode) {
@@ -177,10 +183,10 @@ const StudyMaterialManagementPage = () => {
           alert("학습자료가 수정되었습니다.");
         }
       } else {
-        await axios.post(`${process.env.REACT_APP_API_URL || "http://localhost:8000"}/admin/study-materials/create`, {
-          ...payload,
-          is_example: formData.is_example,
-        });
+        const url = formData.is_example
+          ? `${process.env.REACT_APP_API_URL || "http://localhost:8000"}/admin/examples/create`
+          : `${process.env.REACT_APP_API_URL || "http://localhost:8000"}/admin/study-materials/create`;
+        await axios.post(url, payload);
         alert(`${formData.is_example ? "예제" : "학습자료"}가 추가되었습니다.`);
       }
       setFormData({
@@ -200,6 +206,86 @@ const StudyMaterialManagementPage = () => {
     }
   };
 
+  const onDragEnd = async (result) => {
+    if (!result.destination) return;
+
+    const items = Array.from(materials);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    const updatedMaterials = items.map((item, index) => ({
+      ...item,
+      order: index + 1,
+    }));
+
+    setMaterials(updatedMaterials);
+
+    try {
+      const updatePayload = updatedMaterials.map((item) => ({
+        id: item.material_id || item.example_id,
+        order: item.order,
+        is_example: !!item.example_id,
+      }));
+      await axios.post(`${process.env.REACT_APP_API_URL || "http://localhost:8000"}/admin/study-materials/update-order`, { materials: updatePayload });
+      console.log("순서 업데이트 성공");
+    } catch (err) {
+      console.error("순서 업데이트 실패:", err);
+      setError("순서 업데이트 실패: " + err.message);
+      fetchMaterials();
+    }
+  };
+
+  const handleAddLanguage = async () => {
+    if (!newLanguage.trim()) {
+      setError("언어를 입력하세요.");
+      return;
+    }
+    try {
+      await createLanguage({ language: newLanguage });
+      alert(`언어 '${newLanguage}'가 추가되었습니다.`);
+      setNewLanguage("");
+      fetchLanguagesData();
+    } catch (err) {
+      console.error("언어 추가 실패:", err.response?.data || err.message);
+      setError(`언어 추가 실패: ${err.response?.status || "알 수 없음"} - ${err.response?.data?.detail || err.message}`);
+    }
+  };
+
+  const handleUpdateLanguage = async () => {
+    if (!editLanguage.trim() || !editLanguageId) {
+      setError("언어를 입력하세요.");
+      return;
+    }
+    try {
+      await updateLanguage(editLanguageId, { language: editLanguage });
+      alert(`언어 '${editLanguage}'로 수정되었습니다.`);
+      setEditLanguage("");
+      setEditLanguageId(null);
+      setShowLanguageForm(false);
+      fetchLanguagesData();
+    } catch (err) {
+      console.error("언어 수정 실패:", err.response?.data || err.message);
+      setError(`언어 수정 실패: ${err.response?.status || "알 수 없음"} - ${err.response?.data?.detail || err.message}`);
+    }
+  };
+
+  const handleDeleteLanguage = async (languageId) => {
+    const confirmed = window.confirm("이 언어와 연관된 모든 학습 자료 및 예제가 삭제됩니다. 계속하시겠습니까?");
+    if (!confirmed) return;
+    try {
+      await deleteLanguage(languageId);
+      alert("언어와 연관된 모든 자료가 삭제되었습니다.");
+      fetchLanguagesData();
+      if (languages.find((lang) => lang.value === parseInt(languageId))) {
+        setLanguage(languages[0]?.label || "HTML");
+        fetchMaterials();
+      }
+    } catch (err) {
+      console.error("언어 삭제 실패:", err.response?.data || err.message);
+      setError(`언어 삭제 실패: ${err.response?.status || "알 수 없음"} - ${err.response?.data?.detail || err.message}`);
+    }
+  };
+
   useEffect(() => {
     fetchMaterials();
     fetchLanguagesData();
@@ -215,11 +301,11 @@ const StudyMaterialManagementPage = () => {
       <h1 className="text-2xl font-bold mb-6">학습자료 관리</h1>
       {error && <div className="text-red-500 mb-4">{error}</div>}
 
-      <div className="mb-4">
+      <div className="mb-4 flex items-center">
         <select
           value={language}
           onChange={(e) => setLanguage(e.target.value)}
-          className="px-3 py-1 border rounded"
+          className="px-3 py-1 border rounded mr-4"
         >
           {languages.map((lang) => (
             <option key={lang.value} value={lang.label}>{lang.label}</option>
@@ -242,6 +328,161 @@ const StudyMaterialManagementPage = () => {
         >
           {showForm ? "폼 닫기" : "새 자료 추가"}
         </button>
+        <button
+          className="ml-4 bg-yellow-500 text-white px-4 py-2 rounded"
+          onClick={() => {
+            setShowLanguageForm(!showLanguageForm);
+            setEditLanguageId(null);
+            setEditLanguage("");
+          }}
+        >
+          언어 수정
+        </button>
+        <div className="ml-4">
+          <input
+            type="text"
+            value={newLanguage}
+            onChange={(e) => setNewLanguage(e.target.value)}
+            placeholder="새 언어 입력"
+            className="px-3 py-1 border rounded mr-2"
+          />
+          <button
+            className="bg-green-500 text-white px-4 py-2 rounded"
+            onClick={handleAddLanguage}
+          >
+            언어 추가
+          </button>
+        </div>
+      </div>
+
+      {showLanguageForm && (
+        <div className="mb-8 p-4 bg-gray-100 rounded">
+          <h2 className="text-xl font-semibold mb-4">언어 수정</h2>
+          <div className="mb-4">
+            <label className="block mb-1">수정할 언어 선택:</label>
+            <select
+              value={editLanguageId || ""}
+              onChange={(e) => {
+                const langId = parseInt(e.target.value);
+                const lang = languages.find((l) => l.value === langId);
+                setEditLanguageId(langId);
+                setEditLanguage(lang ? lang.label : "");
+              }}
+              className="w-full px-3 py-1 border rounded mb-2"
+            >
+              <option value="">선택</option>
+              {languages.map((lang) => (
+                <option key={lang.value} value={lang.value}>{lang.label}</option>
+              ))}
+            </select>
+            <label className="block mb-1">새 언어 이름:</label>
+            <input
+              type="text"
+              value={editLanguage}
+              onChange={(e) => setEditLanguage(e.target.value)}
+              className="w-full px-3 py-1 border rounded mb-2"
+            />
+            <button
+              className="bg-blue-500 text-white px-4 py-2 rounded"
+              onClick={handleUpdateLanguage}
+            >
+              저장
+            </button>
+            <button
+              className="ml-2 bg-gray-500 text-white px-4 py-2 rounded"
+              onClick={() => setShowLanguageForm(false)}
+            >
+              취소
+            </button>
+            {editLanguageId && (
+              <button
+                className="ml-2 bg-red-500 text-white px-4 py-2 rounded"
+                onClick={() => handleDeleteLanguage(editLanguageId)}
+              >
+                삭제
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="bg-white rounded shadow overflow-hidden">
+        <DragDropContext onDragEnd={onDragEnd}>
+          <Droppable droppableId="materials">
+            {(provided) => (
+              <table
+                className="w-full table-auto text-left"
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+              >
+                <thead className="bg-navbar text-white">
+                  <tr>
+                    <th className="px-4 py-3">유형</th>
+                    <th className="px-4 py-3">제목</th>
+                    <th className="px-4 py-3">조회수</th>
+                    <th className="px-4 py-3 text-center">관리</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {materials.length === 0 ? (
+                    <tr>
+                      <td colSpan="4" className="px-4 py-3 text-center">데이터가 없습니다.</td>
+                    </tr>
+                  ) : (
+                    materials.map((material, index) => (
+                      <Draggable
+                        key={`${material.is_example ? "example" : "material"}-${material.material_id || material.example_id}`}
+                        draggableId={`${material.is_example ? "example" : "material"}-${material.material_id || material.example_id}`}
+                        index={index}
+                      >
+                        {(provided) => (
+                          <tr
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            className="border-t hover:bg-gray-50"
+                          >
+                            <td className="px-4 py-3">{material.is_example ? "예제" : "학습자료"}</td>
+                            <td className="px-4 py-3">{material.title}</td>
+                            <td className="px-4 py-3">{material.read_count || 0}</td>
+                            <td className="px-4 py-3 text-center relative dropdown">
+                              <button
+                                className="text-gray-600 hover:text-black"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDropdownOpenId(dropdownOpenId === (material.material_id || material.example_id) ? null : (material.material_id || material.example_id));
+                                }}
+                              >
+                                <FaEllipsisV />
+                              </button>
+                              {dropdownOpenId === (material.material_id || material.example_id) && (
+                                <div className="absolute right-0 mt-2 bg-white border rounded shadow-md z-10 w-32">
+                                  <button
+                                    className="block w-full text-left px-4 py-2 text-sm hover:bg-blue-100 text-blue-600"
+                                    onClick={() => handleEdit(material.material_id || material.example_id, material.is_example)}
+                                  >
+                                    수정
+                                  </button>
+                                  <button
+                                    className="block w-full text-left px-4 py-2 text-sm hover:bg-red-100 text-red-600"
+                                    onClick={() => handleDelete(material.material_id || material.example_id, material.is_example)}
+                                  >
+                                    삭제
+                                  </button>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        )}
+                      </Draggable>
+                    ))
+                  )}
+                  {provided.placeholder}
+                </tbody>
+              </table>
+            )}
+          </Droppable>
+        </DragDropContext>
       </div>
 
       {showForm && (
@@ -476,61 +717,6 @@ const StudyMaterialManagementPage = () => {
           </button>
         </div>
       )}
-
-      <div className="bg-white rounded shadow overflow-hidden">
-        <table className="w-full table-auto text-left">
-          <thead className="bg-navbar text-white">
-            <tr>
-              <th className="px-4 py-3">유형</th>
-              <th className="px-4 py-3">제목</th>
-              <th className="px-4 py-3">조회수</th>
-              <th className="px-4 py-3 text-center">관리</th>
-            </tr>
-          </thead>
-          <tbody>
-            {materials.length === 0 ? (
-              <tr>
-                <td colSpan="4" className="px-4 py-3 text-center">데이터가 없습니다.</td>
-              </tr>
-            ) : (
-              materials.map((material) => (
-                <tr key={`${material.is_example ? "example" : "material"}-${material.material_id || material.example_id}`} className="border-t hover:bg-gray-50">
-                  <td className="px-4 py-3">{material.is_example ? "예제" : "학습자료"}</td>
-                  <td className="px-4 py-3">{material.title}</td>
-                  <td className="px-4 py-3">{material.read_count || 0}</td>
-                  <td className="px-4 py-3 text-center relative dropdown">
-                    <button
-                      className="text-gray-600 hover:text-black"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDropdownOpenId(dropdownOpenId === (material.material_id || material.example_id) ? null : (material.material_id || material.example_id));
-                      }}
-                    >
-                      <FaEllipsisV />
-                    </button>
-                    {dropdownOpenId === (material.material_id || material.example_id) && (
-                      <div className="absolute right-0 mt-2 bg-white border rounded shadow-md z-10 w-32">
-                        <button
-                          className="block w-full text-left px-4 py-2 text-sm hover:bg-blue-100 text-blue-600"
-                          onClick={() => handleEdit(material.material_id || material.example_id, material.is_example)}
-                        >
-                          수정
-                        </button>
-                        <button
-                          className="block w-full text-left px-4 py-2 text-sm hover:bg-red-100 text-red-600"
-                          onClick={() => handleDelete(material.material_id || material.example_id, material.is_example)}
-                        >
-                          삭제
-                        </button>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
     </div>
   );
 };
