@@ -434,8 +434,12 @@ if (contextMenu.targetId?.startsWith("code-")) {
         if (contextMenu.targetId.startsWith("folder-")) {
           const folderId = parseInt(contextMenu.targetId.replace("folder-", ""));
           try {
+            // 삭제 전 탐색을 위해 folderTree 복사
+            const folderTreeBeforeDelete = JSON.parse(JSON.stringify(folderTree));
+            
             await deleteFolder(folderId);
 
+            // 폴더 트리에서 삭제
             const deleteNode = (tree, id) => {
               for (let i = 0; i < tree.length; i++) {
                 if (tree[i].folder_id === id) {
@@ -452,10 +456,55 @@ if (contextMenu.targetId?.startsWith("code-")) {
             deleteNode([newTree], folderId);
             setFolderTree(newTree);
             setFolders(newTree);
+
+            // 삭제된 폴더 안에 있는 파일들의 tabId 목록 추출
+            const findFolderNode = (node, id) => {
+              if (node.folder_id === id) return node;
+              for (const child of node.children || []) {
+                const found = findFolderNode(child, id);
+                if (found) return found;
+              }
+              return null;
+            };
+
+            const collectCodeTabIds = (node) => {
+              let ids = node.codes?.map(code => `code-${code.code_id}`) || [];
+              for (const child of node.children || []) {
+                ids = ids.concat(collectCodeTabIds(child));
+              }
+              return ids;
+            };
+
+            const deletedFolderNode = findFolderNode(folderTreeBeforeDelete, folderId);
+            if (deletedFolderNode) {
+              const tabIdsToDelete = collectCodeTabIds(deletedFolderNode);
+              const updatedTabs = tabs.filter(tab => !tabIdsToDelete.includes(tab.tabId));
+              setTabs(updatedTabs);
+
+              const deletedTab = tabs.find(tab => tabIdsToDelete.includes(tab.tabId));
+
+              if (tabIdsToDelete.includes(activeTabId)) {
+                if (updatedTabs.length > 0) {
+                  setActiveTabId(updatedTabs[updatedTabs.length - 1].tabId);
+                } else {
+                  setActiveTabId(null);
+                }
+              }
+              if (deletedTab && deletedTab.filename === selectedFilename) {
+                setSelectedFilename("");
+                setSelectedFileContent("");
+                setPreviewSrcDoc("");
+              }
+            }
+
           } catch (err) {
             console.error("폴더 삭제 실패", err);
+            const message =
+              err?.response?.data?.detail || "폴더 삭제 중 오류가 발생했습니다.";
+            showAlert(message);
           }
-        } else if (contextMenu.targetId.startsWith("code-")) {
+        }
+        else if (contextMenu.targetId.startsWith("code-")) {
           const codeId = parseInt(contextMenu.targetId.replace("code-", ""));
           try {
             await deleteCodeFile(codeId);
@@ -477,6 +526,25 @@ if (contextMenu.targetId?.startsWith("code-")) {
             deleteCode([newTree]);
             setFolderTree({ ...newTree });
             setFolders({ ...newTree });
+            
+            const deletedTabId = `code-${codeId}`;
+            const updatedTabs = tabs.filter((tab) => tab.tabId !== deletedTabId);
+            setTabs(updatedTabs);
+
+            if (activeTabId === deletedTabId) {
+              if (updatedTabs.length > 0) {
+                setActiveTabId(updatedTabs[updatedTabs.length - 1].tabId); // 마지막 탭으로 전환
+              } else {
+                setActiveTabId(null); // 열린 탭이 없다면 비활성화
+              }
+            }
+
+            if (selectedFilename === tabs.find(t => t.tabId === deletedTabId)?.filename) {
+              setSelectedFilename("");
+              setSelectedFileContent("");
+              setPreviewSrcDoc("");
+            }
+
           } catch (err) {
             console.error("코드 삭제 실패", err);
           }
@@ -785,10 +853,24 @@ const handleFolderToggle = async (node) => {
                             folder_id: node.folder_id,
                           });
 
+                          // 트리에 추가
                           node.codes.push(newFile);
                           node.expanded = true;
                           setFolderTree({ ...folderTree });
                           setFolders({ ...folderTree });
+
+                          // 에디터에 자동으로 열기
+                          const newTabId = `code-${newFile.code_id}`;
+                          const newTab = {
+                            tabId: newTabId,
+                            filename: newFile.title,
+                            content: newFile.content,
+                          };
+                          setTabs((prev) => [...prev, newTab]);
+                          setActiveTabId(newTabId);
+                          setSelectedFilename(newFile.title);
+                          setSelectedFileContent(newFile.content);
+                          setPreviewSrcDoc(""); // 초기 실행 결과 비움
                         } catch (err) {
                           console.error("파일 생성 실패", err);
                         } finally {
@@ -800,6 +882,7 @@ const handleFolderToggle = async (node) => {
                         setNewItemName("");
                       }
                     }}
+
                     className="text-sm border px-2 py-1 w-40"
                     placeholder="새 파일 이름 (예: app.js)"
                   />

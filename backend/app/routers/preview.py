@@ -61,19 +61,27 @@ def preview_html_by_code_id(
 
     html_code = html_files[0]
 
-    # HTML 안의 <link rel="stylesheet" href="파일명.css"> 추출
+    # 1. <link> 안의 CSS 파일명 추출
     link_pattern = r'<link\s+[^>]*href=["\']([^"\']+\.css)["\']'
     linked_css_files = re.findall(link_pattern, html_code.content)
 
-    # 실제 폴더 내 있는 css 파일들과 비교해서 일치하는 것만 사용
     matched_css_contents = []
     for filename in linked_css_files:
         for css_code in css_files:
             if css_code.title == filename:
                 matched_css_contents.append(css_code.content)
 
-    js_code = "\n".join(code.content for code in js_files)
+    # 2. <script src="..."> 에서 참조된 JS 파일명 추출
+    script_pattern = r'<script\s+[^>]*src=["\']([^"\']+\.js)["\']'
+    linked_js_files = re.findall(script_pattern, html_code.content)
 
+    matched_js_contents = []
+    for filename in linked_js_files:
+        for js_code in js_files:
+            if js_code.title == filename:
+                matched_js_contents.append(js_code.content)
+
+    # 3. 최종 HTML 구성
     combined_html = f"""
     <!DOCTYPE html>
     <html>
@@ -87,7 +95,7 @@ def preview_html_by_code_id(
         {html_code.content}
         <script>
         try {{
-          {js_code}
+          {'\n'.join(matched_js_contents)}
         }} catch(e) {{
           document.body.innerHTML += '<pre style="color:red;">' + e.message + '</pre>';
         }}
@@ -100,6 +108,7 @@ def preview_html_by_code_id(
         "srcdoc": combined_html,
         "html_filename": html_code.title
     }
+
     
 # 실행 가능한 Python 경로 자동 탐색 함수
 def find_python_executable():

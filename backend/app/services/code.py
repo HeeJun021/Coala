@@ -16,6 +16,30 @@ EXTENSIONS = {
     4: ".py"
 }
 
+# 언어별 기본 템플릿
+DEFAULT_TEMPLATES = {
+    ".html": """<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>새 문서</title>
+  </head>
+  <body>
+    <h1>Hello, HTML!</h1>
+  </body>
+</html>""",
+    ".css": """body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+}""",
+    ".js": """console.log("Hello, JavaScript!");""",
+    ".py": """def main():
+    print("Hello, Python!")
+
+if __name__ == "__main__":
+    main()"""
+}
+
 def append_extension(title: str, language_id: int) -> str:
     ext = EXTENSIONS.get(language_id, "")
     if not title.endswith(ext):
@@ -126,11 +150,13 @@ def create_code_with_mapping(db: Session, user: dict, code_data: CodeCreate) -> 
     ext = splitext(code_data.title)[1] or code_data.title  # 복합 확장자 처리
     language_id = EXTENSION_TO_LANGUAGE_ID.get(ext, 5)  # 기본값: 5 (기타)
 
+    default_content = DEFAULT_TEMPLATES.get(ext, "")
+
     # 3. 코드 저장
     new_code = Code(
         user_id=user_id,
         title=code_data.title,
-        content=code_data.content,
+        content=code_data.content or default_content,
         language_id=language_id,
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
@@ -151,7 +177,7 @@ def create_code_with_mapping(db: Session, user: dict, code_data: CodeCreate) -> 
     return CodeResponse(
         code_id=new_code.code_id,
         title=new_code.title,
-        content=new_code.content,
+        content=code_data.content,
         language_id=new_code.language_id,
         created_at=new_code.created_at,
         updated_at=new_code.updated_at
@@ -265,6 +291,9 @@ def delete_folder_and_contents(db: Session, user: dict, folder_id: int) -> None:
 
     if not folder:
         raise HTTPException(status_code=404, detail="폴더를 찾을 수 없습니다.")
+
+    if folder.parent_folder_id is None:
+        raise HTTPException(status_code=403, detail="루트 폴더는 삭제할 수 없습니다.")
 
     # 하위 폴더들 재귀적으로 삭제
     child_folders = db.query(CodeFolder).filter(
