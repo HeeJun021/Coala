@@ -42,6 +42,7 @@ html,
 body,
 #root {
   height: 100%;
+  overflow: hideen;
 }
 
 /* 코딩테스트 & 에디터 스크롤바 커스텀 */

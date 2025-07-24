@@ -1,32 +1,37 @@
-import React from "react";
+// components/Layout/MainLayout.jsx
+import React, { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
 import Sidebar from "./Sidebar";
 import FloatingButton from "../components/floating/FloatingButton";
 
 const MainLayout = ({ children }) => {
-  const location = useLocation();
+  const { pathname } = useLocation();
 
-  const isHome = location.pathname === "/";
-  const showSidebar = location.pathname.startsWith("/StudyMaterialsPage") || 
-                      location.pathname.startsWith("/materials/");
-  const isTeamProject = location.pathname.startsWith("/team-project");
+  // 경로 바뀔 때 main 컨테이너 최상단으로
+  useEffect(() => {
+    const mainEl = document.getElementById("coala-main");
+    mainEl?.scrollTo(0, 0);
+  }, [pathname]);
+
+  const showSidebar =
+    pathname.startsWith("/StudyMaterialsPage") ||
+    pathname.startsWith("/materials/");
 
   return (
-    <div className="layout flex h-screen">
+    <div className="layout flex h-full"> {/* h-screen → h-full */}
       <Navbar />
 
-      {showSidebar && (
-        <Sidebar className="w-64 flex-shrink-0" />
-      )}
+      {showSidebar && <Sidebar className="w-64 flex-shrink-0" />}
 
+      {/* id로 잡아서 스크롤 제어 */}
       <main
-  className={`content flex-1 min-h-screen ${
-    isHome || isTeamProject ? "px-0" : "px-0"
-  }`}
->
+        id="coala-main"
+        className="content flex-1 overflow-y-auto px-4"
+      >
         {children}
       </main>
+
       <FloatingButton />
     </div>
   );
