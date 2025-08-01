@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List, Dict, Any 
+from typing import List, Dict, Any
 from app.database import get_db
 from app.services import board
 from app.schemas.board_schema import (
-    PostCreate, PostResponse,
+    PostCreate, PostResponse, PostUpdate,  # ⬅️ PostUpdate 추가
     CommentCreate, CommentResponse,
     PostLikeCreate, CommentLikeCreate,
     PostReportCreate, CommentReportCreate,
@@ -16,8 +16,6 @@ router = APIRouter(prefix="/board", tags=["Board"])
 
 @router.post("/posts", response_model=PostResponse)
 def create_post(post: PostCreate, db: Session = Depends(get_db)):
-    print("📥 실제 수신된 post 데이터:", post)
-    print("📥 post.dict():", post.dict())
     return board.create_post(post, db)
 
 @router.get("/posts/{board_type}")
@@ -30,7 +28,6 @@ def get_posts(
 ):
     return board.get_posts(board_type, page, page_size, sort_order, db)
 
-# ✅ 게시글 단건 조회
 @router.get("/post/{post_id}")
 def get_post(post_id: int, db: Session = Depends(get_db)):
     post = board.get_post(post_id, db)
@@ -38,8 +35,9 @@ def get_post(post_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="게시글을 찾을 수 없습니다.")
     return post
 
+# ✅ PostCreate → PostUpdate 로 변경
 @router.put("/post/{post_id}", response_model=PostResponse)
-def update_post(post_id: int, post: PostCreate, db: Session = Depends(get_db)):
+def update_post(post_id: int, post: PostUpdate, db: Session = Depends(get_db)):
     return board.update_post(post_id, post, db)
 
 @router.delete("/post/{post_id}")
@@ -102,7 +100,6 @@ def unlike_comment(payload: CommentLikeCreate, db: Session = Depends(get_db)):
 def check_comment_liked(comment_id: int, user_id: int = Query(...), db: Session = Depends(get_db)):
     return board.check_comment_liked(comment_id, user_id, db)
 
-# ✅ 프로젝트 참여 신청
 @router.post("/post/{post_id}/apply", response_model=ProjectApplicantResponse)
 def apply_project(post_id: int, payload: ProjectApplicantCreate, db: Session = Depends(get_db)):
     try:
@@ -110,7 +107,6 @@ def apply_project(post_id: int, payload: ProjectApplicantCreate, db: Session = D
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-# ✅ 프로젝트 신청자 목록 조회
 @router.get("/post/{post_id}/applicants", response_model=List[ProjectApplicantResponse])
 def get_project_applicants(post_id: int, db: Session = Depends(get_db)):
     return get_applicants(post_id, db)
@@ -123,7 +119,6 @@ def update_applicant_status(applicant_id: int, status: str, db: Session = Depend
 def get_board_list(board_type: str, page: int = 1, sort_order: str = "최신 순", db: Session = Depends(get_db)):
     return board.get_posts(board_type, page, 10, sort_order, db)
 
-# 코드 가져오기 라우터
 @router.post("/post/{post_id}/import_code")
 def import_code(post_id: int, user_id: int = Query(...), db: Session = Depends(get_db)):
     result = board.import_code(post_id, user_id, db)

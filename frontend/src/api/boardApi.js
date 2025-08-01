@@ -53,21 +53,25 @@ export const createBoard = async ({
   return response.data;
 };
 
-// ✅ 게시글 수정
-export const updateBoard = async(postId, {
-  title,
-  content,
-  code = "",
-  code_filename = "",
-  code_language = "javascript"
-}) => {
-  return await apiClient.put(`/board/post/${postId}`, {
-    title,
-    content,
-    code,
-    code_filename,
-    code_language,
-  });
+// ✅ 게시글 수정 (boardType에 따라 전송 필드 분기)
+export const updateBoard = async (postId, payload, boardType = "free") => {
+  const basePayload = {
+    title: payload.title,
+    content: payload.content,
+  };
+
+  if (boardType === "code") {
+    basePayload.code = payload.code || "";
+    basePayload.code_filename = payload.code_filename || "";
+    basePayload.code_language = payload.code_language || "javascript";
+  }
+
+  if (boardType === "project") {
+    basePayload.recruit_limit =
+      payload.recruit_limit !== undefined ? payload.recruit_limit : 1;
+  }
+
+  return await apiClient.put(`/board/post/${postId}`, basePayload);
 };
 
 // ✅ 게시글 삭제
