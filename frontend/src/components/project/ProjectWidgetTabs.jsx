@@ -5,6 +5,7 @@ import TaskCalendarView from "./TaskCalendarView";
 import ProjectTasksTab from "./ProjectTasksTab";
 import TimelineWidget from "./TimelineWidget";
 import { updateProject, getMyProjects } from "../../api/projectApi";
+import { useLocation } from "react-router-dom";
 import { getErds } from "../../api/erd/erdApi";
 import { getMyTasks } from "../../api/taskApi";
 import ErdListPanel from "../erd/list/ErdListPanel";
@@ -23,6 +24,7 @@ const WIDGET_TABS = [
 ];
 
 const ProjectWidgetTabs = ({ project, onNameChange, defaultTab = "overview" }) => {
+  const location = useLocation(); // 추가
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [enabledTabs, setEnabledTabs] = useState(["overview", "erd"]);
   const [showAddMenu, setShowAddMenu] = useState(false);
@@ -35,8 +37,9 @@ const ProjectWidgetTabs = ({ project, onNameChange, defaultTab = "overview" }) =
 
   // ✅ 핵심: defaultTab이 바뀌면 activeTab 업데이트
   useEffect(() => {
-    setActiveTab(defaultTab);
-  }, [defaultTab]);
+    const initialTab = location.state?.subTab || defaultTab;
+    setActiveTab(initialTab);
+  }, [location.state, defaultTab]);
 
   useEffect(() => {
     if (!project) return;

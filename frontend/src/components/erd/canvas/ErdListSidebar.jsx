@@ -3,16 +3,16 @@ import CreateErdModal from "./CreateErdModal";
 import DeleteErdModal from "./DeleteErdModal";
 import { createErd, getErds, deleteErd } from "../../../api/erd/erdApi";
 import { useParams, useNavigate } from "react-router-dom";
-import { Folder, FileText, PlusCircle, Trash2 } from "lucide-react";
+import { Folder, FileText, PlusCircle, Trash2, X } from "lucide-react";
 import dayjs from "dayjs";
 
-const ErdListSidebar = () => {
+const ErdListSidebar = ({ isOpen = true, onClose }) => {
   const [showModal, setShowModal] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedErdId, setSelectedErdId] = useState(null);
   const [selectedErdName, setSelectedErdName] = useState("");
   const [erdList, setErdList] = useState([]);
-  const [sidebarWidth, setSidebarWidth] = useState(260);
+  const [sidebarWidth, setSidebarWidth] = useState(270);
 
   const sidebarRef = useRef(null);
   const isResizing = useRef(false);
@@ -92,6 +92,8 @@ const ErdListSidebar = () => {
     };
   }, []);
 
+  if (!isOpen) return null;
+
   return (
     <>
       <div
@@ -105,6 +107,15 @@ const ErdListSidebar = () => {
             <Folder size={20} className="text-yellow-400" />
             ERD 목록
           </h2>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-red-400 transition"
+              title="닫기"
+            >
+              <X size={20} />
+            </button>
+          )}
         </div>
 
         {/* 목록 */}
