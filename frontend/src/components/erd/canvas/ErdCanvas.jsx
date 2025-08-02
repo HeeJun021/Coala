@@ -13,7 +13,8 @@ import {
   createRelation,
   deleteMultipleRelations,
 } from "../../../api/erd/relationApi";
-import { saveErdSnapshot } from "../../../api/erd/erdDetailApi";
+import { saveErdSnapshot, patchErdViewPosition } from "../../../api/erd/erdDetailApi";
+import { debounce } from "lodash"; // 또는 직접 만든 debounce 함수
 import {
   setColumnPrimaryKey,
   unsetForeignKey,
@@ -31,6 +32,8 @@ const ErdCanvas = ({
   setRelations,
   fetchErdDetail,
   showToast,
+  panOffset,
+  setPanOffset
 }) => {
   const canvasRef = useRef(null);
 
@@ -55,8 +58,11 @@ const ErdCanvas = ({
 
   // 휠 클릭 드래그(pan) 기능
   const [isPanning, setIsPanning] = useState(false);
-  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  
+  const panOffsetRef = useRef({ x: 0, y: 0 });
   const panStartRef = useRef({ x: 0, y: 0 });
+  const [hasInteracted, setHasInteracted] = useState(false);
+
 
   // 컬럼 호버 하이라이트
   const [hoveredColumnId, setHoveredColumnId] = useState(null);
@@ -302,17 +308,34 @@ useEffect(() => {
   };
 
   const handlePanMouseMove = (e) => {
-    if (isPanning) {
-      setPanOffset({
-        x: e.clientX - panStartRef.current.x,
-        y: e.clientY - panStartRef.current.y,
-      });
-    }
-  };
+  if (isPanning) {
+    const newOffset = {
+      x: e.clientX - panStartRef.current.x,
+      y: e.clientY - panStartRef.current.y,
+    };
+    setPanOffset(newOffset);
+    panOffsetRef.current = newOffset; // 👈 여기가 핵심
+    setHasInteracted(true);
+  }
+};
 
-  const handlePanMouseUp = () => {
-    setIsPanning(false);
-  };
+  const saveViewPosition = debounce((x, y) => {
+    patchErdViewPosition(erdId, {
+      view_x: Math.round(x),
+      view_y: Math.round(y),
+    });
+  }, 100);
+    const handlePanMouseUp = useCallback(() => {
+  setIsPanning(false);
+  if (hasInteracted) {
+    saveViewPosition(panOffsetRef.current.x, panOffsetRef.current.y);
+    console.log("🔍 저장되는 panOffset:", panOffsetRef.current.x, panOffsetRef.current.y);
+    setHasInteracted(false); // ✅ 저장 후 초기화
+  }
+}, [hasInteracted, saveViewPosition]);
+
+
+
   const handleColumnClick = async (columnId) => {
     if (!isAddingRelation || !selectedRelationType) return;
 
@@ -666,7 +689,7 @@ useEffect(() => {
   useEffect(() => {
     window.addEventListener("mouseup", handlePanMouseUp);
     return () => window.removeEventListener("mouseup", handlePanMouseUp);
-  }, []);
+  }, [handlePanMouseUp]);
   useEffect(() => {
     const handleWheel = (e) => {
       if (!e.ctrlKey) return;
@@ -701,7 +724,7 @@ useEffect(() => {
         canvas.removeEventListener("wheel", handleWheel);
       }
     };
-  }, [zoomLevel, setZoomLevel]);
+  }, [zoomLevel, setZoomLevel,setPanOffset]);
 
   return (
     <div

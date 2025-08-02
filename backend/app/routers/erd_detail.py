@@ -30,7 +30,8 @@ from app.schemas.erd_schema import (
     ErdBulkDeleteRequest,
     ErdSyncRequest,
     SetPrimaryKeyRequest,
-    ErdNameUpdate
+    ErdNameUpdate,
+    ErdViewPositionUpdate
 )
 
 router = APIRouter(prefix="/erds", tags=["ERD Detail"])
@@ -47,6 +48,8 @@ def get_erd_detail(erd_id: int, db: Session = Depends(get_db)):
         "name": erd.name,
         "description": erd.description,
         "project_id": erd.project_id,
+        "view_x": erd.view_x,
+        "view_y": erd.view_y,
         "tables": [
             {
                 "table_id": t.table_id,
@@ -87,6 +90,26 @@ def get_erd_detail(erd_id: int, db: Session = Depends(get_db)):
             for r in erd.relations
         ],
     }
+
+# 뷰 위치 이동
+@router.patch("/{erd_id}/view-position")
+def update_erd_view_position(
+    erd_id: int,
+    position: ErdViewPositionUpdate,
+    db: Session = Depends(get_db),
+):
+    erd = db.query(Erds).filter(Erds.erd_id == erd_id).first()
+    if not erd:
+        raise HTTPException(status_code=404, detail="ERD not found")
+    
+    # ✅ 이동한 위치 로그 출력
+    print(f"[ERD 뷰 위치 저장] erd_id={erd_id}, view_x={position.view_x}, view_y={position.view_y}")
+
+    erd.view_x = position.view_x
+    erd.view_y = position.view_y
+    db.commit()
+
+    return {"message": "View position updated", "view_x": erd.view_x, "view_y": erd.view_y}
 
 
 

@@ -40,6 +40,8 @@ const ErdPage = () => {
 
   const [toastMessage, setToastMessage] = useState("");
 
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+
   const showToast = useCallback((msg) => {
   setToastMessage(msg); // 시간 제어는 Toast 안에서
 }, []);
@@ -52,6 +54,9 @@ const ErdPage = () => {
       setErdName(data.name ?? "이름 없음");
       setProjectId(data.project_id); 
       console.log("📦 ERD 상세 데이터", data);
+
+      // ✅ 뷰 위치 적용
+      setPanOffset({ x: data.view_x ?? 0, y: data.view_y ?? 0 });
 
       // ✅ 테이블 + 컬럼 구조 파싱
       const parsedTables = (data.tables || []).map((t) => ({
@@ -257,6 +262,8 @@ CREATE TABLE users (
             {mode === "default" ? (
               <ErdCanvas
                 erdId={parseInt(erdId)}
+                panOffset={panOffset}
+                setPanOffset={setPanOffset}
                 isPlacing={isPlacing}
                 setIsPlacing={setIsPlacing}
                 tempTable={tempTable}
