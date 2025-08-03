@@ -43,8 +43,8 @@ const ErdPage = () => {
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
 
   const showToast = useCallback((msg) => {
-  setToastMessage(msg); // 시간 제어는 Toast 안에서
-}, []);
+    setToastMessage(msg); // 시간 제어는 Toast 안에서
+  }, []);
 
   // 📦 ERD 상세 조회 함수
   const fetchErdDetail = useCallback(async () => {
@@ -52,7 +52,7 @@ const ErdPage = () => {
       const data = await getErdDetail(erdId);
 
       setErdName(data.name ?? "이름 없음");
-      setProjectId(data.project_id); 
+      setProjectId(data.project_id);
       console.log("📦 ERD 상세 데이터", data);
 
       // ✅ 뷰 위치 적용
@@ -65,17 +65,19 @@ const ErdPage = () => {
         y: t.pos_y,
         tableName: t.name ?? "",
         description: t.description ?? "",
-        columns: (t.columns || []).map((c) => ({
-          ...c,
-          id: c.column_id,
-          name: c.name ?? "",
-          dataType: c.data_type ?? "",
-          isNullable: !c.is_not_null,
-          isPrimaryKey: c.is_primary,
-          isForeignKey: c.is_foreign, // ✅ FK 표시
-          defaultValue: c.default_value ?? "",
-          comment: c.description ?? "",
-        })),
+        columns: (t.columns || [])
+          .sort((a, b) => a.column_order - b.column_order) // ✅ 이 줄 추가
+          .map((c) => ({
+            ...c,
+            id: c.column_id,
+            name: c.name ?? "",
+            dataType: c.data_type ?? "",
+            isNullable: !c.is_not_null,
+            isPrimaryKey: c.is_primary,
+            isForeignKey: c.is_foreign,
+            defaultValue: c.default_value ?? "",
+            comment: c.description ?? "",
+          })),
       }));
 
       // ✅ 관계 파싱 (4개 속성 → relationType 조합)
