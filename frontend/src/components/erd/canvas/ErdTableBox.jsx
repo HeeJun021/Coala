@@ -113,7 +113,8 @@ const ErdTableBox = ({
 
     // ✅ 백엔드로 순서 업데이트 요청
     try {
-      const newColumnIds = newCols.map((c) => c.id); // 서버에 보낼 column_id 배열
+      const newColumnIds = newCols.map((c) => c.column_id).filter(Boolean);
+      console.log("📦 새로운 컬럼 순서 (column_id):", newColumnIds);
       await reorderColumns(id, newColumnIds);
     } catch (err) {
       console.error("컬럼 순서 변경 실패:", err);

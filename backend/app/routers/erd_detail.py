@@ -174,6 +174,16 @@ def delete_table(table_id: int, db: Session = Depends(get_db)):
 def create_column_for_table(
     table_id: int, column: ErdColumnCreate, db: Session = Depends(get_db)
 ):
+    existing_columns = (
+        db.query(ErdColumns)
+        .filter(ErdColumns.table_id == table_id)
+        .order_by(ErdColumns.column_order)
+        .all()
+    )
+    last_order = (
+        existing_columns[-1].column_order + 1 if existing_columns else 0
+    )
+
     new_column = ErdColumns(
         table_id=table_id,
         name=column.name or "",
@@ -182,12 +192,13 @@ def create_column_for_table(
         is_foreign=column.is_foreign,
         is_not_null=column.is_not_null,
         default_value=column.default_value,
-        column_order=column.column_order,
+        column_order=last_order,  # ✅ 여기 핵심
     )
     db.add(new_column)
     db.commit()
     db.refresh(new_column)
     return new_column
+
 
 
 # 테이블의 컬럼 변경
@@ -217,6 +228,7 @@ def reorder_columns(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
+    print("📥 받은 컬럼 순서:", req.ordered_column_ids)
     # 컬럼 ID 유효성 확인
     columns = (
         db.query(ErdColumns)
@@ -226,6 +238,8 @@ def reorder_columns(
         )
         .all()
     )
+    
+    print("✅ DB에서 조회된 컬럼 ID들:", [col.column_id for col in columns])
 
     if len(columns) != len(req.ordered_column_ids):
         raise HTTPException(
