@@ -334,13 +334,20 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
   }
 
   if (showArchived) {
-    return (
-      <ArchivedChatPanel
-        onBack={() => setShowArchived(false)}
-        onSelectRoom={(room) => setSelectedRoom(room)}
-      />
-    );
-  }
+  return (
+    <ArchivedChatPanel
+      onBack={(accepted) => {
+        setShowArchived(false);
+        if (accepted) {
+          console.log("✅ 아카이브에서 수락됨 → 목록 새로고침");
+          getChatRoomsAndSet(); // 🔥 이게 핵심!
+        }
+      }}
+      onSelectRoom={(room) => setSelectedRoom(room)}
+    />
+  );
+}
+
 
   return (
     <>

@@ -35,7 +35,7 @@ const ArchivedChatPanel = ({ onBack, onSelectRoom }) => {
     <div className="fixed bottom-24 right-6 w-[360px] h-[520px] bg-white shadow-lg rounded-xl border border-gray-200 z-50 flex flex-col">
       <div className="flex items-center justify-between p-3 border-b bg-gray-100">
         <button
-          onClick={onBack}
+          onClick={() => onBack(true)}
           className="flex items-center text-sm text-blue-500 hover:underline"
         >
           <ChevronLeft size={20} className="mr-1" />
