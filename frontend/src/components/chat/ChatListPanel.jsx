@@ -334,20 +334,19 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
   }
 
   if (showArchived) {
-  return (
-    <ArchivedChatPanel
-      onBack={(accepted) => {
-        setShowArchived(false);
-        if (accepted) {
-          console.log("✅ 아카이브에서 수락됨 → 목록 새로고침");
-          getChatRoomsAndSet(); // 🔥 이게 핵심!
-        }
-      }}
-      onSelectRoom={(room) => setSelectedRoom(room)}
-    />
-  );
-}
-
+    return (
+      <ArchivedChatPanel
+        onBack={(accepted) => {
+          setShowArchived(false);
+          if (accepted) {
+            console.log("✅ 아카이브에서 수락됨 → 목록 새로고침");
+            getChatRoomsAndSet(); // 🔥 이게 핵심!
+          }
+        }}
+        onSelectRoom={(room) => setSelectedRoom(room)}
+      />
+    );
+  }
 
   return (
     <>
@@ -578,7 +577,12 @@ const ChatListPanel = ({ onClose, onSelectRoom }) => {
           />
         )}
 
-        {showNewChat && <NewChatModal onClose={() => setShowNewChat(false)} />}
+        {showNewChat && (
+          <NewChatModal
+            onClose={() => setShowNewChat(false)}
+            onChatCreated={() => setRefreshKey((prev) => prev + 1)} // ✅ 채팅 생성 후 목록 새로고침
+          />
+        )}
 
         {/* 채팅방 이름 변경 모달 */}
         {showRenameModal && (
