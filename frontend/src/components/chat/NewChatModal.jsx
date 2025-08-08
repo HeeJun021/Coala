@@ -3,7 +3,7 @@ import { FaTimes } from "react-icons/fa";
 import apiClient from "../../api/apiClient";
 import { motion, AnimatePresence } from "framer-motion";
 
-const NewChatModal = ({ onClose, onCreateRoom }) => {
+const NewChatModal = ({ onClose, onCreateRoom, onChatCreated }) => {
   const [recommendedUsers, setRecommendedUsers] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
   const [search, setSearch] = useState("");
@@ -51,19 +51,25 @@ const NewChatModal = ({ onClose, onCreateRoom }) => {
   };
 
   const handleCreateChat = async () => {
-    if (selectedUserIds.length === 0) return;
-    try {
-      const res = await apiClient.post("/api/chat/create", {
-        room_type: "general",
-        is_group: selectedUserIds.length > 1,
-        participant_ids: selectedUserIds,
-      });
-      if (onCreateRoom) onCreateRoom(res.data);
-      onClose();
-    } catch (err) {
-      console.error("❌ 채팅방 생성 실패:", err);
-    }
-  };
+  if (selectedUserIds.length === 0) return;
+  try {
+    const res = await apiClient.post("/api/chat/create", {
+      room_type: "general",
+      is_group: selectedUserIds.length > 1,
+      participant_ids: selectedUserIds,
+    });
+
+    if (onCreateRoom) onCreateRoom(res.data);
+
+    // ✅ 채팅 생성 후 목록 새로고침 콜백 호출
+    if (onChatCreated) onChatCreated();
+
+    onClose();
+  } catch (err) {
+    console.error("❌ 채팅방 생성 실패:", err);
+  }
+};
+
 
   const renderSkeletonList = () => {
     return Array.from({ length: 7 }).map((_, idx) => (

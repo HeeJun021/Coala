@@ -8,6 +8,7 @@ import {
   ScrollText,
   Bot,
   X,
+  Minus,
   Copy,
   Check,
   Loader2,
@@ -36,6 +37,7 @@ const AIChatPanel = ({ onClose }) => {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef(null);
+  const [minimized, setMinimized] = useState(false);
 
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [hoveringEdge, setHoveringEdge] = useState(false);
@@ -340,6 +342,12 @@ const AIChatPanel = ({ onClose }) => {
         className="bg-white"
       >
         <div className="w-full h-full flex flex-col p-4 relative">
+          <button
+  onClick={() => setMinimized(!minimized)}
+  className="absolute top-2 right-7 text-gray-500 hover:text-black z-10"
+>
+  <Minus className="w-4 h-4" />
+</button>
           {/* 닫기 버튼 */}
           <button
             onClick={onClose}

@@ -79,8 +79,14 @@ class ErdDetailOut(BaseModel):
     name: str
     description: Optional[str]
     project_id: int
+    view_x: int
+    view_y: int
     tables: List[ErdTableOut]
     relations: List[ErdRelationOut]
+    
+class ErdViewPositionUpdate(BaseModel):
+    view_x: int
+    view_y: int
 
 
 # 테이블 생성

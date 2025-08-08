@@ -12,7 +12,12 @@ class Erds(Base):
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
     last_editor_id = Column(Integer, ForeignKey("users.user_id", ondelete="SET NULL"))
+    
+    # ✅ 추가된 뷰 위치 필드
+    view_x = Column(Integer, default=0)
+    view_y = Column(Integer, default=0)
 
+    # 관계 정의
     project = relationship("Project", back_populates="erds")
     last_editor = relationship("User")
     tables = relationship("ErdTables", back_populates="erd", cascade="all, delete-orphan")

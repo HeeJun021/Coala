@@ -6,7 +6,13 @@ export const getErdDetail = async (erdId) => {
   return response.data;
 };
 
-// ERD 자동 저장 (2초마다 호출) 예비용으로 남겨두기
+// 뷰 위치 이동 패치
+export const patchErdViewPosition = async (erdId, position) => {
+  const response = await apiClient.patch(`/erds/${erdId}/view-position`, position);
+  return response.data;
+};
+
+// ✅ ERD 자동 저장 (2초마다 호출) 예비용으로 남겨두기
 export const syncErd = async (erdId, data) => {
   const response = await apiClient.put(`/erds/${erdId}/sync`, data);
   return response.data;

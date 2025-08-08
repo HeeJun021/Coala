@@ -30,7 +30,8 @@ from app.schemas.erd_schema import (
     ErdBulkDeleteRequest,
     ErdSyncRequest,
     SetPrimaryKeyRequest,
-    ErdNameUpdate
+    ErdNameUpdate,
+    ErdViewPositionUpdate
 )
 
 router = APIRouter(prefix="/erds", tags=["ERD Detail"])
@@ -47,6 +48,8 @@ def get_erd_detail(erd_id: int, db: Session = Depends(get_db)):
         "name": erd.name,
         "description": erd.description,
         "project_id": erd.project_id,
+        "view_x": erd.view_x,
+        "view_y": erd.view_y,
         "tables": [
             {
                 "table_id": t.table_id,
@@ -87,6 +90,26 @@ def get_erd_detail(erd_id: int, db: Session = Depends(get_db)):
             for r in erd.relations
         ],
     }
+
+# 뷰 위치 이동
+@router.patch("/{erd_id}/view-position")
+def update_erd_view_position(
+    erd_id: int,
+    position: ErdViewPositionUpdate,
+    db: Session = Depends(get_db),
+):
+    erd = db.query(Erds).filter(Erds.erd_id == erd_id).first()
+    if not erd:
+        raise HTTPException(status_code=404, detail="ERD not found")
+    
+    # ✅ 이동한 위치 로그 출력
+    print(f"[ERD 뷰 위치 저장] erd_id={erd_id}, view_x={position.view_x}, view_y={position.view_y}")
+
+    erd.view_x = position.view_x
+    erd.view_y = position.view_y
+    db.commit()
+
+    return {"message": "View position updated", "view_x": erd.view_x, "view_y": erd.view_y}
 
 
 
@@ -151,6 +174,16 @@ def delete_table(table_id: int, db: Session = Depends(get_db)):
 def create_column_for_table(
     table_id: int, column: ErdColumnCreate, db: Session = Depends(get_db)
 ):
+    existing_columns = (
+        db.query(ErdColumns)
+        .filter(ErdColumns.table_id == table_id)
+        .order_by(ErdColumns.column_order)
+        .all()
+    )
+    last_order = (
+        existing_columns[-1].column_order + 1 if existing_columns else 0
+    )
+
     new_column = ErdColumns(
         table_id=table_id,
         name=column.name or "",
@@ -159,12 +192,13 @@ def create_column_for_table(
         is_foreign=column.is_foreign,
         is_not_null=column.is_not_null,
         default_value=column.default_value,
-        column_order=column.column_order,
+        column_order=last_order,  # ✅ 여기 핵심
     )
     db.add(new_column)
     db.commit()
     db.refresh(new_column)
     return new_column
+
 
 
 # 테이블의 컬럼 변경
@@ -194,6 +228,7 @@ def reorder_columns(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
+    print("📥 받은 컬럼 순서:", req.ordered_column_ids)
     # 컬럼 ID 유효성 확인
     columns = (
         db.query(ErdColumns)
@@ -203,6 +238,8 @@ def reorder_columns(
         )
         .all()
     )
+    
+    print("✅ DB에서 조회된 컬럼 ID들:", [col.column_id for col in columns])
 
     if len(columns) != len(req.ordered_column_ids):
         raise HTTPException(

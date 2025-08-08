@@ -105,9 +105,9 @@ const ErdColumnRow = ({
         ref={ref}
         data-column-id={column.id}
         className={`relative group flex items-center px-2 py-1 pr-8 rounded-sm select-none space-x-2
-    ${isRelationHover ? "bg-blue-500/30 ring-2 ring-blue-300" : ""}
-    ${isDragging ? "opacity-50" : ""}
-    cursor-grab transition duration-150`}
+        ${isRelationHover ? "bg-blue-500/30 ring-2 ring-blue-300" : ""}
+        ${isDragging ? "opacity-50" : ""}
+        cursor-grab transition duration-150`}
         style={{
           backgroundColor: isHovering ? "#3a3a4d" : "transparent",
           opacity: isDragging ? 0.5 : 1,
@@ -136,6 +136,17 @@ const ErdColumnRow = ({
           onClick?.(column.id);
         }}
       >
+        {isAddingRelation && (
+          <div
+            className="absolute top-0 left-0 w-full h-full z-20"
+            style={{ cursor: "pointer" }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onClick?.(column.id);
+            }}
+          />
+        )}
+
         <div
           className="w-[20px] flex justify-center items-center"
           style={{ height: "24px" }}
