@@ -2,7 +2,6 @@ from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 
-
 # ===== 게시글 관련 =====
 class PostBase(BaseModel):
     board_type: str
@@ -13,10 +12,17 @@ class PostBase(BaseModel):
     user_id: int
     recruit_limit: Optional[int] = 1  
 
-
 class PostCreate(PostBase):
     pass
 
+class PostUpdate(BaseModel):  # ✅ 게시글 수정용 모델 추가
+    title: Optional[str] = None
+    content: Optional[str] = None
+    code: Optional[str] = ""
+    image_url: Optional[str] = ""
+    recruit_limit: Optional[int] = None
+    code_filename: Optional[str] = ""
+    code_language: Optional[str] = ""
 
 class PostResponse(PostBase):
     post_id: int
@@ -30,17 +36,14 @@ class PostResponse(PostBase):
 
     model_config = {"from_attributes": True}
 
-
 # ===== 댓글 관련 =====
 class CommentBase(BaseModel):
     user_id: int
     content: str
     parent_comment_id: Optional[int] = None
 
-
 class CommentCreate(CommentBase):
     pass
-
 
 class CommentResponse(CommentBase):
     comment_id: int
@@ -51,17 +54,14 @@ class CommentResponse(CommentBase):
 
     model_config = {"from_attributes": True}
 
-
 # ===== 좋아요 관련 =====
 class PostLikeCreate(BaseModel):
     post_id: int
     user_id: int
 
-
 class CommentLikeCreate(BaseModel):
     comment_id: int
     user_id: int
-
 
 # ===== 신고 관련 =====
 class PostReportCreate(BaseModel):
@@ -69,12 +69,10 @@ class PostReportCreate(BaseModel):
     user_id: int
     reason: str
 
-
 class CommentReportCreate(BaseModel):
     comment_id: int
     user_id: int
     reason: str
-
 
 # ======= 프로젝트 보드 관련 ========
 class ProjectApplicantCreate(BaseModel):
@@ -82,7 +80,6 @@ class ProjectApplicantCreate(BaseModel):
     introduction: str
     skills: List[str]
     links: Optional[str] = None
-
 
 class ProjectApplicantResponse(BaseModel):
     applicant_id: int

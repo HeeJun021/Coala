@@ -1,18 +1,26 @@
-import React from "react";
+import React, { useState } from "react";
 
-const MiniProfileCard = ({ user, isFollowing, onFollowToggle }) => {
+const MiniProfileCard = ({ user, isFollowing, onFollowToggle, onSendMessage }) => {
   console.log("🧩 MiniProfileCard 내부 user:", user); // 디버깅 로그
 
-  // 안전하게 skill 배열 처리
   const skills = user?.skills || [];
+  const [message, setMessage] = useState("");
+
+  const handleSend = () => {
+    const text = message.trim();
+    if (!text) return;
+    onSendMessage(text);
+    setMessage("");
+  };
 
   return (
     <div className="rounded-2xl shadow-lg w-[260px] bg-[#fdfaec] border border-gray-400 overflow-hidden z-50 p-3">
-      {/* 상단 헤더 (닉네임 + 팔로우 버튼) */}
+      {/* 상단 헤더 */}
       <div className="bg-green-600 text-white px-4 py-2 flex justify-between items-center">
         <span className="font-bold text-sm">{user.nickname}</span>
         <button
-          className="bg-white text-gray-700 text-xs px-2 py-1 rounded hover:bg-gray-100"
+          type="button"
+          className="bg-white text-green-600 text-xs px-2 py-1 rounded-md hover:bg-gray-100 transition"
           onClick={onFollowToggle}
         >
           {isFollowing ? "팔로우 취소" : "팔로우"}
@@ -24,7 +32,7 @@ const MiniProfileCard = ({ user, isFollowing, onFollowToggle }) => {
         <img
           src={user.profile_image_url || "/default-profile.png"}
           alt="프로필 이미지"
-          className="w-14 h-14 rounded-full object-cover border"
+          className="w-16 h-16 rounded-full object-cover border border-gray-300 shadow-sm"
         />
       </div>
 
@@ -39,7 +47,7 @@ const MiniProfileCard = ({ user, isFollowing, onFollowToggle }) => {
           skills.map((skill) => (
             <span
               key={skill}
-              className="text-xs bg-gray-200 px-2 py-1 rounded-full text-gray-700"
+              className="text-xs bg-gray-100 px-2 py-1 rounded-full border border-gray-300"
             >
               {skill}
             </span>
@@ -49,9 +57,33 @@ const MiniProfileCard = ({ user, isFollowing, onFollowToggle }) => {
         )}
       </div>
 
-      {/* 메시지 안내 */}
-      <div className="text-center text-gray-600 text-sm bg-white py-2 px-3 border-t">
-        @{user.nickname}님에게 메시지 보내기
+      {/* 채팅 메시지 입력 */}
+      <div className="px-3 pb-2 border-t pt-2">
+        <label className="text-xs text-gray-500 block mb-1">
+          @{user.nickname} 님에게 메시지 보내기
+        </label>
+        <input
+          type="text"
+          autoComplete="off"
+          className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md mb-2 focus:outline-none focus:ring-2 focus:ring-green-400 transition"
+          placeholder="메시지를 입력하세요"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleSend();
+            }
+          }}
+        />
+        <button
+          type="button"
+          className="w-full bg-green-500 text-white text-xs py-1.5 rounded-md hover:bg-green-600 transition disabled:opacity-50"
+          onClick={handleSend}
+          disabled={!message.trim()}
+        >
+          전송
+        </button>
       </div>
     </div>
   );
