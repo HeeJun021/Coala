@@ -10,6 +10,9 @@ import {
 import { AuthProvider } from "./context/AuthContext";
 import { getCurrentUser } from "./api/authApi";
 
+// 전역 UI: 채팅 패널 열림/방 선택 상태
+import { ChatUIProvider } from "./context/ChatUIContext";
+
 // 레이아웃
 import MainLayout from "./Layout/MainLayout";
 import AdminLayout from "./Layout/AdminLayout";
@@ -129,7 +132,7 @@ const App = () => {
           updated_at: user.updated_at,
           tier_name: user.tier?.tier_name || "초급",
           is_admin: user.is_admin || false,
-           eucalyptus_balance: user.eucalyptus_balance ?? 0,
+          eucalyptus_balance: user.eucalyptus_balance ?? 0,
         });
       } catch (error) {
         console.error("⚠️ 사용자 데이터를 가져오는 중 오류 발생:", error);
@@ -141,98 +144,154 @@ const App = () => {
 
   return (
     <Router>
-      <AuthProvider>
-        <ChatSocketProvider>
-          <BodyClassManager />
-          <Routes>
-            {userData?.is_admin && (
-              <>
-                <Route path="/" element={<Navigate to="/admin" replace />} />
-                <Route path="/admin" element={<AdminLayout userData={userData} setUser={setUserData}/>}>
-                  <Route index element={<AdminDashboardPage />} />
-                  <Route path="materials" element={<StudymaterialManagementPage />} />
-                  <Route path="projects" element={<ProjectManagementPage />} />
-                  <Route path="quizzes" element={<QuizManagementPage />} />
-                  <Route path="codingtest" element={<CodingtestManagementPage />} />
-                  <Route path="codingtest/:testId" element={<AdminCodingTestDetailPage />} /> {/* ✅ 이 줄 추가 */}
-                  <Route path="board" element={<BoardManagementPage />} />
-                  <Route path="users" element={<UserManagementPage />} />
-                  <Route path="posts/:postId" element={<BoardManagementDetailPage />} />
-                </Route>
-              </>
-            )}
-
-            {/* 전체화면 페이지 */}
-            <Route path="/self-coding" element={<SelfCodingPage />} />
-            <Route path="/self-coding/templates" element={<SelfCodingTemplatePage />} />
-            <Route path="/codingtest/:id" element={<CodingTestDetailPage />} />
-            <Route
-              path="/codingtest/correct/:testId"
-              element={<CorrectSolutionsPage />}
-            />
-
-            {/* ERD 페이지 전체화면 추가 */}
-            <Route
-              path="/team-project/:projectId/erd/:erdId"
-              element={<ErdPage />}
-            />
-            <Route path="/erd" element={<ErdPage />} />
-
-            {/* 공통 레이아웃 포함 */}
-            <Route path="/*" element={
-              <MainLayout>
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/StudyMaterialsPage" element={<StudyMaterialsPage />} />
-                  <Route path="/StudyMaterialsPage/materials/:language/:id" element={<StudyMaterialsPageDetails />} />
-                  <Route path="/StudyMaterialsPage/examples/:language/:id" element={<StudyMaterialsPageDetails />} />
-                  <Route path="/materials/:language/:id" element={<StudyMaterialsPageDetails />} />
-                  <Route path="/materials" element={<StudyMaterialsPage />} />
-
-                  <Route path="/quizpage" element={<QuizPage userData={userData} />} />
-                  <Route path="/quizsolve/:quizId" element={<QuizSolvePage userData={userData} />} />
-                  <Route path="/quiz-result/:quizId" element={<QuizResultPage userData={userData} />} />
-                  <Route path="/user-quiz/create" element={<CreateUserQuiz userData={userData} />} />
-                  <Route path="/user-quiz-solve/:quizId" element={<UserQuizSolvePage userData={userData} />} />
-                  <Route path="/user-quiz-result/:uq_submission_id" element={<UserQuizResultPage userData={userData} />} />
-
-                  <Route path="/codingtest" element={<CodingTestPage />} />
-                  <Route path="/codetest" element={<CodeTestPage />} />
-                  <Route path="/terminal" element={<CodeTestTerminalPage />} />
-                  <Route path="/my-submissions" element={<MyCodingTestSubmissionsPage />} />
-
-                  <Route path="/signup" element={<Signup />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/forgot-password" element={<ForgotPassword />} />
-                  <Route path="/reset-password" element={<ResetPassword />} />
-
-                  <Route path="mypage" element={<MyPage userData={userData} setUserData={setUserData} />}>
-                    <Route index element={<MyPageModify />} />
-                    <Route path="modify" element={<MyPageModify />} />
-                    <Route path="setting" element={<MyPageSetting />} />
-                    <Route path="quiz-history" element={<MyPageQuizHistory />} />
-                    <Route path="userquiz-history" element={<MyPageUserQuizHistory />} />
-                    <Route path="codingtest" element={<MyPageCTHistory />} />
-                    <Route path="community" element={<MyPageCommunity />} />
+      {/* ✅ 전역 UI 상태: 채팅 패널 열림/방 선택을 어디서나 사용할 수 있게 감쌈 */}
+      <ChatUIProvider>
+        <AuthProvider>
+          <ChatSocketProvider>
+            <BodyClassManager />
+            <Routes>
+              {userData?.is_admin && (
+                <>
+                  <Route path="/" element={<Navigate to="/admin" replace />} />
+                  <Route
+                    path="/admin"
+                    element={<AdminLayout userData={userData} setUser={setUserData} />}
+                  >
+                    <Route index element={<AdminDashboardPage />} />
+                    <Route path="materials" element={<StudymaterialManagementPage />} />
+                    <Route path="projects" element={<ProjectManagementPage />} />
+                    <Route path="quizzes" element={<QuizManagementPage />} />
+                    <Route path="codingtest" element={<CodingtestManagementPage />} />
+                    <Route
+                      path="codingtest/:testId"
+                      element={<AdminCodingTestDetailPage />}
+                    />
+                    <Route path="board" element={<BoardManagementPage />} />
+                    <Route path="users" element={<UserManagementPage />} />
+                    <Route
+                      path="posts/:postId"
+                      element={<BoardManagementDetailPage />}
+                    />
                   </Route>
+                </>
+              )}
 
-                  <Route path="/team-project/:id/doc/:docId" element={<ProjectDocPage />} />
-                  <Route path="/team-project" element={<TeamProjectPage />} />
-                  <Route path="/team-project/:id" element={<TeamProjectPage />} />
+              {/* 전체화면 페이지 */}
+              <Route path="/self-coding" element={<SelfCodingPage />} />
+              <Route path="/self-coding/templates" element={<SelfCodingTemplatePage />} />
+              <Route path="/codingtest/:id" element={<CodingTestDetailPage />} />
+              <Route
+                path="/codingtest/correct/:testId"
+                element={<CorrectSolutionsPage />}
+              />
 
-                  <Route path="/board/:boardType" element={<BoardPage />} />
-                  <Route path="/board/:boardType/write" element={<BoardWritePage />} />
-                  <Route path="/board/:boardType/:postId" element={<BoardDetailPage />} />
-                  <Route path="/board/:boardType/edit/:postId" element={<BoardEditPage />} />
-                  <Route path="/board/:boardType/applicants/:postId" element={<ProjectApplicantsPage />} />
-                  <Route path="/board" element={<Navigate to="/board/free" />} />
+              {/* ERD 페이지 전체화면 추가 */}
+              <Route
+                path="/team-project/:projectId/erd/:erdId"
+                element={<ErdPage />}
+              />
+              <Route path="/erd" element={<ErdPage />} />
 
-                </Routes>
-              </MainLayout>
-            } />
-          </Routes>
-        </ChatSocketProvider>
-      </AuthProvider>
+              {/* 공통 레이아웃 포함 */}
+              <Route
+                path="/*"
+                element={
+                  <MainLayout>
+                    <Routes>
+                      <Route path="/" element={<Home />} />
+                      <Route path="/StudyMaterialsPage" element={<StudyMaterialsPage />} />
+                      <Route
+                        path="/StudyMaterialsPage/materials/:language/:id"
+                        element={<StudyMaterialsPageDetails />}
+                      />
+                      <Route
+                        path="/StudyMaterialsPage/examples/:language/:id"
+                        element={<StudyMaterialsPageDetails />}
+                      />
+                      <Route
+                        path="/materials/:language/:id"
+                        element={<StudyMaterialsPageDetails />}
+                      />
+                      <Route path="/materials" element={<StudyMaterialsPage />} />
+
+                      <Route path="/quizpage" element={<QuizPage userData={userData} />} />
+                      <Route
+                        path="/quizsolve/:quizId"
+                        element={<QuizSolvePage userData={userData} />}
+                      />
+                      <Route
+                        path="/quiz-result/:quizId"
+                        element={<QuizResultPage userData={userData} />}
+                      />
+                      <Route
+                        path="/user-quiz/create"
+                        element={<CreateUserQuiz userData={userData} />}
+                      />
+                      <Route
+                        path="/user-quiz-solve/:quizId"
+                        element={<UserQuizSolvePage userData={userData} />}
+                      />
+                      <Route
+                        path="/user-quiz-result/:uq_submission_id"
+                        element={<UserQuizResultPage userData={userData} />}
+                      />
+
+                      <Route path="/codingtest" element={<CodingTestPage />} />
+                      <Route path="/codetest" element={<CodeTestPage />} />
+                      <Route path="/terminal" element={<CodeTestTerminalPage />} />
+                      <Route
+                        path="/my-submissions"
+                        element={<MyCodingTestSubmissionsPage />}
+                      />
+
+                      <Route path="/signup" element={<Signup />} />
+                      <Route path="/login" element={<Login />} />
+                      <Route path="/forgot-password" element={<ForgotPassword />} />
+                      <Route path="/reset-password" element={<ResetPassword />} />
+
+                      <Route
+                        path="mypage"
+                        element={<MyPage userData={userData} setUserData={setUserData} />}
+                      >
+                        <Route index element={<MyPageModify />} />
+                        <Route path="modify" element={<MyPageModify />} />
+                        <Route path="setting" element={<MyPageSetting />} />
+                        <Route path="quiz-history" element={<MyPageQuizHistory />} />
+                        <Route path="userquiz-history" element={<MyPageUserQuizHistory />} />
+                        <Route path="codingtest" element={<MyPageCTHistory />} />
+                        <Route path="community" element={<MyPageCommunity />} />
+                      </Route>
+
+                      <Route
+                        path="/team-project/:id/doc/:docId"
+                        element={<ProjectDocPage />}
+                      />
+                      <Route path="/team-project" element={<TeamProjectPage />} />
+                      <Route path="/team-project/:id" element={<TeamProjectPage />} />
+
+                      <Route path="/board/:boardType" element={<BoardPage />} />
+                      <Route path="/board/:boardType/write" element={<BoardWritePage />} />
+                      <Route
+                        path="/board/:boardType/:postId"
+                        element={<BoardDetailPage />}
+                      />
+                      <Route
+                        path="/board/:boardType/edit/:postId"
+                        element={<BoardEditPage />}
+                      />
+                      <Route
+                        path="/board/:boardType/applicants/:postId"
+                        element={<ProjectApplicantsPage />}
+                      />
+                      <Route path="/board" element={<Navigate to="/board/free" />} />
+                    </Routes>
+                  </MainLayout>
+                }
+              />
+            </Routes>
+          </ChatSocketProvider>
+        </AuthProvider>
+      </ChatUIProvider>
     </Router>
   );
 };

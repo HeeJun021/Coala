@@ -1,45 +1,33 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import MiniProfileCard from "./MiniProfileCard";
 import useUserProfile from "../../../hooks/useUserProfile";
-import {
-  followUser,
-  unfollowUser,
-  getFollowings,
-} from "../../../api/followApi";
-import {
-  getChatRooms,
-  createChatRoom,
-  sendMessage,
-} from "../../../api/chatApi";
+import { followUser, unfollowUser, getFollowings } from "../../../api/followApi";
+import { getChatRooms, createChatRoom, sendMessage } from "../../../api/chatApi";
+import { useChatUI } from "../../../context/ChatUIContext"; // ✅ 전역 UI (채팅패널)
 
 const UserNameWithProfile = ({ userId, nickname }) => {
   const [showProfile, setShowProfile] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const ref = useRef(null);
-  const navigate = useNavigate();
 
   const { user, loading, error } = useUserProfile(userId);
+  const { openChat } = useChatUI(); // ✅ 채팅 패널 열기 함수
 
-  // 🔁 팔로우 상태 불러오기
+  // 팔로우 상태 불러오기
   useEffect(() => {
-    if (user) {
-      getFollowings()
-        .then((followings) => {
-          const following = followings.some(
-            (f) => f.user_id === user.user_id
-          );
-          setIsFollowing(following);
-        })
-        .catch((err) => {
-          console.warn("팔로잉 목록 조회 실패", err);
-        });
-    }
+    if (!user) return;
+    getFollowings()
+      .then((followings) => {
+        const following = (followings || []).some((f) => f.user_id === user.user_id);
+        setIsFollowing(following);
+      })
+      .catch((err) => console.warn("팔로잉 목록 조회 실패", err));
   }, [user]);
 
-  // 🔁 팔로우/언팔로우 토글
+  // 팔로우/언팔로우 토글
   const handleFollowToggle = async () => {
     try {
+      if (!user) return;
       if (isFollowing) {
         await unfollowUser(user.user_id);
       } else {
@@ -51,14 +39,16 @@ const UserNameWithProfile = ({ userId, nickname }) => {
     }
   };
 
-  // ✅ 메시지 보내기 + 채팅방 중복 방지
+  // 메시지 전송 + 1:1방 중복 방지 + 채팅 패널 열기
   const handleSendMessage = async (messageText) => {
     try {
-      // 1️⃣ 기존 채팅방 목록 조회
+      if (!user) return;
+
+      // 1) 기존 방 조회
       const chatRooms = await getChatRooms();
 
-      // 2️⃣ 해당 유저와의 1:1 채팅방 있는지 확인
-      const existingRoom = chatRooms.find((room) => {
+      // 2) 해당 유저와의 1:1 방 찾기
+      const existingRoom = (chatRooms || []).find((room) => {
         const participants = room.participants || [];
         return (
           !room.is_group &&
@@ -67,30 +57,29 @@ const UserNameWithProfile = ({ userId, nickname }) => {
         );
       });
 
+      // 3) 없으면 생성
       let roomId;
-
       if (existingRoom) {
         roomId = existingRoom.room_id;
       } else {
-        // 3️⃣ 없으면 새 채팅방 생성
         const newRoom = await createChatRoom([user.user_id]);
         roomId = newRoom.room_id;
       }
 
-      // 4️⃣ 메시지 전송
-      await sendMessage(roomId, {
-        type: "text",
-        content: messageText,
-      });
+      // 4) 메시지 전송
+      await sendMessage(roomId, { type: "text", content: messageText });
 
-      // 5️⃣ 채팅방으로 이동
-      navigate(`/chat/${roomId}`);
+      // 5) 라우팅 대신 채팅 패널 열기 + 해당 방 포커스
+      openChat(roomId);
+
+      // 6) 미니 프로필 카드 닫기
+      setShowProfile(false);
     } catch (err) {
       console.error("메시지 전송 실패", err);
     }
   };
 
-  // 🔒 외부 클릭 시 카드 닫기
+  // 외부 클릭 시 카드 닫기
   useEffect(() => {
     const handleClickOutside = (event) => {
       setTimeout(() => {
@@ -99,10 +88,8 @@ const UserNameWithProfile = ({ userId, nickname }) => {
         }
       }, 50);
     };
-
     document.addEventListener("mousedown", handleClickOutside);
-    return () =>
-      document.removeEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   return (
