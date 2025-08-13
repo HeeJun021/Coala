@@ -6,6 +6,8 @@ from app.schemas.project_schemas import ProjectCreateRequest, ProjectUpdateReque
 from app.models.project_models import Project, ProjectMembers, ProjectWidgets, ProjectActivityLog
 from datetime import datetime
 from app.models.user import User
+from typing import List
+from app.schemas.project_schemas import UpdateMemberRolesRequest
 
 router = APIRouter(prefix="/projects", tags=["Projects"])
 
@@ -45,11 +47,11 @@ def get_my_projects(db: Session = Depends(get_db), current_user: User = Depends(
         for p in projects
     ]
 
-# 2. 프로젝트 팀원 목록 조회
+# 2. 프로젝트 팀원 목록 조회 (roles 추가)
 @router.get("/{project_id}/members")
 def get_project_members(project_id: int, db: Session = Depends(get_db)):
     members = (
-        db.query(User, ProjectMembers.is_leader, ProjectMembers.status)
+        db.query(User, ProjectMembers.is_leader, ProjectMembers.status, ProjectMembers.roles,)
         .join(ProjectMembers, User.user_id == ProjectMembers.user_id)
         .filter(ProjectMembers.project_id == project_id)
         .all()
@@ -60,7 +62,8 @@ def get_project_members(project_id: int, db: Session = Depends(get_db)):
             "nickname": m[0].nickname,
             "email": m[0].email,
             "is_leader": m[1],
-            "status": m[2], 
+            "status": m[2],
+            "roles": m[3] or [],  # roles 컬럼이 없으므로 기본값으로 빈 배열 제공
         }
         for m in members
     ]
@@ -334,3 +337,27 @@ def get_project_activity(project_id: int, db: Session = Depends(get_db)):
         }
         for log in logs
     ]
+    
+# 9. 멤버 역할 업데이트
+@router.patch("/{project_id}/members/{user_id}/roles")
+def update_member_roles(
+    project_id: int,
+    user_id: int,
+    payload: UpdateMemberRolesRequest,   # ✅ 바디를 객체로 받기
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.user_id != user_id:
+        raise HTTPException(status_code=403, detail="You can only update your own roles")
+
+    member = db.query(ProjectMembers).filter(
+        ProjectMembers.project_id == project_id,
+        ProjectMembers.user_id == user_id,
+    ).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Member not found")
+
+    member.roles = payload.roles or []
+    db.commit()
+    db.refresh(member)
+    return {"message": "Roles updated successfully", "roles": member.roles}

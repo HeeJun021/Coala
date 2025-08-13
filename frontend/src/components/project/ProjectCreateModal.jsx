@@ -3,7 +3,6 @@ import {
   Database,
   GitBranch,
   FileText,
-  MessageCircle,
   Calendar,
   StickyNote,
   CheckSquare,
@@ -46,11 +45,6 @@ const WIDGET_OPTIONS = [
     key: "docs",
     label: "문서 관리",
     icon: <FileText size={16} className="text-green-700" />,
-  },
-  {
-    key: "chat",
-    label: "채팅",
-    icon: <MessageCircle size={16} className="text-blue-500" />,
   },
   {
     key: "calendar",
@@ -136,7 +130,7 @@ const ProjectCreateModal = ({ onClose, onCreated }) => {
                 onClick={() => toggleWidget(opt.key)}
                 className={`border px-4 py-2 rounded text-sm text-left transition ${
                   selectedWidgets.includes(opt.key)
-                   ? "bg-green-50 border-green-400"
+                    ? "bg-green-50 border-green-400"
                     : "bg-white"
                 } text-black hover:bg-gray-100`}
               >

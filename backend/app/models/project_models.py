@@ -50,6 +50,7 @@ class ProjectMembers(Base):
     user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"))
     is_leader = Column(Boolean, default=False)
     status = Column(String, default="pending")  #   여기 있음
+    roles = Column(JSON, nullable=True, default=[])
 
     project = relationship("Project", back_populates="members")
     user = relationship("User")

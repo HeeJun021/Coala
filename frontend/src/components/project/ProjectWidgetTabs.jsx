@@ -15,7 +15,6 @@ const WIDGET_TABS = [
   { key: "erd", label: "ERD 설계" },
   { key: "git", label: "GitHub" },
   { key: "docs", label: "문서" },
-  { key: "chat", label: "채팅" },
   { key: "calendar", label: "캘린더" },
   { key: "memo", label: "메모" },
   { key: "tasks", label: "작업" },
@@ -126,7 +125,6 @@ const ProjectWidgetTabs = ({ project, onNameChange, defaultTab = "overview" }) =
     setDraggedTab(null);
   };
 
-  // ESLint 오류 수정: 정의 누락됐던 함수 추가
   const handleDragOverTrash = (e) => {
     e.preventDefault();
     setIsOverTrash(true);
