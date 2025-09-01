@@ -1,9 +1,10 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../context/AuthContext";
 
 const MiniProfileCard = ({ user, isFollowing, onFollowToggle, onSendMessage }) => {
-  console.log("🧩 MiniProfileCard 내부 user:", user); // 디버깅 로그
-
-  const skills = user?.skills || [];
+  const navigate = useNavigate();
+  const { user: currentUser } = useAuth(); // 현재 로그인된 사용자
   const [message, setMessage] = useState("");
 
   const handleSend = () => {
@@ -11,6 +12,18 @@ const MiniProfileCard = ({ user, isFollowing, onFollowToggle, onSendMessage }) =
     if (!text) return;
     onSendMessage(text);
     setMessage("");
+  };
+
+  // ✅ 프로필 이미지 클릭 핸들러
+  const handleProfileClick = () => {
+    if (!user) return;
+    if (currentUser?.user_id === user.user_id) {
+      // 자기 자신 → 마이페이지 수정
+      navigate("/mypage/modify");
+    } else {
+      // 다른 사용자 → 뷰어 페이지
+      navigate(`/user/${user.user_id}`);
+    }
   };
 
   return (
@@ -32,7 +45,8 @@ const MiniProfileCard = ({ user, isFollowing, onFollowToggle, onSendMessage }) =
         <img
           src={user.profile_image_url || "/default-profile.png"}
           alt="프로필 이미지"
-          className="w-16 h-16 rounded-full object-cover border border-gray-300 shadow-sm"
+          className="w-16 h-16 rounded-full object-cover border border-gray-300 shadow-sm cursor-pointer hover:opacity-80 transition"
+          onClick={handleProfileClick} // ✅ 클릭 시 이동
         />
       </div>
 
@@ -43,8 +57,8 @@ const MiniProfileCard = ({ user, isFollowing, onFollowToggle, onSendMessage }) =
 
       {/* 기술 스택 */}
       <div className="flex flex-wrap justify-center gap-2 mb-3">
-        {skills.length > 0 ? (
-          skills.map((skill) => (
+        {user.skills?.length > 0 ? (
+          user.skills.map((skill) => (
             <span
               key={skill}
               className="text-xs bg-gray-100 px-2 py-1 rounded-full border border-gray-300"

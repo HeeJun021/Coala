@@ -88,6 +88,9 @@ import ProjectDocPage from "./pages/project/Doc/ProjectDocPage";
 // ERD UI
 import ErdPage from "./pages/erd/ErdPage";
 
+// 유저 뷰어 페이지 (새로 추가)
+import UserProfileViewerPage from "./pages/user/UserProfileViewerPage";
+
 const observerError = /ResizeObserver loop completed/;
 window.addEventListener("error", (e) => {
   if (observerError.test(e.message)) {
@@ -254,6 +257,9 @@ const App = () => {
                         element={<ProjectApplicantsPage />}
                       />
                       <Route path="/board" element={<Navigate to="/board/free" />} />
+
+                      {/* 유저 뷰어 페이지 (추가됨) */}
+                      <Route path="/user/:userId" element={<UserProfileViewerPage />} />
                     </Routes>
                   </MainLayout>
                 }
