@@ -4,23 +4,36 @@ import { deleteBoard } from "../../api/boardApi";
 import { likeBoard, unlikeBoard } from "../../api/likeApi";
 import { reportBoard } from "../../api/reportApi";
 import ApplyModal from "../../components/ApplyModal";
+import { Heart, AlertCircle, Edit, Trash2 } from "lucide-react";
+import UserNameWithProfile from "../../components/board/profcard/UserNameWithProfile";
 
-import {
-  Heart,
-  AlertCircle,
-  Edit,
-  Trash2,
-} from "lucide-react";
+// ... (나머지는 동일)
 
-const ProjectBoardDetail = ({ post, user }) => {
+
+// 작성자 이름 폴백 추출기
+const getAuthorName = (post, fallback = "알 수 없음") => {
+  if (!post) return fallback;
+  return (
+    post.author_nickname ??
+    post.user?.nickname ??
+    post.author?.nickname ??
+    post.author_name ??
+    post.user?.name ??
+    post.author?.name ??
+    fallback
+  );
+};
+
+const ProjectBoardDetail = ({ post, user, authorName: injected }) => {
   const navigate = useNavigate();
   const { boardType, postId } = useParams();
 
   const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(post.like_count || 0);
+  const [likeCount, setLikeCount] = useState(post?.like_count || 0);
   const [showApplyModal, setShowApplyModal] = useState(false);
 
-  const isAuthor = user?.user_id === post.user_id;
+  const isAuthor = user?.user_id === (post?.user_id ?? post?.author_id);
+  const authorName = injected ?? getAuthorName(post);
 
   const handleLike = async () => {
     if (!user) return alert("로그인이 필요합니다.");
@@ -42,7 +55,7 @@ const ProjectBoardDetail = ({ post, user }) => {
   const handleReport = async () => {
     try {
       await reportBoard({
-        post_id: parseInt(postId),
+        post_id: parseInt(postId, 10),
         user_id: user.user_id,
         reason: "부적절한 게시글",
       });
@@ -56,14 +69,13 @@ const ProjectBoardDetail = ({ post, user }) => {
 
   const handleDelete = async () => {
     const confirmDelete = window.confirm("정말 삭제하시겠습니까?");
-    if (confirmDelete) {
-      try {
-        await deleteBoard(postId);
-        alert("삭제되었습니다.");
-        navigate(`/board/${boardType}`);
-      } catch (err) {
-        alert("삭제 실패!");
-      }
+    if (!confirmDelete) return;
+    try {
+      await deleteBoard(postId);
+      alert("삭제되었습니다.");
+      navigate(`/board/${boardType}`);
+    } catch (err) {
+      alert("삭제 실패!");
     }
   };
 
@@ -82,22 +94,34 @@ const ProjectBoardDetail = ({ post, user }) => {
 
       {/* 본문: 제목 + 작성자 정보 */}
       <div className="mb-6">
-        <h2 className="text-2xl font-semibold mb-2">{post.title}</h2>
+        <h2 className="text-2xl font-semibold mb-2">{post?.title}</h2>
         <div className="flex items-center text-sm text-gray-500">
-          <span className="font-medium">{post.author_nickname}</span>
+          {/* ✅ 작성자 이름 클릭 시 미니프로필 */}
+          {post?.author_id ? (
+            <UserNameWithProfile
+              userId={post.author_id}
+              nickname={authorName || "작성자"}
+            />
+          ) : (
+            <span className="font-medium">{authorName}</span>
+          )}
           <span className="mx-2">|</span>
-          <span>{new Date(post.created_at).toLocaleString()}</span>
+          <span>
+            {post?.created_at
+              ? new Date(post.created_at).toLocaleString()
+              : ""}
+          </span>
         </div>
       </div>
 
       {/* 내용 */}
       <div className="mb-6 whitespace-pre-line text-gray-700 leading-relaxed">
-        {post.content}
+        {post?.content}
       </div>
 
       {/* 액션 버튼 */}
       <div className="flex items-center gap-4 border-t pt-4 mb-8">
-        <button onClick={handleLike} className="text-red-500">
+        <button onClick={handleLike} className="text-red-500" title="좋아요">
           <Heart
             size={20}
             fill={liked ? "currentColor" : "none"}
@@ -108,6 +132,7 @@ const ProjectBoardDetail = ({ post, user }) => {
         <button
           onClick={handleReport}
           className="text-gray-500 flex items-center gap-1 text-sm"
+          title="신고"
         >
           <AlertCircle size={16} className="text-gray-500" />
           신고
@@ -136,7 +161,9 @@ const ProjectBoardDetail = ({ post, user }) => {
       <div className="flex justify-end">
         {isAuthor ? (
           <button
-            onClick={() => navigate(`/board/${boardType}/applicants/${postId}`)}
+            onClick={() =>
+              navigate(`/board/${boardType}/applicants/${postId}`)
+            }
             className="px-4 py-2 bg-green-600 text-white rounded-md"
           >
             지원자 보기
@@ -155,7 +182,7 @@ const ProjectBoardDetail = ({ post, user }) => {
       {showApplyModal && (
         <ApplyModal
           onClose={() => setShowApplyModal(false)}
-          projectId={post.post_id || postId}
+          projectId={post?.post_id || postId}
           user={user}
         />
       )}

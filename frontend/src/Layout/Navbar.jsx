@@ -30,13 +30,14 @@ const Navbar = () => {
     try {
       const materials = await fetchStudyMaterials(language);
       if (materials.length > 0) {
-        // id=2를 맨 위로 정렬
-        const sortedMaterials = materials.sort((a, b) => 
+        const sortedMaterials = materials.sort((a, b) =>
           a.material_id === 2 ? -1 : b.material_id === 2 ? 1 : 0
         );
         const firstMaterial = sortedMaterials[0];
         navigate(
-          `/StudyMaterialsPage?category=${encodeURIComponent(language)}&id=${firstMaterial.material_id}`
+          `/StudyMaterialsPage?category=${encodeURIComponent(
+            language
+          )}&id=${firstMaterial.material_id}`
         );
       } else {
         alert("해당 언어의 학습자료가 없습니다.");
@@ -113,8 +114,7 @@ const Navbar = () => {
                         languages[0]?.language
                       );
                       if (materials.length > 0) {
-                        // id=2를 맨 위로 정렬
-                        const sortedMaterials = materials.sort((a, b) => 
+                        const sortedMaterials = materials.sort((a, b) =>
                           a.material_id === 2 ? -1 : b.material_id === 2 ? 1 : 0
                         );
                         navigate(
@@ -158,17 +158,24 @@ const Navbar = () => {
           ))}
         </div>
 
+        {/* 오른쪽 사용자 영역 */}
         <div className="flex items-center gap-4">
           {user ? (
             <>
-              {/* 닉네임 왼쪽으로 살짝 밀기 */}
-              <span className="text-sm text-gray-700">{user.nickname}님</span>
-
-              {/* 유칼립투스 잎 표시 */}
+              {/* ✅ 유칼립투스 잎 먼저 */}
               <span className="flex items-center gap-1 text-sm text-green-700 font-semibold">
                 <Leaf size={16} className="text-green-600" />
                 {user.eucalyptus_balance ?? 0}
               </span>
+
+              {/* ✅ 프로필 이미지 (닉네임 제거) */}
+              <Link to="/mypage/modify">
+                <img
+                  src={user.profile_image_url || "/default-profile.png"}
+                  alt="프로필"
+                  className="w-9 h-9 rounded-full border object-cover cursor-pointer hover:scale-105 transition"
+                />
+              </Link>
 
               {/* 로그아웃 버튼 */}
               <button
@@ -229,7 +236,7 @@ const Navbar = () => {
                     if (child === "연습 퀴즈") link = "/quizpage";
                     if (child === "테스트 퀴즈") link = "/quizpage?category=test";
                     if (child === "퀴즈 만들기") link = "/quizpage?category=user";
-                    if (child === "퀴즈 통계") link = "/quiz-stats"; 
+                    if (child === "퀴즈 통계") link = "/quiz-stats";
                     return (
                       <Link
                         key={i}
@@ -251,7 +258,9 @@ const Navbar = () => {
                           onClick={async () => {
                             try {
                               await initRootCodeFolder();
-                              navigate("/self-coding", { state: { panel: "explorer" } });
+                              navigate("/self-coding", {
+                                state: { panel: "explorer" },
+                              });
                             } catch (err) {
                               alert("초기화 실패");
                             }
@@ -301,10 +310,7 @@ const Navbar = () => {
                     );
                   }
 
-                  if (
-                    item.label === "코딩테스트" &&
-                    child === "통계 및 제출 내역"
-                  ) {
+                  if (item.label === "코딩테스트" && child === "통계 및 제출 내역") {
                     return (
                       <Link
                         key={i}
@@ -316,8 +322,8 @@ const Navbar = () => {
                         {child}
                       </Link>
                     );
-                  }                
-                  
+                  }
+
                   if (item.label === "프로젝트") {
                     let link = "/team-project";
                     let tab = "";
@@ -347,14 +353,14 @@ const Navbar = () => {
                           key={i}
                           to={link}
                           className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
-                          hoverIndex === idx ? "" : "opacity-50"
-                        }`}
+                            hoverIndex === idx ? "" : "opacity-50"
+                          }`}
                         >
                           {child}
                         </Link>
                       );
                     }
-                  }  
+                  }
 
                   if (item.label === "마이페이지") {
                     let link = "";
@@ -367,8 +373,8 @@ const Navbar = () => {
                           key={i}
                           to={link}
                           className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
-                          hoverIndex === idx ? "" : "opacity-50"
-                        }`}
+                            hoverIndex === idx ? "" : "opacity-50"
+                          }`}
                         >
                           {child}
                         </Link>

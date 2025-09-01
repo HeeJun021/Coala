@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import MiniProfileCard from "./MiniProfileCard";
 import useUserProfile from "../../../hooks/useUserProfile";
 import { followUser, unfollowUser, getFollowings } from "../../../api/followApi";
 import { getChatRooms, createChatRoom, sendMessage } from "../../../api/chatApi";
 import { useChatUI } from "../../../context/ChatUIContext"; // 전역 UI (채팅패널)
+import { useAuth } from "../../../context/AuthContext";
 
 const UserNameWithProfile = ({ userId, nickname }) => {
   const [showProfile, setShowProfile] = useState(false);
@@ -12,6 +14,8 @@ const UserNameWithProfile = ({ userId, nickname }) => {
 
   const { user, loading, error } = useUserProfile(userId);
   const { openChat } = useChatUI();
+  const { user: currentUser } = useAuth(); // 현재 로그인한 사용자
+  const navigate = useNavigate();
 
   // 현재 유저와의 팔로우 여부 로딩
   useEffect(() => {
@@ -75,6 +79,17 @@ const UserNameWithProfile = ({ userId, nickname }) => {
     }
   };
 
+  // 프로필 이미지 클릭 → 자기 자신이면 수정페이지, 다른 사람은 뷰어페이지로 이동
+  const handleProfileClick = () => {
+    if (!user) return;
+    setShowProfile(false);
+    if (currentUser?.user_id === user.user_id) {
+      navigate("/mypage/modify"); // 본인 → 수정 페이지
+    } else {
+      navigate(`/users/${user.user_id}`); // 다른 사용자 → 뷰어 페이지
+    }
+  };
+
   // 외부 클릭 시 카드 닫기
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -113,6 +128,7 @@ const UserNameWithProfile = ({ userId, nickname }) => {
               isFollowing={isFollowing}
               onFollowToggle={handleFollowToggle}
               onSendMessage={handleSendMessage}
+              onProfileClick={handleProfileClick} // 🔹 클릭 이벤트 전달
             />
           ) : (
             <div className="text-sm text-gray-500 bg-white border rounded px-2 py-1 shadow">

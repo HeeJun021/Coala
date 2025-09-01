@@ -1,16 +1,24 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getBoardDetail, deleteBoard } from "../../api/boardApi";
-import { getComments, createComment } from "../../api/commentApi";
-import { likeBoard, unlikeBoard, checkLiked, likeComment, unlikeComment, checkCommentLiked } from "../../api/likeApi";
+import { getComments, createComment, deleteComment } from "../../api/commentApi";
+import {
+  likeBoard,
+  unlikeBoard,
+  checkLiked,
+  likeComment,
+  unlikeComment,
+  checkCommentLiked,
+} from "../../api/likeApi";
 import { reportBoard, reportComment } from "../../api/reportApi";
 import { useAuth } from "../../context/AuthContext";
-import { deleteComment } from "../../api/commentApi";
-
 
 import CommonBoardDetail from "./CommonBoardDetail";
 import CodeBoardDetail from "./CodeBoardDetail";
 import ProjectBoardDetail from "./ProjectBoardDetail";
+
+// ✅ 추가
+import UserNameWithProfile from "../../components/board/profcard/UserNameWithProfile";
 
 const BoardDetailPage = () => {
   const { boardType, postId } = useParams();
@@ -35,7 +43,7 @@ const BoardDetailPage = () => {
     const fetchPost = async () => {
       try {
         const data = await getBoardDetail(postId);
-        console.log("🟩 게시글 데이터:", data); 
+        console.log("🟩 게시글 데이터:", data);
         setPost(data);
       } catch (err) {
         console.error("게시글 조회 실패:", err);
@@ -70,8 +78,10 @@ const BoardDetailPage = () => {
         const updatedLikes = {};
         await Promise.all(
           data.map(async (c) => {
-            const { liked, count } = await checkCommentLiked(c.comment_id, user.user_id);
-            console.log(`댓글 ${c.comment_id} 좋아요 상태:`, liked, count);  
+            const { liked, count } = await checkCommentLiked(
+              c.comment_id,
+              user.user_id
+            );
             updatedLikes[c.comment_id] = { liked, count };
           })
         );
@@ -105,10 +115,13 @@ const BoardDetailPage = () => {
   };
 
   const handleReport = async () => {
-    console.log("신고 postId:", postId);
     if (!user) return alert("로그인이 필요합니다.");
     try {
-      await reportBoard({ post_id: parseInt(postId, 10), user_id: user.user_id, reason: "부적절한 게시글" });
+      await reportBoard({
+        post_id: parseInt(postId, 10),
+        user_id: user.user_id,
+        reason: "부적절한 게시글",
+      });
       alert("게시글이 신고되었습니다.");
     } catch (err) {
       alert("이미 신고하셨습니다!");
@@ -128,7 +141,7 @@ const BoardDetailPage = () => {
     }
   };
 
-  // 댓글 관련 핸들러
+  // 댓글 작성
   const handleCommentSubmit = async (content) => {
     if (!user) return alert("로그인이 필요합니다.");
     try {
@@ -143,7 +156,16 @@ const BoardDetailPage = () => {
   const childComments = comments.filter((c) => c.parent_comment_id);
 
   const commonProps = {
-    post,
+    post: {
+      ...post,
+      // ✅ 작성자 이름/프로필을 UserNameWithProfile로 교체해서 전달
+      authorElement: (
+        <UserNameWithProfile
+          userId={post?.author_id}
+          nickname={post?.author_nickname}
+        />
+      ),
+    },
     user,
     liked,
     likeCount,
@@ -175,7 +197,7 @@ const BoardDetailPage = () => {
             ...prev,
             [commentId]: {
               liked: true,
-              count: (prev[commentId]?.count || 0) + 1,  // 안전하게 0으로 시작
+              count: (prev[commentId]?.count || 0) + 1,
             },
           }));
         }
