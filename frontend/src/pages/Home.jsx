@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import studymaterialImg from "../assets/studymaterialpage.png";
 import quizImg from "../assets/quizpage.png";
 import codingTestImg from "../assets/codingtestpage.png";
+import AttendancePopup from "../components/AttendancePopup";
 
 const Home = () => {
   const { user } = useAuth(); 
@@ -26,6 +27,7 @@ const Home = () => {
 
   return (
     <div className="w-full">
+      <AttendancePopup tz="Asia/Seoul" userId={user?.user_id} />
       {/* 히어로 영역 */}
       <section className="text-center py-24">
         <h1 className="text-4xl font-bold mb-4">웹 개발을 배우는 가장 실용적인 방법</h1>

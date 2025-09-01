@@ -6,7 +6,7 @@
   "python.terminal.activateEnvironment": true,
 
   // Python 인터프리터 경로를 가상환경으로 설정 (Windows 기준)
-  "python.defaultInterpreterPath": "./backend/.venv/Scripts/python",
+  "python.defaultInterpreterPath": "./backend/.venv/Scripts/python.exe",
 
   // Python 언어 서버로 Pylance를 사용하여 빠르고 정밀한 코드 분석
   "python.languageServer": "Pylance",
@@ -35,12 +35,14 @@
     "./backend"
   ],
   "python.analysis.extraPaths": [
-    "./backend"
+    "./backend", "backend", "backend/app"
   ],
 
   // Flake8 설정
   "python.linting.flake8Args": [
     "--max-line-length=100",
     "--ignore=E302,E501"
-  ]
+  ],
+  "python-envs.defaultEnvManager": "ms-python.python:system",
+  "python-envs.pythonProjects": []
 }

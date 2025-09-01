@@ -56,6 +56,7 @@ import MyPageQuizHistory from "./pages/mypage/MyPageQuizHistory";
 import MyPageUserQuizHistory from "./pages/mypage/MyPageUserQuizHistory";
 import MyPageCTHistory from "./pages/mypage/MyPageCTHistory";
 import MyPageCommunity from "./pages/mypage/MyPageCommunity";
+import MyPageAttendance from "./pages/mypage/MyPageAttendance"; // 250817 김희준
 
 // 인증
 import Signup from "./pages/loginSignup/Signup";
@@ -237,6 +238,7 @@ const App = () => {
                         <Route path="userquiz-history" element={<MyPageUserQuizHistory />} />
                         <Route path="codingtest" element={<MyPageCTHistory />} />
                         <Route path="community" element={<MyPageCommunity />} />
+                        <Route path="attendance" element={<MyPageAttendance />} /> 
                       </Route>
 
                       {/* 팀프로젝트 */}

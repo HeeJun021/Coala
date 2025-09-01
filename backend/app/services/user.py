@@ -31,6 +31,7 @@ def update_user_info(db: Session, user_id: int, user_update: UserUpdateSchema):
     db.commit()
     db.refresh(user)
     return user
+
 def reward_user_by_action(
     user: User,
     action: RewardActionType,
@@ -40,7 +41,7 @@ def reward_user_by_action(
     reward_table = {
         RewardActionType.quiz_correct: 10,
         RewardActionType.coding_test_passed: 30,
-        RewardActionType.daily_login: 5,
+        RewardActionType.daily_attendance: 5,
         RewardActionType.team_project_complete: 50,
     }
 

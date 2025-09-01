@@ -64,7 +64,8 @@ from app.routers import (
     task,
     memo,
     notification,
-    project_invite
+    project_invite,
+    attendance,
 )
 
 from app.schemas.user import UserUpdateSchema
@@ -154,6 +155,8 @@ app.include_router(notification.router)
 
 # 프로젝트 초대
 app.include_router(project_invite.router)
+
+app.include_router(attendance.router)
 
 # 기본 라우트
 @app.get("/", tags=["Root"])

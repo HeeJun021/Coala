@@ -5,14 +5,14 @@ from datetime import datetime
 class ActionType(str, Enum):
     quiz_correct = "quiz_correct"
     coding_test_passed = "coding_test_passed"
-    daily_login = "daily_login"
+    daily_attendance = "daily_attendance"
     team_project_complete = "team_project_complete"
     change_profile_image = "change_profile_image"
     
 class RewardActionType(str, Enum):
     quiz_correct = "quiz_correct"
     coding_test_passed = "coding_test_passed"
-    daily_login = "daily_login"
+    daily_attendance = "daily_attendance"
     team_project_complete = "team_project_complete"    
 
 class UseActionType(str, Enum):
