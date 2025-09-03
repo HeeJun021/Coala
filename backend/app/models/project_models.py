@@ -28,19 +28,21 @@ class Project(Base):
     created_at = Column(Date, server_default=func.now())
     updated_at = Column(Date, server_default=func.now(), onupdate=func.now())
     widget_order = Column(JSON, nullable=True)  # 위젯 순서 저장
-    topic = Column(String(255), nullable=True)  #   주제(토픽)
-    tech_stack = Column(JSON, nullable=True)  #   기술 스택
+    topic = Column(String(255), nullable=True)  # 주제(토픽)
+    tech_stack = Column(JSON, nullable=True)  # 기술 스택
 
     members = relationship("ProjectMembers", back_populates="project")
     activity_logs = relationship("ProjectActivityLog", back_populates="project")
     widgets = relationship("ProjectWidgets", back_populates="project")
     erds = relationship("Erds", back_populates="project", cascade="all, delete-orphan")
     tasks = relationship("Tasks", back_populates="project", cascade="all, delete-orphan")
-    documents = relationship(  #   문서 다중 관계
+    documents = relationship(
         "ProjectDocument",
         back_populates="project",
         cascade="all, delete-orphan"
     )
+    templates = relationship("ProjectTemplate", back_populates="project", cascade="all, delete-orphan")  # 템플릿 관계 추가
+
 
 class ProjectMembers(Base):
     __tablename__ = "projectmembers"
@@ -49,7 +51,8 @@ class ProjectMembers(Base):
     project_id = Column(Integer, ForeignKey("projects.project_id", ondelete="CASCADE"))
     user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"))
     is_leader = Column(Boolean, default=False)
-    status = Column(String, default="pending")  #   여기 있음
+    status = Column(String, default="pending")
+    roles = Column(JSON, nullable=True, default=[])
 
     project = relationship("Project", back_populates="members")
     user = relationship("User")
@@ -76,3 +79,16 @@ class ProjectActivityLog(Base):
 
     project = relationship("Project", back_populates="activity_logs")
     actor = relationship("User")
+
+
+class ProjectTemplate(Base):
+    __tablename__ = "project_templates"
+
+    template_id = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("projects.project_id", ondelete="CASCADE"))
+    title = Column(String(100), nullable=False)
+    description = Column(Text, nullable=True)
+    widgets = Column(JSON, nullable=True)  # e.g., ["timeline", "tasks"]
+    added_at = Column(DateTime, server_default=func.now())
+
+    project = relationship("Project", back_populates="templates")

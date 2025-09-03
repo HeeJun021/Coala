@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
+import { getCurrentUser } from "../../api/authApi";
 import InviteProjectMember from "./InviteProjectMember";
-import TagInput, { techStackOptions } from "../common/TagInput";
+import TagInput from "../common/TagInput";
 import {
   getProjectMembers,
   updateProject,
@@ -8,6 +9,7 @@ import {
   removeMember,
   getProjectActivity,
   sendProjectInvite,
+  updateMemberRoles,
 } from "../../api/projectApi";
 
 import {
@@ -21,7 +23,31 @@ import {
   History,
 } from "lucide-react";
 
+// 역할 옵션 목록
+export const ROLE_OPTIONS = [
+  "팀장(PL/PM)",
+  "기획/UX",
+  "디자인/UI",
+  "프론트엔드",
+  "백엔드",
+  "풀스택",            // (선택)
+  "DB/데이터 모델링",
+  "데이터/AI",
+  "데브옵스/인프라",
+  "QA/테스트",
+  "보안",              // (선택)
+  "문서/기록",
+  "운영/서비스 관리",  // (선택)
+];
+
+const normalizeRoles = (rolesArray) => {
+  const set = new Set(ROLE_OPTIONS);
+  return (Array.isArray(rolesArray) ? rolesArray : [])
+    .filter((r) => typeof r === "string" && set.has(r));
+};
+
 const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
+  const currentUserId = localStorage.getItem('userId');
   const [members, setMembers] = useState([]);
   const [activityLogs, setActivityLogs] = useState([]);
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -33,6 +59,37 @@ const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
   const [showAllLogs, setShowAllLogs] = useState(false);
   const [topic, setTopic] = useState(project.topic || "");
   const [techStack, setTechStack] = useState(project.tech_stack || []);
+  const [showRoleModal, setShowRoleModal] = useState(false);
+  const [selectedRoles, setSelectedRoles] = useState([]);
+  const [meId, setMeId] = useState(null);
+  const [selectedUserId, setSelectedUserId] = useState(null);
+
+  
+  // 마운트 시 내 정보 로드
+useEffect(() => {
+  getCurrentUser()
+    .then((me) => setMeId(me.user_id))
+    .catch(() => setMeId(null));
+}, []);
+
+// leaderId 안전 계산 (members 로딩 이후도 커버)
+const leaderId = project.leader_id ?? members.find(m => m.is_leader)?.user_id ?? null;
+
+  // 1) 바깥 클릭 시 닫기: 상단 useEffect 추가
+useEffect(() => {
+  const handleOutsideClick = () => setOpenMenuId(null);
+  document.addEventListener("click", handleOutsideClick);
+  return () => document.removeEventListener("click", handleOutsideClick);
+}, []);
+
+// (옵션) ESC로 닫기
+useEffect(() => {
+  const onKeyDown = (e) => {
+    if (e.key === "Escape") setOpenMenuId(null);
+  };
+  document.addEventListener("keydown", onKeyDown);
+  return () => document.removeEventListener("keydown", onKeyDown);
+}, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -61,7 +118,7 @@ const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
   const handleInviteMember = async () => {
     if (selectedFriend) {
       try {
-        await sendProjectInvite(project.project_id, selectedFriend.id); // 초대 API 호출
+        await sendProjectInvite(project.project_id, selectedFriend.id);
         setShowInviteModal(false);
         setSelectedFriend(null);
       } catch (err) {
@@ -138,8 +195,35 @@ const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
   };
 
   const toggleMenu = (userId) => {
+    console.log("Toggling menu for userId:", userId, "currentUserId:", currentUserId, "leaderId:", project.leader_id);
     setOpenMenuId((prev) => (prev === userId ? null : userId));
   };
+
+const handleOpenRoleModal = (userId, roles) => {
+  setSelectedUserId(userId ?? null);
+  setSelectedRoles(roles || []);
+  setShowRoleModal(true);
+};
+
+  // --- 저장 버튼 핸들러 ---
+const handleSaveRoles = async () => {
+  if (!selectedUserId) return;
+
+  try {
+    // ✅ 방어: 허용되지 않은 값 제거 후 저장
+    const cleaned = normalizeRoles(selectedRoles);
+    await updateMemberRoles(project.project_id, Number(selectedUserId), { roles: cleaned });
+
+    // 저장 후 멤버 목록 갱신
+    const membersRes = await getProjectMembers(project.project_id);
+    setMembers(membersRes.filter((m) => m.status === "accepted"));
+
+    setShowRoleModal(false);
+  } catch (err) {
+    console.error("역할 저장 실패", err);
+    alert("역할 저장에 실패했습니다.");
+  }
+};
 
   const displayedLogs = showAllLogs ? activityLogs : activityLogs.slice(0, 5);
 
@@ -205,14 +289,15 @@ const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {[...members]
-              .sort((a, b) => (b.is_leader ? 1 : 0) - (a.is_leader ? 1 : 0)) // 팀장 맨 앞
+              .sort((a, b) => (b.is_leader ? 1 : 0) - (a.is_leader ? 1 : 0))
               .map((m) => (
                 <div
                   key={m.user_id}
-                  onClick={() => {
-                    if (project.leader_id !== m.user_id) toggleMenu(m.user_id);
-                  }}
                   className="relative group bg-white border hover:border-green-500 transition rounded-xl p-4 shadow-sm cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleMenu(m.user_id);
+                  }}
                 >
                   <div className="flex justify-between items-start">
                     <div>
@@ -222,43 +307,63 @@ const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
                           <span className="text-green-600 text-sm">(팀장)</span>
                         )}
                       </p>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {m.role || "역할 미지정"}
-                      </p>
                     </div>
+                  </div>
 
-                    {/* 팀장 자신일 경우 펼침 버튼 숨김 */}
-                    {project.leader_id !== m.user_id && (
-                      <div className="text-gray-400 group-hover:text-gray-800 text-lg leading-none">
-                        ⌄
-                      </div>
-                    )}
+                  <div className="mt-2">
+                    <p className="text-xs text-gray-500 mb-1">역할:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {(m.roles || []).map((role) => (
+                        <span key={role} className="text-xs bg-gray-100 px-2 py-1 rounded">
+                          {role}
+                        </span>
+                      ))}
+                      {(!m.roles || m.roles.length === 0) && (
+                        <span className="text-xs text-gray-500">역할 미지정</span>
+                      )}
+                    </div>
                   </div>
 
                   {openMenuId === m.user_id && (
-                    <div className="absolute top-full left-0 mt-2 w-full bg-white border rounded shadow z-10">
-                      <button
-                        onClick={() => handleRemoveMember(m.user_id)}
-                        className="block w-full px-4 py-2 text-sm text-left hover:bg-gray-100"
-                      >
-                        팀원 방출
-                      </button>
-                      {!m.is_leader && (
-                        <button
-                          onClick={() => handleTransferLeader(m.user_id)}
-                          className="block w-full px-4 py-2 text-sm text-left hover:bg-gray-100"
-                        >
-                          팀장 권한 부여
-                        </button>
-                      )}
-                    </div>
-                  )}
+  <div
+    className="absolute top-full left-0 mt-2 w-full bg-white border rounded shadow-lg z-50 min-h-[40px] p-2"
+    style={{ minWidth: "150px" }}
+    onClick={(e) => e.stopPropagation()}
+    onMouseDown={(e) => e.stopPropagation()}
+  >
+    {/* (A) 내가 리더이고, 내 카드가 아닐 때 */}
+    {meId && leaderId && meId === leaderId && meId !== m.user_id && (
+      <>
+        <button onClick={() => handleRemoveMember(m.user_id)} className="block w-full px-4 py-2 text-sm text-left hover:bg-gray-100">
+          팀원 방출
+        </button>
+        {!m.is_leader && (
+          <button onClick={() => handleTransferLeader(m.user_id)} className="block w-full px-4 py-2 text-sm text-left hover:bg-gray-100">
+            팀장 권한 부여
+          </button>
+        )}
+      </>
+    )}
+
+    {/* (B) 내 카드일 때 */}
+    {meId && meId === m.user_id && (
+  <button
+    onClick={() => handleOpenRoleModal(m.user_id, m.roles)}
+    className="block w-full px-4 py-2 text-sm text-left hover:bg-gray-100"
+  >
+    역할 수정
+  </button>
+)}
+
+    {/* 가드: 위 조건 둘 다 실패하면 메뉴 숨김(또는 안내 넣기) */}
+    {!meId && <span className="text-xs text-gray-500">로그인 정보 확인 중…</span>}
+  </div>
+)}
                 </div>
               ))}
           </div>
         </div>
 
-        {/* 토픽 */}
         <div>
           <h2 className="font-semibold text-lg flex items-center gap-2 mb-1">
             <Tag size={18} className="text-emerald-600" />
@@ -269,13 +374,12 @@ const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
             type="text"
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
-            onBlur={(e) => handleUpdateProject(techStack, e.target.value)} // 👈 최신 topic 직접 전달
+            onBlur={(e) => handleUpdateProject(techStack, e.target.value)}
             placeholder="예: AI 기반 추천 시스템"
             className="w-full border rounded p-3 text-sm focus:outline-none focus:border-green-600 transition-all"
           />
         </div>
 
-        {/* 기술 스택 */}
         <div>
           <h2 className="font-semibold text-lg flex items-center gap-2 mb-1">
             <SettingsIcon size={18} className="text-green-600" />
@@ -285,7 +389,7 @@ const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
           <TagInput
             tags={techStack}
             setTags={setTechStack}
-            suggestions={techStackOptions}
+            suggestions={["React", "Node.js", "Python", "Django", "PostgreSQL", "MongoDB", "JavaScript", "TypeScript", "CSS", "HTML"]}
             placeholder="기술 스택 입력"
             max={10}
             onTagsChange={handleUpdateProject}
@@ -294,7 +398,6 @@ const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
       </div>
 
       <div className="w-80 space-y-4">
-        {/* 프로젝트 상태 */}
         <div className="bg-white border rounded p-4">
           <p className="text-sm font-semibold mb-3 flex items-center gap-2">
             <Activity size={16} className="text-indigo-500" />
@@ -307,7 +410,6 @@ const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
           </div>
         </div>
 
-        {/* 활동 기록 */}
         <div className="bg-white border rounded p-4">
           <p className="text-sm font-semibold mb-3 flex items-center gap-2">
             <History size={18} className="text-sky-600" />
@@ -353,6 +455,47 @@ const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
           onClose={() => setShowInviteModal(false)}
           onInvite={handleInviteMember}
         />
+      )}
+
+      {showRoleModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+            <h2 className="text-xl font-bold mb-4">역할 수정</h2>
+           <div className="space-y-2 max-h-72 overflow-auto pr-1">
+  {ROLE_OPTIONS.map((role) => (
+    <label key={role} className="flex items-center gap-2">
+      <input
+        type="checkbox"
+        checked={selectedRoles.includes(role)}
+        onChange={(e) => {
+          if (e.target.checked) {
+            setSelectedRoles((prev) => Array.from(new Set([...prev, role])));
+          } else {
+            setSelectedRoles((prev) => prev.filter((r) => r !== role));
+          }
+        }}
+      />
+      <span className="text-sm">{role}</span>
+    </label>
+  ))}
+</div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                onClick={() => setShowRoleModal(false)}
+                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+              >
+                취소
+              </button>
+              <button
+  onClick={handleSaveRoles}
+  disabled={!selectedUserId}
+  className={`px-4 py-2 rounded text-white ${selectedUserId ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-400 cursor-not-allowed"}`}
+>
+  확인
+</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

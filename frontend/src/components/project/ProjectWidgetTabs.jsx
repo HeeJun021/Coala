@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import ProjectDetailPanel from "./ProjectDetailPanel";
-import MemoTab from "./MemoTab";
 import TaskCalendarView from "./TaskCalendarView";
 import ProjectTasksTab from "./ProjectTasksTab";
 import TimelineWidget from "./TimelineWidget";
@@ -10,17 +9,20 @@ import { getErds } from "../../api/erd/erdApi";
 import { getMyTasks } from "../../api/taskApi";
 import ErdListPanel from "../erd/list/ErdListPanel";
 import DocsListPanel from "./DocsListPanel";
+import TemplatesListPanel from "./TemplatesListPanel";
+import CodeEditorPanel from "./CodeEditorPanel";
+import GitHubPanel from "./GitHubPanel";
 
 const WIDGET_TABS = [
   { key: "overview", label: "개요" },
   { key: "erd", label: "ERD 설계" },
   { key: "git", label: "GitHub" },
   { key: "docs", label: "문서" },
-  { key: "chat", label: "채팅" },
   { key: "calendar", label: "캘린더" },
-  { key: "memo", label: "메모" },
   { key: "tasks", label: "작업" },
   { key: "timeline", label: "타임라인" },
+  { key: "templates", label: "템플릿" },
+  { key: "code_editor", label: "코드 에디터" },
 ];
 
 const ProjectWidgetTabs = ({ project, onNameChange, defaultTab = "overview" }) => {
@@ -129,7 +131,6 @@ const ProjectWidgetTabs = ({ project, onNameChange, defaultTab = "overview" }) =
     setDraggedTab(null);
   };
 
-  // ESLint 오류 수정: 정의 누락됐던 함수 추가
   const handleDragOverTrash = (e) => {
     e.preventDefault();
     setIsOverTrash(true);
@@ -211,8 +212,6 @@ const ProjectWidgetTabs = ({ project, onNameChange, defaultTab = "overview" }) =
             onSelect={() => {}}
           />
         );
-      case "memo":
-        return <MemoTab />;
       case "calendar":
         return (
           <TaskCalendarView
@@ -224,10 +223,16 @@ const ProjectWidgetTabs = ({ project, onNameChange, defaultTab = "overview" }) =
         );
       case "tasks":
         return <ProjectTasksTab project={currentProject} />;
+      case "git":
+        return <GitHubPanel project={currentProject} />;
       case "timeline":
         return <TimelineWidget project={currentProject} />;
       case "docs":
         return <DocsListPanel project={currentProject} />;
+      case "templates":
+        return <TemplatesListPanel project={currentProject} />;
+      case "code_editor":
+        return <CodeEditorPanel project={currentProject} />;
       default:
         return (
           <div className="p-10 text-gray-500 text-sm">

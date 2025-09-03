@@ -3,11 +3,11 @@ import {
   Database,
   GitBranch,
   FileText,
-  MessageCircle,
   Calendar,
-  StickyNote,
   CheckSquare,
   Activity,
+  LayoutTemplate, // templates 아이콘 추가
+  Code, // code_editor 아이콘 추가
   X,
 } from "lucide-react";
 import { createProject } from "../../api/projectApi";
@@ -48,19 +48,9 @@ const WIDGET_OPTIONS = [
     icon: <FileText size={16} className="text-green-700" />,
   },
   {
-    key: "chat",
-    label: "채팅",
-    icon: <MessageCircle size={16} className="text-blue-500" />,
-  },
-  {
     key: "calendar",
     label: "캘린더",
     icon: <Calendar size={16} className="text-red-500" />,
-  },
-  {
-    key: "memo",
-    label: "메모",
-    icon: <StickyNote size={16} className="text-yellow-600" />,
   },
   {
     key: "tasks",
@@ -72,6 +62,16 @@ const WIDGET_OPTIONS = [
     label: "타임라인",
     icon: <Activity size={16} className="text-pink-500" />,
   },
+  {
+    key: "templates",
+    label: "템플릿",
+    icon: <LayoutTemplate size={16} className="text-blue-600" />, // templates 추가
+  },
+  {
+    key: "code_editor",
+    label: "코드 에디터",
+    icon: <Code size={16} className="text-green-600" />, // code_editor 추가
+  },
 ];
 
 const ProjectCreateModal = ({ onClose, onCreated }) => {
@@ -80,25 +80,20 @@ const ProjectCreateModal = ({ onClose, onCreated }) => {
 
   const toggleWidget = (key) => {
     setSelectedWidgets((prev) =>
-      prev.includes(key) ? prev.filter((item) => item !== key) : [...prev, key]
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
     );
   };
 
   const handleSubmit = async () => {
-    if (!projectName.trim()) return alert("프로젝트 이름을 입력하세요");
-
+    if (!projectName.trim()) return alert("프로젝트 이름을 입력하세요.");
+    const widgetData = WIDGET_OPTIONS.reduce(
+      (acc, opt) => ({ ...acc, [opt.key]: selectedWidgets.includes(opt.key) }),
+      {}
+    );
+    const widgetOrder = ["overview", ...selectedWidgets];
     try {
-      const widgetData = {};
-      const widgetOrder = ["overview"];
-      WIDGET_OPTIONS.forEach((opt) => {
-        const isSelected = selectedWidgets.includes(opt.key);
-        widgetData[opt.key] = isSelected;
-        if (isSelected) widgetOrder.push(opt.key);
-      });
-
       const res = await createProject({
         name: projectName,
-        description: null,
         widgets: widgetData,
         widget_order: widgetOrder,
       });
@@ -136,7 +131,7 @@ const ProjectCreateModal = ({ onClose, onCreated }) => {
                 onClick={() => toggleWidget(opt.key)}
                 className={`border px-4 py-2 rounded text-sm text-left transition ${
                   selectedWidgets.includes(opt.key)
-                   ? "bg-green-50 border-green-400"
+                    ? "bg-green-50 border-green-400"
                     : "bg-white"
                 } text-black hover:bg-gray-100`}
               >
