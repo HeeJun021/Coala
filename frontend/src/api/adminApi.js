@@ -51,6 +51,22 @@ export const fetchAdminUserDetail = async (userId) => {
   return response.data;
 };
 
+// 🔹 (추가) 단일 사용자 프로필 조회 별칭 — 상세 페이지에서 쓰기 좋게 제공
+export const getUserProfile = async (userId) => {
+  // 내부적으로는 같은 엔드포인트 사용
+  return await fetchAdminUserDetail(userId);
+};
+
+// 🔹 (추가) 닉네임/이름 표시용 헬퍼 — 안전하게 표기 문자열만 반환
+export const getUserNickname = async (userId) => {
+  try {
+    const u = await getUserProfile(userId);
+    return u?.nickname ?? u?.name ?? u?.display_name ?? "알 수 없음";
+  } catch {
+    return "알 수 없음";
+  }
+};
+
 // 게시판 종류에 따라 전체 게시글 목록 조회
 export const fetchAdminPosts = async (boardType) => {
   const response = await apiClient.get(`/admin/posts`, {

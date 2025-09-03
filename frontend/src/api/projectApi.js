@@ -76,3 +76,9 @@ export const acceptProjectInvite = (projectId) =>
 // 3. 프로젝트 초대 거절
 export const rejectProjectInvite = (projectId) =>
   apiClient.post(`/projects/${projectId}/reject`);
+
+// 멤버 역할 업데이트
+export const updateMemberRoles = async (projectId, userId, roles) => {
+  const response = await apiClient.patch(`/projects/${projectId}/members/${userId}/roles`, roles);
+  return response.data;
+};

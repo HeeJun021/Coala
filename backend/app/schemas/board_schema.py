@@ -31,7 +31,11 @@ class PostResponse(PostBase):
     comment_count: int
     created_at: datetime
     updated_at: datetime
+
+    # 👇 추가된 작성자 정보 필드
+    author_id: Optional[int] = None
     author_nickname: Optional[str] = None
+
     accepted_count: Optional[int] = 1 
 
     model_config = {"from_attributes": True}

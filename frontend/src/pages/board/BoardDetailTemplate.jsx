@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, { useState } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { dracula } from "react-syntax-highlighter/dist/esm/styles/prism";
 import CommentEditor from "../../components/board/Comment/CommentEditor";
@@ -6,14 +6,7 @@ import apiClient from "../../api/apiClient";
 import { useAuth } from "../../context/AuthContext";
 import UserNameWithProfile from "../../components/board/profcard/UserNameWithProfile";
 import AlertModal from "../../components/AlertModal";
-import {
-  Heart,
-  Edit,
-  Trash2,
-  AlertCircle,
-  Reply,
-} from "lucide-react";
-
+import { Heart, Edit, Trash2, AlertCircle, Reply } from "lucide-react";
 
 const BoardDetailTemplate = ({
   boardName,
@@ -53,6 +46,9 @@ const BoardDetailTemplate = ({
 
   if (!post) return <div className="p-8">로딩 중...</div>;
 
+  // ✅ 디버깅용: 실제 post 구조 확인
+  console.log("🟢 post 데이터:", post);
+
   const safeHandleCommentSubmit = (content) => {
     if (typeof handleCommentSubmit === "function") {
       handleCommentSubmit(content);
@@ -67,10 +63,14 @@ const BoardDetailTemplate = ({
     }
 
     try {
-      await apiClient.post(`/board/post/${post.post_id}/import_code`, {}, {
-        params: { user_id: currentUser.user_id },
-        withCredentials: true,
-      });
+      await apiClient.post(
+        `/board/post/${post.post_id}/import_code`,
+        {},
+        {
+          params: { user_id: currentUser.user_id },
+          withCredentials: true,
+        }
+      );
       setModalMessage("코드가 성공적으로 복사되었습니다!");
       setIsModalOpen(true);
       window.dispatchEvent(new Event("refreshDirectory"));
@@ -81,15 +81,25 @@ const BoardDetailTemplate = ({
 
   return (
     <div className="max-w-4xl mx-auto p-8 bg-white min-h-screen">
+      {/* ✅ 작성자 표시 */}
       <div className="flex items-center gap-2 mb-4 text-gray-600 text-sm">
         <span>작성자:</span>
         {post?.author_id ? (
           <UserNameWithProfile
             userId={post.author_id}
-            nickname={post.nickname || post.author_nickname || "작성자"}
+            nickname={
+              post.author_nickname ||
+              post.nickname ||
+              post.user?.nickname ||
+              post.author?.nickname ||
+              post.author_name ||
+              "작성자"
+            }
           />
         ) : (
-          <span className="font-semibold">{post.author_nickname}</span>
+          <span className="font-semibold">
+            {post?.author_nickname || post?.author_name || "알 수 없음"}
+          </span>
         )}
       </div>
 
@@ -121,27 +131,41 @@ const BoardDetailTemplate = ({
         </div>
       )}
 
+      {/* 좋아요/신고/수정/삭제 */}
       <div className="flex items-center gap-4 text-sm text-gray-600 mt-4">
-        {/* 좋아요 아이콘 + 카운트 */}
-        <div className="flex items-center gap-1 text-red-500 cursor-pointer" onClick={handleLike}>
-          <Heart size={18} fill={liked ? "currentColor" : "none"} stroke="currentColor" />
+        <div
+          className="flex items-center gap-1 text-red-500 cursor-pointer"
+          onClick={handleLike}
+        >
+          <Heart
+            size={18}
+            fill={liked ? "currentColor" : "none"}
+            stroke="currentColor"
+          />
           <span className="text-gray-700">{likeCount}명 좋아요</span>
         </div>
 
-        {/* 신고 */}
-        <button onClick={handleReport} className="flex items-center gap-1 text-gray-500 hover:underline">
+        <button
+          onClick={handleReport}
+          className="flex items-center gap-1 text-gray-500 hover:underline"
+        >
           <AlertCircle size={16} />
           신고
         </button>
 
-        {/* 수정/삭제 (작성자만) */}
         {isAuthor && (
           <>
-            <button onClick={handleEdit} className="flex items-center gap-1 text-yellow-600 hover:underline">
+            <button
+              onClick={handleEdit}
+              className="flex items-center gap-1 text-yellow-600 hover:underline"
+            >
               <Edit size={16} />
               수정
             </button>
-            <button onClick={handleDelete} className="flex items-center gap-1 text-red-600 hover:underline">
+            <button
+              onClick={handleDelete}
+              className="flex items-center gap-1 text-red-600 hover:underline"
+            >
               <Trash2 size={16} />
               삭제
             </button>
@@ -149,6 +173,7 @@ const BoardDetailTemplate = ({
         )}
       </div>
 
+      {/* 댓글 목록 */}
       {commentType !== "none" && parentComments.length > 0 && (
         <div className="mt-8">
           <h3 className="text-lg font-semibold mb-2">댓글 목록</h3>
@@ -158,8 +183,11 @@ const BoardDetailTemplate = ({
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="text-xs text-gray-500 mb-1">
-                      {c?.user_id && c?.nickname && (
-                        <UserNameWithProfile userId={c.user_id} nickname={c.nickname} />
+                      {c?.user_id && (
+                        <UserNameWithProfile
+                          userId={c.user_id}
+                          nickname={c.nickname || "작성자"}
+                        />
                       )}
                     </div>
                     {editingId === c.comment_id ? (
@@ -219,7 +247,11 @@ const BoardDetailTemplate = ({
                         />
                         <Heart
                           size={16}
-                          fill={commentLikes[c.comment_id]?.liked ? "currentColor" : "none"}
+                          fill={
+                            commentLikes[c.comment_id]?.liked
+                              ? "currentColor"
+                              : "none"
+                          }
                           stroke="currentColor"
                           className="text-red-500 cursor-pointer"
                           onClick={() => handleCommentLike(c.comment_id)}
@@ -232,6 +264,7 @@ const BoardDetailTemplate = ({
                   </div>
                 </div>
 
+                {/* 대댓글 */}
                 {replyTargetId === c.comment_id && (
                   <div className="mt-2 ml-4">
                     <input
@@ -261,10 +294,16 @@ const BoardDetailTemplate = ({
                 {childComments
                   .filter((r) => r.parent_comment_id === c.comment_id)
                   .map((r) => (
-                    <div key={r.comment_id} className="ml-6 mt-2 pl-2 border-l text-sm">
+                    <div
+                      key={r.comment_id}
+                      className="ml-6 mt-2 pl-2 border-l text-sm"
+                    >
                       <div className="text-xs text-gray-500 mb-1">
-                        {r?.user_id && r?.nickname && (
-                          <UserNameWithProfile userId={r.user_id} nickname={r.nickname} />
+                        {r?.user_id && (
+                          <UserNameWithProfile
+                            userId={r.user_id}
+                            nickname={r.nickname || "작성자"}
+                          />
                         )}
                       </div>
                       <div className="flex justify-between items-center">
@@ -315,7 +354,11 @@ const BoardDetailTemplate = ({
                               />
                               <Heart
                                 size={16}
-                                fill={commentLikes[r.comment_id]?.liked ? "currentColor" : "none"}
+                                fill={
+                                  commentLikes[r.comment_id]?.liked
+                                    ? "currentColor"
+                                    : "none"
+                                }
                                 stroke="currentColor"
                                 className="text-red-500 cursor-pointer"
                                 onClick={() => handleCommentLike(r.comment_id)}
@@ -335,8 +378,8 @@ const BoardDetailTemplate = ({
         </div>
       )}
 
-            {commentType !== "none" && (
-        <>
+      {/* 댓글 작성 */}
+      {commentType !== "none" && (
         <div className="pt-6 mt-6 border-t border-gray-200">
           <h3 className="text-lg font-semibold mb-2">댓글 작성</h3>
           {commentType === "code" ? (
@@ -350,7 +393,6 @@ const BoardDetailTemplate = ({
                 safeHandleCommentSubmit(content);
                 e.target.comment.value = "";
               }}
-              className="mt-"
             >
               <textarea
                 name="comment"
@@ -365,9 +407,9 @@ const BoardDetailTemplate = ({
               </button>
             </form>
           )}
-          </div>
-        </>
+        </div>
       )}
+
       <AlertModal
         isOpen={isModalOpen}
         message={modalMessage}
