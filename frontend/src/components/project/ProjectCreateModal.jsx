@@ -4,9 +4,10 @@ import {
   GitBranch,
   FileText,
   Calendar,
-  StickyNote,
   CheckSquare,
   Activity,
+  LayoutTemplate, // templates 아이콘 추가
+  Code, // code_editor 아이콘 추가
   X,
 } from "lucide-react";
 import { createProject } from "../../api/projectApi";
@@ -52,11 +53,6 @@ const WIDGET_OPTIONS = [
     icon: <Calendar size={16} className="text-red-500" />,
   },
   {
-    key: "memo",
-    label: "메모",
-    icon: <StickyNote size={16} className="text-yellow-600" />,
-  },
-  {
     key: "tasks",
     label: "작업",
     icon: <CheckSquare size={16} className="text-indigo-600" />,
@@ -66,6 +62,16 @@ const WIDGET_OPTIONS = [
     label: "타임라인",
     icon: <Activity size={16} className="text-pink-500" />,
   },
+  {
+    key: "templates",
+    label: "템플릿",
+    icon: <LayoutTemplate size={16} className="text-blue-600" />, // templates 추가
+  },
+  {
+    key: "code_editor",
+    label: "코드 에디터",
+    icon: <Code size={16} className="text-green-600" />, // code_editor 추가
+  },
 ];
 
 const ProjectCreateModal = ({ onClose, onCreated }) => {
@@ -74,25 +80,20 @@ const ProjectCreateModal = ({ onClose, onCreated }) => {
 
   const toggleWidget = (key) => {
     setSelectedWidgets((prev) =>
-      prev.includes(key) ? prev.filter((item) => item !== key) : [...prev, key]
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
     );
   };
 
   const handleSubmit = async () => {
-    if (!projectName.trim()) return alert("프로젝트 이름을 입력하세요");
-
+    if (!projectName.trim()) return alert("프로젝트 이름을 입력하세요.");
+    const widgetData = WIDGET_OPTIONS.reduce(
+      (acc, opt) => ({ ...acc, [opt.key]: selectedWidgets.includes(opt.key) }),
+      {}
+    );
+    const widgetOrder = ["overview", ...selectedWidgets];
     try {
-      const widgetData = {};
-      const widgetOrder = ["overview"];
-      WIDGET_OPTIONS.forEach((opt) => {
-        const isSelected = selectedWidgets.includes(opt.key);
-        widgetData[opt.key] = isSelected;
-        if (isSelected) widgetOrder.push(opt.key);
-      });
-
       const res = await createProject({
         name: projectName,
-        description: null,
         widgets: widgetData,
         widget_order: widgetOrder,
       });

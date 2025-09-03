@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.dependencies.auth import get_current_user
-from app.schemas.project_schemas import ProjectCreateRequest, ProjectUpdateRequest
-from app.models.project_models import Project, ProjectMembers, ProjectWidgets, ProjectActivityLog
+from app.schemas.project_schemas import ProjectCreateRequest, ProjectUpdateRequest, ProjectTemplateCreateRequest, ProjectTemplateResponse
+from app.models.project_models import Project, ProjectMembers, ProjectWidgets, ProjectActivityLog, ProjectTemplate
 from datetime import datetime
 from app.models.user import User
 from typing import List
@@ -26,8 +26,8 @@ def get_my_projects(db: Session = Depends(get_db), current_user: User = Depends(
             "name": p.name,
             "description": p.description,
             "progress": p.progress,
-            "topic": p.topic, 
-            "tech_stack": p.tech_stack, 
+            "topic": p.topic,
+            "tech_stack": p.tech_stack,
             "leader_id": (
                 db.query(ProjectMembers)
                 .filter(ProjectMembers.project_id == p.project_id, ProjectMembers.is_leader == True)
@@ -63,11 +63,10 @@ def get_project_members(project_id: int, db: Session = Depends(get_db)):
             "email": m[0].email,
             "is_leader": m[1],
             "status": m[2],
-            "roles": m[3] or [],  # roles 컬럼이 없으므로 기본값으로 빈 배열 제공
+            "roles": m[3] or [],
         }
         for m in members
     ]
-
 
 # 3. 프로젝트 생성
 @router.post("")
@@ -76,44 +75,46 @@ def create_project(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    new_project = Project(
+    project = Project(
         name=project_data.name,
         description=project_data.description,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
         widget_order=project_data.widget_order,
     )
-    db.add(new_project)
-    db.flush()
+    db.add(project)
+    db.commit()
+    db.refresh(project)
 
-    # 팀 리더 등록
-    member = ProjectMembers(
-        project_id=new_project.project_id,
-        user_id=current_user.user_id,
-        is_leader=True,
-        status="accepted" 
-    )
-    db.add(member)
-
-    # 위젯 저장
+    # 위젯 추가
     for widget_type, enabled in project_data.widgets.dict().items():
         if enabled:
-            db.add(ProjectWidgets(project_id=new_project.project_id, widget_type=widget_type))
-
-    # 활동 기록 추가
+            db.add(ProjectWidgets(project_id=project.project_id, widget_type=widget_type))
+    
+    # 생성자를 팀장으로 추가
+    db.add(ProjectMembers(
+        project_id=project.project_id,
+        user_id=current_user.user_id,
+        is_leader=True,
+        status="accepted"
+    ))
+    
+    # 활동 로그 추가
     db.add(ProjectActivityLog(
-        project_id=new_project.project_id,
+        project_id=project.project_id,
         actor_id=current_user.user_id,
         action=f"{current_user.nickname}이(가) 프로젝트를 생성함",
         created_at=datetime.now()
     ))
-
+    
     db.commit()
     return {
-        "project_id": new_project.project_id,
-        "name": new_project.name,
-        "description": new_project.description,
+        "project_id": project.project_id,
+        "name": project.name,
+        "description": project.description,
         "widgets": project_data.widgets,
-        "widget_order": new_project.widget_order,
-        "created_at": new_project.created_at
+        "widget_order": project.widget_order,
+        "created_at": project.created_at
     }
 
 # 4. 프로젝트 수정
@@ -127,160 +128,55 @@ def update_project(
     project = db.query(Project).filter(Project.project_id == project_id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
-
-    # 팀원 확인 (현재는 리더만 수정 가능으로 제한)
-    member = db.query(ProjectMembers).filter(
+    
+    # 리더 여부 확인
+    current_leader = db.query(ProjectMembers).filter(
         ProjectMembers.project_id == project_id,
         ProjectMembers.user_id == current_user.user_id,
         ProjectMembers.is_leader == True
     ).first()
-    if not member:
+    if not current_leader:
         raise HTTPException(status_code=403, detail="Only leader can update project")
 
-    # 프로젝트 정보 업데이트
-    if project_data.name:
+    # 업데이트 적용
+    if project_data.name is not None:
         project.name = project_data.name
     if project_data.description is not None:
         project.description = project_data.description
-    if project_data.widget_order is not None:
-        project.widget_order = project_data.widget_order
     if project_data.topic is not None:
         project.topic = project_data.topic
     if project_data.tech_stack is not None:
         project.tech_stack = project_data.tech_stack
-
-    # 위젯 업데이트
+    if project_data.widget_order is not None:
+        project.widget_order = project_data.widget_order
     if project_data.widgets is not None:
+        # 기존 위젯 삭제
         db.query(ProjectWidgets).filter(ProjectWidgets.project_id == project_id).delete()
+        # 새 위젯 추가
         for widget_type, enabled in project_data.widgets.dict().items():
             if enabled:
                 db.add(ProjectWidgets(project_id=project_id, widget_type=widget_type))
 
-    # 활동 기록 추가
-    db.add(ProjectActivityLog(
-        project_id=project_id,
-        actor_id=current_user.user_id,
-        action=f"{current_user.nickname}이(가) 프로젝트 정보를 업데이트함",
-        created_at=datetime.now()
-    ))
-
+    project.updated_at = datetime.now()
     db.commit()
-    return {"message": "Project updated successfully"}
+    db.refresh(project)
+    
+    return {
+        "project_id": project.project_id,
+        "name": project.name,
+        "description": project.description,
+        "topic": project.topic,
+        "tech_stack": project.tech_stack,
+        "widgets": {
+            widget.widget_type: True
+            for widget in db.query(ProjectWidgets).filter(ProjectWidgets.project_id == project_id).all()
+        },
+        "widget_order": project.widget_order
+    }
 
-# 5. 멤버 추가
-@router.post("/{project_id}/members")
-def add_project_member(
-    project_id: int,
-    data: dict,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    project = db.query(Project).filter(Project.project_id == project_id).first()
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-
-    # 리더만 멤버 추가 가능
-    member = db.query(ProjectMembers).filter(
-        ProjectMembers.project_id == project_id,
-        ProjectMembers.user_id == current_user.user_id,
-        ProjectMembers.is_leader == True
-    ).first()
-    if not member:
-        raise HTTPException(status_code=403, detail="Only leader can add members")
-
-    user_id = data.get("user_id")
-    if not user_id:
-        raise HTTPException(status_code=400, detail="User ID is required")
-
-    user = db.query(User).filter(User.user_id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    # 이미 멤버인지 확인
-    existing_member = db.query(ProjectMembers).filter(
-        ProjectMembers.project_id == project_id,
-        ProjectMembers.user_id == user_id
-    ).first()
-    if existing_member:
-        raise HTTPException(status_code=400, detail="User is already a member")
-
-    new_member = ProjectMembers(
-        project_id=project_id,
-        user_id=user_id,
-        is_leader=False
-    )
-    db.add(new_member)
-
-    # 활동 기록 추가
-    db.add(ProjectActivityLog(
-        project_id=project_id,
-        actor_id=current_user.user_id,
-        action=f"{current_user.nickname}이(가) {user.nickname}을(를) 팀에 추가함",
-        created_at=datetime.now()
-    ))
-
-    db.commit()
-    return {"message": "Member added successfully"}
-
-# 6. 멤버 방출
-@router.delete("/{project_id}/members/{user_id}")
-def remove_project_member(
-    project_id: int,
-    user_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    project = db.query(Project).filter(Project.project_id == project_id).first()
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-
-    # 리더만 멤버 방출 가능
-    member = db.query(ProjectMembers).filter(
-        ProjectMembers.project_id == project_id,
-        ProjectMembers.user_id == current_user.user_id,
-        ProjectMembers.is_leader == True
-    ).first()
-    if not member:
-        raise HTTPException(status_code=403, detail="Only leader can remove members")
-
-    # 방출 대상 확인
-    target_member = db.query(ProjectMembers).filter(
-        ProjectMembers.project_id == project_id,
-        ProjectMembers.user_id == user_id
-    ).first()
-    if not target_member:
-        raise HTTPException(status_code=404, detail="Member not found")
-
-    if target_member.is_leader:
-        raise HTTPException(status_code=400, detail="Cannot remove the leader")
-
-    user = db.query(User).filter(User.user_id == user_id).first()
-    db.delete(target_member)
-
-    # 활동 기록 추가
-    db.add(ProjectActivityLog(
-        project_id=project_id,
-        actor_id=current_user.user_id,
-        action=f"{current_user.nickname}이(가) {user.nickname}을(를) 팀에서 방출함",
-        created_at=datetime.now()
-    ))
-
-    db.commit()
-    return {"message": "Member removed successfully"}
-
-# 7. 팀장 권한 이전
+# 5. 팀장 권한 이전
 @router.post("/{project_id}/transfer-leader")
-def transfer_leader(
-    project_id: int,
-    data: dict,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    project = db.query(Project).filter(Project.project_id == project_id).first()
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-
-    # 현재 리더 확인
+def transfer_leader(project_id: int, data: dict, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     current_leader = db.query(ProjectMembers).filter(
         ProjectMembers.project_id == project_id,
         ProjectMembers.user_id == current_user.user_id,
@@ -293,7 +189,6 @@ def transfer_leader(
     if not new_leader_id:
         raise HTTPException(status_code=400, detail="New leader ID is required")
 
-    # 새 리더가 프로젝트 멤버인지 확인
     new_leader = db.query(ProjectMembers).filter(
         ProjectMembers.project_id == project_id,
         ProjectMembers.user_id == new_leader_id
@@ -301,9 +196,7 @@ def transfer_leader(
     if not new_leader:
         raise HTTPException(status_code=404, detail="New leader not found in project")
 
-    # 기존 리더의 is_leader를 False로 변경
     current_leader.is_leader = False
-    # 새 리더의 is_leader를 True로 변경
     new_leader.is_leader = True
 
     new_leader_user = db.query(User).filter(User.user_id == new_leader_id).first()
@@ -316,6 +209,68 @@ def transfer_leader(
 
     db.commit()
     return {"message": "Leadership transferred successfully"}
+
+# 6. 멤버 추가
+@router.post("/{project_id}/members")
+def add_member(project_id: int, data: dict, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    project = db.query(Project).filter(Project.project_id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    user_id = data.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=400, detail="User ID is required")
+    
+    user = db.query(User).filter(User.user_id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    existing_member = db.query(ProjectMembers).filter(
+        ProjectMembers.project_id == project_id,
+        ProjectMembers.user_id == user_id
+    ).first()
+    if existing_member:
+        raise HTTPException(status_code=400, detail="User is already a member")
+    
+    db.add(ProjectMembers(
+        project_id=project_id,
+        user_id=user_id,
+        status="pending"
+    ))
+    db.add(ProjectActivityLog(
+        project_id=project_id,
+        actor_id=current_user.user_id,
+        action=f"{current_user.nickname}이(가) {user.nickname}을(를) 프로젝트에 초대함",
+        created_at=datetime.now()
+    ))
+    
+    db.commit()
+    return {"message": "Member invited successfully"}
+
+# 7. 멤버 방출
+@router.delete("/{project_id}/members/{user_id}")
+def remove_member(project_id: int, user_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    member = db.query(ProjectMembers).filter(
+        ProjectMembers.project_id == project_id,
+        ProjectMembers.user_id == user_id
+    ).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Member not found")
+    
+    if member.is_leader:
+        raise HTTPException(status_code=403, detail="Cannot remove leader")
+    
+    user = db.query(User).filter(User.user_id == user_id).first()
+    db.add(ProjectActivityLog(
+        project_id=project_id,
+        actor_id=current_user.user_id,
+        action=f"{current_user.nickname}이(가) {user.nickname}을(를) 프로젝트에서 제외함",
+        created_at=datetime.now()
+    ))
+    
+    db.delete(member)
+    db.commit()
+    return {"message": "Member removed successfully"}
 
 # 8. 활동 기록 조회
 @router.get("/{project_id}/activity")
@@ -337,13 +292,13 @@ def get_project_activity(project_id: int, db: Session = Depends(get_db)):
         }
         for log in logs
     ]
-    
+
 # 9. 멤버 역할 업데이트
 @router.patch("/{project_id}/members/{user_id}/roles")
 def update_member_roles(
     project_id: int,
     user_id: int,
-    payload: UpdateMemberRolesRequest,   # ✅ 바디를 객체로 받기
+    payload: UpdateMemberRolesRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -361,3 +316,192 @@ def update_member_roles(
     db.commit()
     db.refresh(member)
     return {"message": "Roles updated successfully", "roles": member.roles}
+
+# 10. 프로젝트 초대 전송
+@router.post("/{project_id}/invite")
+def send_project_invite(project_id: int, data: dict, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    project = db.query(Project).filter(Project.project_id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    receiver_id = data.get("receiver_id")
+    if not receiver_id:
+        raise HTTPException(status_code=400, detail="Receiver ID is required")
+    
+    receiver = db.query(User).filter(User.user_id == receiver_id).first()
+    if not receiver:
+        raise HTTPException(status_code=404, detail="Receiver not found")
+    
+    existing_member = db.query(ProjectMembers).filter(
+        ProjectMembers.project_id == project_id,
+        ProjectMembers.user_id == receiver_id
+    ).first()
+    if existing_member:
+        raise HTTPException(status_code=400, detail="User is already invited or a member")
+    
+    db.add(ProjectMembers(
+        project_id=project_id,
+        user_id=receiver_id,
+        status="pending"
+    ))
+    db.add(ProjectActivityLog(
+        project_id=project_id,
+        actor_id=current_user.user_id,
+        action=f"{current_user.nickname}이(가) {receiver.nickname}을(를) 프로젝트에 초대함",
+        created_at=datetime.now()
+    ))
+    
+    db.commit()
+    return {"message": "Invitation sent successfully"}
+
+# 11. 프로젝트 초대 수락
+@router.post("/{project_id}/accept")
+def accept_project_invite(project_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    member = db.query(ProjectMembers).filter(
+        ProjectMembers.project_id == project_id,
+        ProjectMembers.user_id == current_user.user_id,
+        ProjectMembers.status == "pending"
+    ).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Invitation not found")
+    
+    member.status = "accepted"
+    db.add(ProjectActivityLog(
+        project_id=project_id,
+        actor_id=current_user.user_id,
+        action=f"{current_user.nickname}이(가) 프로젝트 초대를 수락함",
+        created_at=datetime.now()
+    ))
+    
+    db.commit()
+    return {"message": "Invitation accepted successfully"}
+
+# 12. 프로젝트 초대 거절
+@router.post("/{project_id}/reject")
+def reject_project_invite(project_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    member = db.query(ProjectMembers).filter(
+        ProjectMembers.project_id == project_id,
+        ProjectMembers.user_id == current_user.user_id,
+        ProjectMembers.status == "pending"
+    ).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Invitation not found")
+    
+    db.add(ProjectActivityLog(
+        project_id=project_id,
+        actor_id=current_user.user_id,
+        action=f"{current_user.nickname}이(가) 프로젝트 초대를 거절함",
+        created_at=datetime.now()
+    ))
+    
+    db.delete(member)
+    db.commit()
+    return {"message": "Invitation rejected successfully"}
+
+# 13. 템플릿 목록 조회
+@router.get("/{project_id}/templates")
+def get_templates(project_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    project = db.query(Project).filter(Project.project_id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    templates = db.query(ProjectTemplate).filter(ProjectTemplate.project_id == project_id).all()
+    return [
+        {
+            "template_id": t.template_id,
+            "title": t.title,
+            "description": t.description,
+            "widgets": t.widgets,
+            "added_at": t.added_at,
+        }
+        for t in templates
+    ]
+
+# 14. 템플릿 추가
+@router.post("/{project_id}/templates")
+def add_template(
+    project_id: int,
+    template_data: ProjectTemplateCreateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    project = db.query(Project).filter(Project.project_id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    # 리더 여부 확인
+    current_leader = db.query(ProjectMembers).filter(
+        ProjectMembers.project_id == project_id,
+        ProjectMembers.user_id == current_user.user_id,
+        ProjectMembers.is_leader == True
+    ).first()
+    if not current_leader:
+        raise HTTPException(status_code=403, detail="Only leader can add templates")
+
+    template = ProjectTemplate(
+        project_id=project_id,
+        title=template_data.title,
+        description=template_data.description,
+        widgets=template_data.widgets,
+        added_at=datetime.now()
+    )
+    db.add(template)
+    
+    # 활동 로그 추가
+    db.add(ProjectActivityLog(
+        project_id=project_id,
+        actor_id=current_user.user_id,
+        action=f"{current_user.nickname}이(가) 템플릿 '{template_data.title}'을(를) 추가함",
+        created_at=datetime.now()
+    ))
+    
+    db.commit()
+    db.refresh(template)
+    
+    return {
+        "template_id": template.template_id,
+        "title": template.title,
+        "description": template.description,
+        "widgets": template.widgets,
+        "added_at": template.added_at
+    }
+
+# 15. 템플릿 삭제
+@router.delete("/{project_id}/templates/{template_id}")
+def delete_template(
+    project_id: int,
+    template_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    project = db.query(Project).filter(Project.project_id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    template = db.query(ProjectTemplate).filter(
+        ProjectTemplate.project_id == project_id,
+        ProjectTemplate.template_id == template_id
+    ).first()
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+    
+    # 리더 여부 확인
+    current_leader = db.query(ProjectMembers).filter(
+        ProjectMembers.project_id == project_id,
+        ProjectMembers.user_id == current_user.user_id,
+        ProjectMembers.is_leader == True
+    ).first()
+    if not current_leader:
+        raise HTTPException(status_code=403, detail="Only leader can delete templates")
+    
+    db.add(ProjectActivityLog(
+        project_id=project_id,
+        actor_id=current_user.user_id,
+        action=f"{current_user.nickname}이(가) 템플릿 '{template.title}'을(를) 삭제함",
+        created_at=datetime.now()
+    ))
+    
+    db.delete(template)
+    db.commit()
+    
+    return {"message": "Template deleted successfully"}
