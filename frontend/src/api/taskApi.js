@@ -12,7 +12,7 @@ export const getTaskById = async (taskId) => {
 };
 
 export const createTask = async (taskData) => {
-  const response = await apiClient.post("/tasks", {
+  const response = await apiClient.post("/tasks/", {
     ...taskData,
     color: taskData.color || getRandomColor(),
   });

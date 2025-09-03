@@ -71,6 +71,18 @@ const MyTasksTab = ({ projects: propProjects }) => {
     fetchProjects();
   }, []);
 
+    const toggleCollaborator = (id) => {
+  setNewTask((prev) => {
+    const exists = prev.collaborator_ids?.includes(id);
+    return {
+      ...prev,
+      collaborator_ids: exists
+        ? prev.collaborator_ids.filter((x) => x !== id)
+        : [...(prev.collaborator_ids || []), id],
+    };
+  });
+};
+
   useEffect(() => {
     const fetchMembers = async () => {
       if (newTask.project_id || (selectedTask && selectedTask.project_id)) {
@@ -479,32 +491,38 @@ const MyTasksTab = ({ projects: propProjects }) => {
                   </select>
                 </div>
 
-                <div className="flex flex-col">
-                  <label className="text-sm font-medium text-gray-800 mb-1 flex items-center gap-1">
-                    <Users className="w-4 h-4 text-yellow-600" />
-                    참여자 선택
-                  </label>
-                  <select
-                    multiple
-                    value={newTask.collaborator_ids}
-                    onChange={(e) =>
-                      setNewTask((prev) => ({
-                        ...prev,
-                        collaborator_ids: Array.from(
-                          e.target.selectedOptions,
-                          (option) => parseInt(option.value)
-                        ),
-                      }))
-                    }
-                    className="border rounded px-3 py-2 text-sm h-[100px]"
-                  >
-                    {members.map((member) => (
-                      <option key={member.user_id} value={member.user_id}>
-                        {member.nickname}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {/* 참여자 선택 (멀티 체크박스) */}
+<div className="flex flex-col">
+  <label className="text-sm font-medium text-gray-800 mb-1">
+    참여자 선택
+    <span className="ml-2 text-xs text-gray-500">
+      (여러 명 선택 가능)
+    </span>
+  </label>
+
+  <div className="border rounded px-3 py-2 text-sm max-h-[140px] overflow-y-auto space-y-1">
+    {members?.length ? (
+      members.map((m) => (
+        <label key={m.user_id} className="flex items-center gap-2 py-1">
+          <input
+            type="checkbox"
+            className="accent-green-600"
+            checked={newTask.collaborator_ids?.includes(m.user_id) || false}
+            onChange={() => toggleCollaborator(m.user_id)}
+          />
+          <span>{m.nickname}</span>
+        </label>
+      ))
+    ) : (
+      <div className="text-gray-500">추가 가능한 참여자가 없습니다.</div>
+    )}
+  </div>
+
+  {/* 선택 요약 */}
+  <div className="mt-1 text-xs text-gray-500">
+    선택됨: {newTask.collaborator_ids?.length || 0}명
+  </div>
+</div>
               </div>
 
               <button
