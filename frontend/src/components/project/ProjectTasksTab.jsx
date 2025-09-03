@@ -15,6 +15,7 @@ import {
   Activity,
   Users,
   FileText,
+  ClipboardEdit,
 } from "lucide-react";
 
 const sections = [
@@ -34,7 +35,7 @@ const ProjectTasksTab = ({ project }) => {
     title: "",
     start_date: "",
     due_date: "",
-    project_id: "",
+    project_id: project?.project_id || "",       // ✅ 현재 프로젝트로 기본 고정
     collaborator_ids: [],
   });
   const [expandedSections, setExpandedSections] = useState(
@@ -45,6 +46,15 @@ const ProjectTasksTab = ({ project }) => {
   const slideRef = useRef(null);
   const collaboratorRef = useRef(null);
 
+  // 프로젝트 변경 시 newTask.project_id를 항상 최신으로 고정
+  useEffect(() => {
+    setNewTask((prev) => ({
+      ...prev,
+      project_id: project?.project_id || "",
+    }));
+  }, [project]);
+
+  // 내 작업 중 해당 프로젝트의 작업만 필터링
   useEffect(() => {
     const fetchTasks = async () => {
       try {
@@ -52,7 +62,6 @@ const ProjectTasksTab = ({ project }) => {
         const projectTasks = allTasks.filter(
           (task) => task.project_id === project?.project_id
         );
-        console.log("Fetched tasks:", projectTasks);
         setTasks(projectTasks || []);
       } catch (err) {
         console.error("Failed to fetch tasks:", err);
@@ -62,23 +71,35 @@ const ProjectTasksTab = ({ project }) => {
     fetchTasks();
   }, [project]);
 
+  const toggleCollaborator = (id) => {
+  setNewTask((prev) => {
+    const exists = prev.collaborator_ids?.includes(id);
+    return {
+      ...prev,
+      collaborator_ids: exists
+        ? prev.collaborator_ids.filter((x) => x !== id)
+        : [...(prev.collaborator_ids || []), id],
+    };
+  });
+};
+  // 참여자 목록 로드: newTask.project_id(고정) 또는 선택된 작업의 project_id 기준
   useEffect(() => {
     const fetchMembers = async () => {
-      if (newTask.project_id || (selectedTask && selectedTask.project_id)) {
-        try {
-          const projectId = newTask.project_id || selectedTask.project_id;
-          const res = await getProjectMembers(projectId);
-          console.log("Fetched members:", res);
-          setMembers(res || []);
-        } catch (err) {
-          console.error("Failed to fetch members:", err);
-          setMembers([]);
-        }
+      const projectId =
+        newTask.project_id || selectedTask?.project_id || project?.project_id;
+      if (!projectId) return;
+      try {
+        const res = await getProjectMembers(projectId);
+        setMembers(res || []);
+      } catch (err) {
+        console.error("Failed to fetch members:", err);
+        setMembers([]);
       }
     };
     fetchMembers();
-  }, [newTask.project_id, selectedTask]);
+  }, [newTask.project_id, selectedTask, project]);
 
+  // 바깥 클릭 처리(슬라이드 패널/협업자 팝오버 닫기)
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (slideRef.current && !slideRef.current.contains(event.target)) {
@@ -149,7 +170,7 @@ const ProjectTasksTab = ({ project }) => {
         title: "",
         start_date: "",
         due_date: "",
-        project_id: "",
+        project_id: project?.project_id || "",   // ✅ 추가 후에도 고정 유지
         collaborator_ids: [],
       });
       setIsAddingTask(false);
@@ -249,7 +270,14 @@ const ProjectTasksTab = ({ project }) => {
           </h1>
           <div className="flex gap-4 mt-4 border-b pb-2"></div>
           <button
-            onClick={() => setIsAddingTask(true)}
+            onClick={() => {
+              // 모달 열 때도 혹시 모를 값 보정
+              setNewTask((prev) => ({
+                ...prev,
+                project_id: project?.project_id || prev.project_id || "",
+              }));
+              setIsAddingTask(true);
+            }}
             className="mt-2 text-sm bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition"
           >
             작업 추가
@@ -366,6 +394,7 @@ const ProjectTasksTab = ({ project }) => {
 
         {isAddingTask && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+            {/* ✅ MyTasksTab 모달과 동일 레이아웃 + 프로젝트 고정 */}
             <div className="bg-white p-6 rounded-lg shadow-lg w-[500px]">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold">새 작업 추가</h3>
@@ -376,84 +405,124 @@ const ProjectTasksTab = ({ project }) => {
                   ×
                 </button>
               </div>
-              <input
-                type="text"
-                placeholder="작업 이름"
-                value={newTask.title}
-                onChange={(e) =>
-                  setNewTask((prev) => ({ ...prev, title: e.target.value }))
-                }
-                className="w-full border rounded px-3 py-2 text-sm mb-2"
-                autoFocus
-              />
-              <div className="flex gap-2 mb-2">
+
+              {/* 작업 이름 */}
+              <div className="flex flex-col mb-2">
+                <label className="text-sm font-medium text-gray-800 mb-1 flex items-center gap-1">
+                  <ClipboardEdit className="w-4 h-4 text-blue-600" />
+                  작업 이름
+                </label>
                 <input
-                  type="date"
-                  value={newTask.start_date}
+                  type="text"
+                  placeholder="작업 이름 입력"
+                  value={newTask.title}
                   onChange={(e) =>
-                    setNewTask((prev) => ({
-                      ...prev,
-                      start_date: e.target.value,
-                    }))
+                    setNewTask((prev) => ({ ...prev, title: e.target.value }))
                   }
-                  className="border rounded px-3 py-1 text-sm"
-                  placeholder="시작일"
+                  className="w-full border rounded px-3 py-2 text-sm"
+                  autoFocus
                 />
-                <input
-                  type="date"
-                  value={newTask.due_date}
-                  onChange={(e) =>
-                    setNewTask((prev) => ({
-                      ...prev,
-                      due_date: e.target.value,
-                    }))
-                  }
-                  className="border rounded px-3 py-1 text-sm"
-                  placeholder="마감일"
-                />
-                <select
-                  value={newTask.project_id}
-                  onChange={(e) =>
-                    setNewTask((prev) => ({
-                      ...prev,
-                      project_id: e.target.value,
-                    }))
-                  }
-                  className="border rounded px-3 py-1 text-sm"
-                >
-                  <option value="">프로젝트 선택</option>
-                  {[
-                    { project_id: project?.project_id, name: project?.name },
-                  ].map((proj) => (
-                    <option key={proj.project_id} value={proj.project_id}>
-                      {proj.name}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  multiple
-                  value={newTask.collaborator_ids}
-                  onChange={(e) =>
-                    setNewTask((prev) => ({
-                      ...prev,
-                      collaborator_ids: Array.from(
-                        e.target.selectedOptions,
-                        (option) => parseInt(option.value)
-                      ),
-                    }))
-                  }
-                  className="border rounded px-3 py-1 text-sm h-[100px]"
-                >
-                  {members.map((member) => (
-                    <option key={member.user_id} value={member.user_id}>
-                      {member.nickname}
-                    </option>
-                  ))}
-                </select>
               </div>
+
+              {/* 날짜 + 프로젝트 + 참여자 */}
+              <div className="flex flex-col gap-4 mb-4">
+                <div className="flex gap-2">
+                  <div className="flex flex-col flex-1">
+                    <label className="text-sm font-medium text-gray-800 mb-1 flex items-center gap-1">
+                      <CalendarCheck className="w-4 h-4 text-green-600" />
+                      시작일
+                    </label>
+                    <input
+                      type="date"
+                      value={newTask.start_date}
+                      onChange={(e) =>
+                        setNewTask((prev) => ({
+                          ...prev,
+                          start_date: e.target.value,
+                        }))
+                      }
+                      className="border rounded px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div className="flex flex-col flex-1">
+                    <label className="text-sm font-medium text-gray-800 mb-1 flex items-center gap-1">
+                      <CalendarCheck className="w-4 h-4 text-red-600" />
+                      마감일
+                    </label>
+                    <input
+                      type="date"
+                      value={newTask.due_date}
+                      onChange={(e) =>
+                        setNewTask((prev) => ({
+                          ...prev,
+                          due_date: e.target.value,
+                        }))
+                      }
+                      className="border rounded px-3 py-2 text-sm"
+                    />
+                  </div>
+                </div>
+
+                {/* 프로젝트: 현재 프로젝트로 고정 */}
+                <div className="flex flex-col">
+                  <label className="text-sm font-medium text-gray-800 mb-1 flex items-center gap-1">
+                    <FolderKanban className="w-4 h-4 text-indigo-600" />
+                    프로젝트 선택
+                  </label>
+                  <select
+                    value={newTask.project_id}
+                    onChange={(e) =>
+                      setNewTask((prev) => ({
+                        ...prev,
+                        project_id: e.target.value,
+                      }))
+                    }
+                    className="border rounded px-3 py-2 text-sm"
+                  >
+                    {/* 현재 프로젝트만 선택지로 제공(사실상 고정) */}
+                    <option value={project?.project_id}>{project?.name}</option>
+                  </select>
+                </div>
+
+                {/* 참여자 선택 */}
+                {/* 참여자 선택 (멀티 체크박스) */}
+<div className="flex flex-col">
+  <label className="text-sm font-medium text-gray-800 mb-1">
+    참여자 선택
+    <span className="ml-2 text-xs text-gray-500">
+      (여러 명 선택 가능)
+    </span>
+  </label>
+
+  <div className="border rounded px-3 py-2 text-sm max-h-[140px] overflow-y-auto space-y-1">
+    {members?.length ? (
+      members.map((m) => (
+        <label key={m.user_id} className="flex items-center gap-2 py-1">
+          <input
+            type="checkbox"
+            className="accent-green-600"
+            checked={newTask.collaborator_ids?.includes(m.user_id) || false}
+            onChange={() => toggleCollaborator(m.user_id)}
+          />
+          <span>{m.nickname}</span>
+        </label>
+      ))
+    ) : (
+      <div className="text-gray-500">추가 가능한 참여자가 없습니다.</div>
+    )}
+  </div>
+
+  {/* 선택 요약 */}
+  <div className="mt-1 text-xs text-gray-500">
+    선택됨: {newTask.collaborator_ids?.length || 0}명
+  </div>
+</div>
+
+              </div>
+
               <button
                 onClick={handleAddTask}
-                className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+                className="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
               >
                 작업 추가
               </button>
@@ -557,14 +626,8 @@ const ProjectTasksTab = ({ project }) => {
                 }}
                 className="text-base font-medium border-none focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-2 py-1"
               >
-                <option value="">프로젝트 없음</option>
-                {[{ project_id: project?.project_id, name: project?.name }].map(
-                  (p) => (
-                    <option key={p.project_id} value={p.project_id}>
-                      {p.name}
-                    </option>
-                  )
-                )}
+                {/* 상세 패널에서도 현재 프로젝트만 선택 가능하게 고정 */}
+                <option value={project?.project_id}>{project?.name}</option>
               </select>
             </div>
 

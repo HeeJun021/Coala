@@ -65,6 +65,36 @@ const DashboardTab = ({ project, onProjectSelect, setShowCreateProjectModal }) =
     }
   };
 
+    const getActiveTaskCountsByProject = (allTasks) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const map = new Map(); // project_id -> { active, done }
+    for (const t of allTasks || []) {
+      const pid = t.project_id;
+      if (!pid) continue;
+
+      const due = t.due_date ? new Date(t.due_date) : null;
+      const isDone = t.status === "완료됨";
+      const isOverdueUnfinished = !isDone && due && due < today;
+
+      const shouldCountInActive = isDone || !isOverdueUnfinished;
+
+      if (!map.has(pid)) map.set(pid, { active: 0, done: 0 });
+      const obj = map.get(pid);
+      if (shouldCountInActive) obj.active += 1;
+      if (isDone) obj.done += 1;
+    }
+    return map;
+  };
+
+  const computeProgress = (counts) => {
+    if (!counts || counts.active === 0) return 0;
+    return Math.min(100, Math.round((counts.done / counts.active) * 100));
+  };
+
+  const countsMap = getActiveTaskCountsByProject(tasks);
+
   const filteredTasks = tasks.filter((task) => {
     const due = task.due_date ? new Date(task.due_date) : null;
     const today = new Date();
@@ -82,7 +112,7 @@ const DashboardTab = ({ project, onProjectSelect, setShowCreateProjectModal }) =
   });
 
   return (
-    <div className="bg-[#f9f9f9] min-h-screen py-10 px-6">
+    <div className="bg-[#f9f9f970] min-h-screen py-10 px-6">
       <div className="max-w-screen-lg mx-auto space-y-10">
         <div>
           <p className="text-gray-500 text-sm">{today}</p>
@@ -162,26 +192,40 @@ const DashboardTab = ({ project, onProjectSelect, setShowCreateProjectModal }) =
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {projects.length > 0 ? (
-              projects.map((proj) => (
-                <div
-                  key={proj.project_id}
-                  onClick={() => onProjectSelect?.(proj.project_id)}
-                  className="border rounded-lg p-4 hover:shadow-sm cursor-pointer transition"
-                >
-                  <div className="flex items-center gap-2 mb-2 text-sm font-semibold">
-                     {proj.name}
+              projects.map((proj) => {
+                const counts = countsMap.get(proj.project_id);
+                const progress = computeProgress(counts);
+
+                return (
+                  <div
+                    key={proj.project_id}
+                    onClick={() => onProjectSelect?.(proj.project_id)}
+                    className="border rounded-lg p-4 hover:shadow-sm cursor-pointer transition"
+                  >
+                    <div className="flex items-center gap-2 mb-2 text-sm font-semibold">
+                      {proj.name}
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div
+                        className="bg-green-600 h-2.5 rounded-full"
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      진행률: {progress}%{" "}
+                      {counts?.active ? (
+                        <span className="ml-1 text-gray-400">
+                          (완료 {counts.done} / 활성 {counts.active})
+                        </span>
+                      ) : (
+                        <span className="ml-1 text-gray-400">(활성 작업 없음)</span>
+                      )}
+                    </p>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2.5">
-                    <div
-                      className="bg-blue-600 h-2.5 rounded-full"
-                      style={{ width: `${proj.progress}%` }}
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">진행률: {proj.progress}%</p>
-                </div>
-              ))
+                );
+              })
             ) : (
               <p className="text-gray-400">프로젝트가 없습니다.</p>
             )}
