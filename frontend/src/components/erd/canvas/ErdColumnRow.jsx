@@ -136,6 +136,31 @@ const ErdColumnRow = ({
           onClick?.(column.id);
         }}
       >
+        {/* ◀️ 좌측 레일: 한 칸(24px)만 예약하고, 내부에서 점/아이콘을 겹쳐 토글 */}
+        <div className="relative shrink-0 w-6 h-6 flex items-center justify-center">
+          {/* 관계 모드 점: PK/FK가 없는 컬럼에서만 표시 */}
+          <div
+            className={
+              "absolute h-1.5 w-1.5 rounded-full bg-blue-400 transition-opacity " +
+              (isRelationMode && !isPK && !isFK
+                ? "opacity-100"
+                : "opacity-0 pointer-events-none")
+            }
+            aria-hidden={!(isRelationMode && !isPK && !isFK)}
+          />
+
+          {/* PK/FK 아이콘 묶음 (관계 모드 때 시각 방해되면 살짝 숨김) */}
+          <div
+            className={
+              "flex items-center gap-0.5 transition-opacity " +
+              (isRelationMode ? "opacity-70" : "opacity-100")
+            }
+          >
+            {isPK && <FaKey className="text-yellow-300" size={11} />}
+            {isFK && <FaKey className="text-red-400" size={11} />}
+          </div>
+        </div>
+
         {isAddingRelation && (
           <div
             className="absolute top-0 left-0 w-full h-full z-20"
@@ -147,15 +172,7 @@ const ErdColumnRow = ({
           />
         )}
 
-        <div
-          className="w-[20px] flex justify-center items-center"
-          style={{ height: "24px" }}
-        >
-          {isPK && <FaKey className="text-yellow-300 mr-1" size={12} />}
-          {isFK && <FaKey className="text-red-400" size={12} />}
-        </div>
-
-        <div className="flex items-center space-x-2 flex-grow">
+        <div className="flex items-center space-x-2 flex-grow min-w-0">
           <input
             className="bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 text-sm text-white placeholder:text-gray-500 pl-2"
             style={{
