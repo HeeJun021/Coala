@@ -40,7 +40,21 @@ const ErdCanvas = ({
   // 관계, 위치
   const [columnPositions, setColumnPositions] = useState({});
 
-  // 관계 생성 상태
+// 테이블/컬럼 구조가 바뀌어도, 기존 앵커는 살리고 사라진 컬럼만 제거 (깜빡임 방지)
+useEffect(() => {
+  setColumnPositions((prev) => {
+    const valid = new Set();
+    tables.forEach(t => (t.columns || []).forEach(c => valid.add(String(c.column_id ?? c.id))));
+    const next = {};
+    for (const [key, val] of Object.entries(prev)) {
+      if (valid.has(String(key))) next[key] = val;
+    }
+    return next;
+  });
+}, [tables]);
+
+
+  // 🧱 관계 생성 상태
   const [isAddingRelation, setIsAddingRelation] = useState(false);
   const [selectedRelationType, setSelectedRelationType] = useState(null);
   const [pendingFromColumnId, setPendingFromColumnId] = useState(null);
@@ -75,7 +89,8 @@ const ErdCanvas = ({
   const dragOriginRef = useRef(null);
   const tablePositionsRef = useRef({});
 
-  
+
+
 useEffect(() => {
   const handleKeyDown = (e) => {
     if (e.key === "Escape") {
@@ -249,6 +264,28 @@ useEffect(() => {
     setWasDraggingSelectionBox(isDraggingSelectionBox);
     setTimeout(() => setWasDraggingSelectionBox(false), 0);
   };
+  const measureColumnAnchor = useCallback((columnId) => {
+  const canvasRect = canvasRef.current?.getBoundingClientRect();
+  if (!canvasRect) return;
+
+  // 해당 컬럼 DOM 찾기
+  const el = document.querySelector(`[data-column-id='${columnId}']`);
+  const tableBox = el?.closest(".erd-table-box");
+  if (!el || !tableBox) return;
+
+  const tableRect = tableBox.getBoundingClientRect();
+  const colRect = el.getBoundingClientRect();
+
+  const adjustedLeft  = (tableRect.left  - canvasRect.left - panOffset.x) / zoomLevel;
+  const adjustedRight = (tableRect.right - canvasRect.left - panOffset.x) / zoomLevel;
+  const adjustedY     = (colRect.top    - canvasRect.top  - panOffset.y + colRect.height / 2) / zoomLevel;
+
+  setColumnPositions(prev => ({
+    ...prev,
+    [String(columnId)]: { left: adjustedLeft, right: adjustedRight, y: adjustedY },
+  }));
+}, [panOffset.x, panOffset.y, zoomLevel]);
+
 
   const handleCanvasClick = async (e) => {
     if (wasDraggingSelectionBox) return;
@@ -444,8 +481,12 @@ useEffect(() => {
         participation_right: created.participation_target,
       };
 
-      const updatedRelations = [...relations, newRelation];
-      setRelations(updatedRelations);
+        // 두 컬럼의 앵커를 즉시 채워 깜빡임 방지
+  measureColumnAnchor(created.source_column_id);
+  measureColumnAnchor(created.target_column_id);
+
+  const updatedRelations = [...relations, newRelation];
+  setRelations(updatedRelations);
 
       await handleSnapshotSaveWithColumns(tables, updatedRelations);
     } catch (err) {

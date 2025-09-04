@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { Undo2, Redo2 } from "lucide-react";
 import { useParams } from "react-router-dom";
 import {
   getErdDetail,
@@ -141,7 +142,12 @@ const ErdPage = () => {
 
         setTables?.(parsedTables);
         setRelations?.(parsedRelations);
-        showToast("🪄 마지막 상태로 되돌렸습니다.");
+        showToast(
+  <div className="flex items-center gap-2">
+    <Undo2 className="w-5 h-5 text-blue-500" /> 
+    <span>마지막 상태로 되돌렸습니다.</span>
+  </div>
+);
       }
     } catch (err) {
       console.error("Undo 실패:", err);
@@ -185,11 +191,16 @@ const ErdPage = () => {
 
         setTables?.(parsedTables);
         setRelations?.(parsedRelations);
-        showToast("🔁 다음 상태로 되돌렸습니다.");
+        showToast(
+  <div className="flex items-center gap-2">
+    <Redo2 className="w-5 h-5 text-blue-500" /> 
+    <span>다음 상태로 되돌렸습니다.</span>
+  </div>
+);
       }
     } catch (err) {
       console.error("Redo 실패:", err);
-      showToast("📌이미 최신 상태 입니다.");
+      showToast("이미 최신 상태 입니다.");
     }
   }, [erdId, setTables, setRelations, showToast]);
 

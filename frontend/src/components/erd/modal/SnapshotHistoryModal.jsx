@@ -4,7 +4,7 @@ import {
   checkoutSnapshot,
 } from "../../../api/erd/erdDetailApi";
 import SnapshotItem from "./SnapshotItem";
-import { X, ScrollText } from "lucide-react";
+import { X, ScrollText, CheckSquare } from "lucide-react";
 
 const SnapshotHistoryModal = ({
   erdId,
@@ -25,7 +25,12 @@ const SnapshotHistoryModal = ({
   const handleCheckout = async (snapshotId) => {
     try {
       await checkoutSnapshot(erdId, snapshotId);
-      showToast("해당 스냅샷으로 이동했습니다.");
+       showToast(
+   <div className="flex items-center gap-2">
+     <CheckSquare className="w-5 h-5 text-green-600" /> {/* 아이콘만 초록색 */}
+     <span>해당 스냅샷으로 이동했습니다.</span>
+   </div>
+ );
       await fetchErdDetail(erdId);
       onClose();
     } catch (error) {
