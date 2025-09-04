@@ -157,23 +157,28 @@ const ErdTableBox = ({
     };
   };
 
-  const handleTogglePK = (targetId) => {
-    setLocalColumns((prev) =>
-      prev.map((col) =>
-        col.id === targetId ? { ...col, isPrimaryKey: !col.isPrimaryKey } : col
-      )
-    );
-  };
-  useEffect(() => {
-    onUpdate({
-      id,
-      x,
-      y,
-      tableName: localName,
-      description: localDesc,
-      columns: localColumns,
-    });
-  }, [id, x, y, localName, localDesc, localColumns, onUpdate]);
+  // 3) PK 토글
+const handleTogglePK = (targetId) => {
+  const updated = localColumns.map((col) =>
+    (col.column_id ?? col.id) === targetId
+      ? { ...col, isPrimaryKey: !col.isPrimaryKey }
+      : col
+  );
+
+  setLocalColumns(updated);
+
+  // 부모 tables 동기화
+  onUpdate({
+    id,
+    x,
+    y,
+    tableName: localName,
+    description: localDesc,
+    columns: updated,
+  });
+};
+
+
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -323,34 +328,45 @@ const ErdTableBox = ({
     tablePositionsRef,
   ]);
 
-  const handleAddColumn = async () => {
-    try {
-      const newColumn = await createColumn(id); // id = 테이블 ID
+  // 1) 컬럼 추가
+const handleAddColumn = async () => {
+  try {
+    const newColumn = await createColumn(id); // id = 테이블 ID
 
-      setLocalColumns((prev) => {
-        const updated = [
-          ...prev,
-          {
-            ...newColumn,
-            id: newColumn.column_id ?? `temp-${Date.now()}`, // fallback ID
-            name: newColumn.name || "",
-            dataType: newColumn.data_type || "",
-            isNullable: !newColumn.is_not_null,
-            isPrimaryKey: newColumn.is_primary,
-            defaultValue: newColumn.default_value || "",
-            comment: newColumn.description || "",
-          },
-        ];
+    const updated = [
+      ...localColumns,
+      {
+        ...newColumn,
+        id: newColumn.column_id ?? `temp-${Date.now()}`, // fallback ID
+        name: newColumn.name || "",
+        dataType: newColumn.data_type || "",
+        isNullable: !newColumn.is_not_null,
+        isPrimaryKey: newColumn.is_primary,
+        defaultValue: newColumn.default_value || "",
+        comment: newColumn.description || "",
+      },
+    ];
 
-        // ✅ 스냅샷 저장
-        onSnapshotRequest?.();
-        return updated;
-      });
-    } catch (err) {
-      console.error("컬럼 생성 실패:", err);
-      alert("컬럼 생성 중 오류가 발생했습니다.");
-    }
-  };
+    setLocalColumns(updated);
+
+    // 부모 tables 동기화 (관계 생성 로직이 최신 컬럼을 참조하도록)
+    onUpdate({
+      id,
+      x,
+      y,
+      tableName: localName,
+      description: localDesc,
+      columns: updated,
+    });
+
+    // 스냅샷 저장
+    onSnapshotRequest?.();
+  } catch (err) {
+    console.error("컬럼 생성 실패:", err);
+    alert("컬럼 생성 중 오류가 발생했습니다.");
+  }
+};
+
 
   const handleColumnChange = (index, key, value) => {
     const updated = [...localColumns];
@@ -366,24 +382,36 @@ const ErdTableBox = ({
       columns: updated,
     });
   };
-  const handleDeleteColumn = async (index) => {
-    const columnId = localColumns[index]?.id;
-    if (!columnId) return;
+  // 2) 컬럼 삭제
+const handleDeleteColumn = async (index) => {
+  const col = localColumns[index];
+  const columnId = col?.column_id ?? col?.id;
+  if (!columnId) return;
 
-    try {
-      await deleteColumn(columnId);
-      setLocalColumns((prev) => {
-        const updated = prev.filter((_, i) => i !== index);
+  try {
+    await deleteColumn(columnId);
 
-        // ✅ 스냅샷 저장
-        onSnapshotRequest?.();
-        return updated;
-      });
-    } catch (err) {
-      console.error("컬럼 삭제 실패:", err);
-      alert("컬럼 삭제 중 오류가 발생했습니다.");
-    }
-  };
+    const updated = localColumns.filter((_, i) => i !== index);
+    setLocalColumns(updated);
+
+    // 부모 tables 동기화
+    onUpdate({
+      id,
+      x,
+      y,
+      tableName: localName,
+      description: localDesc,
+      columns: updated,
+    });
+
+    // 스냅샷 저장
+    onSnapshotRequest?.();
+  } catch (err) {
+    console.error("컬럼 삭제 실패:", err);
+    alert("컬럼 삭제 중 오류가 발생했습니다.");
+  }
+};
+
 
   return (
     <div

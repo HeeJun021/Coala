@@ -40,6 +40,13 @@ const ErdCanvas = ({
   // 🧱 관계, 위치
   const [columnPositions, setColumnPositions] = useState({});
 
+    // 파일 상단 훅들 아래 어딘가에 추가
+useEffect(() => {
+  // 테이블 수나 관계 수가 변했으면 예전 앵커 좌표는 무효화
+  setColumnPositions({});
+  // 이후 각 테이블 박스가 마운트되며 onColumnPositionUpdate로 최신 좌표를 다시 채움
+}, [tables.length, relations.length]);
+
   // 🧱 관계 생성 상태
   const [isAddingRelation, setIsAddingRelation] = useState(false);
   const [selectedRelationType, setSelectedRelationType] = useState(null);
@@ -75,7 +82,8 @@ const ErdCanvas = ({
   const dragOriginRef = useRef(null);
   const tablePositionsRef = useRef({});
 
-  
+
+
 useEffect(() => {
   const handleKeyDown = (e) => {
     if (e.key === "Escape") {
