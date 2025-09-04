@@ -67,7 +67,7 @@ from app.routers import (
     project_invite,
     attendance,
     project_code,
-    github_integration,
+    project_git,
 )
 
 from app.schemas.user import UserUpdateSchema
@@ -157,9 +157,8 @@ app.include_router(notification.router)
 
 # 프로젝트 초대
 app.include_router(project_invite.router)
-app.include_router(github_integration.router)
 app.include_router(project_code.router)
-
+app.include_router(project_git.router)
 app.include_router(attendance.router)
 
 

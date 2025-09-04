@@ -15,7 +15,6 @@ class ProjectCodeBuffer(Base):
     content: Mapped[str | None] = mapped_column(Text)          # 편집본
     base_sha: Mapped[str | None] = mapped_column(CHAR(40))     # 기준점(브랜치 HEAD 또는 blob)
     change_type: Mapped[str | None] = mapped_column(String(1)) # 'A','M','D'
-    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     is_staged: Mapped[bool] = mapped_column(Boolean, default=False)
 
     updated_at: Mapped[str] = mapped_column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))

@@ -18,7 +18,7 @@ class RepoInfo(BaseModel):
 
 # ----- Branch -----
 class BranchCreateRequest(BaseModel):
-    from_branch: BranchStr = "main"
+    from_branch: BranchStr | None = None
     new_branch: BranchStr
 
 class BranchInfo(BaseModel):
@@ -37,3 +37,23 @@ class TreeResponse(BaseModel):
     branch: BranchStr
     recursive: bool = True
     items: List[TreeItem]
+
+class FileCreateRequest(BaseModel):
+    branch: Optional[str] = None
+    path: str
+    content: str = ""
+    
+class StatusResponse(BaseModel):
+    branch: str
+    staged: List[str] = []
+    unstaged: List[str] = []
+    has_uncommitted: bool = False
+
+class FileUpdateRequest(BaseModel):
+    branch: Optional[str] = None
+    path: str
+    content: str
+
+class FileDeleteRequest(BaseModel):
+    branch: Optional[str] = None
+    path: str

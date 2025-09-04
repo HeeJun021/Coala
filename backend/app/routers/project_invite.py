@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.dependencies.auth import get_current_user
 from app.services.invite_service import send_project_invite, accept_project_invite
+from app.services.project_git.github_service import invite_collaborator
 from app.models.user import User
 
 router = APIRouter(prefix="/projects", tags=["ProjectInvites"])
@@ -34,9 +35,14 @@ def accept_project_invitation(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    # 1) 내부 프로젝트 멤버십 수락 처리
     accept_project_invite(db=db, user=current_user, project_id=project_id)
 
-    return {"message": "프로젝트에 참여하고 팀 채팅방에 연결되었습니다."}
+    # 2) GitHub collaborator 초대 (권한은 push 기본)
+    #    actor_user_id로 현재 사용자 전달(소유자 토큰 없을 때 fallback 용)
+    invite_collaborator(db=db, project_id=project_id, invitee_user_id=current_user.user_id, permission="push", actor_user_id=current_user.user_id)
+
+    return {"message": "프로젝트에 참여하고 레포 Collaborator 초대가 전송되었습니다."}
 
 
 # 3. 프로젝트 초대 거절
