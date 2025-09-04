@@ -1,3 +1,4 @@
+# app/schemas/task_schemas.py
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import date, datetime
@@ -13,7 +14,8 @@ class TaskBase(BaseModel):
     color: Optional[str] = None  # HEX 색상 코드
 
 class TaskCreate(TaskBase):
-    collaborator_ids: List[int] = []
+    user_id: Optional[int] = None             # ✅ 선택값으로 변경
+    collaborator_ids: Optional[List[int]] = []  # 협업자 선택적
 
 class TaskUpdate(BaseModel):
     title: Optional[str] = None
@@ -28,7 +30,6 @@ class TaskUpdate(BaseModel):
 class UserResponse(BaseModel):
     user_id: int
     nickname: str
-
     class Config:
         from_attributes = True
 
@@ -39,6 +40,5 @@ class TaskResponse(TaskBase):
     updated_at: datetime
     collaborators: List[UserResponse] = []
     project_name: str
-
     class Config:
         from_attributes = True

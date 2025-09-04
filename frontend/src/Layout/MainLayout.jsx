@@ -8,26 +8,38 @@ import FloatingButton from "../components/floating/FloatingButton";
 const MainLayout = ({ children }) => {
   const { pathname } = useLocation();
 
-  // 경로 바뀔 때 main 컨테이너 최상단으로
-  useEffect(() => {
-    const mainEl = document.getElementById("coala-main");
-    mainEl?.scrollTo(0, 0);
-  }, [pathname]);
-
+  const isTeamProject = pathname.startsWith("/team-project");
   const showSidebar =
     pathname.startsWith("/StudyMaterialsPage") ||
     pathname.startsWith("/materials/");
 
+  // 경로 바뀔 때 스크롤 최상단
+  useEffect(() => {
+    if (isTeamProject) {
+      // 팀 프로젝트는 예전처럼 뷰포트 스크롤
+      window.scrollTo(0, 0);
+    } else {
+      // 그 외는 main 컨테이너 스크롤
+      const mainEl = document.getElementById("coala-main");
+      mainEl?.scrollTo(0, 0);
+    }
+  }, [pathname, isTeamProject]);
+
   return (
-    <div className="layout flex h-full"> {/* h-screen → h-full */}
+    <div className={`layout flex ${isTeamProject ? "h-screen" : "h-full"}`}>
       <Navbar />
 
       {showSidebar && <Sidebar className="w-64 flex-shrink-0" />}
 
-      {/* id로 잡아서 스크롤 제어 */}
+      {/* 팀 프로젝트: 예전 레이아웃(overflow 제거, px-0, min-h-screen)
+          그 외: 현재 레이아웃(overflow-y-auto, px-4) */}
       <main
         id="coala-main"
-        className="content flex-1 overflow-y-auto px-4"
+        className={`content flex-1 ${
+          isTeamProject
+            ? "min-h-screen px-0"
+            : "overflow-y-auto px-4"
+        }`}
       >
         {children}
       </main>

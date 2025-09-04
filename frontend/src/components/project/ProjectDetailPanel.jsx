@@ -12,6 +12,8 @@ import {
   updateMemberRoles,
 } from "../../api/projectApi";
 
+import { getMyTasks } from "../../api/taskApi";
+
 import {
   LayoutDashboard,
   FileText,
@@ -63,8 +65,38 @@ const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
   const [selectedRoles, setSelectedRoles] = useState([]);
   const [meId, setMeId] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState(null);
-
+  const [allMyTasks, setAllMyTasks] = useState([]);
   
+
+  useEffect(() => {
+  getMyTasks()
+    .then((res) => setAllMyTasks(res || []))
+    .catch(() => setAllMyTasks([]));
+}, []);
+
+// ✅ "마감 지난 미완료 작업 제외" 진행률 계산 유틸
+const getActiveCountsForProject = (tasks, projectId) => {
+  const today = new Date(); today.setHours(0,0,0,0);
+  let active = 0, done = 0;
+
+  for (const t of tasks || []) {
+    if (t.project_id !== projectId) continue;
+    const due = t.due_date ? new Date(t.due_date) : null;
+    const isDone = t.status === "완료됨";
+    const isOverdueUnfinished = !isDone && due && due < today;
+
+    const shouldCountInActive = isDone || !isOverdueUnfinished; // 분모에 셈할지
+    if (shouldCountInActive) active += 1;
+    if (isDone) done += 1;
+  }
+  return { active, done };
+};
+const computeProgress = ({ active, done }) =>
+  active === 0 ? 0 : Math.min(100, Math.round((done / active) * 100));
+
+const progressCounts = getActiveCountsForProject(allMyTasks, project.project_id);
+const projectProgress = computeProgress(progressCounts);
+
   // 마운트 시 내 정보 로드
 useEffect(() => {
   getCurrentUser()
@@ -409,6 +441,32 @@ const handleSaveRoles = async () => {
             </span>
           </div>
         </div>
+
+        {/* ✅ 프로젝트 진행률 */}
+<div className="bg-white border rounded p-4">
+  <p className="text-sm font-semibold mb-3 flex items-center gap-2">
+    <Activity size={16} className="text-green-600" />
+    진행률
+  </p>
+
+  <div className="w-full bg-gray-200 rounded-full h-2.5">
+    <div
+      className="bg-blue-600 h-2.5 rounded-full"
+      style={{ width: `${projectProgress}%` }}
+    />
+  </div>
+  <p className="text-xs text-gray-500 mt-1">
+    진행률: {projectProgress}%{" "}
+    {progressCounts.active ? (
+      <span className="ml-1 text-gray-400">
+        (완료 {progressCounts.done} / 활성 {progressCounts.active})
+      </span>
+    ) : (
+      <span className="ml-1 text-gray-400">(활성 작업 없음)</span>
+    )}
+  </p>
+</div>
+
 
         <div className="bg-white border rounded p-4">
           <p className="text-sm font-semibold mb-3 flex items-center gap-2">
