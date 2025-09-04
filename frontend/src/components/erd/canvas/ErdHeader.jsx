@@ -73,7 +73,12 @@ const ErdHeader = ({
         updated_columns: [],
         updated_relations: [],
       });
-      showToast("📝 ERD 히스토리 기록 완료!");
+      showToast(
+  <div className="flex items-center gap-2">
+    <History className="w-5 h-5 text-pink-400" /> 
+    <span>ERD 히스토리 기록 완료!</span>
+  </div>
+);
     } catch (err) {
       console.error("히스토리 기록 실패:", err);
       showToast("❌ 히스토리 기록 중 오류 발생");
