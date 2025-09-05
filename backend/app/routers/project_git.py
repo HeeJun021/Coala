@@ -56,6 +56,7 @@ class FileData(BaseModel):
     is_staged: bool = False
     change_type: Optional[Literal["A","M","D"]] = None
     source: Literal["buffer","github"]
+    encoding: Optional[Literal["utf-8","base64"]] = "utf-8"
 
 @router.get("/{project_id}/file", response_model=FileData)
 def read_file(
@@ -75,6 +76,8 @@ class FileSaveRequest(BaseModel):
     path: str
     content: str
     change_type: Optional[Literal["A","M","D"]] = None
+    encoding: Optional[Literal["utf-8","base64"]] = "utf-8"
+    expected_base_sha: Optional[str] = None
 
 @router.put("/{project_id}/file")
 def save_file(
@@ -83,7 +86,15 @@ def save_file(
     db: Session = Depends(get_db),
     me: User = Depends(get_current_user),
 ):
-    return save_file_to_buffer(db, me, project_id, body.branch, body.path, body.content, body.change_type)
+    res = save_file_to_buffer(
+        db, me, project_id,
+        body.branch, body.path, body.content,
+        change_type=body.change_type,
+        encoding=body.encoding,
+        expected_base_sha=body.expected_base_sha,
+    )
+
+    return res
 
 # ----------------------
 # 5) 스테이징/언스테이징
@@ -110,6 +121,7 @@ class CommitRequest(BaseModel):
     message: str
     useStagedOnly: bool = True
     paths: Optional[List[str]] = None
+    expected_head_sha: Optional[str] = None 
 
 @router.post("/{project_id}/commit")
 def commit(
@@ -118,7 +130,12 @@ def commit(
     db: Session = Depends(get_db),
     me: User = Depends(get_current_user),
 ):
-    return commit_changes(db, me, project_id, body.branch, body.message, body.useStagedOnly, body.paths)
+    return commit_changes(
+        db, me, project_id,
+        body.branch, body.message,
+        body.useStagedOnly, body.paths,
+        expected_head_sha=body.expected_head_sha,
+    )
 
 # 브랜치 생성, 생성 후 바로 이동
 @router.post("/{project_id}/branches", response_model=BranchInfo)

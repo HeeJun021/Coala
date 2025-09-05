@@ -1,6 +1,8 @@
 from __future__ import annotations
 from typing import List, Optional, Tuple, Dict
 import requests
+import base64
+import binascii
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
@@ -11,7 +13,31 @@ from app.models.project_git.project_branch import ProjectBranch
 from app.models.project_git.project_code_buffer import ProjectCodeBuffer
 from app.services.project_git.github_service import _get_github_token, _gh_headers, GITHUB_API
 
+MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024  # 5MB
+
 # --- 컨텍스트/캐시 헬퍼 -------------------------------------------------
+
+def _decode_content_for_storage(raw: str, encoding: str) -> str:
+    """
+    저장 전 content를 디코드하고 사이즈 제한 검사.
+    - encoding='base64'면 디코드 후 utf-8로 decode
+    - encoding='utf-8'이면 그대로 사용
+    - 최종 바이트 길이가 MAX_FILE_SIZE_BYTES 초과면 413
+    """
+    try:
+        if encoding == "base64":
+            binary = base64.b64decode(raw, validate=True)
+            if len(binary) > MAX_FILE_SIZE_BYTES:
+                raise HTTPException(status_code=413, detail="파일이 너무 큽니다(> 5MB).")
+            return binary.decode("utf-8", errors="strict")
+        else:
+            # utf-8 텍스트 길이 체크
+            b = raw.encode("utf-8")
+            if len(b) > MAX_FILE_SIZE_BYTES:
+                raise HTTPException(status_code=413, detail="파일이 너무 큽니다(> 5MB).")
+            return raw
+    except (binascii.Error, UnicodeDecodeError):
+        raise HTTPException(status_code=400, detail="콘텐츠 디코딩 실패(encoding 확인).")
 
 def _get_repo_context(db: Session, project_id: int) -> Tuple[int, str, str, str]:
     repo = (
@@ -32,7 +58,7 @@ def _ensure_branch_head(db: Session, project_repo_id: int, owner: str, repo: str
     if pb and pb.head_sha:
         return pb.head_sha
 
-    r = requests.get(f"{GITHUB_API}/repos/{owner}/{repo}/git/ref/heads/{branch}", headers=_gh_headers(token))
+    r = requests.get(f"{GITHUB_API}/repos/{owner}/{repo}/git/refs/heads/{branch}", headers=_gh_headers(token))
     if r.status_code != 200:
         raise HTTPException(status_code=r.status_code, detail=f"브랜치 참조 조회 실패: {r.text}")
     head_sha = (r.json().get("object") or {}).get("sha")
@@ -67,14 +93,26 @@ def save_file_to_buffer(
     path: str,
     content: str,
     change_type: Optional[str] = None,  # "A" | "M" | "D"
+    encoding: str = "utf-8",            # ← 추가
+    expected_base_sha: Optional[str] = None,  # ← 추가
 ) -> Dict:
     project_repo_id, owner, repo, default_branch = _get_repo_context(db, project_id)
     branch = branch or default_branch
     token = _get_github_token(db, current_user.user_id)
 
+    # 현재 원격 파일 sha 조회
+    current_sha = _get_file_sha(owner, repo, branch, path, token)
+
+    # 낙관적 잠금: expected_base_sha가 주어졌고, 현재 sha와 다르면 409
+    if expected_base_sha is not None and expected_base_sha != current_sha:
+        raise HTTPException(status_code=409, detail="원본이 변경되어 저장할 수 없습니다(SHA mismatch).")
+
     # change_type 자동 추론 (없으면)
     if change_type is None:
-        change_type = "M" if _get_file_sha(owner, repo, branch, path, token) else "A"
+        change_type = "M" if current_sha else "A"
+
+    # content 디코딩 + 사이즈 제한
+    decoded = _decode_content_for_storage(content, encoding)
 
     buf = (
         db.query(ProjectCodeBuffer)
@@ -95,22 +133,24 @@ def save_file_to_buffer(
         )
         db.add(buf)
 
-    buf.content = content
+    buf.content = decoded
     buf.change_type = change_type
     buf.is_staged = False
-    buf.base_sha = _get_file_sha(owner, repo, branch, path, token)
+    buf.base_sha = current_sha
 
     db.commit()
 
     return {
         "branch": branch,
         "path": path,
-        "content": content,
+        "content": decoded,
         "base_sha": buf.base_sha,
         "is_staged": buf.is_staged,
         "change_type": buf.change_type,
         "source": "buffer",
+        "encoding": "utf-8",  # 버퍼에는 UTF-8 텍스트로 저장
     }
+
 
 # --- 2) 스테이징/언스테이징 -------------------------------------------------
 
@@ -148,7 +188,6 @@ def stage_paths(
     }
 
 # --- 3) 커밋(=푸시) -------------------------------------------------
-
 def commit_changes(
     db: Session,
     current_user: User,
@@ -157,6 +196,7 @@ def commit_changes(
     message: str,
     use_staged_only: bool = True,
     only_paths: Optional[List[str]] = None,
+    expected_head_sha: Optional[str] = None,          # ← 추가
 ) -> Dict:
     project_repo_id, owner, repo, default_branch = _get_repo_context(db, project_id)
     branch = branch or default_branch
@@ -179,6 +219,10 @@ def commit_changes(
         raise HTTPException(status_code=400, detail="커밋할 변경이 없습니다.")
 
     head_sha = _ensure_branch_head(db, project_repo_id, owner, repo, branch, token)
+
+    # 낙관적 잠금: expected_head_sha가 주어졌고, 현재 head와 다르면 409
+    if expected_head_sha is not None and expected_head_sha != head_sha:
+        raise HTTPException(status_code=409, detail="브랜치 HEAD가 변경되었습니다(SHA mismatch).")
 
     # base tree
     r = requests.get(f"{GITHUB_API}/repos/{owner}/{repo}/git/commits/{head_sha}", headers=_gh_headers(token))
@@ -288,13 +332,16 @@ def create_new_file_service(
     if existing and existing.change_type != "D":
         raise HTTPException(status_code=409, detail="이미 버퍼에 동일 경로가 존재합니다.")
 
+    # content 디코딩 + 사이즈 제한 (라우터에서 encoding을 안 받으므로 우선 utf-8 전제)
+    decoded = _decode_content_for_storage(content or "", "utf-8")
+
     buf = existing or ProjectCodeBuffer(
         project_repo_id=project_repo_id,
         branch_name=branch,
         path=path,
         user_id=current_user.user_id,
     )
-    buf.content = content or ""
+    buf.content = decoded
     buf.change_type = "A"
     buf.is_staged = False
     buf.base_sha = None  # 신규 파일이므로 원본 없음
@@ -305,13 +352,14 @@ def create_new_file_service(
     return {
         "branch": branch,
         "path": path,
-        "content": buf.content,
+        "content": decoded,
         "base_sha": buf.base_sha,
         "is_staged": buf.is_staged,
         "change_type": buf.change_type,
         "source": "buffer",
+        "encoding": "utf-8",  # 버퍼에는 UTF-8 텍스트로 저장
     }
-    
+
 # ---- 상태 조회 ----
 def get_change_status(
     db: Session,
@@ -376,11 +424,14 @@ def update_file_service(
         .first()
     )
 
+    # content 디코딩 + 사이즈 제한 (utf-8 전제)
+    decoded = _decode_content_for_storage(content, "utf-8")
+
     if buf:
         if buf.change_type == "D":
             raise HTTPException(status_code=409, detail="삭제 예정인 파일입니다. 삭제를 취소하거나 경로를 변경하세요.")
         # 신규 추가중(A)이면 그대로 업데이트 가능, 이외엔 수정(M)로 강제
-        buf.content = content
+        buf.content = decoded
         if buf.change_type != "A":
             buf.change_type = "M"
         db.commit()
@@ -392,6 +443,7 @@ def update_file_service(
             "is_staged": bool(buf.is_staged),
             "change_type": buf.change_type,
             "source": "buffer",
+            "encoding": "utf-8",
         }
 
     # 2) 버퍼가 없으면 GitHub 존재 확인 (없으면 404)
@@ -405,7 +457,7 @@ def update_file_service(
         branch_name=branch,
         path=path,
         user_id=current_user.user_id,
-        content=content,
+        content=decoded,
         base_sha=sha,
         change_type="M",
         is_staged=False,
@@ -416,12 +468,14 @@ def update_file_service(
     return {
         "branch": branch,
         "path": path,
-        "content": content,
+        "content": decoded,
         "base_sha": sha,
         "is_staged": False,
         "change_type": "M",
         "source": "buffer",
+        "encoding": "utf-8",
     }
+
 
 # ---- 파일 삭제 (버퍼) ----
 def delete_file_service(
