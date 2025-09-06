@@ -1,0 +1,405 @@
+[
+  {
+    "title": "프로덕트 개발 회의록",
+    "description": "개발 회의에 바로 쓰는 구조화 템플릿",
+    "category": "회의",
+    "tags": [
+      "회의록",
+      "개발",
+      "결정/액션"
+    ],
+    "thumbnail_url": "",
+    "version": 1,
+    "is_published": true,
+    "blocks": {
+      "layout": [
+        "doc:header",
+        "checklist:agenda",
+        "table:decisions",
+        "table:action-items"
+      ],
+      "items": {
+        "doc:header": {
+          "type": "doc",
+          "title": "프로덕트 개발 회의록",
+          "content": "프로젝트: {{project.name}}\n일시: {{today}}\n참석자: \n목표:\n\n요약:\n- "
+        },
+        "checklist:agenda": {
+          "type": "checklist",
+          "title": "아젠다",
+          "items": [
+            "업데이트 공유",
+            "이슈 논의",
+            "결정/액션 정리"
+          ]
+        },
+        "table:decisions": {
+          "type": "table",
+          "title": "결정사항",
+          "columns": [
+            "주제",
+            "결정",
+            "근거",
+            "담당"
+          ],
+          "rows": []
+        },
+        "table:action-items": {
+          "type": "table",
+          "title": "액션 아이템",
+          "columns": [
+            "할 일",
+            "담당",
+            "기한",
+            "상태"
+          ],
+          "rows": []
+        }
+      }
+    }
+  },
+  {
+    "title": "Sprint Planning",
+    "description": "백로그에서 스프린트 계획을 수립",
+    "category": "Agile",
+    "tags": [
+      "스프린트",
+      "백로그",
+      "계획"
+    ],
+    "thumbnail_url": "",
+    "version": 1,
+    "is_published": true,
+    "blocks": {
+      "layout": [
+        "doc:header",
+        "table:backlog",
+        "table:sprint-plan",
+        "checklist:goals"
+      ],
+      "items": {
+        "doc:header": {
+          "type": "doc",
+          "title": "스프린트 플래닝 노트",
+          "content": "스프린트 기간: \n스프린트 목표:\n\n메모:"
+        },
+        "table:backlog": {
+          "type": "table",
+          "title": "백로그",
+          "columns": [
+            "이슈",
+            "우선순위",
+            "스토리포인트",
+            "메모"
+          ],
+          "rows": []
+        },
+        "table:sprint-plan": {
+          "type": "table",
+          "title": "스프린트 계획",
+          "columns": [
+            "작업",
+            "담당",
+            "스토리포인트",
+            "상태"
+          ],
+          "rows": []
+        },
+        "checklist:goals": {
+          "type": "checklist",
+          "title": "스프린트 목표",
+          "items": [
+            "핵심 기능 1 전달",
+            "버그 핵심 3개 해결"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "title": "Bug Triage",
+    "description": "버그 수집/분류/검증 워크플로",
+    "category": "품질",
+    "tags": [
+      "버그",
+      "QA",
+      "트리아지"
+    ],
+    "thumbnail_url": "",
+    "version": 1,
+    "is_published": true,
+    "blocks": {
+      "layout": [
+        "doc:guide",
+        "kanban:bugs"
+      ],
+      "items": {
+        "doc:guide": {
+          "type": "doc",
+          "title": "트리아지 가이드",
+          "content": "1) 신규: 접수 검토\n2) 분석: 원인 파악/재현\n3) 수정: 담당자 할당\n4) 검증: 테스트 후 닫기"
+        },
+        "kanban:bugs": {
+          "type": "kanban",
+          "title": "버그 보드",
+          "columns": [
+            "신규",
+            "분석중",
+            "수정중",
+            "검증중",
+            "완료"
+          ],
+          "seedCards": [
+            {
+              "title": "로그인 오류 재현 필요",
+              "column": "신규"
+            },
+            {
+              "title": "이미지 업로드 실패",
+              "column": "분석중"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "title": "PRD (제품 요구사항)",
+    "description": "제품 요구사항 문서 + 요구사항 표",
+    "category": "기획",
+    "tags": [
+      "PRD",
+      "요구사항",
+      "제품"
+    ],
+    "thumbnail_url": "",
+    "version": 1,
+    "is_published": true,
+    "blocks": {
+      "layout": [
+        "doc:overview",
+        "table:requirements"
+      ],
+      "items": {
+        "doc:overview": {
+          "type": "doc",
+          "title": "PRD 개요",
+          "content": "문제정의:\n가치/목표:\n범위:\n비범위:\n지표:\n리스크:"
+        },
+        "table:requirements": {
+          "type": "table",
+          "title": "요구사항",
+          "columns": [
+            "ID",
+            "설명",
+            "우선순위",
+            "수용기준",
+            "메모"
+          ],
+          "rows": []
+        }
+      }
+    }
+  },
+  {
+    "title": "팀 회고 (Retro)",
+    "description": "잘한점/개선점/액션을 구조화",
+    "category": "팀 운영",
+    "tags": [
+      "회고",
+      "팀",
+      "개선"
+    ],
+    "thumbnail_url": "",
+    "version": 1,
+    "is_published": true,
+    "blocks": {
+      "layout": [
+        "doc:intro",
+        "table:retro",
+        "checklist:actions"
+      ],
+      "items": {
+        "doc:intro": {
+          "type": "doc",
+          "title": "회고 안내",
+          "content": "기간: \n참석자: \n\n공유하고 싶은 것들을 자유롭게 적어주세요."
+        },
+        "table:retro": {
+          "type": "table",
+          "title": "레트로 보드",
+          "columns": [
+            "잘한 점",
+            "개선할 점",
+            "의견"
+          ],
+          "rows": []
+        },
+        "checklist:actions": {
+          "type": "checklist",
+          "title": "액션 아이템",
+          "items": []
+        }
+      }
+    }
+  },
+  {
+    "title": "데일리 스탠드업",
+    "description": "어제/오늘/블로커 공유",
+    "category": "팀 운영",
+    "tags": [
+      "스탠드업",
+      "데일리",
+      "커뮤니케이션"
+    ],
+    "thumbnail_url": "",
+    "version": 1,
+    "is_published": true,
+    "blocks": {
+      "layout": [
+        "doc:tips",
+        "table:standup"
+      ],
+      "items": {
+        "doc:tips": {
+          "type": "doc",
+          "title": "진행 방식",
+          "content": "각자 1~2분: 어제 / 오늘 / 블로커 공유"
+        },
+        "table:standup": {
+          "type": "table",
+          "title": "스탠드업 기록",
+          "columns": [
+            "이름",
+            "어제",
+            "오늘",
+            "블로커"
+          ],
+          "rows": []
+        }
+      }
+    }
+  },
+  {
+    "title": "Product Roadmap",
+    "description": "분기 로드맵/마일스톤 계획",
+    "category": "기획",
+    "tags": [
+      "로드맵",
+      "마일스톤"
+    ],
+    "thumbnail_url": "",
+    "version": 1,
+    "is_published": true,
+    "blocks": {
+      "layout": [
+        "doc:overview",
+        "table:milestones"
+      ],
+      "items": {
+        "doc:overview": {
+          "type": "doc",
+          "title": "로드맵 개요",
+          "content": "비전/목표/전략 요약"
+        },
+        "table:milestones": {
+          "type": "table",
+          "title": "마일스톤",
+          "columns": [
+            "마일스톤",
+            "기간",
+            "담당",
+            "상태"
+          ],
+          "rows": []
+        }
+      }
+    }
+  },
+  {
+    "title": "OKR Tracker",
+    "description": "목표/핵심결과 추적 표",
+    "category": "기획",
+    "tags": [
+      "OKR",
+      "목표관리"
+    ],
+    "thumbnail_url": "",
+    "version": 1,
+    "is_published": true,
+    "blocks": {
+      "layout": [
+        "doc:okr-guide",
+        "table:objectives",
+        "table:key-results"
+      ],
+      "items": {
+        "doc:okr-guide": {
+          "type": "doc",
+          "title": "OKR 가이드",
+          "content": "분기/팀/개인 OKR 정의 및 주간 점검"
+        },
+        "table:objectives": {
+          "type": "table",
+          "title": "Objectives",
+          "columns": [
+            "Objective",
+            "설명",
+            "오너",
+            "상태"
+          ],
+          "rows": []
+        },
+        "table:key-results": {
+          "type": "table",
+          "title": "Key Results",
+          "columns": [
+            "Objective",
+            "Key Result",
+            "측정방식",
+            "진척(%)"
+          ],
+          "rows": []
+        }
+      }
+    }
+  },
+  {
+    "title": "Release Checklist",
+    "description": "배포 전/중/후 체크리스트",
+    "category": "릴리즈",
+    "tags": [
+      "릴리즈",
+      "체크리스트"
+    ],
+    "thumbnail_url": "",
+    "version": 1,
+    "is_published": true,
+    "blocks": {
+      "layout": [
+        "checklist:pre",
+        "checklist:post"
+      ],
+      "items": {
+        "checklist:pre": {
+          "type": "checklist",
+          "title": "사전 점검",
+          "items": [
+            "체인지로그 정리",
+            "테스트 통과",
+            "롤백 플랜 준비"
+          ]
+        },
+        "checklist:post": {
+          "type": "checklist",
+          "title": "사후 점검",
+          "items": [
+            "모니터링 지표 확인",
+            "버그 리포트 수집",
+            "학습 정리"
+          ]
+        }
+      }
+    }
+  }
+]

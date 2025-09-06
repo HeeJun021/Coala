@@ -90,8 +90,12 @@ import ProjectDocPage from "./pages/project/Doc/ProjectDocPage";
 // ERD UI
 import ErdPage from "./pages/erd/ErdPage";
 
+
 // 유저 뷰어 페이지 (새로 추가)
 import UserProfileViewerPage from "./pages/user/UserProfileViewerPage";
+
+// 프로젝트 템플릿
+import TemplateWorkspace from "./pages/project/TemplateWorkspace";
 
 const observerError = /ResizeObserver loop completed/;
 window.addEventListener("error", (e) => {
@@ -250,6 +254,9 @@ const App = () => {
                       <Route path="/team-project/:id/doc/:docId" element={<ProjectDocPage />} />
                       <Route path="/team-project" element={<TeamProjectPage />} />
                       <Route path="/team-project/:id" element={<TeamProjectPage />} />
+
+                      {/* 템플릿 */}
+                      <Route path="/team-project/:projectId/template/:templateId" element={<TemplateWorkspace />} />
 
                       {/* 게시판 */}
                       <Route path="/board/:boardType" element={<BoardPage />} />
