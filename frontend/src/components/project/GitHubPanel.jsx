@@ -23,6 +23,7 @@ import {
   createBranch,
   getRepoInfo,
   commitChanges,
+  mergeBranch,
 } from "../../api/project_gitApi";
 
 /* ---------------------- Sub Components ---------------------- */
@@ -94,7 +95,7 @@ const CreateRepoView = ({ project, onRepoCreated }) => {
           value={repoName}
           onChange={(e) => setRepoName(e.target.value)}
           className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm
-                     focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+                     focus:outline-none focus:ring-green-500 focus:border-green-500 text-sm"
         />
       </div>
 
@@ -104,7 +105,7 @@ const CreateRepoView = ({ project, onRepoCreated }) => {
           type="checkbox"
           checked={isPrivate}
           onChange={(e) => setIsPrivate(e.target.checked)}
-          className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+          className="h-4 w-4 text-green-600 border-gray-300 rounded"
         />
         <label htmlFor="is-private" className="ml-2 block text-sm text-gray-900">
           비공개(Private) 저장소로 만들기
@@ -164,7 +165,7 @@ const BranchModal = ({
                   onClick={() => onSwitch(b.name)}
                   className={`w-full text-left px-3 py-2 text-sm ${
                     currentBranch === b.name
-                      ? "bg-blue-50 text-blue-700 font-semibold"
+                      ? "bg-blue-50 text-green-700 font-semibold"
                       : "hover:bg-gray-50"
                   }`}
                 >
@@ -184,15 +185,93 @@ const BranchModal = ({
               onChange={(e) => setNewBranchName(e.target.value)}
               placeholder="새 브랜치 이름"
               className="flex-grow px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm
-                         focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                         focus:outline-none focus:ring-green-500 focus:border-green-500"
             />
             <button
               onClick={handleCreate}
-              className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
+              className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700"
             >
               생성
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const MergeModal = ({ isOpen, onClose, branches, currentBranch, onMerge }) => {
+  const [sourceBranch, setSourceBranch] = useState("");
+
+  useEffect(() => {
+    // 모달이 열릴 때 선택 가능한 첫 번째 브랜치를 기본값으로 설정
+    if (isOpen) {
+      const defaultSource = branches.find(b => b.name !== currentBranch)?.name || "";
+      setSourceBranch(defaultSource);
+    }
+  }, [isOpen, branches, currentBranch]);
+
+  if (!isOpen) return null;
+
+  const handleMerge = () => {
+    if (!sourceBranch) {
+      alert("병합할 브랜치를 선택하세요.");
+      return;
+    }
+    onMerge(sourceBranch);
+  };
+
+  const availableBranches = branches.filter(b => b.name !== currentBranch);
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+        <div className="flex justify-between items-center p-4 border-b">
+          <h3 className="text-lg font-semibold">브랜치 병합 (Merge)</h3>
+          <button onClick={onClose} className="p-1 hover:bg-gray-200 rounded-full">
+            <X size={20} />
+          </button>
+        </div>
+        <div className="p-4 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              어떤 브랜치를
+            </label>
+            {/* ▼▼▼ [수정] 드롭다운을 목록 형태로 변경 ▼▼▼ */}
+            <ul className="max-h-48 overflow-y-auto border rounded-md">
+              {availableBranches.length > 0 ? (
+                availableBranches.map((b) => (
+                  <li key={b.name}>
+                    <button
+                      onClick={() => setSourceBranch(b.name)}
+                      className={`w-full text-left px-3 py-2 text-sm ${
+                        sourceBranch === b.name
+                          ? "bg-purple-50 text-green-700 font-semibold"
+                          : "hover:bg-gray-50"
+                      }`}
+                    >
+                      {b.name}
+                    </button>
+                  </li>
+                ))
+              ) : (
+                <li className="px-3 py-2 text-sm text-gray-400">병합할 브랜치가 없습니다</li>
+              )}
+            </ul>
+          </div>
+          <div className="text-center text-gray-500">▼</div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              현재 브랜치 '{currentBranch}'(으)로 병합합니다.
+            </label>
+          </div>
+          <button
+            onClick={handleMerge}
+            disabled={!sourceBranch}
+            className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+          >
+            '{sourceBranch}' → '{currentBranch}' 병합 실행
+          </button>
         </div>
       </div>
     </div>
@@ -210,6 +289,7 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isBranchModalOpen, setIsBranchModalOpen] = useState(false);
+  const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
 
   const fetchDataForBranch = useCallback(
     async (branch) => {
@@ -301,15 +381,33 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
     }
   };
 
+  // frontend/src/components/project/GitHubPanel.jsx 의 ConnectedView 내부
+
   const handleCreateBranch = async (newBranchName) => {
     if (!newBranchName?.trim()) return;
     setIsSubmitting(true);
     try {
+      // 1. GitHub API로 새 브랜치 생성
       await createBranch(project.project_id, {
         from_branch: currentBranch,
         new_branch: newBranchName.trim(),
       });
+
+      // ▼▼▼ [추가] 브랜치 목록을 즉시 다시 불러와서 상태를 업데이트 ▼▼▼
+      // 이 부분이 있어야 모달을 다시 열었을 때 새 브랜치가 보임
+      const rawBranches = await listBranches(project.project_id);
+      const mappedBranches =
+        (rawBranches || []).map((b) => ({
+          name: b.branch_name,
+          head_sha: b.head_sha,
+          is_default: b.branch_name === (repoInfo?.default_branch ?? ""),
+          is_protected: !!b.is_protected,
+        })) || [];
+      setBranches(mappedBranches);
+
+      // 2. 기존 브랜치 이동 함수를 호출해서 새로 만든 브랜치로 이동
       await handleBranchSwitch(newBranchName.trim());
+
     } catch (error) {
       alert(
         `브랜치 생성 실패: ${
@@ -317,7 +415,8 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
         }`
       );
     } finally {
-      setIsSubmitting(false);
+      // handleBranchSwitch에서 modal을 닫고 submitting을 false로 만드므로 여기선 할 필요 없음
+      // setIsSubmitting(false); 
     }
   };
 
@@ -353,6 +452,28 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
     }
   };
 
+  const handleMerge = async (sourceBranch) => {
+  const commitMessage = `Merge branch '${sourceBranch}' into ${currentBranch}`;
+  const ok = window.confirm(`'${sourceBranch}' 브랜치를 '${currentBranch}'(으)로 병합합니다.\n\n진행할까요?`);
+    if (!ok) return;
+
+    setIsSubmitting(true);
+    try {
+      await mergeBranch(project.project_id, {
+        base: currentBranch,
+        head: sourceBranch,
+        commit_message: commitMessage,
+      });
+      alert("병합이 완료되었습니다.");
+      await fetchDataForBranch(currentBranch); // 데이터 새로고침
+    } catch (error) {
+      alert(`병합 실패: ${error?.response?.data?.detail || error.message}`);
+    } finally {
+      setIsSubmitting(false);
+      setIsMergeModalOpen(false);
+    }
+  };  
+
   if (loading) return <div className="text-center py-10">로딩 중...</div>;
 
   return (
@@ -375,6 +496,13 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
             title="원격 상태 새로고침"
           >
             <RotateCw size={14} /> Fetch
+          </button>
+          <button
+            onClick={() => setIsMergeModalOpen(true)}
+            className="px-3 py-1.5 text-sm bg-white border rounded-md hover:bg-gray-50 flex items-center gap-1.5 disabled:opacity-50"
+            disabled={isSubmitting}
+          >
+            <GitBranch size={14} className="text-purple-600"/> Merge
           </button>
           <button
             disabled
@@ -483,6 +611,13 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
         currentBranch={currentBranch}
         onSwitch={handleBranchSwitch}
         onCreate={handleCreateBranch}
+      />
+      <MergeModal
+        isOpen={isMergeModalOpen}
+        onClose={() => setIsMergeModalOpen(false)}
+        branches={branches}
+        currentBranch={currentBranch}
+        onMerge={handleMerge}
       />
     </div>
   );

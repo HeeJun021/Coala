@@ -139,3 +139,70 @@ def list_branches_service(
         })
 
     return results
+
+def merge_branch_service(
+    db: Session,
+    current_user: User,
+    project_id: int,
+    base: str,
+    head: str,
+    message: str | None,
+) -> dict:
+    """
+    GitHub API를 사용하여 브랜치를 병합합니다.
+    """
+    if base == head:
+        raise HTTPException(status_code=400, detail="동일한 브랜치를 병합할 수 없습니다.")
+
+    # 1. 레포 정보와 GitHub 토큰 가져오기
+    _, owner, repo, _ = _get_repo_context(db, project_id)
+    token = _get_github_token(db, current_user.user_id)
+
+    # 2. GitHub API에 병합 요청
+    url = f"{GITHUB_API}/repos/{owner}/{repo}/merges"
+    payload = {
+        "base": base,
+        "head": head,
+    }
+    if message:
+        payload["commit_message"] = message
+
+    response = requests.post(url, headers=_gh_headers(token), json=payload)
+
+    # 3. GitHub API 응답 처리
+    if response.status_code == 201:  # 성공적으로 병합 & 커밋 생성
+        data = response.json()
+        return {
+            "sha": data["sha"],
+            "message": data["commit"]["message"],
+            "author_name": data["commit"]["author"]["name"],
+            "merged": True,
+            "details": f"성공적으로 '{head}' 브랜치를 '{base}' 브랜치에 병합했습니다.",
+        }
+    
+    elif response.status_code == 204:  # 이미 병합된 상태 (변경 사항 없음)
+        return {
+            "sha": "N/A",
+            "message": "No new commits to merge.",
+            "author_name": "System",
+            "merged": True,
+            "details": f"'{head}' 브랜치는 이미 '{base}' 브랜치에 최신 상태로 병합되어 있습니다.",
+        }
+        
+    elif response.status_code == 409:  # 충돌(Conflict) 발생
+        raise HTTPException(
+            status_code=409,
+            detail="자동 병합에 실패했습니다. 충돌(conflict)을 해결해야 합니다."
+        )
+        
+    elif response.status_code == 404:  # 브랜치 찾을 수 없음
+        raise HTTPException(
+            status_code=404,
+            detail=f"'{base}' 또는 '{head}' 브랜치를 찾을 수 없습니다."
+        )
+        
+    else:  # 그 외 GitHub API 오류
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=f"GitHub API 오류: {response.text}"
+        )

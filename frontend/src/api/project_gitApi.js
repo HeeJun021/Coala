@@ -171,3 +171,16 @@ export const listBranches = async (projectId) => {
   return res.data;
 };
 
+/**
+ * 브랜치를 병합합니다 (head -> base).
+ * POST /project-git/{projectId}/branches/merge
+ * @param {object} payload - { base, head, commit_message? }
+ * @returns {Promise<object>} Merge result
+ */
+export const mergeBranch = async (projectId, payload) => {
+  const res = await apiClient.post(
+    `/project-git/${projectId}/branches/merge`,
+    payload
+  );
+  return res.data;
+};

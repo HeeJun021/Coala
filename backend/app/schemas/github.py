@@ -57,3 +57,17 @@ class FileUpdateRequest(BaseModel):
 class FileDeleteRequest(BaseModel):
     branch: Optional[str] = None
     path: str
+    
+# --- 요청 모델 ---
+class MergeBranchRequest(BaseModel):
+    base: str  # 병합의 대상이 되는 브랜치 (예: "main")
+    head: str  # 병합할 브랜치 (예: "feature/login")
+    commit_message: Optional[str] = None
+
+# --- 응답 모델 ---
+class MergeResult(BaseModel):
+    sha: str
+    message: str
+    author_name: str
+    merged: bool
+    details: str

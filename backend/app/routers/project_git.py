@@ -7,12 +7,12 @@ from app.database import get_db
 from app.models.user import User
 from app.dependencies.auth import get_current_user
 
-from app.schemas.github import RepoCreateRequest, RepoInfo, TreeResponse, BranchCreateRequest, BranchInfo, FileCreateRequest, StatusResponse, FileDeleteRequest
+from app.schemas.github import RepoCreateRequest, RepoInfo, TreeResponse, BranchCreateRequest, BranchInfo, FileCreateRequest, StatusResponse, FileDeleteRequest, MergeBranchRequest, MergeResult
 
 from app.services.project_git.github_service import create_repo_service
 from app.services.project_git.git_browse_service import get_repo_tree, get_repo_file, get_connection_status, get_commit_history
 from app.services.project_git.git_edit_service import save_file_to_buffer, stage_paths, commit_changes, create_new_file_service,  get_change_status, delete_file_service
-from app.services.project_git.git_branch_service import create_branch_service, switch_branch_service, get_repo_info_service, list_branches_service
+from app.services.project_git.git_branch_service import create_branch_service, switch_branch_service, get_repo_info_service, list_branches_service, merge_branch_service
 
 router = APIRouter(prefix="/project-git", tags=["Project Git"])
 
@@ -247,3 +247,24 @@ def get_branch_commit_history(
     선택된 브랜치의 최근 커밋 내역을 가져옵니다.
     """
     return get_commit_history(db, current_user, project_id, branch)
+
+@router.post("/{project_id}/branches/merge", response_model=MergeResult)
+def merge_branches(
+    project_id: int,
+    body: MergeBranchRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    한 브랜치를 다른 브랜치로 병합(Merge)합니다.
+    - head 브랜치를 base 브랜치로 병합합니다.
+    """
+    result = merge_branch_service(
+        db=db,
+        current_user=current_user,
+        project_id=project_id,
+        base=body.base,
+        head=body.head,
+        message=body.commit_message,
+    )
+    return result
