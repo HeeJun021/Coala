@@ -13,12 +13,20 @@ const TeamProjectPage = () => {
   const navigate = useNavigate();
   const { projectId: paramProjectId } = useParams();
 
+  // ▼▼▼ [수정] 실제 앱에서는 useAuth() 같은 훅이나 전역 상태(Recoil, Zustand 등)로 currentUser를 가져와야 해 ▼▼▼
+  // 지금은 테스트를 위해 임시로 객체를 만들어 둘게.
+  const [currentUser, setCurrentUser] = useState({
+    user_id: 1,
+    username: "testuser",
+    provider: "github", // 이 값이 'github'이어야 GitHub 대시보드가 보여!
+  });
+  
   const [activeTab, setActiveTab] = useState("dashboard");
   const [subTab, setSubTab] = useState(null);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [projects, setProjects] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [tempProject, setTempProject] = useState(null); // 생성 직후 접근 용도
+  const [tempProject, setTempProject] = useState(null);
 
   const fetchProjects = useCallback(async () => {
     try {
@@ -102,6 +110,8 @@ const TeamProjectPage = () => {
             project={selectedProject}
             onNameChange={() => fetchProjects()}
             defaultTab={normalizedSubTab || normalizedTab}
+            // ▼▼▼ [핵심 수정] currentUser를 props로 전달! ▼▼▼
+            currentUser={currentUser}
           />
         );
       case "dashboard":

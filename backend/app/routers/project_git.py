@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
-from typing import Optional, List, Literal
+from typing import Optional, List, Literal, Dict
 
 from app.database import get_db
 from app.models.user import User
@@ -10,7 +10,7 @@ from app.dependencies.auth import get_current_user
 from app.schemas.github import RepoCreateRequest, RepoInfo, TreeResponse, BranchCreateRequest, BranchInfo, FileCreateRequest, StatusResponse, FileDeleteRequest
 
 from app.services.project_git.github_service import create_repo_service
-from app.services.project_git.git_browse_service import get_repo_tree, get_repo_file
+from app.services.project_git.git_browse_service import get_repo_tree, get_repo_file, get_connection_status, get_commit_history
 from app.services.project_git.git_edit_service import save_file_to_buffer, stage_paths, commit_changes, create_new_file_service,  get_change_status, delete_file_service
 from app.services.project_git.git_branch_service import create_branch_service, switch_branch_service, get_repo_info_service, list_branches_service
 
@@ -216,3 +216,34 @@ def delete_file(
     me: User = Depends(get_current_user),
 ):
     return delete_file_service(db, me, project_id, body.branch, body.path)
+
+@router.get(
+    "/{project_id}/connection-status",
+    summary="GitHub 저장소 연결 상태 확인",
+    response_model=dict,
+)
+def get_repository_connection_status(
+    project_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    프로젝트에 GitHub 저장소가 연결되어 있는지 확인합니다.
+    """
+    return get_connection_status(db, project_id)
+
+@router.get(
+    "/{project_id}/commits",
+    summary="브랜치 커밋 내역 조회",
+    response_model=List[Dict],
+)
+def get_branch_commit_history(
+    project_id: int,
+    branch: str, # 쿼리 파라미터로 브랜치 이름을 받음
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    선택된 브랜치의 최근 커밋 내역을 가져옵니다.
+    """
+    return get_commit_history(db, current_user, project_id, branch)

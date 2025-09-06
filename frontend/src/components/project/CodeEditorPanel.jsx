@@ -1,54 +1,62 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { FaChevronLeft, FaChevronRight, FaPlay } from "react-icons/fa";
 import {
-  getRepoInfo,
   getFile,
   saveFile,
   stagePaths,
   commitChanges,
   getStatus,
 } from "../../api/project_gitApi";
-// ▼▼▼ [수정] 새로 만든 프로젝트용 preview API 임포트 ▼▼▼
 import { runProjectJs, runProjectPython } from "../../api/projectPreviewApi";
 import ProjectGitExplorerPanel from "./projectgit/ProjectGitExploerPanel";
 import ProjectGitPreviewPanel from "./projectgit/ProjectGitPreviewPanel";
 
-export default function CodeEditorPanel({ project }) {
+// ▼▼▼ [수정] props에 branch와 onBranchChange 추가 ▼▼▼
+export default function CodeEditorPanel({ project, branch, onBranchChange }) {
   const projectId = project?.project_id;
-  const [branch, setBranch] = useState(null);
+
+  // ▼▼▼ [제거] 자체적으로 관리하던 branch 상태 제거 ▼▼▼
+  // const [branch, setBranch] = useState(null);
 
   const [showExplorer, setShowExplorer] = useState(true);
   const sidebarWidth = showExplorer ? 260 : 36;
-
   const [activePath, setActivePath] = useState("");
   const [content, setContent] = useState("");
   const [baseSha, setBaseSha] = useState(null);
   const [encoding, setEncoding] = useState("utf-8");
-
   const [status, setStatus] = useState({ staged: [], unstaged: [], has_uncommitted: false });
-  
   const [previewSrcDoc, setPreviewSrcDoc] = useState(null);
   const [previewFilename, setPreviewFilename] = useState("");
   const [showPreview, setShowPreview] = useState(true);
 
+  // ▼▼▼ [제거] Repo 정보(기본 브랜치)를 직접 불러오는 로직 제거 ▼▼▼
+  /*
   const loadRepoInfo = useCallback(async () => {
     if (!projectId) return;
     const info = await getRepoInfo(projectId);
-    setBranch(info.default_branch || "main");
-  }, [projectId]);
+    // 부모에게서 받은 branch가 없을 때만 초기값 설정
+    if (!branch) {
+      onBranchChange(info.default_branch || "main");
+    }
+  }, [projectId, branch, onBranchChange]);
+  useEffect(() => { loadRepoInfo(); }, [loadRepoInfo]);
+  */
 
+  // ▼▼▼ [수정] branch prop이 바뀔 때마다 status 갱신 ▼▼▼
   const refreshStatus = useCallback(async () => {
     if (!projectId || !branch) return;
     const s = await getStatus(projectId, { branch });
     setStatus(s);
   }, [projectId, branch]);
 
-  useEffect(() => { loadRepoInfo(); }, [loadRepoInfo]);
-  useEffect(() => { refreshStatus(); }, [refreshStatus]);
+  useEffect(() => {
+    refreshStatus();
+  }, [refreshStatus]);
 
+  // ▼▼▼ [수정] 파일 열 때도 props로 받은 branch 사용 ▼▼▼
   const handleOpenFile = async (path, fileData) => {
     setActivePath(path);
-    const file = fileData || await getFile(projectId, { path, branch });
+    const file = fileData || (await getFile(projectId, { path, branch }));
     setContent(file?.content ?? "");
     setBaseSha(file?.base_sha ?? null);
     setEncoding(file?.encoding ?? "utf-8");
@@ -56,6 +64,7 @@ export default function CodeEditorPanel({ project }) {
     setPreviewFilename("");
   };
 
+  // 저장, 스테이징 등 모든 API 호출에서 props.branch를 사용 (기존 코드와 동일)
   const handleSave = async () => {
     if (!activePath) return;
     await saveFile(projectId, {
@@ -83,6 +92,8 @@ export default function CodeEditorPanel({ project }) {
     await commitChanges(projectId, { branch, message, useStagedOnly: true });
     setBaseSha(null);
     await refreshStatus();
+    // ▼▼▼ [추가] 커밋 후 파일 탐색기 새로고침 트리거 (선택사항) ▼▼▼
+    // refreshExplorer(); 
   };
 
   const isRunnable = useMemo(() => {
@@ -136,15 +147,16 @@ export default function CodeEditorPanel({ project }) {
 
         <div className="text-sm text-gray-600 flex items-center flex-shrink min-w-0">
           <span className="font-medium truncate">{activePath || "파일을 선택하세요"}</span>
-          {/* ▼▼▼ [수정] h-4 제거하여 구분선이 세로로 꽉 차도록 변경 ▼▼▼ */}
           <div className="w-px bg-gray-300 mx-3 self-stretch"></div>
-          <span className="flex-shrink-0">{branch}</span>
+          {/* 현재 브랜치 표시 */}
+          <span className="flex-shrink-0">{branch || "브랜치 로딩 중..."}</span>
           <div className="w-px bg-gray-300 mx-3 self-stretch"></div>
           <span className="flex-shrink-0">Staged: {status.staged?.length || 0}</span>
           <span className="ml-2 flex-shrink-0">Unstaged: {status.unstaged?.length || 0}</span>
         </div>
 
         <div className="ml-auto flex items-center gap-2 flex-shrink-0">
+          {/* 버튼들... (기존과 동일) */}
           <button className="text-[12px] text-blue-600 hover:text-blue-800 px-2 py-0.5 border border-blue-300 rounded disabled:opacity-50"
                   onClick={handleSave} disabled={!activePath}>💾 저장</button>
           <button className="text-[12px] text-green-600 hover:text-green-800 px-2 py-0.5 border border-green-300 rounded disabled:opacity-50"
@@ -198,4 +210,3 @@ export default function CodeEditorPanel({ project }) {
     </div>
   );
 }
-

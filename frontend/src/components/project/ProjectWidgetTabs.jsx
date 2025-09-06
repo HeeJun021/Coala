@@ -3,10 +3,12 @@ import ProjectDetailPanel from "./ProjectDetailPanel";
 import TaskCalendarView from "./TaskCalendarView";
 import ProjectTasksTab from "./ProjectTasksTab";
 import TimelineWidget from "./TimelineWidget";
-import { updateProject, getMyProjects } from "../../api/projectApi";
+import { updateProject } from "../../api/projectApi";
 import { useLocation } from "react-router-dom";
 import { getErds } from "../../api/erd/erdApi";
 import { getMyTasks } from "../../api/taskApi";
+// ▼▼▼ [추가] getRepoInfo API 임포트 ▼▼▼
+import { getRepoInfo } from "../../api/project_gitApi";
 import ErdListPanel from "../erd/list/ErdListPanel";
 import DocsListPanel from "./DocsListPanel";
 import TemplatesListPanel from "./TemplatesListPanel";
@@ -25,8 +27,8 @@ const WIDGET_TABS = [
   { key: "code_editor", label: "코드 에디터" },
 ];
 
-const ProjectWidgetTabs = ({ project, onNameChange, defaultTab = "overview" }) => {
-  const location = useLocation(); // 추가
+const ProjectWidgetTabs = ({ project, onNameChange, currentUser, defaultTab = "overview" }) => {
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [enabledTabs, setEnabledTabs] = useState(["overview", "erd"]);
   const [showAddMenu, setShowAddMenu] = useState(false);
@@ -37,7 +39,9 @@ const ProjectWidgetTabs = ({ project, onNameChange, defaultTab = "overview" }) =
   const [isOverTrash, setIsOverTrash] = useState(false);
   const addMenuRef = useRef(null);
 
-  // 핵심: defaultTab이 바뀌면 activeTab 업데이트
+  // ▼▼▼ [추가] 현재 선택된 브랜치를 관리하는 상태 ▼▼▼
+  const [currentBranch, setCurrentBranch] = useState(null);
+
   useEffect(() => {
     const initialTab = location.state?.subTab || defaultTab;
     setActiveTab(initialTab);
@@ -58,6 +62,20 @@ const ProjectWidgetTabs = ({ project, onNameChange, defaultTab = "overview" }) =
     }
     setEnabledTabs(orderedTabs);
     setCurrentProject(project);
+    
+    // ▼▼▼ [추가] 프로젝트가 바뀔 때마다 기본 브랜치를 가져와서 상태 초기화 ▼▼▼
+    const fetchInitialBranch = async () => {
+      if (project?.project_id) {
+        try {
+          const info = await getRepoInfo(project.project_id);
+          setCurrentBranch(info.default_branch || "main");
+        } catch (error) {
+          console.log("초기 브랜치 정보 로드 실패 (레포 미연결일 수 있음)");
+          setCurrentBranch(null);
+        }
+      }
+    };
+    fetchInitialBranch();
   }, [project]);
 
   useEffect(() => {
@@ -193,6 +211,11 @@ const ProjectWidgetTabs = ({ project, onNameChange, defaultTab = "overview" }) =
     }
   }, [project, loadErds, loadTasks]);
 
+  // ▼▼▼ [추가] 브랜치 변경 시 상태를 업데이트하는 핸들러 ▼▼▼
+  const handleBranchChange = (newBranch) => {
+    setCurrentBranch(newBranch);
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
       case "overview":
@@ -224,7 +247,14 @@ const ProjectWidgetTabs = ({ project, onNameChange, defaultTab = "overview" }) =
       case "tasks":
         return <ProjectTasksTab project={currentProject} />;
       case "git":
-        return <GitHubPanel project={currentProject} />;
+        // ▼▼▼ [수정] GitHubPanel에 currentUser와 onBranchChange props 전달 ▼▼▼
+        return (
+          <GitHubPanel 
+            project={currentProject} 
+            currentUser={currentUser} 
+            onBranchChange={handleBranchChange}
+          />
+        );
       case "timeline":
         return <TimelineWidget project={currentProject} />;
       case "docs":
@@ -232,7 +262,14 @@ const ProjectWidgetTabs = ({ project, onNameChange, defaultTab = "overview" }) =
       case "templates":
         return <TemplatesListPanel project={currentProject} />;
       case "code_editor":
-        return <CodeEditorPanel project={currentProject} />;
+        // ▼▼▼ [수정] CodeEditorPanel에 현재 branch와 onBranchChange props 전달 ▼▼▼
+        return (
+          <CodeEditorPanel 
+            project={currentProject} 
+            branch={currentBranch}
+            onBranchChange={handleBranchChange}
+          />
+        );
       default:
         return (
           <div className="p-10 text-gray-500 text-sm">

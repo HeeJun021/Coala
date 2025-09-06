@@ -232,3 +232,57 @@ def get_repo_file(
         "change_type": None,
         "source": "github",
     }
+
+def get_connection_status(db: Session, project_id: int) -> Dict:
+    """
+    프로젝트의 GitHub 저장소 연결 상태를 확인한다.
+    """
+    try:
+        # _get_repo_context는 레포가 없으면 404 예외를 발생시킨다.
+        _, owner, repo, _ = _get_repo_context(db, project_id)
+        
+        # 레포 정보가 있으면 연결된 것으로 간주
+        return {
+            "is_connected": True,
+            "owner": owner,
+            "repo_name": repo,
+            "repo_url": f"https://github.com/{owner}/{repo}"
+        }
+    except HTTPException as e:
+        if e.status_code == 404:
+            # _get_repo_context에서 레포를 찾지 못한 경우
+            return {"is_connected": False}
+        # 다른 예외는 그대로 전달
+        raise e
+
+def get_commit_history(
+    db: Session,
+    current_user: User,
+    project_id: int,
+    branch: str,
+    limit: int = 30,
+) -> List[Dict]:
+    """
+    특정 브랜치의 커밋 내역을 GitHub에서 가져온다.
+    """
+    _, owner, repo, _ = _get_repo_context(db, project_id)
+    token = _get_github_token(db, current_user.user_id)
+
+    url = f"{GITHUB_API}/repos/{owner}/{repo}/commits"
+    params = {"sha": branch, "per_page": limit}
+    
+    r = requests.get(url, headers=_gh_headers(token), params=params)
+    
+    if r.status_code != 200:
+        raise HTTPException(status_code=r.status_code, detail="GitHub 커밋 내역 조회에 실패했습니다.")
+    
+    commits_data = r.json()
+    history = []
+    for c in commits_data:
+        history.append({
+            "sha": c.get("sha"),
+            "message": (c.get("commit") or {}).get("message"),
+            "author": (c.get("commit") or {}).get("author", {}).get("name"),
+            "date": (c.get("commit") or {}).get("author", {}).get("date"),
+        })
+    return history
