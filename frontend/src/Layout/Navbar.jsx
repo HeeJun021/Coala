@@ -55,9 +55,9 @@ const Navbar = () => {
       children: languages.map((lang) => lang.language),
     },
     {
-      label: "퀴즈문제",
+      label: "개념퀴즈",
       path: "/quizpage",
-      children: ["연습 퀴즈", "테스트 퀴즈", "퀴즈 만들기", "퀴즈 통계"],
+      children: ["연습 문제", "실전 문제", "제출 내역", "문제 만들기", "퀴즈 통계", ],
     },
     {
       label: "자율코딩",
@@ -231,11 +231,12 @@ const Navbar = () => {
                     );
                   }
 
-                  if (item.label === "퀴즈문제") {
+                  if (item.label === "개념퀴즈") {
                     let link = "";
-                    if (child === "연습 퀴즈") link = "/quizpage";
-                    if (child === "테스트 퀴즈") link = "/quizpage?category=test";
-                    if (child === "퀴즈 만들기") link = "/quizpage?category=user";
+                    if (child === "연습 문제") link = "/quizpage";
+                    if (child === "실전 문제") link = "/quizpage?category=test";
+                    if (child === "문제 만들기") link = "/quizpage?category=user";
+                    if (child === "제출 내역") link = "/quiz-history";
                     if (child === "퀴즈 통계") link = "/quiz-stats";
                     return (
                       <Link

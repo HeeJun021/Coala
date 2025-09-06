@@ -3,7 +3,8 @@ import { useLocation } from "react-router-dom";
 import PracticeQuiz from "./PracticeQuiz";
 import TestQuiz from "./TestQuiz";
 import UserQuiz from "./UserQuiz";
-
+import QuizHistoryPage from "./QuizHistoryPage"
+import QuizStatsPage from "./QuizStatsPage"
 const QuizPage = ({ userData }) => {
   const location = useLocation();
 
@@ -20,6 +21,10 @@ const QuizPage = ({ userData }) => {
         return <TestQuiz />;
       case "user":
         return <UserQuiz userData={userData}/>;
+      case "stats":
+        return <QuizStatsPage />
+      case "history":
+        return <QuizHistoryPage />
       default:
         return <PracticeQuiz />; // 기본값
     }

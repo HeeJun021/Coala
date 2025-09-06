@@ -364,7 +364,7 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
           className="px-3 py-1.5 text-sm bg-white border rounded-md hover:bg-gray-50 flex items-center gap-2"
         >
           현재 브랜치:{" "}
-          <span className="font-semibold text-blue-600">{currentBranch}</span>
+          <span className="font-semibold text-green-600">{currentBranch}</span>
           <ChevronsUpDown size={14} className="text-gray-400" />
         </button>
         <div className="flex items-center gap-2">
@@ -441,10 +441,10 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
               rows={3}
               value={commitMsg}
               onChange={(e) => setCommitMsg(e.target.value)}
-              className="w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              className="w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-green-600 focus:border-green-600"
             />
             <button
-              className="mt-2 w-full px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50"
+              className="mt-2 w-full px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 disabled:opacity-50"
               onClick={handleCommit}
               disabled={isSubmitting || !currentBranch}
             >
@@ -467,7 +467,7 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
                 <p className="text-xs text-gray-500">
                   {c.author} - {new Date(c.date).toLocaleString()}
                 </p>
-                <p className="font-mono text-blue-600 text-xs hover:underline cursor-pointer">
+                <p className="font-mono text-green-600 text-xs hover:underline cursor-pointer">
                   {c.sha.substring(0, 7)}
                 </p>
               </div>

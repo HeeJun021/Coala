@@ -43,7 +43,7 @@ const QuizSubmissionTable = ({ userId }) => {
 
   return (
     <div className="bg-white shadow-md rounded-lg p-6 mt-10 max-w-screen-lg mx-auto">
-      <h2 className="text-lg font-semibold mb-4">테스트 퀴즈 제출 내역</h2>
+      <h2 className="text-lg font-semibold mb-4">퀴즈 제출 내역</h2>
       <table className="w-full border-collapse border text-sm">
         <thead>
           <tr className="bg-gray-100">

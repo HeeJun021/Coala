@@ -1,15 +1,11 @@
-// src/pages/quiz/QuizStatsPage.jsx
-
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { getQuizStats } from "../../api/quizApi";
 
-// 컴포넌트
-import QuizStatsPanel from "../../components/quiz/QuizStatsPanel";
-import QuizStatsChart from "../../components/quiz/QuizStatsChart";
+import QuizSubmissionTable from "../../components/quiz/QuizSubmissionTable";
 import QuizSideBar from "../../Layout/QuizSideBar";
 
-const QuizStatsPage = () => {
+const QuizHistoryPage = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
 
@@ -32,17 +28,12 @@ const QuizStatsPage = () => {
       <QuizSideBar />
       {stats && (
         <>
-          {/* 상단 통계 패널 */}
-          <QuizStatsPanel stats={stats} />
-
-          {/* 중단 차트 (언어별 비율/정답률) */}
-          <div className="max-w-5xl mx-auto">
-            <QuizStatsChart solvedByLanguage={stats.solvedByLanguage} />
-          </div>
+          {/* 하단 제출 내역 테이블 */}
+          <QuizSubmissionTable userId={user?.user_id} />
         </>
       )}
     </div>
   );
 };
 
-export default QuizStatsPage;
+export default QuizHistoryPage;

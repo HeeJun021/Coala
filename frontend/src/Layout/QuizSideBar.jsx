@@ -33,7 +33,7 @@ const QuizSideBar = () => {
           }`}
           onClick={() => handleMenuClick("practice")}
         >
-          연습 퀴즈
+          연습 문제
         </div>
 
         {/* 퀴즈 테스트 */}
@@ -45,9 +45,20 @@ const QuizSideBar = () => {
           }`}
           onClick={() => handleMenuClick("test")}
         >
-          테스트 퀴즈
+          실전 문제
         </div>
 
+        {/* 제출 내역 */}
+        <div
+          className={`px-6 py-4 cursor-pointer text-[16px] font-semibold transition-all duration-150 ${
+            currentCategory === "history"
+              ? "bg-[#D9D9D9] text-gray-800"
+              : "hover:bg-gray-100 text-gray-600"
+          }`}
+          onClick={() => handleMenuClick("history")}
+        >
+          제출 내역
+        </div>
         {/* 사용자 정의 퀴즈 */}
         <div
           className={`px-6 py-4 cursor-pointer text-[16px] font-semibold transition-all duration-150 ${
@@ -57,8 +68,21 @@ const QuizSideBar = () => {
           }`}
           onClick={() => handleMenuClick("user")}
         >
-          퀴즈 만들기
+          문제 만들기
         </div>
+        {/* 통계*/}
+        <div
+          className={`px-6 py-4 cursor-pointer text-[16px] font-semibold transition-all duration-150 ${
+            currentCategory === "stats"
+              ? "bg-[#D9D9D9] text-gray-800"
+              : "hover:bg-gray-100 text-gray-600"
+          }`}
+          onClick={() => handleMenuClick("stats")}
+        >
+          퀴즈 통계
+        </div>
+
+        
       </div>
     </div>
   );
