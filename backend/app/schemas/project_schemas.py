@@ -14,7 +14,8 @@ class ProjectWidget(BaseModel):
     timeline: bool = False
     files: bool = False
     templates: bool = False
-
+    code_editor: bool = False
+    
 # 프로젝트 생성 요청
 class ProjectCreateRequest(BaseModel):
     name: str
@@ -62,20 +63,3 @@ class MyProjectListResponse(BaseModel):
 
 class UpdateMemberRolesRequest(BaseModel):
     roles: List[str]
-
-# 템플릿 생성 요청
-class ProjectTemplateCreateRequest(BaseModel):
-    title: str
-    description: Optional[str] = None
-    widgets: Optional[List[str]] = None
-
-# 템플릿 응답
-class ProjectTemplateResponse(BaseModel):
-    template_id: int
-    title: str
-    description: Optional[str] = None
-    widgets: Optional[List[str]] = None
-    added_at: datetime
-
-    class Config:
-        from_attributes = True
