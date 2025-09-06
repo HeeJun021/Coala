@@ -83,6 +83,9 @@ import ProjectDocPage from "./pages/project/Doc/ProjectDocPage";
 // ERD UI
 import ErdPage from "./pages/erd/ErdPage";
 
+// 프로젝트 템플릿
+import TemplateWorkspace from "./pages/project/TemplateWorkspace";
+
 const observerError = /ResizeObserver loop completed/;
 window.addEventListener("error", (e) => {
   if (observerError.test(e.message)) {
@@ -226,6 +229,8 @@ const App = () => {
                   <Route path="/board/:boardType/edit/:postId" element={<BoardEditPage />} />
                   <Route path="/board/:boardType/applicants/:postId" element={<ProjectApplicantsPage />} />
                   <Route path="/board" element={<Navigate to="/board/free" />} />
+
+                  <Route path="/team-project/:projectId/template/:templateId" element={<TemplateWorkspace />} />
 
                 </Routes>
               </MainLayout>

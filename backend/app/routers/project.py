@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.dependencies.auth import get_current_user
-from app.schemas.project_schemas import ProjectCreateRequest, ProjectUpdateRequest, ProjectTemplateCreateRequest, ProjectTemplateResponse
-from app.models.project_models import Project, ProjectMembers, ProjectWidgets, ProjectActivityLog, ProjectTemplate
+from app.schemas.project_schemas import ProjectCreateRequest, ProjectUpdateRequest
+from app.models.project_models import Project, ProjectMembers, ProjectWidgets, ProjectActivityLog
 from datetime import datetime
 from app.models.user import User
 from typing import List
@@ -398,110 +398,3 @@ def reject_project_invite(project_id: int, db: Session = Depends(get_db), curren
     db.commit()
     return {"message": "Invitation rejected successfully"}
 
-# 13. 템플릿 목록 조회
-@router.get("/{project_id}/templates")
-def get_templates(project_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    project = db.query(Project).filter(Project.project_id == project_id).first()
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    
-    templates = db.query(ProjectTemplate).filter(ProjectTemplate.project_id == project_id).all()
-    return [
-        {
-            "template_id": t.template_id,
-            "title": t.title,
-            "description": t.description,
-            "widgets": t.widgets,
-            "added_at": t.added_at,
-        }
-        for t in templates
-    ]
-
-# 14. 템플릿 추가
-@router.post("/{project_id}/templates")
-def add_template(
-    project_id: int,
-    template_data: ProjectTemplateCreateRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    project = db.query(Project).filter(Project.project_id == project_id).first()
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    
-    # 리더 여부 확인
-    current_leader = db.query(ProjectMembers).filter(
-        ProjectMembers.project_id == project_id,
-        ProjectMembers.user_id == current_user.user_id,
-        ProjectMembers.is_leader == True
-    ).first()
-    if not current_leader:
-        raise HTTPException(status_code=403, detail="Only leader can add templates")
-
-    template = ProjectTemplate(
-        project_id=project_id,
-        title=template_data.title,
-        description=template_data.description,
-        widgets=template_data.widgets,
-        added_at=datetime.now()
-    )
-    db.add(template)
-    
-    # 활동 로그 추가
-    db.add(ProjectActivityLog(
-        project_id=project_id,
-        actor_id=current_user.user_id,
-        action=f"{current_user.nickname}이(가) 템플릿 '{template_data.title}'을(를) 추가함",
-        created_at=datetime.now()
-    ))
-    
-    db.commit()
-    db.refresh(template)
-    
-    return {
-        "template_id": template.template_id,
-        "title": template.title,
-        "description": template.description,
-        "widgets": template.widgets,
-        "added_at": template.added_at
-    }
-
-# 15. 템플릿 삭제
-@router.delete("/{project_id}/templates/{template_id}")
-def delete_template(
-    project_id: int,
-    template_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    project = db.query(Project).filter(Project.project_id == project_id).first()
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    
-    template = db.query(ProjectTemplate).filter(
-        ProjectTemplate.project_id == project_id,
-        ProjectTemplate.template_id == template_id
-    ).first()
-    if not template:
-        raise HTTPException(status_code=404, detail="Template not found")
-    
-    # 리더 여부 확인
-    current_leader = db.query(ProjectMembers).filter(
-        ProjectMembers.project_id == project_id,
-        ProjectMembers.user_id == current_user.user_id,
-        ProjectMembers.is_leader == True
-    ).first()
-    if not current_leader:
-        raise HTTPException(status_code=403, detail="Only leader can delete templates")
-    
-    db.add(ProjectActivityLog(
-        project_id=project_id,
-        actor_id=current_user.user_id,
-        action=f"{current_user.nickname}이(가) 템플릿 '{template.title}'을(를) 삭제함",
-        created_at=datetime.now()
-    ))
-    
-    db.delete(template)
-    db.commit()
-    
-    return {"message": "Template deleted successfully"}
