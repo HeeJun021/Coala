@@ -1,4 +1,5 @@
 from fastapi import HTTPException
+from typing import List, Optional
 from sqlalchemy import case
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
@@ -362,3 +363,108 @@ def get_quiz_statistics(user_id: int, db: Session):
         "accuracy": round(accuracy, 1),
         "solvedByLanguage": solved_by_language
     }
+    
+def get_user_incorrect_questions_service(user_id: int, db: Session, language_id: Optional[int] = None):
+    """
+    사용자가 틀렸던 모든 문제와 틀린 횟수를 집계하여 반환합니다.
+    language_id가 주어지면 해당 언어의 문제만 필터링합니다.
+    """
+    
+    # 기본 쿼리 구성
+    query = (
+        db.query(
+            Question,
+            func.count(Question.question_id).label("incorrect_attempts")
+        )
+        .join(QuizSubmissionDetails, Question.question_id == QuizSubmissionDetails.question_id)
+        .join(QuizSubmissions, QuizSubmissionDetails.submission_id == QuizSubmissions.submission_id)
+        .filter(
+            QuizSubmissions.user_id == user_id,
+            QuizSubmissionDetails.is_correct == False
+        )
+    )
+
+    # language_id가 파라미터로 들어온 경우, 필터 조건 추가
+    if language_id is not None:
+        query = query.filter(Question.language_id == language_id)
+
+    # 그룹화 및 정렬
+    incorrect_questions_with_count = (
+        query.group_by(Question.question_id)
+        .order_by(func.count(Question.question_id).desc())
+        .all()
+    )
+
+    if not incorrect_questions_with_count:
+        return []
+
+    results = []
+    for question, attempts in incorrect_questions_with_count:
+        results.append({
+            "question_id": question.question_id,
+            "question_text": question.question_text,
+            "question_type": question.question_type,
+            "difficulty": question.difficulty,
+            "correct_answer": question.correct_answer,
+            "explanation": question.explanation,
+            "choices": question.choices,
+            "language_id": question.language_id,
+            "incorrect_attempts": attempts,
+            "created_at": question.created_at,
+            "updated_at": question.updated_at
+        })
+
+    return results
+
+def create_quiz_from_questions(db: Session, title: str, quiz_type: str, language_id: int, question_ids: List[int]):
+    """
+    제공된 문제 ID 목록으로 새로운 퀴즈를 생성합니다.
+    """
+    # 1. 새로운 퀴즈 생성
+    new_quiz = Quiz(title=title, quiz_type=quiz_type, language_id=language_id)
+    db.add(new_quiz)
+    db.commit()
+    db.refresh(new_quiz)
+
+    # 2. 제공된 문제 ID들을 퀴즈에 배정 (QuizAssignment)
+    assignments = []
+    for q_id in question_ids:
+        # 실제 존재하는 문제인지 확인하는 로직을 추가하면 더 안정적
+        assignments.append(QuizAssignment(quiz_id=new_quiz.quiz_id, question_id=q_id))
+    
+    db.add_all(assignments)
+    db.commit()
+
+    # 3. 생성된 퀴즈 정보 반환
+    # (get_quiz 서비스를 호출하여 전체 퀴즈 정보를 반환하는 것이 더 좋음)
+    return get_quiz(db, new_quiz.quiz_id)
+
+def create_retake_quiz_service(db: Session, user_id: int, title: str, language_id: int, count: int):
+    """
+    사용자의 오답 문제를 기반으로 새로운 복습 퀴즈를 생성합니다.
+    가장 많이 틀린 순서대로 'count' 개수만큼 문제를 선택합니다.
+    """
+    # 1. 사용자의 전체 오답 목록을 가져온다 (이미 가장 많이 틀린 순으로 정렬되어 있음).
+    all_incorrect_questions = get_user_incorrect_questions_service(user_id=user_id, db=db)
+    
+    if not all_incorrect_questions:
+        # 틀린 문제가 없으면 퀴즈를 생성할 수 없음
+        return None
+
+    # 2. 요청된 개수(count)만큼 문제 목록을 잘라낸다.
+    questions_for_quiz = all_incorrect_questions[:count]
+    
+    # 3. 잘라낸 문제들의 ID만 추출한다.
+    question_ids = [q["question_id"] for q in questions_for_quiz]
+
+    if not question_ids:
+        return None
+
+    # 4. 추출된 ID들로 '임시 퀴즈' 생성을 요청한다 (기존 함수 재사용).
+    return create_quiz_from_questions(
+        db=db,
+        title=title,
+        quiz_type="practice", # 오답 퀴즈는 'practice' 타입으로 고정
+        language_id=language_id,
+        question_ids=question_ids
+    )

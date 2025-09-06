@@ -10,8 +10,10 @@ from app.services.quiz_service import (
     submit_quiz_logic,
     get_quiz_result_service,
     get_user_quiz_history_service,
-    get_quiz_statistics
+    get_quiz_statistics,
+    create_retake_quiz_service,
 )
+from app.schemas.quiz_schema import RetakeQuizRequest, QuizResponse
 from app.models.question_models import Question
 from app.models.quiz_models import Quiz, QuizSubmissions, QuizSubmissionDetails
 from app.schemas.quiz_schema import QuizCreate, QuizResponse, QuizResultResponse, QuizSubmissionRequest
@@ -20,6 +22,7 @@ from app.utils.quiz import check_answer
 from app.models.user import User
 from app.schemas.eucalyptus_schema import RewardActionType
 from app.services.user import reward_user_by_action
+from app.dependencies.auth import get_current_user
 
 router = APIRouter(
     prefix="/quizzes",
@@ -53,6 +56,30 @@ def create(quiz_data: QuizCreate, db: Session = Depends(get_db)):
         language_id=quiz_data.language_id, 
         settings=quiz_data.settings
     )
+
+@router.post(
+    "/retake-incorrect",
+    response_model=QuizResponse,
+    summary="오답 문제로 복습 퀴즈 생성",
+    description="가장 많이 틀린 문제들을 지정된 개수만큼 선택하여 새로운 퀴즈를 생성합니다."
+)
+def create_quiz_from_incorrect_answers(
+    request_data: RetakeQuizRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    new_quiz = create_retake_quiz_service(
+        db=db,
+        user_id=current_user.user_id,
+        title=request_data.title,
+        language_id=request_data.language_id,
+        count=request_data.count
+    )
+
+    if not new_quiz:
+        raise HTTPException(status_code=400, detail="오답 퀴즈를 생성할 수 없습니다. 틀린 문제가 없거나 오류가 발생했습니다.")
+        
+    return new_quiz
 
 @router.post("/{quiz_id}/submit")
 def submit_quiz(quiz_id: int, submission_data: QuizSubmissionRequest, db: Session = Depends(get_db)):
