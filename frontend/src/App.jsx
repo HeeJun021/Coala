@@ -253,6 +253,9 @@ const App = () => {
                       <Route path="/team-project" element={<TeamProjectPage />} />
                       <Route path="/team-project/:id" element={<TeamProjectPage />} />
 
+                      {/* 템플릿 */}
+                      <Route path="/team-project/:projectId/template/:templateId" element={<TemplateWorkspace />} />
+
                       {/* 게시판 */}
                       <Route path="/board/:boardType" element={<BoardPage />} />
                       <Route path="/board/:boardType/write" element={<BoardWritePage />} />
