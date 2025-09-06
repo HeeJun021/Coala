@@ -68,6 +68,7 @@ from app.routers import (
     attendance,
     project_code,
     project_git,
+    project_preview,
 )
 
 from app.schemas.user import UserUpdateSchema
@@ -159,6 +160,7 @@ app.include_router(notification.router)
 app.include_router(project_invite.router)
 app.include_router(project_code.router)
 app.include_router(project_git.router)
+app.include_router(project_preview.router)
 app.include_router(attendance.router)
 
 

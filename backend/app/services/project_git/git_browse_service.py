@@ -115,67 +115,69 @@ def get_repo_tree(
     """
     project_repo_id, owner, repo, default_branch = _get_repo_context(db, project_id)
     branch = branch or default_branch
-
     token = _get_github_token(db, current_user.user_id)
+    
+    # GitHub에서 전체 파일/폴더 목록을 가져온다
     tree = _github_tree(owner, repo, branch, token, recursive=recursive)
 
-    # 1) GitHub 트리 → UI용 items로 정규화
+    # 1) GitHub 트리를 딕셔너리로 변환 (경로를 key로 사용)
+    # 기존의 복잡한 상대 경로 계산 로직을 제거하고, GitHub가 주는 전체 경로를 그대로 사용한다.
+    # 프론트엔드는 이 전체 경로 목록을 받아 직접 트리 구조를 만들기 때문에 이게 더 안정적이다.
     items: Dict[str, Dict] = {}
     for node in tree:
-        p = node.get("path", "")
-        t = node.get("type")  # "blob" | "tree"
-        if base_path and not p.startswith(base_path.rstrip("/") + "/") and p != base_path:
-            # base_path 하위만
+        path = node.get("path")
+        if not path:
             continue
-        # base_path 제거(상대경로로)
-        rel = p[len(base_path) + 1:] if base_path and p.startswith(base_path + "/") else ("" if p == base_path else p)
-        if rel == "":
+            
+        # base_path가 지정된 경우, 해당 경로 하위의 항목만 필터링한다.
+        # 루트 조회 시(base_path="") 이 조건은 무시된다.
+        if base_path and not path.startswith(base_path.rstrip("/") + "/"):
             continue
-        items[rel] = {
-            "path": rel,
-            "type": t,
+
+        items[path] = {
+            "path": path,
+            "type": node.get("type"),
             "size": node.get("size"),
             "sha": node.get("sha"),
         }
 
-    # 2) 사용자 버퍼 오버레이 (추가/수정/삭제 반영)
+    # 2) 사용자 버퍼 오버레이 (DB에 임시 저장된 변경사항을 덮어쓰기)
     buffers = (
         db.query(ProjectCodeBuffer)
         .filter(
             ProjectCodeBuffer.project_repo_id == project_repo_id,
             ProjectCodeBuffer.branch_name == branch,
+            ProjectCodeBuffer.user_id == current_user.user_id,
         )
-        .filter(ProjectCodeBuffer.user_id == current_user.user_id)
         .all()
     )
     for b in buffers:
-        # base_path 필터링
-        if base_path and not (b.path == base_path or b.path.startswith(base_path.rstrip("/") + "/")):
-            continue
-        # 상대 경로
-        rel = b.path[len(base_path) + 1:] if base_path and b.path.startswith(base_path + "/") else ("" if b.path == base_path else b.path)
-        if rel == "":
+        path = b.path
+        
+        # base_path 필터링 (버퍼 항목에도 동일하게 적용)
+        if base_path and not path.startswith(base_path.rstrip("/") + "/"):
             continue
 
-        if b.is_deleted or b.change_type == "D":
-            # 삭제로 표시되면 목록에서 제거
-            if rel in items:
-                del items[rel]
-            continue
-
-        # 추가/수정은 blob로 표시 (size/sha는 None으로 둠)
-        items[rel] = {
-            "path": rel,
-            "type": "blob",
-            "size": None,
-            "sha": None,
-        }
+        if b.change_type == "D":
+            # '삭제'로 표시된 항목은 최종 목록에서 제거한다.
+            if path in items:
+                del items[path]
+        else:
+            # '추가' 또는 '수정'된 항목은 최종 목록에 덮어쓴다.
+            # 이 항목들은 아직 커밋 전이라 sha가 없으므로 None으로 설정한다.
+            items[path] = {
+                "path": path,
+                "type": "blob",  # 버퍼에 있는 건 항상 파일(blob)로 취급
+                "size": None,
+                "sha": None,
+            }
 
     return {
         "branch": branch,
         "recursive": recursive,
         "items": list(items.values()),
     }
+
 
 
 def get_repo_file(
@@ -207,7 +209,7 @@ def get_repo_file(
         )
         .first()
     )
-    if buf and not buf.is_deleted:
+    if buf and buf.change_type != "D":
         return {
             "branch": branch,
             "path": path,

@@ -246,7 +246,7 @@ const ProjectWidgetTabs = ({ project, onNameChange, defaultTab = "overview" }) =
 
   return (
     <div>
-      <div className="sticky top-[70px] z-10 bg-white border-b">
+      <div className="sticky z-10 bg-white border-b">
         <div className="flex items-center h-12 px-6">
           {enabledTabs.map((tab) => {
             const label = WIDGET_TABS.find((t) => t.key === tab)?.label || tab;
