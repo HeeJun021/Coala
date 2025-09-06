@@ -2,13 +2,12 @@ import React, { useEffect, useState, useCallback } from "react";
 import TemplateCard from "./TemplateCard";
 import SelectTemplateModal from "./SelectTemplateModal";
 import AlertModal from "../AlertModal";
+import { Plus } from "lucide-react";
 import {
   getTemplates,
   addTemplate,
   deleteTemplate,
 } from "../../api/templateApi";
-
-import { Plus } from "lucide-react";
 
 const TemplatesListPanel = ({ project }) => {
   const projectId = project?.project_id;
@@ -21,7 +20,6 @@ const TemplatesListPanel = ({ project }) => {
     if (!projectId) return;
     try {
       const result = await getTemplates(projectId);
-      console.log("Fetched templates:", result); // 디버깅 로그
       setTemplates(Array.isArray(result) ? result : []);
     } catch (err) {
       console.error("템플릿 목록 불러오기 실패", err);
@@ -31,7 +29,7 @@ const TemplatesListPanel = ({ project }) => {
 
   const handleAddTemplate = async (selectedTemplate) => {
     try {
-      await addTemplate(projectId, selectedTemplate); // newTemplate 변수 제거
+      await addTemplate(projectId, selectedTemplate);
       await fetchTemplates();
     } catch (err) {
       console.error("템플릿 추가 실패", err);
@@ -57,6 +55,13 @@ const TemplatesListPanel = ({ project }) => {
     }
   };
 
+  // PATCH 응답을 목록 상태에 반영
+  const handleTemplateUpdated = (updated) => {
+    setTemplates((prev) =>
+      prev.map((t) => (t.template_id === updated.template_id ? updated : t))
+    );
+  };
+
   useEffect(() => {
     fetchTemplates();
   }, [fetchTemplates]);
@@ -69,8 +74,10 @@ const TemplatesListPanel = ({ project }) => {
             templates.map((template) => (
               <TemplateCard
                 key={template.template_id}
+                projectId={projectId}
                 template={template}
                 onDelete={() => confirmDelete(template.template_id)}
+                onUpdated={handleTemplateUpdated}
               />
             ))
           ) : (

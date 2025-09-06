@@ -81,14 +81,3 @@ class ProjectActivityLog(Base):
     actor = relationship("User")
 
 
-class ProjectTemplate(Base):
-    __tablename__ = "project_templates"
-
-    template_id = Column(Integer, primary_key=True, index=True)
-    project_id = Column(Integer, ForeignKey("projects.project_id", ondelete="CASCADE"))
-    title = Column(String(100), nullable=False)
-    description = Column(Text, nullable=True)
-    widgets = Column(JSON, nullable=True)  # e.g., ["timeline", "tasks"]
-    added_at = Column(DateTime, server_default=func.now())
-
-    project = relationship("Project", back_populates="templates")

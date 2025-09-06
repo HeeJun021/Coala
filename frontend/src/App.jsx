@@ -89,8 +89,12 @@ import ProjectDocPage from "./pages/project/Doc/ProjectDocPage";
 // ERD UI
 import ErdPage from "./pages/erd/ErdPage";
 
+
 // 유저 뷰어 페이지 (새로 추가)
 import UserProfileViewerPage from "./pages/user/UserProfileViewerPage";
+
+// 프로젝트 템플릿
+import TemplateWorkspace from "./pages/project/TemplateWorkspace";
 
 const observerError = /ResizeObserver loop completed/;
 window.addEventListener("error", (e) => {

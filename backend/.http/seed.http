@@ -1,0 +1,19 @@
+@base = http://127.0.0.1:8000
+@token = YOUR_TOKEN_IF_NEEDED
+
+POST {{base}}/template-library/seed
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+< ../seeds/template_catalog.json
+
+
+### 확인: 카탈로그 메타(공개만)
+GET {{base}}/template-library?published=1
+Authorization: Bearer {{token}}
+
+
+
+### 확인: 단건 조회 (blocks 포함)
+GET {{base}}/template-library/1
+Authorization: Bearer {{token}}

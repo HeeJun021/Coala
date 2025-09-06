@@ -68,6 +68,7 @@ from app.routers import (
     attendance,
     project_code,
     project_git,
+    templates,
 )
 
 from app.schemas.user import UserUpdateSchema
@@ -161,6 +162,10 @@ app.include_router(project_code.router)
 app.include_router(project_git.router)
 app.include_router(attendance.router)
 
+
+
+# 프로젝트 템플릿
+app.include_router(templates.router)
 
 
 # 기본 라우트
