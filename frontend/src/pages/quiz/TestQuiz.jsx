@@ -107,10 +107,10 @@ const TestQuiz = () => {
         {/* 타이틀 */}
         <div className="mb-8">
           <h1 className="text-3xl font-extrabold text-gray-800 mb-4 tracking-wide">
-            <span className="text-black">테스트 퀴즈</span>
+            <span className="text-black">실전 문제</span>
           </h1>
           <p className="text-gray-500 text-sm">
-            자동으로 생성되는 <span className="font-medium text-gray-700">퀴즈 유형</span>을 확인하고
+            자동으로 생성되는 <span className="font-medium text-gray-700">문제 유형</span>을 확인하고
             <br /> 테스트를 시작해보세요!
           </p>
         </div>

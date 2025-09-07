@@ -46,6 +46,7 @@ import QuizResultPage from "./pages/quiz/QuizResultPage";
 import CreateUserQuiz from "./pages/quiz/CreateUserQuiz";
 import QuizStatsPage from "./pages/quiz/QuizStatsPage";
 import QuizHistoryPage from "./pages/quiz/QuizHistoryPage";
+import QuizReviewPage from "./pages/quiz/QuizReviewPage";
 import UserQuizSolvePage from "./pages/quiz/UserQuizSolvePage";
 import UserQuizResultPage from "./pages/quiz/UserQuizResultPage";
 
@@ -216,6 +217,7 @@ const App = () => {
                       <Route path="/quiz-result/:quizId" element={<QuizResultPage userData={userData} />} />
                       <Route path="/quiz-stats" element={<QuizStatsPage />} />
                       <Route path="/quiz-history" element={<QuizHistoryPage />} />
+                      <Route path="/quiz-review" element={<QuizReviewPage />} />
                       <Route path="/user-quiz/create" element={<CreateUserQuiz userData={userData} />} />
                       <Route path="/user-quiz-solve/:quizId" element={<UserQuizSolvePage userData={userData} />} />
                       <Route

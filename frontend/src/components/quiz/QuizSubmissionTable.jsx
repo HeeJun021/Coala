@@ -43,7 +43,12 @@ const QuizSubmissionTable = ({ userId }) => {
 
   return (
     <div className="bg-white shadow-md rounded-lg p-6 mt-10 max-w-screen-lg mx-auto">
-      <h2 className="text-lg font-semibold mb-4">퀴즈 제출 내역</h2>
+      <h2 className="text-3xl font-extrabold text-gray-800 mb-2 tracking-wide">
+        제출 내역
+      </h2>
+      <p className="text-gray-500 text-sm mb-6">
+        지금까지 퀴즈 기록을 조회할 수 있습니다.
+      </p>
       <table className="w-full border-collapse border text-sm">
         <thead>
           <tr className="bg-gray-100">

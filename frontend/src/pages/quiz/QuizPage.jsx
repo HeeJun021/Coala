@@ -5,6 +5,7 @@ import TestQuiz from "./TestQuiz";
 import UserQuiz from "./UserQuiz";
 import QuizHistoryPage from "./QuizHistoryPage"
 import QuizStatsPage from "./QuizStatsPage"
+import QuizReviewPage from "./QuizReviewPage";
 const QuizPage = ({ userData }) => {
   const location = useLocation();
 
@@ -25,6 +26,8 @@ const QuizPage = ({ userData }) => {
         return <QuizStatsPage />
       case "history":
         return <QuizHistoryPage />
+      case "review":
+        return <QuizReviewPage />
       default:
         return <PracticeQuiz />; // 기본값
     }

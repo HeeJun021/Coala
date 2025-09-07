@@ -140,7 +140,7 @@ const PracticeQuiz = () => {
 
         <div className="mb-8">
           <h1 className="text-3xl font-extrabold text-gray-800 mb-4 tracking-wide">
-            <span className="text-black">연습 퀴즈</span>
+            <span className="text-black">연습 문제</span>
           </h1>
           <p className="text-gray-500 text-sm">
             원하는 유형과 난이도를 선택해{" "}

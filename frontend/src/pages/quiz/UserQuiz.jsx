@@ -102,7 +102,7 @@ const UserQuiz = ({ userData }) => {
         {/* 타이틀 */}
         <div className="mb-8">
           <h1 className="text-3xl font-extrabold text-gray-800 mb-4 tracking-wide">
-            <span className="text-black">퀴즈 만들기</span>
+            <span className="text-black">문제 만들기</span>
           </h1>
           <p className="text-gray-500 text-sm">
             다른 사용자가 만든 퀴즈를 풀어보며{" "}

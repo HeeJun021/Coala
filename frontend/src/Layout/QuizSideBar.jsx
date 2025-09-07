@@ -47,17 +47,16 @@ const QuizSideBar = () => {
         >
           실전 문제
         </div>
-
-        {/* 제출 내역 */}
+        {/* 오답 노트 */}
         <div
           className={`px-6 py-4 cursor-pointer text-[16px] font-semibold transition-all duration-150 ${
-            currentCategory === "history"
+            currentCategory === "review"
               ? "bg-[#D9D9D9] text-gray-800"
               : "hover:bg-gray-100 text-gray-600"
           }`}
-          onClick={() => handleMenuClick("history")}
+          onClick={() => handleMenuClick("review")}
         >
-          제출 내역
+          오답 노트
         </div>
         {/* 사용자 정의 퀴즈 */}
         <div
@@ -69,6 +68,17 @@ const QuizSideBar = () => {
           onClick={() => handleMenuClick("user")}
         >
           문제 만들기
+        </div>
+        {/* 제출 내역 */}
+        <div
+          className={`px-6 py-4 cursor-pointer text-[16px] font-semibold transition-all duration-150 ${
+            currentCategory === "history"
+              ? "bg-[#D9D9D9] text-gray-800"
+              : "hover:bg-gray-100 text-gray-600"
+          }`}
+          onClick={() => handleMenuClick("history")}
+        >
+          제출 내역
         </div>
         {/* 통계*/}
         <div
