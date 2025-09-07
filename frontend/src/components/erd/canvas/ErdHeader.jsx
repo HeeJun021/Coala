@@ -86,96 +86,103 @@ const ErdHeader = ({
   };
 
   const handleImageDownload = async () => {
-    const canvasElement = document.getElementById("erd-canvas");
-    if (!canvasElement) {
-      alert("❌ 캔버스를 찾을 수 없습니다.");
-      return;
+  const canvasElement = document.getElementById("erd-canvas");
+  if (!canvasElement) {
+    alert("❌ 캔버스를 찾을 수 없습니다.");
+    return;
+  }
+
+  const transformedRoot = canvasElement.querySelector(".origin-top-left");
+  if (!transformedRoot) {
+    alert("❌ 캡처 대상이 없습니다.");
+    return;
+  }
+
+  const tableEls = transformedRoot.querySelectorAll(".erd-table-box");
+  if (!tableEls.length) {
+    alert("📭 테이블이 없습니다.");
+    return;
+  }
+
+  // 1) 캡처 범위 계산
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+  tableEls.forEach((el) => {
+    const x = el.offsetLeft;
+    const y = el.offsetTop;
+    const w = el.offsetWidth;
+    const h = el.offsetHeight;
+    minX = Math.min(minX, x);
+    minY = Math.min(minY, y);
+    maxX = Math.max(maxX, x + w);
+    maxY = Math.max(maxY, y + h);
+  });
+
+  // ✅ 패딩 추가 (상하좌우에 40px)
+  const padding = 40;
+  minX -= padding;
+  minY -= padding;
+  maxX += padding;
+  maxY += padding;
+
+  const width = Math.ceil(maxX - minX);
+  const height = Math.ceil(maxY - minY);
+
+  // 2) 오프스크린 컨테이너 생성
+  const offscreen = document.createElement("div");
+  offscreen.style.position = "fixed";
+  offscreen.style.left = "-100000px";
+  offscreen.style.top = "0";
+  offscreen.style.width = width + "px";
+  offscreen.style.height = height + "px";
+  offscreen.style.background = "#ffffff";
+  offscreen.style.overflow = "visible";
+  offscreen.style.pointerEvents = "none";
+
+  // 테이블 복제해서 배치
+  tableEls.forEach((el) => {
+    const clone = el.cloneNode(true);
+    clone.style.position = "absolute";
+    clone.style.left = (el.offsetLeft - minX) + "px";
+    clone.style.top = (el.offsetTop - minY) + "px";
+    clone.style.transform = "none";
+    offscreen.appendChild(clone);
+  });
+
+  document.body.appendChild(offscreen);
+
+  try {
+    if (document.fonts && document.fonts.ready) {
+      await document.fonts.ready;
     }
 
-    const transformedRoot = canvasElement.querySelector(".origin-top-left");
-    if (!transformedRoot) {
-      alert("❌ 캡처 대상이 없습니다.");
-      return;
-    }
-
-    const tableEls = transformedRoot.querySelectorAll(".erd-table-box");
-    if (!tableEls.length) {
-      alert("📭 테이블이 없습니다.");
-      return;
-    }
-
-    const originalTransform = transformedRoot.style.transform;
-    transformedRoot.style.transform = "none";
-
-    const zoom = parseFloat(
-      originalTransform.match(/scale\((.*?)\)/)?.[1] || "1"
-    );
-
-    const adjustedTables = [];
-    tableEls.forEach((el) => {
-      const x = parseFloat(el.style.left || "0");
-      const y = parseFloat(el.style.top || "0");
-
-      adjustedTables.push({
-        el,
-        originalLeft: el.style.left,
-        originalTop: el.style.top,
-      });
-
-      el.style.left = `${x * zoom}px`;
-      el.style.top = `${y * zoom}px`;
+    const canvas = await html2canvas(offscreen, {
+      backgroundColor: "#ffffff",
+      useCORS: true,
+      letterRendering: true,
+      scale: Math.max(1.5, Math.min(3, window.devicePixelRatio || 2)),
+      x: 0,
+      y: 0,
+      width,
+      height,
+      scrollX: 0,
+      scrollY: 0,
+      windowWidth: width,
+      windowHeight: height,
     });
 
-    let minX = Infinity,
-      minY = Infinity,
-      maxX = -Infinity,
-      maxY = -Infinity;
+    const link = document.createElement("a");
+    link.href = canvas.toDataURL("image/png");
+    link.download = "erd_capture.png";
+    link.click();
+  } catch (err) {
+    console.error("❌ 이미지 저장 오류:", err);
+    alert("이미지 저장 중 오류가 발생했습니다.");
+  } finally {
+    offscreen.remove();
+  }
+};
 
-    tableEls.forEach((el) => {
-      const x = el.offsetLeft;
-      const y = el.offsetTop;
-      const w = el.offsetWidth;
-      const h = el.offsetHeight;
-
-      minX = Math.min(minX, x);
-      minY = Math.min(minY, y);
-      maxX = Math.max(maxX, x + w);
-      maxY = Math.max(maxY, y + h);
-    });
-
-    const width = maxX - minX;
-    const height = maxY - minY;
-
-    try {
-      const canvas = await html2canvas(transformedRoot, {
-        backgroundColor: null,
-        useCORS: true,
-        scale: 2,
-        x: minX,
-        y: minY,
-        width,
-        height,
-        scrollX: 0,
-        scrollY: 0,
-        windowWidth: transformedRoot.scrollWidth,
-        windowHeight: transformedRoot.scrollHeight,
-      });
-
-      const link = document.createElement("a");
-      link.href = canvas.toDataURL("image/png");
-      link.download = "erd_capture.png";
-      link.click();
-    } catch (err) {
-      console.error("❌ 이미지 저장 오류:", err);
-      alert("이미지 저장 중 오류가 발생했습니다.");
-    } finally {
-      transformedRoot.style.transform = originalTransform;
-      adjustedTables.forEach(({ el, originalLeft, originalTop }) => {
-        el.style.left = originalLeft;
-        el.style.top = originalTop;
-      });
-    }
-  };
 
   return (
     <>
