@@ -26,7 +26,12 @@ class User(Base):
     
     created_at = Column(TIMESTAMP, server_default=func.now())  # ✅ `CURRENT_TIMESTAMP` → `func.now()`로 변경
     updated_at = Column(TIMESTAMP, default=func.now(), onupdate=func.now())  # ✅ 수정된 시간 자동 업데이트
-    
+    preferred_coding_lang = Column(
+    String(20),
+    nullable=False,
+    server_default="python",  # DB 기본값과 일치
+    comment="코딩테스트 선호 언어: python | java | javascript",
+)
      # 관계 설정
     tier = relationship("UserTier")  # User → UserTier 관계
     social_logins = relationship("SocialLogin", back_populates="user", cascade="all, delete")

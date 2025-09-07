@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { getCodingTestList } from "../../api/codingTestApi";
+import {
+  getCodingTestList,
+  setPreferredCodingLang,
+  getMyPreferredCodingLang,
+} from "../../api/codingTestApi";
 import { useAuth } from "../../context/AuthContext";
 import {
   ListChecks,
@@ -31,6 +35,14 @@ const getLevelClass = (level) => {
 const CodingTestPage = () => {
   const { user } = useAuth(); // ✅ 사용자 정보 가져오기
   const [searchParams, setSearchParams] = useSearchParams();
+  const LANG_OPTIONS = [
+    { value: "python", label: "PYTHON" },
+    { value: "java", label: "JAVA" },
+    { value: "javascript", label: "JAVASCRIPT" },
+  ];
+  const [preferredLang, setPreferredLang] = useState(
+    user?.preferred_coding_lang || ""
+  );
 
   const [problems, setProblems] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -66,6 +78,43 @@ const CodingTestPage = () => {
     };
     fetchProblems();
   }, [page, search, level, status, category, sort, user]);
+
+  // 사용자 정보 변경/로그인 시 서버에서 선호 언어 로드
+  useEffect(() => {
+    let mounted = true;
+    if (!user?.user_id) {
+      // 비로그인: placeholder 유지
+      setPreferredLang("");
+      return () => {
+        mounted = false;
+      };
+    }
+    (async () => {
+      try {
+        // 컨텍스트에 있으면 우선 사용, 없으면 서버 조회
+        const fromCtx = user?.preferred_coding_lang || "";
+        const pref = fromCtx || (await getMyPreferredCodingLang());
+        if (mounted) setPreferredLang(pref || ""); // 없으면 placeholder 유지
+      } catch (e) {
+        console.warn("선호 언어 조회 실패:", e);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [user?.user_id, user?.preferred_coding_lang]);
+
+  // 선호 언어 변경 → 서버 저장(PATCH)
+  const handlePreferredLangChange = async (e) => {
+    const next = e.target.value;
+    setPreferredLang(next); // optimistic
+    if (!user?.user_id || !next) return; // 비로그인 또는 placeholder면 저장 안 함
+    try {
+      await setPreferredCodingLang(next);
+    } catch (err) {
+      console.error("선호 언어 저장 실패:", err);
+    }
+  };
 
   const handleSearch = () => {
     setSearchParams({
@@ -158,9 +207,24 @@ const CodingTestPage = () => {
               onClick={handleSearch}
             />
           </div>
-
           {/* 필터 */}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 items-center">
+            {/* ✅ 선호 언어 드롭다운 (난이도 왼쪽) - 로그인시에만 표시 */}
+            {user && (
+              <select
+                value={preferredLang}
+                onChange={handlePreferredLangChange}
+                className="border border-gray-300 rounded-md px-3 py-1 text-sm w-[150px]"
+                title="코딩테스트 기본 언어 설정"
+              >
+                <option value="">선호 언어 선택</option>
+                {LANG_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            )}
             <select
               value={level}
               onChange={(e) =>
