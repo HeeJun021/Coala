@@ -10,7 +10,7 @@ import {
   ZoomIn,
   ZoomOut,
   FileUp,
-  Blocks,
+  // Blocks,
   History,
   HelpCircle,
 } from "lucide-react";
@@ -179,7 +179,7 @@ const ErdHeader = ({
 
   return (
     <>
-      <div className="w-full bg-white text-gray-900 shadow-md border-b border-gray-200 py-4">
+      <div className="relative w-full bg-gray-50 text-gray-900 shadow-sm py-4">
         <div className="max-w-7xl mx-auto px-4 flex flex-col gap-3">
           {mode !== "codegen" && (
             <div className="flex items-center justify-between gap-4">
@@ -280,7 +280,7 @@ const ErdHeader = ({
               >
                 <Blocks size={16} className="text-purple-600" />
                 코드 변환
-              </button> */}
+              </button> 구현 x */}
               <button
                 onClick={onUndo}
                 className="btn-header flex items-center gap-1 text-gray-700 hover:bg-gray-200 rounded-md"
@@ -316,6 +316,11 @@ const ErdHeader = ({
             </div>
           )}
         </div>
+        {/* 헤더 하단 하이라이트 */}
+        <div
+          className="absolute left-0 right-0 bottom-0 h-[6px] 
+                bg-gradient-to-b from-gray-300 via-gray-100 to-transparent"
+        />
 
         {isEditModalOpen && (
           <EditErdNameModal

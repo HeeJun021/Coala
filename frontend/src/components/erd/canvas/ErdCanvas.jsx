@@ -40,6 +40,13 @@ const ErdCanvas = ({
 }) => {
   const canvasRef = useRef(null);
 
+
+  // draw.io 스타일 격자
+  const MINOR_STEP = 16; // 미세 격자 간격(px)
+  const MAJOR_EVERY = 6; // 몇 칸마다 주격자(진한 선)
+  const MAJOR_STEP = MINOR_STEP * MAJOR_EVERY;
+  const MINOR_COLOR = "#e5e7eb"; // gray-200
+  const MAJOR_COLOR = "#d1d5db"; // gray-300
   // 🧱 관계, 위치
   const [columnPositions, setColumnPositions] = useState({});
 
@@ -794,9 +801,31 @@ const ErdCanvas = ({
         handlePanMouseMove(e); // ✅ 중간 클릭 이동
       }}
       onMouseUp={handleMouseUp}
-      className={`relative w-full h-full bg-white overflow-hidden ${
+      className={`relative w-full h-full overflow-hidden ${
         isPlacing || isAddingRelation ? "cursor-crosshair" : "cursor-default"
       } select-none`}
+      style={{
+        backgroundColor: "#ffffff",
+        // ⬇️ 미세 격자(옅음) + 주격자(진함) 두 세트 겹치기
+        backgroundImage: `
+      linear-gradient(${MINOR_COLOR} 1px, transparent 1px),
+      linear-gradient(90deg, ${MINOR_COLOR} 1px, transparent 1px),
+      linear-gradient(${MAJOR_COLOR} 1px, transparent 1px),
+      linear-gradient(90deg, ${MAJOR_COLOR} 1px, transparent 1px)
+    `,
+        backgroundSize: `
+      ${MINOR_STEP * zoomLevel}px ${MINOR_STEP * zoomLevel}px,
+      ${MINOR_STEP * zoomLevel}px ${MINOR_STEP * zoomLevel}px,
+      ${MAJOR_STEP * zoomLevel}px ${MAJOR_STEP * zoomLevel}px,
+      ${MAJOR_STEP * zoomLevel}px ${MAJOR_STEP * zoomLevel}px
+    `,
+        backgroundPosition: `
+      ${panOffset.x}px ${panOffset.y}px,
+      ${panOffset.x}px ${panOffset.y}px,
+      ${panOffset.x}px ${panOffset.y}px,
+      ${panOffset.x}px ${panOffset.y}px
+    `,
+      }}
     >
       {/* 확대/축소 대상 */}
       <div
