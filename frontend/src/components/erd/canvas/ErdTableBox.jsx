@@ -157,27 +157,25 @@ const ErdTableBox = ({
   };
 
   // 3) PK 토글
-const handleTogglePK = (targetId) => {
-  const updated = localColumns.map((col) =>
-    (col.column_id ?? col.id) === targetId
-      ? { ...col, isPrimaryKey: !col.isPrimaryKey }
-      : col
-  );
+  const handleTogglePK = (targetId) => {
+    const updated = localColumns.map((col) =>
+      (col.column_id ?? col.id) === targetId
+        ? { ...col, isPrimaryKey: !col.isPrimaryKey }
+        : col
+    );
 
-  setLocalColumns(updated);
+    setLocalColumns(updated);
 
-  // 부모 tables 동기화
-  onUpdate({
-    id,
-    x,
-    y,
-    tableName: localName,
-    description: localDesc,
-    columns: updated,
-  });
-};
-
-
+    // 부모 tables 동기화
+    onUpdate({
+      id,
+      x,
+      y,
+      tableName: localName,
+      description: localDesc,
+      columns: updated,
+    });
+  };
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -328,44 +326,43 @@ const handleTogglePK = (targetId) => {
   ]);
 
   // 1) 컬럼 추가
-const handleAddColumn = async () => {
-  try {
-    const newColumn = await createColumn(id); // id = 테이블 ID
+  const handleAddColumn = async () => {
+    try {
+      const newColumn = await createColumn(id); // id = 테이블 ID
 
-    const updated = [
-      ...localColumns,
-      {
-        ...newColumn,
-        id: newColumn.column_id ?? `temp-${Date.now()}`, // fallback ID
-        name: newColumn.name || "",
-        dataType: newColumn.data_type || "",
-        isNullable: !newColumn.is_not_null,
-        isPrimaryKey: newColumn.is_primary,
-        defaultValue: newColumn.default_value || "",
-        comment: newColumn.description || "",
-      },
-    ];
+      const updated = [
+        ...localColumns,
+        {
+          ...newColumn,
+          id: newColumn.column_id ?? `temp-${Date.now()}`, // fallback ID
+          name: newColumn.name || "",
+          dataType: newColumn.data_type || "",
+          isNullable: !newColumn.is_not_null,
+          isPrimaryKey: newColumn.is_primary,
+          defaultValue: newColumn.default_value || "",
+          comment: newColumn.description || "",
+        },
+      ];
 
-    setLocalColumns(updated);
+      setLocalColumns(updated);
 
-    // 부모 tables 동기화 (관계 생성 로직이 최신 컬럼을 참조하도록)
-    onUpdate({
-      id,
-      x,
-      y,
-      tableName: localName,
-      description: localDesc,
-      columns: updated,
-    });
+      // 부모 tables 동기화 (관계 생성 로직이 최신 컬럼을 참조하도록)
+      onUpdate({
+        id,
+        x,
+        y,
+        tableName: localName,
+        description: localDesc,
+        columns: updated,
+      });
 
-    // 스냅샷 저장
-    onSnapshotRequest?.();
-  } catch (err) {
-    console.error("컬럼 생성 실패:", err);
-    alert("컬럼 생성 중 오류가 발생했습니다.");
-  }
-};
-
+      // 스냅샷 저장
+      onSnapshotRequest?.();
+    } catch (err) {
+      console.error("컬럼 생성 실패:", err);
+      alert("컬럼 생성 중 오류가 발생했습니다.");
+    }
+  };
 
   const handleColumnChange = (index, key, value) => {
     const updated = [...localColumns];
@@ -382,41 +379,40 @@ const handleAddColumn = async () => {
     });
   };
   // 2) 컬럼 삭제
-const handleDeleteColumn = async (index) => {
-  const col = localColumns[index];
-  const columnId = col?.column_id ?? col?.id;
-  if (!columnId) return;
+  const handleDeleteColumn = async (index) => {
+    const col = localColumns[index];
+    const columnId = col?.column_id ?? col?.id;
+    if (!columnId) return;
 
-  try {
-    await deleteColumn(columnId);
+    try {
+      await deleteColumn(columnId);
 
-    const updated = localColumns.filter((_, i) => i !== index);
-    setLocalColumns(updated);
+      const updated = localColumns.filter((_, i) => i !== index);
+      setLocalColumns(updated);
 
-    // 부모 tables 동기화
-    onUpdate({
-      id,
-      x,
-      y,
-      tableName: localName,
-      description: localDesc,
-      columns: updated,
-    });
+      // 부모 tables 동기화
+      onUpdate({
+        id,
+        x,
+        y,
+        tableName: localName,
+        description: localDesc,
+        columns: updated,
+      });
 
-    // 스냅샷 저장
-    onSnapshotRequest?.();
-  } catch (err) {
-    console.error("컬럼 삭제 실패:", err);
-    alert("컬럼 삭제 중 오류가 발생했습니다.");
-  }
-};
-
+      // 스냅샷 저장
+      onSnapshotRequest?.();
+    } catch (err) {
+      console.error("컬럼 삭제 실패:", err);
+      alert("컬럼 삭제 중 오류가 발생했습니다.");
+    }
+  };
 
   return (
     <div
       ref={tableRef}
-      className={`erd-table-box absolute bg-[#1e1e2e] text-white border border-blue-400 rounded-md shadow-md w-[480px] px-3 py-2 select-none ${
-        isSelected ? "ring-2 ring-yellow-300" : ""
+      className={`erd-table-box absolute bg-white text-gray-900 border border-gray-300 rounded-md shadow-md w-[480px] px-3 py-2 select-none ${
+        isSelected ? "ring-2 ring-blue-500" : ""
       }`}
       data-id={id}
       style={{ top: y, left: x }}
@@ -436,23 +432,23 @@ const handleDeleteColumn = async (index) => {
       >
         <button
           onClick={handleAddColumn}
-          className="text-white hover:text-blue-300 text-sm mr-2"
+          className="text-gray-600 hover:text-blue-600 text-sm mr-2"
         >
           <FaPlus size={12} />
         </button>
         <button
           onClick={async () => {
-            await onDelete?.(); 
+            await onDelete?.();
             onSnapshotRequest?.();
           }}
-          className="text-white hover:text-red-400 text-sm"
+          className="text-gray-600 hover:text-red-500 text-sm"
         >
           <FaTimes size={12} />
         </button>
       </div>
       <div className="flex items-center h-[28px] gap-0">
         <input
-          className="bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 text-sm font-medium placeholder:text-gray-400 h-full leading-[1.4] pl-2"
+          className="bg-transparent text-gray-900 border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 text-sm font-medium placeholder:text-gray-400 h-full leading-[1.4] pl-2"
           style={{ width: "30%" }}
           placeholder="table"
           value={localName}
@@ -464,7 +460,7 @@ const handleDeleteColumn = async (index) => {
           onBlur={() => handleTableFieldBlur("tableName")}
         />
         <input
-          className="bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 text-sm placeholder:text-gray-500 h-full leading-[1.4] pl-2"
+          className="bg-transparent text-gray-900 border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 text-sm placeholder:text-gray-500 h-full leading-[1.4] pl-2"
           style={{ width: "30%" }}
           placeholder="description"
           value={localDesc}

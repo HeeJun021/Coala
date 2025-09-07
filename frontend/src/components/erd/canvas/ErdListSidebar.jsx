@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import CreateErdModal from "./CreateErdModal";
-import DeleteErdModal from "./DeleteErdModal";
+import CreateErdModal from "../list/CreateErdModal";
+import DeleteErdModal from "../list/DeleteErdModal";
 import { createErd, getErds, deleteErd } from "../../../api/erd/erdApi";
 import { useParams, useNavigate } from "react-router-dom";
 import { Folder, FileText, PlusCircle, Trash2, X } from "lucide-react";
@@ -22,7 +22,9 @@ const ErdListSidebar = ({ isOpen = true, onClose }) => {
   const fetchErdList = useCallback(async () => {
     try {
       const data = await getErds(projectId);
-      const sorted = data.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      const sorted = data.sort(
+        (a, b) => new Date(a.created_at) - new Date(b.created_at)
+      );
       setErdList(sorted);
     } catch (err) {
       console.error("ERD 목록 불러오기 실패:", err);
@@ -99,10 +101,10 @@ const ErdListSidebar = ({ isOpen = true, onClose }) => {
       <div
         ref={sidebarRef}
         style={{ width: sidebarWidth }}
-        className="fixed top-0 left-0 h-full bg-[#1f1f2b] text-white shadow-lg z-50 flex flex-col"
+        className="fixed top-0 left-0 h-full bg-white text-gray-900 shadow-lg z-50 flex flex-col border-r border-gray-200"
       >
         {/* 헤더 */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
           <h2 className="flex items-center gap-2 text-lg font-bold">
             <Folder size={20} className="text-yellow-400" />
             ERD 목록
@@ -123,8 +125,10 @@ const ErdListSidebar = ({ isOpen = true, onClose }) => {
           {erdList.map((erd) => (
             <div
               key={erd.erd_id}
-              className="group cursor-pointer px-3 py-2 bg-[#2a2a3c] rounded hover:bg-[#3a3a4c] flex items-center justify-between"
-              onClick={() => navigate(`/team-project/${projectId}/erd/${erd.erd_id}`)}
+              className="group cursor-pointer px-3 py-2 bg-white border border-gray-200 rounded hover:bg-gray-100 flex items-center justify-between"
+              onClick={() =>
+                navigate(`/team-project/${projectId}/erd/${erd.erd_id}`)
+              }
             >
               <div className="flex items-center gap-2 w-[70%] overflow-hidden">
                 <FileText size={16} className="text-blue-400" />
@@ -147,20 +151,19 @@ const ErdListSidebar = ({ isOpen = true, onClose }) => {
         </div>
 
         {/* 하단 버튼 */}
-        <div className="p-4 border-t border-gray-700">
+        <div className="p-4 border-t border-gray-200">
           <button
             onClick={() => setShowModal(true)}
-            className="w-full py-2 bg-blue-600 hover:bg-blue-700 rounded text-sm font-semibold flex items-center justify-center gap-2"
+            className="w-full py-2 bg-green-600 hover:bg-green-700 rounded text-sm font-semibold text-white flex items-center justify-center gap-2"
           >
-            <PlusCircle size={18} className="text-green-200" />
-            새 ERD 만들기
+            <PlusCircle size={18} className="text-white" />새 ERD 만들기
           </button>
         </div>
 
         {/* 리사이징 핸들러 */}
         <div
           onMouseDown={handleMouseDown}
-          className="absolute top-0 right-0 w-1 h-full cursor-col-resize bg-gray-500 opacity-0 hover:opacity-50 transition"
+          className="absolute top-0 right-0 w-1 h-full cursor-col-resize bg-gray-300 opacity-0 hover:opacity-60 transition"
         />
       </div>
 

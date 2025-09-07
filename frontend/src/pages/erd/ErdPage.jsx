@@ -235,7 +235,7 @@ CREATE TABLE users (
 
   return (
     <>
-      <div className="w-full h-screen bg-[#1E1E2F] text-white flex flex-col overflow-hidden">
+      <div className="w-full h-screen bg-white text-gray-900 flex flex-col overflow-hidden">
         {/* 상단 헤더 */}
         <div className="shrink-0">
           <ErdHeader

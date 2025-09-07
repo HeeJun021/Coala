@@ -18,6 +18,29 @@ export const getStarterCode = async (testId, language) => {
   return res.data;
 };
 
+// 내 선호 언어 조회 (로그인 필요)
+// GET /problem-starter-code/me/preferred-language  → { preferred_coding_lang: "python" | "java" | "javascript" }
+export const getMyPreferredCodingLang = async () => {
+  const res = await apiClient.get("/problem-starter-code/me/preferred-language");
+  return res.data?.preferred_coding_lang || "";
+};
+
+// 선호/기본 언어로 스타터 코드 조회 (언어 생략)
+export const getStarterCodeByPref = async (testId) => {
+  const res = await apiClient.get(`/problem-starter-code/${testId}`);
+  return res.data;
+};
+
+// 선호 언어 저장 (python | java | javascript)
+export const setPreferredCodingLang = async (language) => {
+  const res = await apiClient.patch(`/problem-starter-code/me/preferred-language`, {
+    language,
+  });
+  return res.data;
+};
+
+
+
 
 // 코드 제출
 export const submitCodingTest = async (data) => {

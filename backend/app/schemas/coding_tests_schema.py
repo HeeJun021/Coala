@@ -8,12 +8,14 @@ class CodingTestSubmissionCreate(BaseModel):
     test_id: int
     code: str
     language: str
+    category: Optional[str] = None
+    difficulty: Optional[int] = None
     title: Optional[str] = None  # 제출 제목 (기본값: "제출 1", "제출 2" 등 자동 생성)
 
 #   문제별 스타터 코드 조회용 기본 스키마
 class ProblemStarterCodeBase(BaseModel):
     test_id: int
-    language: str
+    language: Optional[str] = None
 
 #   스타터 코드 생성 요청용 스키마
 class ProblemStarterCodeCreate(ProblemStarterCodeBase):
@@ -92,3 +94,7 @@ class SubmissionStatsResponse(BaseModel):
     accuracy: float
     solvedByDifficulty: Dict[str, int]
     weeklySubmissions: List[WeeklySubmissionItem]
+    
+# 선호 언어 업데이트 스키마
+class PreferredLangUpdate(BaseModel):
+    language: str  # 'python' | 'java' | 'javascript'

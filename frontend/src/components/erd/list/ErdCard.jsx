@@ -8,7 +8,7 @@ import {
   History
 } from "lucide-react";
 import { deleteErd } from "../../../api/erd/erdApi";
-import DeleteErdModalWhite from "./DeleteErdModalWhite"; // 모달 경로에 맞게 조정
+import DeleteErdModal from "./DeleteErdModal"; // 모달 경로에 맞게 조정
 
 const ErdCard = ({ erd, onDelete, project }) => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -100,7 +100,7 @@ const ErdCard = ({ erd, onDelete, project }) => {
 
       {/* 삭제 모달 */}
       {isDeleteModalOpen && (
-        <DeleteErdModalWhite
+        <DeleteErdModal
           erdName={erd.name}
           onClose={() => setIsDeleteModalOpen(false)}
           onConfirm={handleConfirmDelete}

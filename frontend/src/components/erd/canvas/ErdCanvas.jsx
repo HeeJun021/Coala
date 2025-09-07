@@ -13,7 +13,10 @@ import {
   createRelation,
   deleteMultipleRelations,
 } from "../../../api/erd/relationApi";
-import { saveErdSnapshot, patchErdViewPosition } from "../../../api/erd/erdDetailApi";
+import {
+  saveErdSnapshot,
+  patchErdViewPosition,
+} from "../../../api/erd/erdDetailApi";
 import { debounce } from "lodash"; // 또는 직접 만든 debounce 함수
 import {
   setColumnPrimaryKey,
@@ -33,26 +36,33 @@ const ErdCanvas = ({
   fetchErdDetail,
   showToast,
   panOffset,
-  setPanOffset
+  setPanOffset,
 }) => {
   const canvasRef = useRef(null);
 
-  // 관계, 위치
+  // draw.io 스타일 격자
+  const MINOR_STEP = 16; // 미세 격자 간격(px)
+  const MAJOR_EVERY = 6; // 몇 칸마다 주격자(진한 선)
+  const MAJOR_STEP = MINOR_STEP * MAJOR_EVERY;
+  const MINOR_COLOR = "#e5e7eb"; // gray-200
+  const MAJOR_COLOR = "#d1d5db"; // gray-300
+  // 🧱 관계, 위치
   const [columnPositions, setColumnPositions] = useState({});
 
-// 테이블/컬럼 구조가 바뀌어도, 기존 앵커는 살리고 사라진 컬럼만 제거 (깜빡임 방지)
-useEffect(() => {
-  setColumnPositions((prev) => {
-    const valid = new Set();
-    tables.forEach(t => (t.columns || []).forEach(c => valid.add(String(c.column_id ?? c.id))));
-    const next = {};
-    for (const [key, val] of Object.entries(prev)) {
-      if (valid.has(String(key))) next[key] = val;
-    }
-    return next;
-  });
-}, [tables]);
-
+  // 테이블/컬럼 구조가 바뀌어도, 기존 앵커는 살리고 사라진 컬럼만 제거 (깜빡임 방지)
+  useEffect(() => {
+    setColumnPositions((prev) => {
+      const valid = new Set();
+      tables.forEach((t) =>
+        (t.columns || []).forEach((c) => valid.add(String(c.column_id ?? c.id)))
+      );
+      const next = {};
+      for (const [key, val] of Object.entries(prev)) {
+        if (valid.has(String(key))) next[key] = val;
+      }
+      return next;
+    });
+  }, [tables]);
 
   // 🧱 관계 생성 상태
   const [isAddingRelation, setIsAddingRelation] = useState(false);
@@ -72,11 +82,10 @@ useEffect(() => {
 
   // 휠 클릭 드래그(pan) 기능
   const [isPanning, setIsPanning] = useState(false);
-  
+
   const panOffsetRef = useRef({ x: 0, y: 0 });
   const panStartRef = useRef({ x: 0, y: 0 });
   const [hasInteracted, setHasInteracted] = useState(false);
-
 
   // 컬럼 호버 하이라이트
   const [hoveredColumnId, setHoveredColumnId] = useState(null);
@@ -89,19 +98,17 @@ useEffect(() => {
   const dragOriginRef = useRef(null);
   const tablePositionsRef = useRef({});
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        if (isPlacing) setIsPlacing(false);
+        if (isAddingRelation) setIsAddingRelation(false);
+      }
+    };
 
-
-useEffect(() => {
-  const handleKeyDown = (e) => {
-    if (e.key === "Escape") {
-      if (isPlacing) setIsPlacing(false);
-      if (isAddingRelation) setIsAddingRelation(false);
-    }
-  };
-
-  window.addEventListener("keydown", handleKeyDown);
-  return () => window.removeEventListener("keydown", handleKeyDown);
-}, [isPlacing, isAddingRelation, setIsPlacing, setIsAddingRelation]);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isPlacing, isAddingRelation, setIsPlacing, setIsAddingRelation]);
 
   // 1. 드래그 시작
   const handleMouseDown = (e) => {
@@ -264,28 +271,38 @@ useEffect(() => {
     setWasDraggingSelectionBox(isDraggingSelectionBox);
     setTimeout(() => setWasDraggingSelectionBox(false), 0);
   };
-  const measureColumnAnchor = useCallback((columnId) => {
-  const canvasRect = canvasRef.current?.getBoundingClientRect();
-  if (!canvasRect) return;
+  const measureColumnAnchor = useCallback(
+    (columnId) => {
+      const canvasRect = canvasRef.current?.getBoundingClientRect();
+      if (!canvasRect) return;
 
-  // 해당 컬럼 DOM 찾기
-  const el = document.querySelector(`[data-column-id='${columnId}']`);
-  const tableBox = el?.closest(".erd-table-box");
-  if (!el || !tableBox) return;
+      // 해당 컬럼 DOM 찾기
+      const el = document.querySelector(`[data-column-id='${columnId}']`);
+      const tableBox = el?.closest(".erd-table-box");
+      if (!el || !tableBox) return;
 
-  const tableRect = tableBox.getBoundingClientRect();
-  const colRect = el.getBoundingClientRect();
+      const tableRect = tableBox.getBoundingClientRect();
+      const colRect = el.getBoundingClientRect();
 
-  const adjustedLeft  = (tableRect.left  - canvasRect.left - panOffset.x) / zoomLevel;
-  const adjustedRight = (tableRect.right - canvasRect.left - panOffset.x) / zoomLevel;
-  const adjustedY     = (colRect.top    - canvasRect.top  - panOffset.y + colRect.height / 2) / zoomLevel;
+      const adjustedLeft =
+        (tableRect.left - canvasRect.left - panOffset.x) / zoomLevel;
+      const adjustedRight =
+        (tableRect.right - canvasRect.left - panOffset.x) / zoomLevel;
+      const adjustedY =
+        (colRect.top - canvasRect.top - panOffset.y + colRect.height / 2) /
+        zoomLevel;
 
-  setColumnPositions(prev => ({
-    ...prev,
-    [String(columnId)]: { left: adjustedLeft, right: adjustedRight, y: adjustedY },
-  }));
-}, [panOffset.x, panOffset.y, zoomLevel]);
-
+      setColumnPositions((prev) => ({
+        ...prev,
+        [String(columnId)]: {
+          left: adjustedLeft,
+          right: adjustedRight,
+          y: adjustedY,
+        },
+      }));
+    },
+    [panOffset.x, panOffset.y, zoomLevel]
+  );
 
   const handleCanvasClick = async (e) => {
     if (wasDraggingSelectionBox) return;
@@ -345,16 +362,16 @@ useEffect(() => {
   };
 
   const handlePanMouseMove = (e) => {
-  if (isPanning) {
-    const newOffset = {
-      x: e.clientX - panStartRef.current.x,
-      y: e.clientY - panStartRef.current.y,
-    };
-    setPanOffset(newOffset);
-    panOffsetRef.current = newOffset; // 👈 여기가 핵심
-    setHasInteracted(true);
-  }
-};
+    if (isPanning) {
+      const newOffset = {
+        x: e.clientX - panStartRef.current.x,
+        y: e.clientY - panStartRef.current.y,
+      };
+      setPanOffset(newOffset);
+      panOffsetRef.current = newOffset; // 👈 여기가 핵심
+      setHasInteracted(true);
+    }
+  };
 
   const saveViewPosition = debounce((x, y) => {
     patchErdViewPosition(erdId, {
@@ -362,16 +379,18 @@ useEffect(() => {
       view_y: Math.round(y),
     });
   }, 100);
-    const handlePanMouseUp = useCallback(() => {
-  setIsPanning(false);
-  if (hasInteracted) {
-    saveViewPosition(panOffsetRef.current.x, panOffsetRef.current.y);
-    console.log("🔍 저장되는 panOffset:", panOffsetRef.current.x, panOffsetRef.current.y);
-    setHasInteracted(false); // ✅ 저장 후 초기화
-  }
-}, [hasInteracted, saveViewPosition]);
-
-
+  const handlePanMouseUp = useCallback(() => {
+    setIsPanning(false);
+    if (hasInteracted) {
+      saveViewPosition(panOffsetRef.current.x, panOffsetRef.current.y);
+      console.log(
+        "🔍 저장되는 panOffset:",
+        panOffsetRef.current.x,
+        panOffsetRef.current.y
+      );
+      setHasInteracted(false); // ✅ 저장 후 초기화
+    }
+  }, [hasInteracted, saveViewPosition]);
 
   const handleColumnClick = async (columnId) => {
     if (!isAddingRelation || !selectedRelationType) return;
@@ -481,12 +500,12 @@ useEffect(() => {
         participation_right: created.participation_target,
       };
 
-        // 두 컬럼의 앵커를 즉시 채워 깜빡임 방지
-  measureColumnAnchor(created.source_column_id);
-  measureColumnAnchor(created.target_column_id);
+      // 두 컬럼의 앵커를 즉시 채워 깜빡임 방지
+      measureColumnAnchor(created.source_column_id);
+      measureColumnAnchor(created.target_column_id);
 
-  const updatedRelations = [...relations, newRelation];
-  setRelations(updatedRelations);
+      const updatedRelations = [...relations, newRelation];
+      setRelations(updatedRelations);
 
       await handleSnapshotSaveWithColumns(tables, updatedRelations);
     } catch (err) {
@@ -762,7 +781,7 @@ useEffect(() => {
         canvas.removeEventListener("wheel", handleWheel);
       }
     };
-  }, [zoomLevel, setZoomLevel,setPanOffset]);
+  }, [zoomLevel, setZoomLevel, setPanOffset]);
 
   return (
     <div
@@ -778,9 +797,31 @@ useEffect(() => {
         handlePanMouseMove(e); // 중간 클릭 이동
       }}
       onMouseUp={handleMouseUp}
-      className={`relative w-full h-full bg-[#1e1e2f] overflow-hidden ${
+      className={`relative w-full h-full overflow-hidden ${
         isPlacing || isAddingRelation ? "cursor-crosshair" : "cursor-default"
       } select-none`}
+      style={{
+        backgroundColor: "#ffffff",
+        // ⬇️ 미세 격자(옅음) + 주격자(진함) 두 세트 겹치기
+        backgroundImage: `
+      linear-gradient(${MINOR_COLOR} 1px, transparent 1px),
+      linear-gradient(90deg, ${MINOR_COLOR} 1px, transparent 1px),
+      linear-gradient(${MAJOR_COLOR} 1px, transparent 1px),
+      linear-gradient(90deg, ${MAJOR_COLOR} 1px, transparent 1px)
+    `,
+        backgroundSize: `
+      ${MINOR_STEP * zoomLevel}px ${MINOR_STEP * zoomLevel}px,
+      ${MINOR_STEP * zoomLevel}px ${MINOR_STEP * zoomLevel}px,
+      ${MAJOR_STEP * zoomLevel}px ${MAJOR_STEP * zoomLevel}px,
+      ${MAJOR_STEP * zoomLevel}px ${MAJOR_STEP * zoomLevel}px
+    `,
+        backgroundPosition: `
+      ${panOffset.x}px ${panOffset.y}px,
+      ${panOffset.x}px ${panOffset.y}px,
+      ${panOffset.x}px ${panOffset.y}px,
+      ${panOffset.x}px ${panOffset.y}px
+    `,
+      }}
     >
       {/* 확대/축소 대상 */}
       <div

@@ -21,7 +21,7 @@ from app.routers.coding_test_submission import update_correct_stats
 from app.schemas.coding_tests_schema import CodingTestSubmissionCreate, SolutionViewRequest
 from app.services.coding_test_case_service import get_testcases
 from app.services.code_executor import run_code_against_testcases
-from app.services.user import reward_user_by_action
+from app.services.user import reward_user_by_action 
 
 router = APIRouter(prefix="/codingtest", tags=["Coding Test"])
 
@@ -51,7 +51,11 @@ def get_coding_test_list(
         query = query.filter(CodingTests.difficulty == int(level))
 
     if category:
-        query = query.filter(CodingTests.category == category)
+        cats = [c.strip() for c in category.split(",") if c.strip()]
+        if len(cats) == 1:
+            query = query.filter(CodingTests.category == cats[0])
+        elif len(cats) > 1:
+            query = query.filter(CodingTests.category.in_(cats))
 
     if sort == "asc":
         query = query.order_by(stats_alias.correct_rate.asc().nullsfirst())

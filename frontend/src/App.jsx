@@ -71,6 +71,8 @@ import CodingTestPage from "./pages/codingTest/CodingTestPage";
 import CodingTestDetailPage from "./pages/codingTest/CodingTestDetailPage";
 import CorrectSolutionsPage from "./pages/codingTest/CorrectSolutionsPage";
 import MyCodingTestSubmissionsPage from "./pages/codingTest/MyCodingTestSubmissionsPage";
+import MyCodingTestStatsPage from "./pages/codingTest/MyCodingTestStatsPage";
+import ProblemExplorePage from "./pages/codingTest/ProblemExplorePage";
 
 // 게시판
 import "@toast-ui/editor/dist/toastui-editor.css";
@@ -230,6 +232,12 @@ const App = () => {
                       <Route path="/codetest" element={<CodeTestPage />} />
                       <Route path="/terminal" element={<CodeTestTerminalPage />} />
                       <Route path="/my-submissions" element={<MyCodingTestSubmissionsPage />} />
+
+                      {/* 코딩테스트 통계 */}
+                      <Route path="/my-stats" element={<MyCodingTestStatsPage />} />
+
+                      {/* 코딩테스트 문제 탐색 */}
+                      <Route path="/problem-explore" element={<ProblemExplorePage />} />
 
                       {/* 인증 */}
                       <Route path="/signup" element={<Signup />} />

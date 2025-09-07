@@ -22,6 +22,7 @@ import {
   runCodeWithTestcases,
   submitCode,
   checkHasSolved,
+  getStarterCodeByPref,
 } from "../../api/codingTestApi";
 
 // 컴포넌트
@@ -60,20 +61,35 @@ const CodingTestDetailPage = () => {
   const [hasSolvedBefore, setHasSolvedBefore] = useState(false);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchInitial = async () => {
       try {
+        // 1) 문제 상세
         const problemData = await getCodingTestDetail(id);
         setProblem(problemData);
 
-        const starter = await getStarterCode(id, language);
+        // 2) 초기 스타터코드 결정
+        let starter;
+        if (user?.user_id) {
+          try {
+            // 로그인: 선호 언어 → 없으면 python (백엔드가 처리)
+            starter = await getStarterCodeByPref(id);
+          } catch {
+            // 혹시 404/401 등 예외 시 python 폴백
+            starter = await getStarterCode(id, "python");
+          }
+        } else {
+          // 비로그인: python 고정
+          starter = await getStarterCode(id, "python");
+        }
         const formattedCode = starter.code.replace(/\\n/g, "\n");
         setCode(formattedCode);
+        setLanguage((starter.language || "python").toLowerCase());
       } catch (err) {
         console.error(err);
       }
     };
-    fetchData();
-  }, [id, language]);
+    fetchInitial();
+  }, [id, user?.user_id]);
 
   const fetchSubmissions = useCallback(async () => {
     try {
@@ -265,6 +281,21 @@ const CodingTestDetailPage = () => {
     const newLang = e.target.value;
     setLanguage(newLang);
   };
+
+  // 언어 변경 시 해당 언어의 스타터 코드 불러오기
+  useEffect(() => {
+    if (!id || !language) return;
+    const fetchByLang = async () => {
+      try {
+        const starter = await getStarterCode(id, language);
+        const formattedCode = starter.code.replace(/\\n/g, "\n");
+        setCode(formattedCode);
+      } catch (err) {
+        console.error("스타터 코드 로드 실패:", err);
+      }
+    };
+    fetchByLang();
+  }, [language, id]);
 
   const getPrismLang = (lang) => {
     if (lang === "python") return "python";

@@ -1,4 +1,65 @@
 @tailwind base;
+@layer base {
+  /* 기본 select 통일 */
+  select {
+    @apply h-9 rounded-md border border-gray-300 bg-white px-3 pr-9 text-sm text-gray-800
+           outline-none transition focus:ring-2 focus:ring-green-300 focus:border-green-400
+           hover:border-green-400 disabled:opacity-50 disabled:cursor-not-allowed;
+    /* 기본 화살표 (SVG 인라인) */
+    background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7 10l5 5 5-5' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.6rem center;
+    background-size: 1rem;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+  }
+  /* iOS/Safari 기본 화살표 제거 */
+  select::-ms-expand { display: none; }
+
+  /* 사이즈 옵션 (필요 시 클래스 붙여 사용) */
+  .select-sm { @apply h-8 text-[13px] px-2.5 pr-8; }
+  .select-lg { @apply h-10 text-[15px] px-3.5 pr-10; }
+
+  /* 상태 바리에이션 */
+  .select-ghost  { @apply bg-gray-50 border-gray-200; }
+  .select-error  { @apply border-rose-300 focus:ring-rose-200 focus:border-rose-400; }
+  .select-success{ @apply border-emerald-300 focus:ring-emerald-200 focus:border-emerald-400; }
+}
+@layer components {
+  /* 트리거 버튼(팝오버 여는 버튼) 공통 */
+  .dropdown-trigger {
+    @apply h-9 inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 text-sm
+           hover:border-green-400 focus:outline-none focus:ring-2 focus:ring-green-300;
+  }
+
+  /* 팝오버 패널 공통 */
+  .dropdown-panel {
+    @apply rounded-xl border border-gray-200 bg-white p-4 shadow-2xl z-50;
+  }
+
+  /* 패널 내부 아이템(칩/옵션) 공통 */
+  .dropdown-item {
+    @apply inline-flex items-center rounded-full border px-2.5 py-1 text-xs transition-colors
+           border-gray-200 bg-gray-50 text-gray-600 hover:border-green-300;
+  }
+  .dropdown-item--active {
+    @apply border-green-300 bg-green-50 text-green-700;
+  }
+
+  /* 패널 하단 액션 */
+  .dropdown-actions {
+    @apply mt-4 flex items-center justify-between;
+  }
+  .btn-apply {
+    @apply h-9 rounded-md bg-green-600 px-4 text-sm text-white hover:bg-green-700;
+  }
+  .btn-reset {
+    @apply text-xs text-gray-500 hover:text-gray-700 underline;
+  }
+}
+
+
 @tailwind components;
 @tailwind utilities;
 @font-face {
@@ -7,7 +68,7 @@
   font-weight: normal;
   font-style: normal;
 }
-@import "prismjs/themes/prism-tomorrow.css"; 
+@import "prismjs/themes/prism.css";
 
 @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono&family=Fira+Code&display=swap");
 
@@ -346,11 +407,11 @@ body {
   }
 }
 
-/* 다크모드 전용 셀렉트 박스(ERD 속성 데이터 타입 박스) */
+/* 라이트 모드 셀렉트 (ERD 데이터 타입) */
 .select-dark {
-  background-color: #1e1e2e;
-  color: #ffffff;
-  border: 1px solid #4b5563;
+  background-color: #ffffff;         /* 흰 배경 */
+  color: #111827;                    /* slate-900 */
+  border: 1px solid #d1d5db;         /* gray-300 */
   border-radius: 6px;
   padding: 4px 10px;
   font-size: 14px;
@@ -360,28 +421,45 @@ body {
   text-align-last: center;
 }
 
+.select-dark:focus {
+  outline: none;
+  border-color: #60a5fa;             /* blue-400 */
+  box-shadow: 0 0 0 2px rgba(96,165,250,0.35);
+}
+
 .select-dark option {
-  background-color: #1e1e2e;
-  color: #ffffff;
+  background-color: #ffffff;         /* 드롭다운 메뉴도 라이트 */
+  color: #111827;
 }
 
 
-/* sql 스크롤바 스타일 */
+/* placeholder 옵션이 있을 때 흐리게 */
+.select-dark option:disabled {
+  color: #9ca3af;                    /* gray-400 */
+}
+
+
+
+/* sql 스크롤바 스타일 - 라이트 */
 .sql-scrollbar::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
-.sql-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #3b4252;
+.sql-scrollbar::-webkit-scrollbar-track {
+  background: #f5f5f5;       /* 밝은 트랙 */
   border-radius: 6px;
-  border: 2px solid #282c34;
 }
 
-.sql-scrollbar::-webkit-scrollbar-track {
-  background-color: #282c34;
+.sql-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #c1c1c1; /* 기본 썸 */
   border-radius: 6px;
+  border: 2px solid #f5f5f5; /* 트랙과 구분감 */
 }
+.sql-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #a0a0a0; /* hover 시 진하게 */
+}
+
 
 /* Tiptap 기본 스타일 강제 적용 */
 .ProseMirror {
