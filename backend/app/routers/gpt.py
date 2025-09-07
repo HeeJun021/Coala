@@ -43,7 +43,7 @@ def create_gpt_session(
     try:
         # 🔹 2. GPT에게 제목 요청
         title_response = client.chat.completions.create(
-            model="gpt-5",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "당신은 핵심 요약 제목을 생성하는 비서입니다."},
                 {"role": "user", "content": title_prompt},
@@ -81,9 +81,8 @@ def create_gpt_session(
 
     try:
         gpt_response = client.chat.completions.create(
-            model="gpt-5",
+            model="gpt-4o-mini",
             messages=messages,
-            max_tokens=300  # 필요 최소한만
         )
         answer = gpt_response.choices[0].message.content
     except Exception as e:
@@ -139,8 +138,7 @@ def continue_gpt_session(
 
     try:
         gpt_response = client.chat.completions.create(
-            model="gpt-5",
-            reasoning_effort="low",
+            model="gpt-4o-mini",
             messages=messages,
         )
         answer = gpt_response.choices[0].message.content
