@@ -25,12 +25,12 @@ const SnapshotHistoryModal = ({
   const handleCheckout = async (snapshotId) => {
     try {
       await checkoutSnapshot(erdId, snapshotId);
-       showToast(
-   <div className="flex items-center gap-2">
-     <CheckSquare className="w-5 h-5 text-green-600" /> {/* 아이콘만 초록색 */}
-     <span>해당 스냅샷으로 이동했습니다.</span>
-   </div>
- );
+      showToast(
+        <div className="flex items-center gap-2">
+          <CheckSquare className="w-5 h-5 text-green-600" />
+          <span>해당 스냅샷으로 이동했습니다.</span>
+        </div>
+      );
       await fetchErdDetail(erdId);
       onClose();
     } catch (error) {
@@ -48,16 +48,16 @@ const SnapshotHistoryModal = ({
       />
 
       {/* 모달 */}
-      <div className="relative z-50 bg-[#1e1e2e] text-white w-[480px] max-h-[80vh] overflow-y-auto rounded-xl shadow-xl p-6 border border-gray-700">
+      <div className="relative z-50 bg-white text-gray-900 w-[480px] max-h-[80vh] overflow-y-auto rounded-xl shadow-xl p-6 border border-gray-200">
         {/* 제목 */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold flex items-center gap-2">
-            <ScrollText size={20} className="text-yellow-400" />
+            <ScrollText size={20} className="text-yellow-600" />
             스냅샷 히스토리
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
+            className="text-gray-500 hover:text-gray-800 transition-colors"
           >
             <X size={22} />
           </button>
@@ -65,7 +65,7 @@ const SnapshotHistoryModal = ({
 
         {/* 스냅샷 목록 */}
         {snapshots.length === 0 ? (
-          <p className="text-sm text-gray-400">저장된 커밋이 없습니다.</p>
+          <p className="text-sm text-gray-500">저장된 커밋이 없습니다.</p>
         ) : (
           <ul className="space-y-2">
             {snapshots.map((s, i) => (

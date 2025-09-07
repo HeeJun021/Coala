@@ -1,7 +1,7 @@
 import React from "react";
 import { Trash2 } from "lucide-react";
 
-const DeleteErdModalWhite = ({ erdName, onClose, onConfirm }) => {
+const DeleteErdModal = ({ erdName, onClose, onConfirm }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
       <div className="bg-white text-gray-800 p-6 rounded-xl w-[400px] shadow-2xl border border-gray-200">
@@ -35,4 +35,4 @@ const DeleteErdModalWhite = ({ erdName, onClose, onConfirm }) => {
   );
 };
 
-export default DeleteErdModalWhite;
+export default DeleteErdModal;

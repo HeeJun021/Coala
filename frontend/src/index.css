@@ -7,7 +7,7 @@
   font-weight: normal;
   font-style: normal;
 }
-@import "prismjs/themes/prism-tomorrow.css"; /* 🔥 다크 테마 (or prism.css) */
+@import "prismjs/themes/prism.css";
 
 @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono&family=Fira+Code&display=swap");
 
@@ -345,11 +345,11 @@ body {
   }
 }
 
-/* 다크모드 전용 셀렉트 박스(ERD 속성 데이터 타입 박스) */
+/* 라이트 모드 셀렉트 (ERD 데이터 타입) */
 .select-dark {
-  background-color: #1e1e2e;
-  color: #ffffff;
-  border: 1px solid #4b5563;
+  background-color: #ffffff;         /* 흰 배경 */
+  color: #111827;                    /* slate-900 */
+  border: 1px solid #d1d5db;         /* gray-300 */
   border-radius: 6px;
   padding: 4px 10px;
   font-size: 14px;
@@ -359,28 +359,45 @@ body {
   text-align-last: center;
 }
 
+.select-dark:focus {
+  outline: none;
+  border-color: #60a5fa;             /* blue-400 */
+  box-shadow: 0 0 0 2px rgba(96,165,250,0.35);
+}
+
 .select-dark option {
-  background-color: #1e1e2e;
-  color: #ffffff;
+  background-color: #ffffff;         /* 드롭다운 메뉴도 라이트 */
+  color: #111827;
 }
 
 
-/* sql 스크롤바 스타일 */
+/* placeholder 옵션이 있을 때 흐리게 */
+.select-dark option:disabled {
+  color: #9ca3af;                    /* gray-400 */
+}
+
+
+
+/* sql 스크롤바 스타일 - 라이트 */
 .sql-scrollbar::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
-.sql-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #3b4252;
+.sql-scrollbar::-webkit-scrollbar-track {
+  background: #f5f5f5;       /* 밝은 트랙 */
   border-radius: 6px;
-  border: 2px solid #282c34;
 }
 
-.sql-scrollbar::-webkit-scrollbar-track {
-  background-color: #282c34;
+.sql-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #c1c1c1; /* 기본 썸 */
   border-radius: 6px;
+  border: 2px solid #f5f5f5; /* 트랙과 구분감 */
 }
+.sql-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #a0a0a0; /* hover 시 진하게 */
+}
+
 
 /* ✅ Tiptap 기본 스타일 강제 적용 */
 .ProseMirror {

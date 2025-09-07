@@ -13,41 +13,45 @@ const ErdRelationLine = ({
   if (!fromColumn || !toColumn) return null;
 
   // ✅ 색상 변수 선언
-  const RELATION_COLOR = "#fb923c";
-  const SELECTED_COLOR = "#60a5fa";
-  const BACKGROUND_COLOR = "#1e1e2e";
+  const RELATION_COLOR = "#64748b"; // slate-500
+  const SELECTED_COLOR = "#3b82f6"; // blue-500
+  const BACKGROUND_COLOR = "#ffffff"; // 라이트 배경
 
   const lineColor = isSelected ? SELECTED_COLOR : RELATION_COLOR;
   const symbolColor = isSelected ? SELECTED_COLOR : RELATION_COLOR;
-  const strokeWidth = isSelected ? 2.5 : 1.5;
-  const circleStrokeWidth = isSelected ? 2.5 : 1.5;
+  const strokeWidth = isSelected ? 3 : 2;
+  const circleStrokeWidth = isSelected ? 3 : 2;
+
 
   // 항상 화면상 좌 → 우로 선을 보이도록 강제 렌더링 보정
-const isLeftToRightVisual = fromColumn.left < toColumn.left;
+  const isLeftToRightVisual = fromColumn.left < toColumn.left;
 
-const visualFrom = isLeftToRightVisual ? fromColumn : toColumn;
-const visualTo = isLeftToRightVisual ? toColumn : fromColumn;
+  const visualFrom = isLeftToRightVisual ? fromColumn : toColumn;
+  const visualTo = isLeftToRightVisual ? toColumn : fromColumn;
 
-const from = {
-  x: visualFrom.right,
-  y: visualFrom.y,
-};
-const to = {
-  x: visualTo.left,
-  y: visualTo.y,
-};
+  const from = {
+    x: visualFrom.right,
+    y: visualFrom.y,
+  };
+  const to = {
+    x: visualTo.left,
+    y: visualTo.y,
+  };
 
-const stubLength = 40;
-const fromStubEndX = from.x + stubLength;
-const toStubEndX = to.x - stubLength;
+  const stubLength = 40;
+  const fromStubEndX = from.x + stubLength;
+  const toStubEndX = to.x - stubLength;
 
-// 렌더링용 참여도/기호 방향도 정렬
-const participationLeft = isLeftToRightVisual ? participation_left : participation_right;
-const participationRight = isLeftToRightVisual ? participation_right : participation_left;
+  // 렌더링용 참여도/기호 방향도 정렬
+  const participationLeft = isLeftToRightVisual
+    ? participation_left
+    : participation_right;
+  const participationRight = isLeftToRightVisual
+    ? participation_right
+    : participation_left;
 
-const relationLeft = isLeftToRightVisual ? relation_left : relation_right;
-const relationRight = isLeftToRightVisual ? relation_right : relation_left;
-
+  const relationLeft = isLeftToRightVisual ? relation_left : relation_right;
+  const relationRight = isLeftToRightVisual ? relation_right : relation_left;
 
   const getRelationSymbol = (type, x, y, isLeft) => {
     if (type === "bar") {
@@ -105,12 +109,11 @@ const relationRight = isLeftToRightVisual ? relation_right : relation_left;
 
   return (
     <svg
-  className="absolute top-0 left-0"
-  width="2000"
-  height="2000"
-  style={{ pointerEvents: "none", zIndex: 100 }}
->
-
+      className="absolute top-0 left-0"
+      width="2000"
+      height="2000"
+      style={{ pointerEvents: "none", zIndex: 100 }}
+    >
       {/* 클릭 가능한 선들 */}
       <line
         x1={from.x}
@@ -164,29 +167,10 @@ const relationRight = isLeftToRightVisual ? relation_right : relation_left;
         }}
       />
 
-{getRelationSymbol(
-  relationLeft,
-  from.x + 10,
-  from.y,
-  true
-)}
-{getParticipationSymbol(
-  participationLeft,
-  from.x + 15,
-  from.y
-)}
-{getParticipationSymbol(
-  participationRight,
-  to.x - 22,
-  to.y
-)}
-{getRelationSymbol(
-  relationRight,
-  to.x - 10,
-  to.y,
-  false
-)}
-
+      {getRelationSymbol(relationLeft, from.x + 10, from.y, true)}
+      {getParticipationSymbol(participationLeft, from.x + 15, from.y)}
+      {getParticipationSymbol(participationRight, to.x - 22, to.y)}
+      {getRelationSymbol(relationRight, to.x - 10, to.y, false)}
     </svg>
   );
 };

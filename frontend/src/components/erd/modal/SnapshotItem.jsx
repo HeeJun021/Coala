@@ -8,7 +8,7 @@ const SnapshotItem = ({ snapshot, onSelect, index, isLast }) => {
   return (
     <div className="flex items-start text-sm">
       {/* 좌측: 시간 */}
-      <div className="flex-1 text-right pr-4 text-gray-300 pt-2">
+      <div className="flex-1 text-right pr-4 text-gray-500 pt-2">
         {formattedTime}
       </div>
 
@@ -20,18 +20,18 @@ const SnapshotItem = ({ snapshot, onSelect, index, isLast }) => {
             ${
               is_active
                 ? "bg-blue-500 border-blue-300 text-white shadow-md"
-                : "bg-neutral-800 border-gray-500 text-gray-200 hover:bg-neutral-700"
+                : "bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200"
             }`}
         >
           {index}
         </button>
 
-        {!isLast && <div className="w-px h-[32px] bg-gray-500 mt-1" />}
+        {!isLast && <div className="w-px h-[32px] bg-gray-300 mt-1" />}
       </div>
 
       {/* 우측: 사용자 정보 */}
-      <div className="flex-1 pl-4 text-gray-300 pt-2 flex items-center gap-2">
-        <User2 size={16} className="text-purple-400" />
+      <div className="flex-1 pl-4 text-gray-600 pt-2 flex items-center gap-2">
+        <User2 size={16} className="text-purple-600" />
         <span className="truncate">{user_name || "알 수 없음"}</span>
       </div>
     </div>

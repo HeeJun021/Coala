@@ -109,11 +109,12 @@ const ErdColumnRow = ({
         ${isDragging ? "opacity-50" : ""}
         cursor-grab transition duration-150`}
         style={{
-          backgroundColor: isHovering ? "#3a3a4d" : "transparent",
-          opacity: isDragging ? 0.5 : 1,
-          cursor: "grab",
-          lineHeight: "24px", // ✅ 추가
-        }}
+  backgroundColor: isHovering ? "#f3f4f6" : "transparent", // 라이트 hover
+  opacity: isDragging ? 0.5 : 1,
+  cursor: "grab",
+  lineHeight: "24px",
+}}
+
         draggable
         onDragStart={onDragStart}
         onDragOver={(e) => {
@@ -174,7 +175,7 @@ const ErdColumnRow = ({
 
         <div className="flex items-center space-x-2 flex-grow min-w-0">
           <input
-            className="bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 text-sm text-white placeholder:text-gray-500 pl-2"
+            className="bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 text-sm text-gray-900 placeholder:text-gray-500 pl-2"
             style={{
               width: "70px",
               height: "24px",
@@ -190,7 +191,7 @@ const ErdColumnRow = ({
           />
 
           <select
-            className="select-dark bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 text-sm text-white pl-2"
+            className="select-dark bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 text-sm text-gray-900 pl-2"
             style={{
               width: "100px", // ✅ TIMESTAMP 길이에 맞춰 고정
               height: "24px",
@@ -227,7 +228,7 @@ const ErdColumnRow = ({
           </select>
 
           <div
-            className="cursor-pointer text-xs w-[50px] text-center text-gray-300 hover:text-white"
+            className="cursor-pointer text-xs w-[50px] text-center text-gray-600 hover:text-gray-900"
             onClick={() => {
               const newValue = !column.isNullable;
               handleInputChange("isNullable", newValue);
@@ -239,7 +240,7 @@ const ErdColumnRow = ({
           </div>
 
           <input
-            className="bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 text-sm text-white placeholder:text-gray-500 pl-2"
+            className="bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 text-sm text-gray-900 placeholder:text-gray-500 pl-2"
             style={{
               width: "70px",
               height: "24px",
@@ -255,7 +256,7 @@ const ErdColumnRow = ({
           />
 
           <input
-            className="bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 text-sm text-white placeholder:text-gray-500 pl-2"
+            className="bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none transition duration-150 text-sm text-gray-900 placeholder:text-gray-500 pl-2"
             style={{
               width: "90px",
               height: "24px",
@@ -285,11 +286,12 @@ const ErdColumnRow = ({
 
       {showPkMenu && (
         <div
-          className="absolute z-50 min-w-[140px] bg-[#1f2233] border border-[#2b2e42] rounded-lg shadow-xl text-sm"
-          style={{ top: pkMenuPos.y, left: pkMenuPos.x }}
-        >
+  className="absolute z-50 min-w-[140px] bg-white border border-gray-200 rounded-lg shadow-xl text-sm text-gray-900"
+  style={{ top: pkMenuPos.y, left: pkMenuPos.x }}
+>
+
           <button
-            className="flex items-center justify-between gap-2 px-4 py-[6px] w-full hover:bg-[#2c2f45] text-gray-100 rounded-lg transition"
+            className="flex items-center justify-between gap-2 px-4 py-[6px] w-full hover:bg-gray-100 text-gray-900 rounded-lg transition"
             onClick={async () => {
               try {
                 await setColumnPrimaryKey(column.column_id, !isPK);
@@ -305,7 +307,7 @@ const ErdColumnRow = ({
               <FaKey className="w-3.5 h-3.5 text-yellow-400" />
               PK 설정
             </div>
-            {isPK && <Check className="w-4 h-4 text-green-400" />}
+            {isPK && <Check className="w-4 h-4 text-green-500" />}
           </button>
         </div>
       )}

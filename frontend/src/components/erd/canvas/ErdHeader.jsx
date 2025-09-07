@@ -74,11 +74,11 @@ const ErdHeader = ({
         updated_relations: [],
       });
       showToast(
-  <div className="flex items-center gap-2">
-    <History className="w-5 h-5 text-pink-400" /> 
-    <span>ERD 히스토리 기록 완료!</span>
-  </div>
-);
+        <div className="flex items-center gap-2">
+          <History className="w-5 h-5 text-pink-600" />
+          <span>ERD 히스토리 기록 완료!</span>
+        </div>
+      );
     } catch (err) {
       console.error("히스토리 기록 실패:", err);
       showToast("❌ 히스토리 기록 중 오류 발생");
@@ -179,7 +179,7 @@ const ErdHeader = ({
 
   return (
     <>
-      <div className="w-full bg-[#252836] text-white shadow-md border-b border-gray-700 py-4">
+      <div className="w-full bg-white text-gray-900 shadow-md border-b border-gray-200 py-4">
         <div className="max-w-7xl mx-auto px-4 flex flex-col gap-3">
           {mode !== "codegen" && (
             <div className="flex items-center justify-between gap-4">
@@ -190,7 +190,7 @@ const ErdHeader = ({
                       state: { tab: "overview", subTab: "erd", projectId }, // 수정: subTab과 projectId 추가
                     })
                   }
-                  className="text-white hover:text-gray-300 flex items-center gap-1"
+                  className="text-gray-700 hover:text-gray-900 flex items-center gap-1"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -211,21 +211,21 @@ const ErdHeader = ({
                 <h1 className="text-xl font-semibold">{projectName}</h1>
                 <button
                   onClick={() => setIsEditModalOpen(true)}
-                  className="text-sm text-gray-400 hover:text-white flex items-center gap-1"
+                  className="text-sm text-gray-500 hover:text-gray-900 flex items-center gap-1"
                 >
-                  <Edit size={16} className="text-blue-400" />
+                  <Edit size={16} className="text-blue-600" />
                 </button>
               </div>
 
               <div>
                 <button
                   onClick={handleOpenGuide}
-                  className="relative text-sm text-gray-400 hover:text-white flex items-center gap-1"
+                  className="relative text-sm text-gray-500 hover:text-gray-900 flex items-center gap-1"
                 >
-                  <HelpCircle size={18} className="text-gray-300" />
+                  <HelpCircle size={18} className="text-gray-600" />
                   {showDot && (
                     <div
-                      className="absolute top-0.5 -right-2.5 w-[8px] h-[8px] bg-rose-600 rounded-full shadow-md"
+                      className="absolute top-0.5 -right-2.5 w-[8px] h-[8px] bg-rose-500 rounded-full shadow-md"
                       style={{ transform: "translateY(-50%)" }}
                     />
                   )}
@@ -247,52 +247,52 @@ const ErdHeader = ({
             <div className="flex flex-wrap items-center gap-3 text-sm">
               <button
                 onClick={onOpenSidebar}
-                className="btn-header flex items-center gap-1"
+                className="btn-header flex items-center gap-1 text-gray-700 hover:bg-gray-200 rounded-md"
               >
-                <Folder size={16} className="text-yellow-400" />
+                <Folder size={16} className="text-yellow-600" />
                 목록
               </button>
               <button
                 onClick={handleCommit}
-                className="btn-header flex items-center gap-1"
+                className="btn-header flex items-center gap-1 text-gray-700 hover:bg-gray-200 rounded-md"
               >
-                <History size={16} className="text-pink-400" /> 히스토리 기록
+                <History size={16} className="text-pink-600" /> 히스토리 기록
               </button>
               <button
                 onClick={() => setIsExportModalOpen(true)}
-                className="btn-header flex items-center gap-1"
+                className="btn-header flex items-center gap-1 text-gray-700 hover:bg-gray-200 rounded-md"
               >
-                <FileUp size={16} className="text-gray-400" />
+                <FileUp size={16} className="text-gray-600" />
                 SQL 내보내기
               </button>
 
               <button
                 onClick={handleImageDownload}
-                className="btn-header flex items-center gap-1"
+                className="btn-header flex items-center gap-1 text-gray-700 hover:bg-gray-200 rounded-md"
               >
-                <Camera size={16} className="text-green-400" />
+                <Camera size={16} className="text-green-600" />
                 이미지 내보내기
               </button>
 
-              <button
+              {/* <button
                 onClick={() => setMode("codegen")}
-                className="btn-header flex items-center gap-1"
+                className="btn-header flex items-center gap-1 text-gray-700 hover:bg-gray-200 rounded-md"
               >
-                <Blocks size={16} className="text-purple-400" />
+                <Blocks size={16} className="text-purple-600" />
                 코드 변환
-              </button>
+              </button> */}
               <button
                 onClick={onUndo}
-                className="btn-header flex items-center gap-1"
+                className="btn-header flex items-center gap-1 text-gray-700 hover:bg-gray-200 rounded-md"
               >
-                <Undo2 size={16} className="text-orange-400" />
+                <Undo2 size={16} className="text-orange-600" />
                 Undo
               </button>
               <button
                 onClick={onRedo}
-                className="btn-header flex items-center gap-1"
+                className="btn-header flex items-center gap-1 text-gray-700 hover:bg-gray-200 rounded-md"
               >
-                <Redo2 size={16} className="text-orange-400" />
+                <Redo2 size={16} className="text-orange-600" />
                 Redo
               </button>
 
@@ -301,16 +301,16 @@ const ErdHeader = ({
                   onClick={() => handleZoom("out")}
                   className="btn-header px-2"
                 >
-                  <ZoomOut size={16} className="text-red-400" />
+                  <ZoomOut size={16} className="text-red-600" />
                 </button>
-                <span className="w-[50px] text-center">
+                <span className="w-[50px] text-center text-gray-700">
                   {Math.round(zoomLevel * 100)}%
                 </span>
                 <button
                   onClick={() => handleZoom("in")}
                   className="btn-header px-2"
                 >
-                  <ZoomIn size={16} className="text-green-400" />
+                  <ZoomIn size={16} className="text-green-600" />
                 </button>
               </div>
             </div>
