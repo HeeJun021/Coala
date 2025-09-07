@@ -35,9 +35,9 @@ const Navbar = () => {
         );
         const firstMaterial = sortedMaterials[0];
         navigate(
-          `/StudyMaterialsPage?category=${encodeURIComponent(
-            language
-          )}&id=${firstMaterial.material_id}`
+          `/StudyMaterialsPage?category=${encodeURIComponent(language)}&id=${
+            firstMaterial.material_id
+          }`
         );
       } else {
         alert("해당 언어의 학습자료가 없습니다.");
@@ -57,7 +57,14 @@ const Navbar = () => {
     {
       label: "개념퀴즈",
       path: "/quizpage",
-      children: ["연습 문제", "실전 문제", "오답 노트", "문제 만들기", "제출 내역", "퀴즈 통계", ],
+      children: [
+        "연습 문제",
+        "실전 문제",
+        "오답 노트",
+        "문제 만들기",
+        "제출 내역",
+        "퀴즈 통계",
+      ],
     },
     {
       label: "자율코딩",
@@ -66,9 +73,10 @@ const Navbar = () => {
     },
     {
       label: "코딩테스트",
-      path: "/codingtest",
-      children: ["문제 목록", "통계 및 제출 내역"],
+      path: "/problem-explore", // 기본 클릭 시 "문제탐색"으로 이동
+      children: ["문제탐색", "모든 문제", "제출 내역", "코딩테스트 통계"],
     },
+
     {
       label: "프로젝트",
       path: "/team-project",
@@ -235,7 +243,8 @@ const Navbar = () => {
                     let link = "";
                     if (child === "연습 문제") link = "/quizpage";
                     if (child === "실전 문제") link = "/quizpage?category=test";
-                    if (child === "문제 만들기") link = "/quizpage?category=user";
+                    if (child === "문제 만들기")
+                      link = "/quizpage?category=user";
                     if (child === "제출 내역") link = "/quiz-history";
                     if (child === "퀴즈 통계") link = "/quiz-stats";
                     if (child === "오답 노트") link = "/quiz-review";
@@ -283,7 +292,9 @@ const Navbar = () => {
                           onClick={async () => {
                             try {
                               await initRootCodeFolder();
-                              navigate("/self-coding", { state: { panel: "git" } });
+                              navigate("/self-coding", {
+                                state: { panel: "git" },
+                              });
                             } catch (err) {
                               alert("초기화 실패");
                             }
@@ -298,25 +309,18 @@ const Navbar = () => {
                     }
                   }
 
-                  if (item.label === "코딩테스트" && child === "문제 목록") {
-                    return (
-                      <Link
-                        key={i}
-                        to="/codingtest"
-                        className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
-                          hoverIndex === idx ? "" : "opacity-50"
-                        }`}
-                      >
-                        {child}
-                      </Link>
-                    );
-                  }
+                  // ⬇️ 아래 두 블록(문제 목록 / 통계 및 제출 내역) 지우고 이 블록 하나로 교체하세요.
+                  if (item.label === "코딩테스트") {
+                    let link = "";
+                    if (child === "문제탐색") link = "/problem-explore";
+                    if (child === "모든 문제") link = "/codingtest";
+                    if (child === "제출 내역") link = "/my-submissions";
+                    if (child === "코딩테스트 통계") link = "/my-stats";
 
-                  if (item.label === "코딩테스트" && child === "통계 및 제출 내역") {
                     return (
                       <Link
                         key={i}
-                        to="/my-submissions"
+                        to={link}
                         className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
                           hoverIndex === idx ? "" : "opacity-50"
                         }`}
