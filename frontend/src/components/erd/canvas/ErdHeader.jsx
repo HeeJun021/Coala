@@ -316,11 +316,8 @@ const ErdHeader = ({
             </div>
           )}
         </div>
-        {/* 헤더 하단 하이라이트 */}
-        <div
-          className="absolute left-0 right-0 bottom-0 h-[6px] 
-                bg-gradient-to-b from-gray-300 via-gray-100 to-transparent"
-        />
+        {/* 헤더 하단 실선 */}
+        <div className="absolute left-0 right-0 bottom-0 h-px bg-gray-300" />
 
         {isEditModalOpen && (
           <EditErdNameModal
