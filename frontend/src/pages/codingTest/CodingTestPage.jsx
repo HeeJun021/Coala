@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import {
   getCodingTestList,
@@ -13,6 +13,8 @@ import {
   ArrowUpDown,
   Search,
   X,
+  ChevronDown,
+  RefreshCw,
 } from "lucide-react";
 
 const getLevelClass = (level) => {
@@ -35,6 +37,7 @@ const getLevelClass = (level) => {
 const CodingTestPage = () => {
   const { user } = useAuth(); // ✅ 사용자 정보 가져오기
   const [searchParams, setSearchParams] = useSearchParams();
+
   const LANG_OPTIONS = [
     { value: "python", label: "PYTHON" },
     { value: "java", label: "JAVA" },
@@ -55,7 +58,45 @@ const CodingTestPage = () => {
   const category = searchParams.get("category") || "";
   const sort = searchParams.get("sort") || "desc";
 
+  // 🔎 카테고리 다중 선택 상태
+  const [catOpen, setCatOpen] = useState(false);
+  const [selectedCats, setSelectedCats] = useState(() =>
+    category ? category.split(",") : []
+  );
+  const catPanelRef = useRef(null);
+
   const [searchTerm, setSearchTerm] = useState(search);
+  // ✅ URL 쿼리(category=a,b,c)를 기준으로 '적용된' 카테고리 목록
+  const committedCats = useMemo(
+    () => (category ? category.split(",") : []),
+    [category]
+  );
+
+  // ✅ 칩에서 X 눌렀을 때 해당 카테고리만 제거
+  const removeCommittedCat = (cat) => {
+    const next = committedCats.filter((c) => c !== cat);
+    setSearchParams({
+      page: 1,
+      search,
+      level,
+      status,
+      sort,
+      ...(next.length ? { category: next.join(",") } : {}),
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // ✅ 전체 초기화
+  const clearCommittedCats = () => {
+    setSearchParams({
+      page: 1,
+      search,
+      level,
+      status,
+      sort,
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   useEffect(() => {
     const fetchProblems = async () => {
@@ -78,6 +119,21 @@ const CodingTestPage = () => {
     };
     fetchProblems();
   }, [page, search, level, status, category, sort, user]);
+
+  // URL의 category 쿼리가 바뀌면 로컬 선택도 동기화
+  useEffect(() => {
+    setSelectedCats(category ? category.split(",") : []);
+  }, [category]);
+
+  // 카테고리 패널 바깥 클릭 시 닫기
+  useEffect(() => {
+    const onClickOutside = (e) => {
+      if (!catPanelRef.current) return;
+      if (!catPanelRef.current.contains(e.target)) setCatOpen(false);
+    };
+    if (catOpen) document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [catOpen]);
 
   // 사용자 정보 변경/로그인 시 서버에서 선호 언어 로드
   useEffect(() => {
@@ -114,6 +170,28 @@ const CodingTestPage = () => {
     } catch (err) {
       console.error("선호 언어 저장 실패:", err);
     }
+  };
+
+  // 카테고리 토글
+  const toggleCat = (cat) => {
+    setSelectedCats((prev) =>
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
+    );
+  };
+
+  const resetCats = () => setSelectedCats([]);
+
+  const applyCats = () => {
+    setSearchParams({
+      page: 1,
+      search,
+      level,
+      status,
+      sort,
+      ...(selectedCats.length ? { category: selectedCats.join(",") } : {}),
+    });
+    setCatOpen(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleSearch = () => {
@@ -170,12 +248,20 @@ const CodingTestPage = () => {
             </h1>
           </div>
 
-          {/* 간단 설명 */}
-          <p className="text-sm text-gray-500 leading-relaxed">
-            문제를 풀며{" "}
-            <span className="text-green-600 font-medium">알고리즘 사고력</span>
-            을 키워보세요.
-          </p>
+          <div className="text-sm text-gray-800 leading-relaxed">
+            코딩테스트는 아래 언어를 지원합니다.
+            <div className="mt-2 flex flex-wrap gap-2">
+              <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+                PYTHON
+              </span>
+              <span className="inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-2.5 py-0.5 text-xs font-semibold text-sky-700">
+                JAVA
+              </span>
+              <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+                JAVASCRIPT
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* 검색 및 필터 */}
@@ -207,6 +293,7 @@ const CodingTestPage = () => {
               onClick={handleSearch}
             />
           </div>
+
           {/* 필터 */}
           <div className="flex flex-wrap gap-2 items-center">
             {/* ✅ 선호 언어 드롭다운 (난이도 왼쪽) - 로그인시에만 표시 */}
@@ -225,6 +312,8 @@ const CodingTestPage = () => {
                 ))}
               </select>
             )}
+
+            {/* 난이도 */}
             <select
               value={level}
               onChange={(e) =>
@@ -247,28 +336,82 @@ const CodingTestPage = () => {
               ))}
             </select>
 
-            <select
-              value={category}
-              onChange={(e) =>
-                setSearchParams({
-                  page: 1,
-                  search,
-                  status,
-                  level,
-                  sort,
-                  category: e.target.value,
-                })
-              }
-              className="border border-gray-300 rounded-md px-3 py-1 text-sm w-[180px]"
-            >
-              <option value="">카테고리</option>
-              {categoryCounts.map((cat) => (
-                <option key={cat.category} value={cat.category}>
-                  {cat.category} ({cat.count})
-                </option>
-              ))}
-            </select>
+            {/* ✅ 카테고리: 다중 선택 패널 */}
+            <div className="relative" ref={catPanelRef}>
+              <button
+                type="button"
+                onClick={() => setCatOpen((v) => !v)}
+                className="flex items-center gap-2 border border-gray-300 rounded-md px-3 py-1 text-sm hover:border-emerald-400"
+                title="카테고리 다중 선택"
+              >
+                <span>카테고리</span>
+                {selectedCats.length > 0 && (
+                  <span className="text-xs bg-green-100 text-green-700 rounded-full px-2 py-0.5">
+                    {selectedCats.length}
+                  </span>
+                )}
+                <ChevronDown className="w-4 h-4 text-gray-500" />
+              </button>
 
+              {catOpen && (
+                <div className="absolute z-50 mt-2 w-80 sm:w-[28rem] rounded-xl border border-gray-200 bg-white shadow-xl p-4">
+                  <div className="mb-2">
+                    <div className="text-sm font-semibold text-gray-800">
+                      카테고리
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      여러 개 선택할 수 있어요
+                    </div>
+                  </div>
+
+                  <div className="max-h-72 overflow-y-auto pr-1">
+                    <div className="flex flex-wrap gap-2">
+                      {categoryCounts.map((cat) => {
+                        const active = selectedCats.includes(cat.category);
+                        return (
+                          <button
+                            key={cat.category}
+                            type="button"
+                            onClick={() => toggleCat(cat.category)}
+                            className={[
+                              "inline-flex items-center rounded-full border px-2.5 py-1 text-xs",
+                              active
+                                ? "border-green-300 bg-green-50 text-green-700"
+                                : "border-gray-200 bg-gray-50 text-gray-600 hover:border-green-300",
+                            ].join(" ")}
+                            title={`${cat.category} (${cat.count})`}
+                          >
+                            {cat.category}
+                            <span className="ml-1 text-[10px] opacity-70">
+                              ({cat.count})
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={resetCats}
+                      className="text-xs text-gray-500 hover:text-gray-700 underline"
+                    >
+                      초기화
+                    </button>
+                    <button
+                      type="button"
+                      onClick={applyCats}
+                      className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm text-white hover:bg-emerald-700"
+                    >
+                      적용하기
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 상태 */}
             {user && (
               <select
                 value={status}
@@ -290,7 +433,46 @@ const CodingTestPage = () => {
               </select>
             )}
           </div>
+          {/* ✅ 선택된 카테고리 칩 (적용하기 이후에만 노출) */}
+          <div
+            className={`transition-all duration-300 overflow-hidden ${
+              committedCats.length
+                ? "max-h-24 mt-1 opacity-100"
+                : "max-h-0 opacity-0"
+            }`}
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={clearCommittedCats}
+                className="flex items-center gap-1 text-xs text-green-600 hover:text-green-700"
+                title="선택 초기화"
+              >
+                <RefreshCw className="w-3 h-3" />
+                초기화
+              </button>
+
+              {committedCats.map((c) => (
+                <span
+                  key={c}
+                  className="inline-flex items-center rounded-full border border-green-200 bg-green-50 text-green-700 px-2.5 py-1 text-xs"
+                >
+                  {c}
+                  <button
+                    type="button"
+                    onClick={() => removeCommittedCat(c)}
+                    className="ml-1 hover:text-green-900"
+                    aria-label={`${c} 제거`}
+                    title="제거"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
+
         {/* 문제 목록 헤더 라인 */}
         <div className="flex justify-between items-center mb-4">
           {/* 좌측: 아이콘 + 제목 + 총 문제 수 */}
