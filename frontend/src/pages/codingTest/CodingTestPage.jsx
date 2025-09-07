@@ -15,6 +15,9 @@ import {
   X,
   ChevronDown,
   RefreshCw,
+  Coffee, // JAVA용
+  Braces, // JavaScript용
+  Code, // Python용 (없으면 추가)
 } from "lucide-react";
 
 const getLevelClass = (level) => {
@@ -240,38 +243,55 @@ const CodingTestPage = () => {
       <div className="max-w-6xl mx-auto bg-white shadow-lg rounded-xl border border-gray-200 p-6 mt-6">
         {/* 페이지 헤더 */}
         <div className="mb-6">
-          {/* 코딩 테스트 타이틀 + 아이콘 */}
-          <div className="flex items-center gap-2 mb-2">
-            <FileCode className="w-8 h-8 text-green-600" />
-            <h1 className="text-4xl font-extrabold text-gray-800 tracking-tight">
-              코딩 테스트
-            </h1>
-          </div>
+          {/* 타이틀 + 우측 언어 배지 */}
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <div className="flex items-center gap-2">
+              <FileCode className="w-8 h-8 text-green-600" />
+              <h1 className="text-4xl font-extrabold text-gray-800 tracking-tight">
+                코딩 테스트
+              </h1>
+            </div>
 
-          <div className="text-sm text-gray-800 leading-relaxed">
-            코딩테스트는 아래 언어를 지원합니다.
-            <div className="mt-2 flex flex-wrap gap-2">
-              <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+            {/* 지원 언어 배지 (md↑에서만 노출) */}
+            <div className="hidden md:flex items-center gap-2">
+              <span className="text-xs text-gray-500">지원 언어</span>
+
+              {/* Python */}
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-2.5 py-0.5 text-[11px] font-semibold text-sky-700">
+                <Code className="w-3.5 h-3.5 text-sky-600" />
                 PYTHON
               </span>
-              <span className="inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-2.5 py-0.5 text-xs font-semibold text-sky-700">
+
+              {/* Java */}
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-orange-200 bg-orange-50 px-2.5 py-0.5 text-[11px] font-semibold text-orange-700">
+                <Coffee className="w-3.5 h-3.5 text-orange-600" />
                 JAVA
               </span>
-              <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+
+              {/* JavaScript */}
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-100 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800">
+                <Braces className="w-3.5 h-3.5 text-amber-700" />
                 JAVASCRIPT
               </span>
             </div>
           </div>
+
+          {/* 간단 설명 */}
+          <p className="text-sm text-gray-500 leading-relaxed">
+            문제를 풀며{" "}
+            <span className="text-green-600 font-medium">알고리즘 사고력</span>
+            을 키워보세요.
+          </p>
         </div>
 
         {/* 검색 및 필터 */}
         <div className="flex flex-col gap-3 mb-6">
           {/* 검색창 */}
           <div
-            className={`flex items-center border rounded-md w-full max-w-md px-3 py-2 ${
+            className={`flex items-center border rounded-lg w-full max-w-xl px-3 py-2 bg-white/70 backdrop-blur ${
               search
                 ? "border-green-500"
-                : "border-gray-300 hover:border-green-500 focus-within:border-green-500"
+                : "border-gray-300 hover:border-green-400 focus-within:border-green-400"
             }`}
           >
             <input
@@ -284,7 +304,7 @@ const CodingTestPage = () => {
             />
             {searchTerm && (
               <X
-                className="w-4 h-4 text-gray-400 cursor-pointer mx-2"
+                className="w-4 h-4 text-gray-400 cursor-pointer mx-2 hover:text-gray-600"
                 onClick={clearSearch}
               />
             )}
@@ -294,145 +314,159 @@ const CodingTestPage = () => {
             />
           </div>
 
-          {/* 필터 */}
-          <div className="flex flex-wrap gap-2 items-center">
-            {/* ✅ 선호 언어 드롭다운 (난이도 왼쪽) - 로그인시에만 표시 */}
-            {user && (
-              <select
-                value={preferredLang}
-                onChange={handlePreferredLangChange}
-                className="border border-gray-300 rounded-md px-3 py-1 text-sm w-[150px]"
-                title="코딩테스트 기본 언어 설정"
-              >
-                <option value="">선호 언어 선택</option>
-                {LANG_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            )}
+          {/* 필터 박스 */}
+          <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-3">
+            <div className="flex flex-wrap items-end gap-3">
+              {/* 선호 언어 */}
+              {user && (
+                <div className="flex flex-col gap-1">
+                  <span className="text-[11px] text-gray-500">선호 언어</span>
+                  <select
+                    value={preferredLang}
+                    onChange={handlePreferredLangChange}
+                    className="h-9 w-[180px] min-w-[180px] shrink-0 border border-gray-300 rounded-md px-3 pr-8 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-300"
+                    title="코딩테스트 기본 언어 설정"
+                  >
+                    <option value="">선호 언어 선택</option>
+                    {LANG_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
-            {/* 난이도 */}
-            <select
-              value={level}
-              onChange={(e) =>
-                setSearchParams({
-                  page: 1,
-                  search,
-                  status,
-                  category,
-                  sort,
-                  level: e.target.value,
-                })
-              }
-              className="border border-gray-300 rounded-md px-3 py-1 text-sm w-[100px]"
-            >
-              <option value="">난이도</option>
-              {[1, 2, 3, 4, 5].map((lv) => (
-                <option key={lv} value={lv}>
-                  Lv.{lv}
-                </option>
-              ))}
-            </select>
+              {/* 난이도 */}
+              <div className="flex flex-col gap-1">
+                <span className="text-[11px] text-gray-500">난이도</span>
+                <select
+                  value={level}
+                  onChange={(e) =>
+                    setSearchParams({
+                      page: 1,
+                      search,
+                      status,
+                      category,
+                      sort,
+                      level: e.target.value,
+                    })
+                  }
+                  className="h-9 border border-gray-300 rounded-md px-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-300 w-[120px]"
+                >
+                  <option value="">전체</option>
+                  {[1, 2, 3, 4, 5].map((lv) => (
+                    <option key={lv} value={lv}>
+                      Lv.{lv}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            {/* ✅ 카테고리: 다중 선택 패널 */}
-            <div className="relative" ref={catPanelRef}>
-              <button
-                type="button"
-                onClick={() => setCatOpen((v) => !v)}
-                className="flex items-center gap-2 border border-gray-300 rounded-md px-3 py-1 text-sm hover:border-emerald-400"
-                title="카테고리 다중 선택"
-              >
-                <span>카테고리</span>
-                {selectedCats.length > 0 && (
-                  <span className="text-xs bg-green-100 text-green-700 rounded-full px-2 py-0.5">
-                    {selectedCats.length}
-                  </span>
+              {/* 카테고리 (다중선택 패널 트리거) */}
+              <div className="flex flex-col gap-1 relative" ref={catPanelRef}>
+                <span className="text-[11px] text-gray-500">카테고리</span>
+                <button
+                  type="button"
+                  onClick={() => setCatOpen((v) => !v)}
+                  className="h-9 flex items-center gap-2 border border-gray-300 rounded-md px-3 text-sm bg-white hover:border-green-400 focus:outline-none focus:ring-2 focus:ring-green-300"
+                  title="카테고리 다중 선택"
+                >
+                  <span>선택하기</span>
+                  {selectedCats.length > 0 && (
+                    <span className="text-xs bg-green-100 text-green-700 rounded-full px-2 py-0.5">
+                      {selectedCats.length}
+                    </span>
+                  )}
+                  <ChevronDown className="w-4 h-4 text-gray-500" />
+                </button>
+
+                {catOpen && (
+                  // 🔽 팝오버: 버튼 컨테이너 기준으로 '겹쳐' 뜨도록 left-0 + top-full + mt-2
+                  <div className="absolute left-0 top-full mt-2 z-50 w-[28rem] max-w-[calc(100vw-2rem)] rounded-xl border border-gray-200 bg-white shadow-2xl p-4">
+                    <div className="mb-3">
+                      <div className="text-sm font-semibold text-gray-800">
+                        카테고리
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        중복 선택할 수 있어요
+                      </div>
+                    </div>
+
+                    <div className="max-h-72 overflow-y-auto pr-1">
+                      <div className="flex flex-wrap gap-2">
+                        {categoryCounts.map((cat) => {
+                          const active = selectedCats.includes(cat.category);
+                          return (
+                            <button
+                              key={cat.category}
+                              type="button"
+                              onClick={() => toggleCat(cat.category)}
+                              className={[
+                                "inline-flex items-center rounded-full border px-2.5 py-1 text-xs transition-colors",
+                                active
+                                  ? "border-green-300 bg-green-50 text-green-700"
+                                  : "border-gray-200 bg-gray-50 text-gray-600 hover:border-green-300",
+                              ].join(" ")}
+                              title={`${cat.category} (${cat.count})`}
+                            >
+                              {cat.category}
+                              <span className="ml-1 text-[10px] opacity-70">
+                                ({cat.count})
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={resetCats}
+                        className="text-xs text-gray-500 hover:text-gray-700 underline"
+                      >
+                        선택 초기화
+                      </button>
+                      <button
+                        type="button"
+                        onClick={applyCats}
+                        className="h-9 rounded-md bg-green-600 px-4 text-sm text-white hover:bg-green-700"
+                      >
+                        적용하기
+                      </button>
+                    </div>
+                  </div>
                 )}
-                <ChevronDown className="w-4 h-4 text-gray-500" />
-              </button>
+              </div>
 
-              {catOpen && (
-                <div className="absolute z-50 mt-2 w-80 sm:w-[28rem] rounded-xl border border-gray-200 bg-white shadow-xl p-4">
-                  <div className="mb-2">
-                    <div className="text-sm font-semibold text-gray-800">
-                      카테고리
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      여러 개 선택할 수 있어요
-                    </div>
-                  </div>
-
-                  <div className="max-h-72 overflow-y-auto pr-1">
-                    <div className="flex flex-wrap gap-2">
-                      {categoryCounts.map((cat) => {
-                        const active = selectedCats.includes(cat.category);
-                        return (
-                          <button
-                            key={cat.category}
-                            type="button"
-                            onClick={() => toggleCat(cat.category)}
-                            className={[
-                              "inline-flex items-center rounded-full border px-2.5 py-1 text-xs",
-                              active
-                                ? "border-green-300 bg-green-50 text-green-700"
-                                : "border-gray-200 bg-gray-50 text-gray-600 hover:border-green-300",
-                            ].join(" ")}
-                            title={`${cat.category} (${cat.count})`}
-                          >
-                            {cat.category}
-                            <span className="ml-1 text-[10px] opacity-70">
-                              ({cat.count})
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="mt-4 flex items-center justify-between">
-                    <button
-                      type="button"
-                      onClick={resetCats}
-                      className="text-xs text-gray-500 hover:text-gray-700 underline"
-                    >
-                      초기화
-                    </button>
-                    <button
-                      type="button"
-                      onClick={applyCats}
-                      className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm text-white hover:bg-emerald-700"
-                    >
-                      적용하기
-                    </button>
-                  </div>
+              {/* 상태 */}
+              {user && (
+                <div className="flex flex-col gap-1">
+                  <span className="text-[11px] text-gray-500">상태</span>
+                  <select
+                    value={status}
+                    onChange={(e) =>
+                      setSearchParams({
+                        page: 1,
+                        search,
+                        level,
+                        category,
+                        sort,
+                        status: e.target.value,
+                      })
+                    }
+                    className="h-9 border border-gray-300 rounded-md px-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-300 w-[120px]"
+                  >
+                    <option value="">전체</option>
+                    <option value="solved">푼 문제</option>
+                    <option value="unsolved">안 푼 문제</option>
+                  </select>
                 </div>
               )}
             </div>
-
-            {/* 상태 */}
-            {user && (
-              <select
-                value={status}
-                onChange={(e) =>
-                  setSearchParams({
-                    page: 1,
-                    search,
-                    level,
-                    category,
-                    sort,
-                    status: e.target.value,
-                  })
-                }
-                className="border border-gray-300 rounded-md px-3 py-1 text-sm w-[110px]"
-              >
-                <option value="">상태</option>
-                <option value="solved">푼 문제</option>
-                <option value="unsolved">안 푼 문제</option>
-              </select>
-            )}
           </div>
+
           {/* ✅ 선택된 카테고리 칩 (적용하기 이후에만 노출) */}
           <div
             className={`transition-all duration-300 overflow-hidden ${
@@ -441,7 +475,7 @@ const CodingTestPage = () => {
                 : "max-h-0 opacity-0"
             }`}
           >
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-green-100 bg-green-50/50 px-3 py-2">
               <button
                 type="button"
                 onClick={clearCommittedCats}
@@ -455,7 +489,7 @@ const CodingTestPage = () => {
               {committedCats.map((c) => (
                 <span
                   key={c}
-                  className="inline-flex items-center rounded-full border border-green-200 bg-green-50 text-green-700 px-2.5 py-1 text-xs"
+                  className="inline-flex items-center rounded-full border border-green-200 bg-white text-green-700 px-2.5 py-1 text-xs shadow-sm"
                 >
                   {c}
                   <button
