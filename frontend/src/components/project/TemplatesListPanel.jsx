@@ -5,8 +5,8 @@ import AlertModal from "../AlertModal";
 import { Plus } from "lucide-react";
 import {
   getTemplates,
-  addTemplate,
   deleteTemplate,
+  createTemplateFromCatalog,
 } from "../../api/templateApi";
 
 const TemplatesListPanel = ({ project }) => {
@@ -27,9 +27,9 @@ const TemplatesListPanel = ({ project }) => {
     }
   }, [projectId]);
 
-  const handleAddTemplate = async (selectedTemplate) => {
+  const handleAddTemplate = async (selected) => {
     try {
-      await addTemplate(projectId, selectedTemplate);
+      await createTemplateFromCatalog(projectId, selected.catalogId);
       await fetchTemplates();
     } catch (err) {
       console.error("템플릿 추가 실패", err);

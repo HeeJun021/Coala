@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { FaChevronRight, FaChevronDown, FaPlusCircle, FaFolder, FaFile } from "react-icons/fa";
+import { ChevronRight, ChevronDown, PlusCircle, Folder as FolderIcon, FileText} from "lucide-react";
 import {
   getRootCodeFolder,
   getChildFolders,
@@ -584,7 +584,7 @@ if (contextMenu.targetId?.startsWith("code-")) {
               onClick={() => !item.submenu && handleClick(item.label)}
             >
               {item.label}
-              {item.submenu && <FaChevronRight className="text-gray-400" />}
+              {item.submenu && <ChevronRight className="text-gray-400" />}
             </div>
             {item.submenu && (
               <ul
@@ -672,8 +672,8 @@ const handleFolderToggle = async (node) => {
           onContextMenu={handleContextMenu}
           data-id={`folder-${node.folder_id}`}
         >
-          {node.expanded ? <FaChevronDown className="mr-1" /> : <FaChevronRight className="mr-1" />}
-          <FaFolder className="text-yellow-600 mr-1" />
+          {node.expanded ? <ChevronDown className="mr-1" /> : <ChevronRight className="mr-1" />}
+          <FolderIcon size={20} className="text-yellow-600 mr-1" />
           {renamingItem?.path === `folder-${node.folder_id}` ? (
             <input
               className="text-sm border px-1 py-0.5 w-32"
@@ -724,7 +724,7 @@ const handleFolderToggle = async (node) => {
                   onContextMenu={handleContextMenu}
                   data-id={`code-${file.code_id}`}
                 >
-                  <FaFile className="mr-1 text-gray-500" />
+                  <FileText size={20} className="text-gray-500 mr-1" />
                   {isRenaming ? (
                     <>
                       <input
@@ -900,16 +900,16 @@ const handleFolderToggle = async (node) => {
         className="text-sm text-green-700 font-medium flex items-center gap-2 cursor-pointer mb-4 hover:underline"
         onClick={() => navigate("/self-coding/templates")}
       >
-        <FaPlusCircle className="text-green-600" /> 템플릿 새로 만들기
+        <PlusCircle className="text-green-600" /> 템플릿 새로 만들기
       </div>
       <div
         className="text-[13px] font-medium text-gray-600 flex items-center cursor-pointer mb-1"
         onClick={() => setShowFileTree((prev) => !prev)}
       >
         {showFileTree ? (
-          <FaChevronDown className="mr-1 text-gray-500" />
+          <ChevronDown className="mr-1 text-gray-500" />
         ) : (
-          <FaChevronRight className="mr-1 text-gray-500" />
+          <ChevronRight className="mr-1 text-gray-500" />
         )}
         파일 구조
       </div>

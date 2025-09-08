@@ -1,5 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
-import { FaBookOpen, FaChevronRight, FaChevronDown, FaFile } from "react-icons/fa";
+
+import {
+  BookOpen,
+  ChevronRight,
+  ChevronDown,
+  Folder as FolderIcon,
+  FolderOpen,
+  Github,
+  Plus,
+  RefreshCcw,
+  Upload,
+  FileText,
+  Link
+} from "lucide-react";
 import { getRootCodeFolder, getChildFolders, getCodesInFolder } from "../../api/codeApi";
 import githubApi from "../../api/githubApi";
 
@@ -532,11 +545,15 @@ const SelfCodingGitPanel = ({ isGithubConnected }) => {
             onClick={() => handleFolderToggle(node)}
           >
             {node.expanded ? (
-              <FaChevronDown className="mr-1 text-gray-500" size={12} />
+              <ChevronDown className="mr-1 text-gray-500" size={12} />
             ) : (
-              <FaChevronRight className="mr-1 text-gray-500" size={12} />
+              <ChevronRight className="mr-1 text-gray-500" size={12} />
             )}
-            <span className="mr-1">{node.expanded ? "📂" : "📁"}</span>
+            {node.expanded ? (
+              <FolderOpen className="mr-1 text-yellow-600" size={16} />
+            ) : (
+              <FolderIcon className="mr-1 text-yellow-600" size={16} />
+            )}
             <label className="flex items-center cursor-pointer">
               <input
                 type="checkbox"
@@ -556,7 +573,7 @@ const SelfCodingGitPanel = ({ isGithubConnected }) => {
                 key={`code-${file.code_id}`}
                 className="flex items-center py-1 pl-4"
               >
-                <FaFile className="mr-2 text-gray-400" size={14} />
+                <FileText className="mr-2 text-gray-400" size={14} />
                 <label className="flex items-center cursor-pointer">
                   <input
                     type="checkbox"
@@ -615,11 +632,15 @@ const SelfCodingGitPanel = ({ isGithubConnected }) => {
                     data-testid={`folder-${file.name}`}
                   >
                     {isExpanded ? (
-                      <FaChevronDown className="mr-2 text-gray-600" size={14} />
+                      <ChevronDown className="mr-2 text-gray-600" size={14} />
                     ) : (
-                      <FaChevronRight className="mr-2 text-gray-600" size={14} />
+                      <ChevronRight className="mr-2 text-gray-600" size={14} />
                     )}
-                    <span className="mr-2">{isExpanded ? "📂" : "📁"}</span>
+                    {isExpanded ? (
+                      <FolderOpen className="mr-2 text-yellow-600" size={16} />
+                    ) : (
+                      <FolderIcon className="mr-2 text-yellow-600" size={16} />
+                    )}
                     <span className="text-sm font-medium text-gray-800">{file.name}</span>
                   </div>
                   {isExpanded && file.contents && file.contents.length > 0 && (
@@ -634,7 +655,7 @@ const SelfCodingGitPanel = ({ isGithubConnected }) => {
                   onClick={() => handleFileClick(file)}
                   data-testid={`file-${file.name}`}
                 >
-                  <FaFile className="mr-2 text-gray-400" size={14} />
+                  <FileText className="mr-2 text-gray-400" size={14} />
                   <span className="text-sm text-blue-600 hover:underline">{file.name}</span>
                 </div>
               )}
@@ -647,7 +668,8 @@ const SelfCodingGitPanel = ({ isGithubConnected }) => {
 
   const GithubConnectGuide = () => (
     <div className="p-6 bg-white rounded-lg shadow-sm">
-      <h2 className="text-xl font-bold text-gray-800 mb-4">🔗 GitHub 연동 안내</h2>
+      <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+      <Link size={16} className="text-gray-700" />GitHub 연동 안내</h2>
       <p className="text-sm text-gray-600 mb-6 leading-relaxed">
         자율 코딩 프로젝트를 GitHub 원격 저장소에 연동하여 관리할 수 있습니다.<br />
         아직 GitHub 계정과 연동되어 있지 않습니다. 아래 버튼을 눌러 연동을 진행해 주세요.
@@ -664,19 +686,19 @@ const SelfCodingGitPanel = ({ isGithubConnected }) => {
   const GithubRepoList = () => (
     <div className="w-full h-full bg-white flex flex-col rounded-none p-0 m-0">
       <div className="px-4 pt-4 pb-2 border-b border-gray-200">
-        <h2 className="text-lg font-bold text-gray-800">📂 내 GitHub 저장소</h2>
+        <h2 className="text-lg font-bold text-gray-800"><FolderIcon size={22} className="text-yellow-600" /> 내 GitHub 저장소</h2>
         <div className="flex flex-col space-y-2 mt-2">
           <button
             onClick={() => setIsModalOpen(true)}
             className="text-xs text-gray-600 border border-gray-300 px-3 py-1 rounded-md hover:bg-gray-100 transition-colors"
           >
-            ➕ 새로운 저장소 만들기
+            <Plus size={14} className="text-gray-600" /> 새로운 저장소 만들기
           </button>
           <button
             onClick={handleOpenUploadModal}
             className="text-xs text-gray-600 border border-gray-300 px-3 py-1 rounded-md hover:bg-gray-100 transition-colors"
           >
-            📤 저장소에 업로드하기
+            <Upload size={14} className="text-gray-600" /> 저장소에 업로드하기
           </button>
         </div>
       </div>
@@ -695,7 +717,7 @@ const SelfCodingGitPanel = ({ isGithubConnected }) => {
               className="flex items-start gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
             >
               <div className="mt-1 text-gray-500">
-                <FaBookOpen size={14} />
+                <BookOpen size={14} />
               </div>
               <div className="flex-1">
                 <div className="flex flex-wrap justify-between items-center mb-1">
@@ -716,7 +738,7 @@ const SelfCodingGitPanel = ({ isGithubConnected }) => {
           onClick={handleUnlinkGithub}
           className="text-xs text-gray-600 border border-gray-300 px-3 py-1 rounded-md hover:bg-gray-100 transition-colors"
         >
-          🔄 GitHub 계정 변경
+          <RefreshCcw size={14} className="text-gray-600" /> GitHub 계정 변경
         </button>
       </div>
     </div>
@@ -823,7 +845,8 @@ const SelfCodingGitPanel = ({ isGithubConnected }) => {
               {selectedRepo && (
                 <div className="flex flex-col flex-1 border border-gray-200 rounded-md overflow-hidden bg-gray-50">
                   <div className="p-3 border-b border-gray-200">
-                    <h5 className="text-sm font-semibold text-gray-700 mb-2">📁 업로드 경로</h5>
+                    <FolderIcon size={14} className="text-yellow-600" />
+                    <h5 className="text-sm font-semibold text-gray-700 mb-0">업로드 경로</h5>
                     <input
                       type="text"
                       value={destinationPath}
@@ -836,7 +859,8 @@ const SelfCodingGitPanel = ({ isGithubConnected }) => {
                     </p>
                   </div>
                   <div className="flex-1 overflow-y-auto p-3" data-testid="file-list">
-                    <h5 className="text-sm font-semibold text-gray-700 mb-2">📁 저장소 파일 목록</h5>
+                    <FolderIcon size={14} className="text-yellow-600" />
+                      <h5 className="text-sm font-semibold text-gray-700 mb-0">저장소 파일 목록</h5>
                     {fileViewError && (
                       <p className="text-sm text-red-500" data-testid="error-message">
                         {fileViewError}
@@ -849,7 +873,8 @@ const SelfCodingGitPanel = ({ isGithubConnected }) => {
                     data-testid="preview-content"
                     style={{ minHeight: "200px" }}
                   >
-                    <h5 className="text-sm font-semibold text-gray-700 mb-2">📄 파일 미리보기</h5>
+                    <h5 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                    <FileText size={14} className="text-gray-700" />파일 미리보기</h5>
                     {previewContent ? (
                       <pre className="text-xs whitespace-pre-wrap bg-gray-50 p-2 rounded-md border border-gray-200" data-testid="preview-text">
                         {previewContent}
@@ -898,7 +923,7 @@ const SelfCodingGitPanel = ({ isGithubConnected }) => {
           {isUploading && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <div className="bg-white p-6 rounded-lg shadow-lg w-[300px] text-center">
-                <p className="text-sm text-gray-700 mb-4">📤 파일 업로드 중입니다. 잠시만 기다려주세요...</p>
+                <p className="text-sm text-gray-700 mb-4"><Upload size={16} /> 파일 업로드 중입니다. 잠시만 기다려주세요...</p>
                 <div className="loader border-t-4 border-blue-500 rounded-full w-8 h-8 animate-spin mx-auto mb-4"></div>
                 <button
                   className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors shadow-sm"

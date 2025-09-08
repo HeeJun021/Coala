@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
-import { FaTimes } from "react-icons/fa";
+import {FileText, X, Folder } from "lucide-react";
 import Split from "react-split";
 import CodeMirror from "@uiw/react-codemirror";
 import { debounce } from "lodash";
-import { getCodeById, updateCodeFile } from "../../api/codeApi";
-import { runJsPreview } from "../../api/previewApi";
+import { getCodeById, updateCodeFile } from "././api/codeApi";
+import { runJsPreview } from "././api/previewApi";
 
 const SelfCodingEditorPreview = ({
   tabs,
@@ -28,7 +28,7 @@ const SelfCodingEditorPreview = ({
   const editorRef = useRef(null);
   const [originalContent, setOriginalContent] = useState("");
   const [unsaved, setUnsaved] = useState(false);
-  const [languageId, setLanguageId] = useState(null); 
+  const [languageId, setLanguageId] = useState(null);
   const extension = selectedFilename?.split(".").pop();
 
   const debouncedLayout = debounce(() => {
@@ -87,7 +87,7 @@ const SelfCodingEditorPreview = ({
       alert("실행 중 오류가 발생했습니다.");
     }
   };
-  
+
   const renderActionButton = () => {
     if (unsaved || extension === "css") {
       return (
@@ -99,7 +99,7 @@ const SelfCodingEditorPreview = ({
         </button>
       );
     }
-  
+
     // 실행 버튼: 저장됨 + .js 파일
     if (selectedFilename.endsWith(".js")) {
       return (
@@ -111,7 +111,7 @@ const SelfCodingEditorPreview = ({
         </button>
       );
     }
-  
+
     return null;
   };
 
@@ -161,7 +161,7 @@ const SelfCodingEditorPreview = ({
               <div className="flex items-center overflow-x-auto bg-[#f3f3f3] border-b border-gray-300 px-2 py-1">
                 {tabs.map((tab) => {
                   const fileName = tab.split("/").pop();
-                  const emoji = templateDescriptions[templateId]?.emoji || "📄";
+                  const emoji = templateDescriptions[templateId]?.emoji || <FileText size={14} className="inline text-gray-600" />;
                   const isActive = tab === activeTab;
                   const isUnsaved = isActive && unsaved;
                   return (
@@ -176,7 +176,7 @@ const SelfCodingEditorPreview = ({
                     >
                       <span className="mr-2">{emoji}</span>
                       <span>{selectedFilename}{isUnsaved && " ●"}</span>
-                      <FaTimes
+                      <X
                         className="ml-2 text-xs hover:text-red-500"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -228,7 +228,11 @@ const SelfCodingEditorPreview = ({
               <div className="flex items-center overflow-x-auto bg-[#f3f3f3] border-b border-gray-300 px-2 py-1">
                 {previewTabs.map((tab) => {
                   const label = tab.split("/").slice(-1)[0];
-                  const emoji = templateDescriptions[templateId]?.emoji || "📁";
+                  const emoji =
+  templateDescriptions[templateId]?.emoji || (
+    <Folder size={14} className="inline text-gray-600" />
+  );
+
                   const isActive = tab === activePreviewTab;
                   return (
                     <div
@@ -242,7 +246,7 @@ const SelfCodingEditorPreview = ({
                     >
                       <span className="mr-2">{emoji}</span>
                       <span>{label}</span>
-                      <FaTimes
+                      <X
                         className="ml-2 text-xs hover:text-red-500"
                         onClick={(e) => {
                           e.stopPropagation();

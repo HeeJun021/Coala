@@ -1,21 +1,22 @@
 import React, { useState, useEffect } from "react";
 import {
-  FaBars,
-  FaFileAlt,
-  FaGithub,
-  FaSave,
-  FaCog,
-} from "react-icons/fa";
-import { HelpCircle } from "lucide-react";
+  Menu,
+  FileText,
+  Github,
+  Save,
+  Settings,
+  HelpCircle,
+} from "lucide-react";
+
 import SelfCodingSettingsPanel from "./SelfCodingSettingsPanel";
 import SelfCodingGuideModal from "./SelfCodingGuideModal";
 import { saveCodeFile } from "../../api/codeApi";
 
 const icons = [
-  { name: "menu", icon: <FaBars />, tooltip: "메뉴" },
-  { name: "explorer", icon: <FaFileAlt />, tooltip: "파일 탐색기" },
-  { name: "git", icon: <FaGithub />, tooltip: "Git 연동" },
-  { name: "save", icon: <FaSave />, tooltip: "로컬 저장" },
+  { name: "menu", icon: <Menu />, tooltip: "메뉴" },
+  { name: "explorer", icon: <FileText />, tooltip: "파일 탐색기" },
+  { name: "git", icon: <Github />, tooltip: "Git 연동" },
+  { name: "save", icon: <Save />, tooltip: "로컬 저장" },
 ];
 
 const MIME_TYPES = {
@@ -303,7 +304,7 @@ const SelfCodingSidebar = ({
               setShowMenu(false);
             }}
           >
-            <FaCog />
+            <Settings />
           </div>
         </div>
 

@@ -1,56 +1,27 @@
-import React, { useState } from "react";
+import React, { useEffect, useState} from "react";
 import { Plus } from "lucide-react";
-
-const PREDEFINED_TEMPLATES = [
-  {
-    key: "roadmap",
-    title: "Product Roadmap",
-    description: "Visualize project milestones and timelines.",
-    previewUrl: "https://example.com/roadmap-preview.png",
-    widgets: ["timeline", "tasks"],
-  },
-  {
-    key: "kanban",
-    title: "Kanban Board",
-    description: "Manage tasks with to-do, in-progress, done columns.",
-    previewUrl: "https://example.com/kanban-preview.png",
-    widgets: ["tasks"],
-  },
-  {
-    key: "sprint-planning",
-    title: "Sprint Planning",
-    description: "Plan sprints with backlog and reviews.",
-    previewUrl: "https://example.com/sprint-preview.png",
-    widgets: ["tasks", "calendar"],
-  },
-  {
-    key: "scrum-board",
-    title: "Scrum Board",
-    description: "Agile scrum methodology template.",
-    previewUrl: "https://example.com/scrum-preview.png",
-    widgets: ["tasks", "timeline"],
-  },
-  {
-    key: "bug-tracker",
-    title: "Bug Tracker",
-    description: "Track and resolve bugs efficiently.",
-    previewUrl: "https://example.com/bug-preview.png",
-    widgets: ["tasks", "docs"],
-  },
-];
+import { getTemplateCatalog } from "../../api/templateApi";
 
 const SelectTemplateModal = ({ onClose, onSelect }) => {
-  const [templates] = useState(PREDEFINED_TEMPLATES);
-  const [isLoading] = useState(false);
+  const [templates, setTemplates] = useState([]);
+  const [isLoading, setLoading] = useState(true);
 
-  const handleSelect = (template) => {
-    onSelect({
-      title: template.title,
-      description: template.description,
-      widgets: template.widgets,
-    });
-    onClose();
-  };
+  
+  useEffect(() => {
+    (async () => {
+      try {
+        const items = await getTemplateCatalog(); // GET /template-library?published=1
+        setTemplates(items);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const handleSelect = (tpl) => {
+    onSelect({ catalogId: tpl.id, title: tpl.title, description: tpl.description });
+     onClose();
+   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
