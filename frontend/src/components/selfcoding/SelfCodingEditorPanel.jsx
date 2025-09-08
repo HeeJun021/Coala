@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { FaTimes } from "react-icons/fa";
+import { X, FileText } from "lucide-react";
 import { Controlled as CodeMirror } from "react-codemirror2";
 import { getCodeById, updateCodeFile } from "../../api/codeApi";
 import { registerCustomHints } from "../../utils/customHints";
@@ -212,7 +212,7 @@ const SelfCodingEditorPanel = ({
       <div className="flex items-center overflow-x-auto bg-[#f3f3f3] border-b border-gray-300 px-2 py-1">
         {tabs.map((tab) => {
           const fileName = tab.filename;
-          const emoji = templateDescriptions[templateId]?.emoji || "📄";
+          const emoji = templateDescriptions[templateId]?.emoji || <FileText size={14} className="inline text-gray-600" />;
           const isActive = tab.tabId === activeTabId;
           const isUnsaved = isActive && unsaved;
           return (
@@ -230,7 +230,7 @@ const SelfCodingEditorPanel = ({
                 {fileName}
                 {isUnsaved && " ●"}
               </span>
-              <FaTimes
+              <X
                 className="ml-2 text-xs hover:text-red-500"
                 onClick={(e) => {
                   e.stopPropagation();

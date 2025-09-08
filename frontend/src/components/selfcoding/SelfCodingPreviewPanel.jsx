@@ -1,5 +1,5 @@
 import React from "react";
-import { FaFileAlt } from "react-icons/fa";
+import { FileText } from "lucide-react";
 
 const SelfCodingPreviewPanel = ({
   previewFilename,
@@ -20,7 +20,7 @@ const SelfCodingPreviewPanel = ({
     <div className="flex flex-col w-full h-full bg-white">
       {/* 상단 실행 파일 이름 표시 */}
       <div className="flex items-center bg-[#f3f3f3] border-b border-gray-300 px-3 py-1 text-sm font-medium text-gray-700">
-        <FaFileAlt className="mr-2 text-gray-600" />
+        <FileText className="mr-2 text-gray-600" />
         {previewFilename ? (
           <span>{previewFilename}</span>
         ) : (
