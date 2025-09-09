@@ -33,6 +33,10 @@ const Sidebar = () => {
     initialCategory || null
   );
 
+  useEffect(() => {
+  setOpenLanguage(initialCategory || null); // category 없으면 전부 접힘
+}, [initialCategory]);
+
   // 기존 스크롤 고정 로직 유지
   const [sidebarTop, setSidebarTop] = useState(150);
   const [isHovering, setIsHovering] = useState(false);
