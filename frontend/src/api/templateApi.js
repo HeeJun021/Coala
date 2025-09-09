@@ -21,3 +21,7 @@ export const createTemplateFromCatalog = async (projectId, catalogId) =>
   (await apiClient.post(`/projects/${projectId}/templates/from-catalog`, {
     catalog_id: catalogId,
   })).data;
+
+// ✅ 추가: Trello 보드에서 바로 템플릿 생성
+export const importTemplateFromTrello = async (projectId, { board, title }) =>
+  (await apiClient.post(`/projects/${projectId}/templates/import/trello`, { board, title })).data;
