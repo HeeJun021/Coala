@@ -7,7 +7,7 @@ const BoardPage = () => {
   const { boardType } = useParams();
 
   return (
-    <div className="max-w-6xl mx-auto p-8 min-h-screen flex">
+    <div className="max-w-7xl mx-auto min-h-screen flex">
       {/* 사이드바 */}
       <BoardSidebar />
 
