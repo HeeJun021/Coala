@@ -253,12 +253,13 @@ const StudyMaterialsPage = () => {
     ["html", "css"].includes(category?.toLowerCase());
 
   return (
-    <div className="p-6 bg-[#f9fafb] min-h-screen">
+    <div className="w-full min-h-screen pt-4 pl-[280px] bg-[#F9FAFB]">
       <div
-        className={`bg-white shadow-md rounded-lg p-8 max-w-[1200px] w-full mx-auto text-left transition-opacity duration-500 ${
+        className={`max-w-5xl ml-28 mr-auto mt-16 bg-white shadow-xl rounded-2xl border border-gray-300 p-7 relative transition-opacity duration-500 ${
           fadeIn ? "opacity-100" : "opacity-0"
         }`}
       >
+
         <div className="mb-6">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
