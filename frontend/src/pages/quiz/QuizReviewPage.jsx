@@ -8,6 +8,7 @@ import QuizSideBar from "../../Layout/QuizSideBar";
 import LanguageFilter from "../../components/quiz/LanguageFilter";
 import RetakeQuizForm from "../../components/quiz/RetakeQuizForm";
 import IncorrectQuestionList from "../../components/quiz/IncorrectQuestionList";
+import { HelpCircle } from "lucide-react";
 
 export default function QuizReviewPage() {
   const [allQuestions, setAllQuestions] = useState([]);
@@ -16,7 +17,21 @@ export default function QuizReviewPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // 🔎 가이드 버튼 (Practice/Test와 동일 동작)
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [showGuideTooltip, setShowGuideTooltip] = useState(false);
+
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const seen = localStorage.getItem("quiz_guide_seen");
+    if (seen !== "true") setShowGuideTooltip(true);
+  }, []);
+  const handleGuideClick = () => {
+    setIsGuideOpen(true);
+    setShowGuideTooltip(false);
+    localStorage.setItem("quiz_guide_seen", "true");
+  };
 
   // 1) 전체 오답 목록 불러오기
   useEffect(() => {
@@ -51,14 +66,14 @@ export default function QuizReviewPage() {
     try {
       const newQuiz = await createRetakeQuiz({
         title: "나의 오답 복습 퀴즈",
-        quiz_type: "review", // 타입 구분을 확실히
+        quiz_type: "review",
         count,
         language_id: languageId,
       });
 
       if (newQuiz && newQuiz.quiz_id) {
-        // 올바른 라우트로 이동
-        navigate(`/quizsolve/${newQuiz.quiz_id}`);
+        // ✅ Practice/Test와 라우팅 규격 통일 (쿼리로 모드 표시)
+        navigate(`/quizsolve/${newQuiz.quiz_id}?mode=review`);
       }
     } catch (e) {
       console.error("복습 퀴즈 생성 실패:", e);
@@ -67,10 +82,24 @@ export default function QuizReviewPage() {
   };
 
   return (
-    <div className="flex w-full">
+    <div className="w-full min-h-screen pt-4 pl-[164px]">
+      {/* 좌측 사이드바 */}
       <QuizSideBar />
 
-      <div className="flex-1 max-w-6xl pt-8 mt-8 mx-auto bg-white shadow-xl rounded-2xl border border-gray-300 p-7 relative">
+      {/* 본문 카드 (Practice/Test 규격 동일) */}
+      <div className="max-w-6xl mx-auto pt-8 mt-8 bg-white shadow-xl rounded-2xl border border-gray-300 p-7 relative">
+        {/* 가이드 버튼 */}
+        <button
+          onClick={handleGuideClick}
+          className="absolute top-4 right-4 text-gray-500 hover:text-black"
+          title="가이드 보기"
+        >
+          <HelpCircle size={24} />
+          {showGuideTooltip && (
+            <div className="absolute top-[-2px] right-[-6px] w-[7px] h-[7px] bg-rose-600 rounded-full shadow-sm" />
+          )}
+        </button>
+
         {/* 타이틀 */}
         <div className="mb-8">
           <h1 className="text-3xl font-extrabold text-gray-800 mb-4 tracking-wide">

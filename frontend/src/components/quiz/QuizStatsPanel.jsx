@@ -16,9 +16,6 @@ const QuizStatsPanel = ({ stats }) => {
 
   return (
     <div className="max-w-[1025px] mx-auto">
-      <h2 className="text-3xl font-extrabold text-gray-800 mb-2 tracking-wide">
-        퀴즈 통계
-      </h2>
 
       {/* 상단 통계 박스 */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">

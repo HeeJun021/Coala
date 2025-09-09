@@ -14,12 +14,12 @@ const QuizSideBar = () => {
 
   return (
     <div
-      className="absolute left-[33px] w-[260px] bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden z-40"
-      style={{ top: "239px" }}
+      className="absolute left-[70px] w-[260px] bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden z-40"
+      style={{ top: "120px" }}
     >
       {/* 상단 헤더 */}
       <div className="h-[56px] flex items-center px-6 bg-[#88C078] rounded-t-2xl shadow-sm">
-        <h1 className="text-[18px] font-semibold text-black tracking-wide">퀴즈</h1>
+        <h1 className="text-[18px] font-semibold text-black tracking-wide">개념퀴즈</h1>
       </div>
 
       {/* 카테고리 목록 */}

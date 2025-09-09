@@ -1,11 +1,13 @@
+// frontend/src/pages/quiz/QuizPage.jsx
 import React from "react";
 import { useLocation } from "react-router-dom";
 import PracticeQuiz from "./PracticeQuiz";
 import TestQuiz from "./TestQuiz";
 import UserQuiz from "./UserQuiz";
-import QuizHistoryPage from "./QuizHistoryPage"
-import QuizStatsPage from "./QuizStatsPage"
+import QuizHistoryPage from "./QuizHistoryPage";
+import QuizStatsPage from "./QuizStatsPage";
 import QuizReviewPage from "./QuizReviewPage";
+
 const QuizPage = ({ userData }) => {
   const location = useLocation();
 
@@ -21,21 +23,25 @@ const QuizPage = ({ userData }) => {
       case "test":
         return <TestQuiz />;
       case "user":
-        return <UserQuiz userData={userData}/>;
+        return <UserQuiz userData={userData} />;
       case "stats":
-        return <QuizStatsPage />
+        return <QuizStatsPage />;
       case "history":
-        return <QuizHistoryPage />
+        return <QuizHistoryPage />;
       case "review":
-        return <QuizReviewPage />
+        return <QuizReviewPage />;
       default:
         return <PracticeQuiz />; // 기본값
     }
   };
 
   return (
-    <div className="flex min-h-screen">
-      <div className="ml-[250px] p-6 flex-1">{renderQuizComponent()}</div>
+    // 부모는 높이만 보장하고, 좌우 여백은 컨테이너에서 통일
+    <div className="min-h-screen">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        {/* 자식 컴포넌트에서 사이드바/콘텐츠를 배치하므로 margin-left 제거 */}
+        {renderQuizComponent()}
+      </div>
     </div>
   );
 };

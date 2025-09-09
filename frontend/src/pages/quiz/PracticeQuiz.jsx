@@ -1,3 +1,4 @@
+// src/pages/quiz/PracticeQuiz.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createQuiz } from "../../api/quizApi";
@@ -123,10 +124,13 @@ const PracticeQuiz = () => {
     type === "ox" ? "O/X 문제" : type === "short" ? "단답형 문제" : "선택형 문제";
 
   return (
-    <div className="flex w-full">
-      <QuizSideBar />
+    <div className="w-full min-h-screen pt-4 pl-[164px]"> 
+      {/* 사이드바 폭 260px + 간격 24px = 284px, 오른쪽 간격 24px */}
+      <QuizSideBar/>
 
-      <div className="flex-1 max-w-6xl pt-8 mt-8 mx-auto bg-white shadow-xl rounded-2xl border border-gray-300 p-7 relative">
+      {/* 컨텐츠 */}
+      <div className="max-w-6xl mx-auto pt-8 mt-8 bg-white shadow-xl rounded-2xl border border-gray-300 p-7 relative">
+        {/* 가이드 버튼 */}
         <button
           onClick={handleGuideClick}
           className="absolute top-4 right-4 text-gray-500 hover:text-black"
@@ -138,6 +142,7 @@ const PracticeQuiz = () => {
           )}
         </button>
 
+        {/* 타이틀 */}
         <div className="mb-8">
           <h1 className="text-3xl font-extrabold text-gray-800 mb-4 tracking-wide">
             <span className="text-black">연습 문제</span>
@@ -150,7 +155,9 @@ const PracticeQuiz = () => {
 
         {/* 문제 언어 선택 */}
         <div className="mb-8 max-w-xs">
-          <label className="text-sm font-semibold text-gray-700 block mb-2">문제 언어</label>
+          <label className="text-sm font-semibold text-gray-700 block mb-2">
+            문제 언어
+          </label>
           <select
             className="w-full p-2 border rounded-lg"
             value={languageId || ""}
@@ -164,8 +171,11 @@ const PracticeQuiz = () => {
           </select>
         </div>
 
+        {/* 유형 토글 */}
         <div className="mb-6">
-          <h2 className="text-lg font-semibold mb-2 text-gray-700">문제 유형을 선택하세요.</h2>
+          <h2 className="text-lg font-semibold mb-2 text-gray-700">
+            문제 유형을 선택하세요.
+          </h2>
           <div className="flex gap-4">
             {["ox", "short", "multiple"].map((type) => (
               <label
@@ -188,6 +198,7 @@ const PracticeQuiz = () => {
           </div>
         </div>
 
+        {/* 유형별 카드 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
           {["ox", "short", "multiple"].map((type) => (
             <div
@@ -241,6 +252,7 @@ const PracticeQuiz = () => {
           ))}
         </div>
 
+        {/* 액션 */}
         <div className="flex pt-8 justify-end">
           <button
             className="px-6 py-2 bg-green-600 text-white rounded-xl shadow-md hover:bg-green-700 transition-all"
@@ -253,7 +265,10 @@ const PracticeQuiz = () => {
       </div>
 
       {isGuideOpen && (
-        <QuizGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
+        <QuizGuideModal
+          isOpen={isGuideOpen}
+          onClose={() => setIsGuideOpen(false)}
+        />
       )}
     </div>
   );
