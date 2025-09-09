@@ -1,131 +1,132 @@
 // src/components/MyPageSidebar.jsx
-import React from "react";
-import { Link, useLocation } from "react-router-dom";
-import ProfileSummary from "./ProfileSummary";
-import {
-  UserCog,
-  ListTodo,
-  BarChart3,
-  Users2,
-} from "lucide-react";
+import React, { useMemo, useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { UserCog, ListTodo, BarChart3, ChevronDown, ChevronRight } from "lucide-react";
 
-const MyPageSidebar = ({ userData }) => {
+const MyPageSidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const currentPath = location.pathname;
 
-  const getLinkClass = (pathPrefix) =>
-    `hover:font-semibold hover:text-gray-800 ${
-      currentPath.startsWith(pathPrefix) ? "font-bold text-gray-700" : ""
-    }`;
+  // 섹션/항목 정의
+  const sections = useMemo(
+    () => [
+      {
+        key: "account",
+        title: "로그인 정보",
+        icon: <UserCog className="w-4 h-4 text-sky-600" />,
+        items: [
+          { label: "계정 정보 및 관리", to: "/mypage/modify" },
+          { label: "개인정보 보호 설정", to: "/mypage/setting" },
+        ],
+      },
+      {
+        key: "activity",
+        title: "활동 내역",
+        icon: <ListTodo className="w-4 h-4 text-green-600" />,
+        items: [
+          { label: "퀴즈 이력", to: "/mypage/quiz-history" },
+          { label: "사용자 퀴즈 이력", to: "/mypage/userquiz-history" },
+          { label: "코딩 테스트 이력", to: "/mypage/codingtest" },
+          { label: "커뮤니티 활동 내역", to: "/mypage/community" },
+        ],
+      },
+      {
+        key: "records",
+        title: "학습 성과 및 기록",
+        icon: <BarChart3 className="w-4 h-4 text-yellow-600" />,
+        items: [
+          { label: "오답노트", to: "/mypage/wrong-notes" },
+          { label: "출석체크", to: "/mypage/attendance" },
+        ],
+      },
+    ],
+    []
+  );
+
+  // 현재 경로가 속한 섹션 자동 펼침
+  const sectionForPath = useMemo(() => {
+    for (const s of sections) {
+      if (s.items.some((i) => currentPath.startsWith(i.to))) return s.key;
+    }
+    return null;
+  }, [sections, currentPath]);
+
+  const [openSection, setOpenSection] = useState(sectionForPath);
+
+  useEffect(() => {
+    setOpenSection(sectionForPath);
+  }, [sectionForPath]);
+
+  const isActive = (to) => currentPath.startsWith(to);
+
+  const handleSectionToggle = (key) => {
+    setOpenSection((prev) => (prev === key ? null : key));
+  };
+
+  const handleItemClick = (to) => {
+    if (currentPath !== to) navigate(to);
+  };
 
   return (
-    <aside className="w-64 bg-gray-50 p-6 shadow-md flex-shrink-0 absolute left-4 rounded-xl border border-gray-200">
-      <h1 className="text-2xl font-bold text-center mb-6 text-gray-800">마이페이지</h1>
+    <aside
+      className="absolute left-[70px] w-[260px] bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden z-40"
+      style={{ top: "120px" }}
+    >
+      {/* 헤더 */}
+      <div className="h-[56px] flex items-center px-6 bg-[#88C078] rounded-t-2xl shadow-sm">
+        <h1 className="text-[18px] font-semibold text-black tracking-wide">마이페이지</h1>
+      </div>
 
-      <ProfileSummary
-        profile_image_url={userData?.profile_image_url || "/assets/koala.jpg"}
-        nickname={userData?.nickname || "익명 사용자"}
-        eucalyptus_balance={userData?.eucalyptus_balance ?? 0}
-      />
+      {/* 섹션들 */}
+      <div className="divide-y divide-gray-100">
+        {sections.map((section) => {
+          const isOpen = openSection === section.key;
+          return (
+            <div key={section.key}>
+              {/* 섹션 헤더 */}
+              <button
+                type="button"
+                onClick={() => handleSectionToggle(section.key)}
+                className={`w-full px-6 py-4 flex items-center justify-between text-left cursor-pointer text-[16px] font-semibold transition-all duration-150 ${
+                  isOpen ? "bg-[#D9D9D9] text-gray-800" : "hover:bg-gray-100 text-gray-600"
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  {section.icon}
+                  {section.title}
+                </span>
+                {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+              </button>
 
-      <nav className="text-gray-800 mt-8">
-        <ul className="space-y-6 text-sm">
-          {/* 로그인 정보 */}
-          <li>
-            <div className="flex items-center gap-2 font-semibold text-gray-700 mb-2">
-              <UserCog size={16} className="text-sky-500" />
-              로그인 정보
+              {/* 섹션 항목 */}
+              <div
+                className={`transition-all duration-500 ease-in-out overflow-hidden origin-top ${
+                  isOpen ? "max-h-[600px] opacity-100 scale-y-100" : "max-h-0 opacity-0 scale-y-95"
+                }`}
+                style={{ pointerEvents: isOpen ? "auto" : "none" }}
+              >
+                <ul className="py-2">
+                  {section.items.map((item) => (
+                    <li key={item.to}>
+                      <div
+                        onClick={() => handleItemClick(item.to)}
+                        className={`mx-4 my-1 px-3 py-2 rounded-md text-[14px] cursor-pointer transition-all duration-150 ${
+                          isActive(item.to)
+                            ? "bg-[#D9D9D9] text-gray-800 font-semibold"
+                            : "text-gray-600 hover:bg-gray-100"
+                        }`}
+                      >
+                        {item.label}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
-            <ul className="ml-6 space-y-1 text-gray-600">
-              <li>
-                <Link to="/mypage/modify" className={getLinkClass("/mypage/modify")}>
-                  계정 정보 및 관리
-                </Link>
-              </li>
-              <li>
-                <Link to="/mypage/setting" className={getLinkClass("/mypage/setting")}>
-                  개인정보 보호 설정
-                </Link>
-              </li>
-            </ul>
-          </li>
-
-          {/* 활동 내역 */}
-          <li>
-            <div className="flex items-center gap-2 font-semibold text-gray-700 mb-2">
-              <ListTodo size={16} className="text-green-500" />
-              활동 내역
-            </div>
-            <ul className="ml-6 space-y-1 text-gray-600">
-              <li>
-                <Link to="/mypage/quiz-history" className={getLinkClass("/mypage/quiz-history")}>
-                  퀴즈 이력
-                </Link>
-              </li>
-              <li>
-                <Link to="/mypage/userquiz-history" className={getLinkClass("/mypage/userquiz-history")}>
-                  사용자 퀴즈 이력
-                </Link>
-              </li>
-              <li>
-                <Link to="/mypage/codingtest" className={getLinkClass("/mypage/codingtest")}>
-                  코딩 테스트 이력
-                </Link>
-              </li>
-              <li>
-                <Link to="/mypage/community" className={getLinkClass("/mypage/community")}>
-                  커뮤니티 활동 내역
-                </Link>
-              </li>
-            </ul>
-          </li>
-
-          {/* 학습 성과 및 기록 */}
-          <li>
-            <div className="flex items-center gap-2 font-semibold text-gray-700 mb-2">
-              <BarChart3 size={16} className="text-yellow-500" />
-              학습 성과 및 기록
-            </div>
-            <ul className="ml-6 space-y-1 text-gray-600">
-              <li>
-                <Link to="/mypage/wrong-notes" className={getLinkClass("/mypage/wrong-notes")}>
-                  오답노트
-                </Link>
-              </li>
-              <li>
-                <Link to="/mypage/attendance" className={getLinkClass("/mypage/attendance")}>
-                  출석체크
-                </Link>
-              </li>
-              <li>
-                <Link to="/mypage/rating" className={getLinkClass("/mypage/rating")}>
-                  레이팅 점수 내역
-                </Link>
-              </li>
-            </ul>
-          </li>
-
-          {/* 멘토링 및 프로젝트 */}
-          <li>
-            <div className="flex items-center gap-2 font-semibold text-gray-700 mb-2">
-              <Users2 size={16} className="text-purple-500" />
-              멘토링 및 프로젝트
-            </div>
-            <ul className="ml-6 space-y-1 text-gray-600">
-              <li>
-                <Link to="/mypage/mentoring" className={getLinkClass("/mypage/mentoring")}>
-                  멘토링 이력
-                </Link>
-              </li>
-              <li>
-                <Link to="/mypage/projects" className={getLinkClass("/mypage/projects")}>
-                  팀 프로젝트 이력
-                </Link>
-              </li>
-            </ul>
-          </li>
-        </ul>
-      </nav>
+          );
+        })}
+      </div>
     </aside>
   );
 };
