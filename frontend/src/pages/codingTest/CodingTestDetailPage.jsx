@@ -42,7 +42,9 @@ import CodingTestFooterButtons from "../../components/CodingTest/CodingTestFoote
 
 const CodingTestDetailPage = () => {
   const { user } = useAuth();
-  const { id } = useParams();
+  const { id, testId } = useParams();
+  const codingTestId = id || testId; // ✅ 통일된 문제 ID
+
   const [problem, setProblem] = useState(null);
   const [activeTab, setActiveTab] = useState("info");
   const [code, setCode] = useState("// 여기에 코드를 입력하세요.");
@@ -59,13 +61,15 @@ const CodingTestDetailPage = () => {
   const [showCopyMessage, setShowCopyMessage] = useState(false);
   const [hasSolvedBefore, setHasSolvedBefore] = useState(false);
 
+  // 문제 + 스타터 코드 불러오기
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const problemData = await getCodingTestDetail(id);
+        if (!codingTestId) return;
+        const problemData = await getCodingTestDetail(codingTestId);
         setProblem(problemData);
 
-        const starter = await getStarterCode(id, language);
+        const starter = await getStarterCode(codingTestId, language);
         const formattedCode = starter.code.replace(/\\n/g, "\n");
         setCode(formattedCode);
       } catch (err) {
@@ -73,12 +77,13 @@ const CodingTestDetailPage = () => {
       }
     };
     fetchData();
-  }, [id, language]);
+  }, [codingTestId, language]);
 
+  // 제출 내역 불러오기
   const fetchSubmissions = useCallback(async () => {
     try {
-      if (user?.user_id) {
-        const res = await getSubmissionList(id, user.user_id);
+      if (user?.user_id && codingTestId) {
+        const res = await getSubmissionList(codingTestId, user.user_id);
         const withOpen = res.submissions.map((s) => ({
           ...s,
           open: false,
@@ -88,7 +93,7 @@ const CodingTestDetailPage = () => {
     } catch (err) {
       console.error("제출 내역 불러오기 실패:", err);
     }
-  }, [id, user]);
+  }, [codingTestId, user]);
 
   useEffect(() => {
     fetchSubmissions();
@@ -102,13 +107,14 @@ const CodingTestDetailPage = () => {
     }, 3000);
   };
 
+  // 풀었는지 여부 확인
   useEffect(() => {
     const fetchHasSolved = async () => {
       try {
-        if (user?.user_id && id) {
-          const result = await checkHasSolved(id);
+        if (user?.user_id && codingTestId) {
+          const result = await checkHasSolved(codingTestId);
           if (result?.data && typeof result.data.hasSolved === "boolean") {
-            setHasSolvedBefore(result.data.hasSolved); // 여기서 추출
+            setHasSolvedBefore(result.data.hasSolved);
           } else {
             console.error("⚠️ 응답에 hasSolved 필드가 없습니다:", result);
             setHasSolvedBefore(false);
@@ -121,14 +127,14 @@ const CodingTestDetailPage = () => {
     };
 
     fetchHasSolved();
-  }, [user, id]);
+  }, [user, codingTestId]);
 
   // 실행 버튼 핸들러
   const handleRunCode = async () => {
     if (!problem) return;
 
-    setIsSubmitResult(false); // 제출 실행 결과가 아님
-    setIsRunning(true); // 실행 중 상태 시작
+    setIsSubmitResult(false);
+    setIsRunning(true);
 
     try {
       const res = await runCodeWithTestcases(problem.id, code, language);
@@ -153,13 +159,14 @@ const CodingTestDetailPage = () => {
         },
       ]);
     } finally {
-      setIsRunning(false); 
+      setIsRunning(false);
     }
   };
 
+  // 코드 초기화
   const handleResetCode = async () => {
     try {
-      const starter = await getStarterCode(id, language);
+      const starter = await getStarterCode(codingTestId, language);
       const formattedCode = starter.code.replace(/\\n/g, "\n");
       setCode(formattedCode);
     } catch (err) {
@@ -167,6 +174,7 @@ const CodingTestDetailPage = () => {
     }
   };
 
+  // 제출
   const handleSubmitCode = async () => {
     try {
       setIsSubmitResult(true);
@@ -180,12 +188,10 @@ const CodingTestDetailPage = () => {
         language,
       });
 
-      // 결과 테이블 먼저 표시
       if (res.all_cases) {
         setExecutionResults(res.all_cases);
       }
 
-      // 결과 모달은 1초 후 띄우기
       setTimeout(() => {
         setResultData({
           isCorrect: res.is_correct,
@@ -201,8 +207,8 @@ const CodingTestDetailPage = () => {
           memoryLimitExceeded: res.memory_limit_exceeded,
         });
         setShowResultModal(true);
-        setIsRunning(false); // 로딩 상태 종료
-      }, 1000); // 1초 딜레이
+        setIsRunning(false);
+      }, 1000);
     } catch (err) {
       console.error("제출 중 오류:", err);
       alert("제출 실패");
@@ -214,16 +220,13 @@ const CodingTestDetailPage = () => {
     fetchSubmissions();
   };
 
+  // Hover 핸들러
   const HoverHandle = () => {
     const [hover, setHover] = useState(false);
 
     return (
       <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "3px",
-        }}
+        style={{ display: "flex", flexDirection: "column", gap: "3px" }}
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
       >
@@ -233,7 +236,7 @@ const CodingTestDetailPage = () => {
             style={{
               width: "40px",
               height: "2px",
-              backgroundColor: hover ? "#607D8B" : "#B0BEC5", 
+              backgroundColor: hover ? "#607D8B" : "#B0BEC5",
               borderRadius: "1px",
               transition: "background-color 0.2s",
             }}
@@ -308,7 +311,6 @@ const CodingTestDetailPage = () => {
       </AnimatePresence>
 
       <div className="codingtest-detail w-screen h-screen bg-[#f9fafb] text-gray-800 flex flex-col">
-        {/* 상단 헤더 */}
         <CodingTestHeader title={problem.title} />
 
         <CodingTestTabMenu
@@ -322,9 +324,7 @@ const CodingTestDetailPage = () => {
           problem={problem}
         />
 
-        {/* 콘텐츠 영역 */}
         <div className="flex flex-1 overflow-hidden">
-          {/* 좌측 영역 */}
           <div
             className={`${
               activeTab === "notes" ? "w-full" : "w-1/2"
@@ -367,7 +367,6 @@ const CodingTestDetailPage = () => {
               ))}
           </div>
 
-          {/* 우측 영역 - 코드 에디터 + 실행결과는 notes 탭 아닐 때만 */}
           {activeTab !== "notes" && (
             <CodingTestEditorPanel
               code={code}
@@ -413,4 +412,5 @@ const CodingTestDetailPage = () => {
     </>
   );
 };
+
 export default CodingTestDetailPage;

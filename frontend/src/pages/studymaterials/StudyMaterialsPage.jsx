@@ -3,9 +3,10 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { dracula } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { useAuth } from "../../context/AuthContext";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, ArrowLeft } from "lucide-react";
 import StudyMaterialsGuideModal from "../../components/studymaterials/StudyMaterialsGuideModal";
 
+// 📌 style string → object 변환
 const parseStyleString = (styleString) => {
   if (!styleString) return {};
   return Object.fromEntries(
@@ -23,8 +24,7 @@ const parseStyleString = (styleString) => {
   );
 };
 
-
-const StudyMaterialsPage = () => {
+const StudyMaterialsPage = ({ isAdminPreview }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
@@ -44,26 +44,30 @@ const StudyMaterialsPage = () => {
   const [submittedStatus, setSubmittedStatus] = useState({});
   const [correctStatus, setCorrectStatus] = useState({});
   const [quizIndices, setQuizIndices] = useState([]);
-const [isGuideOpen, setIsGuideOpen] = useState(false);
-const [showGuideTooltip, setShowGuideTooltip] = useState(false);
 
-useEffect(() => {
-  const savedScrollY = localStorage.getItem("study_scroll_position");
-  if (savedScrollY) {
-    setTimeout(() => {
-      window.scrollTo({ top: parseInt(savedScrollY, 10), behavior: "auto" });
-      localStorage.removeItem("study_scroll_position");
-    }, 100); // 콘텐츠 렌더링 기다리기
-  } else {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-}, []);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [showGuideTooltip, setShowGuideTooltip] = useState(false);
 
-useEffect(() => {
-  const seen = localStorage.getItem("study_guide_seen");
-  if (seen !== "true") setShowGuideTooltip(true);
-}, []);
+  // 📌 스크롤 복원
+  useEffect(() => {
+    const savedScrollY = localStorage.getItem("study_scroll_position");
+    if (savedScrollY) {
+      setTimeout(() => {
+        window.scrollTo({ top: parseInt(savedScrollY, 10), behavior: "auto" });
+        localStorage.removeItem("study_scroll_position");
+      }, 100);
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, []);
 
+  // 📌 가이드 툴팁
+  useEffect(() => {
+    const seen = localStorage.getItem("study_guide_seen");
+    if (seen !== "true") setShowGuideTooltip(true);
+  }, []);
+
+  // 📌 데이터 로드
   useEffect(() => {
     setFadeIn(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -102,10 +106,10 @@ useEffect(() => {
   }, [category, materialId, exampleId]);
 
   const handleGuideClick = () => {
-  setIsGuideOpen(true);
-  setShowGuideTooltip(false);
-  localStorage.setItem("study_guide_seen", "true");
-};
+    setIsGuideOpen(true);
+    setShowGuideTooltip(false);
+    localStorage.setItem("study_guide_seen", "true");
+  };
 
   const formatCodeContent = (content) => {
     return content.replace(/<br>/g, "\n").replace(/\\n/g, "\n");
@@ -166,6 +170,17 @@ useEffect(() => {
 
   return (
     <div className="p-6 bg-[#f9fafb] min-h-screen">
+      {/* 🔹 프리뷰 모드일 때 뒤로가기 버튼 */}
+      {isAdminPreview && (
+        <button
+          onClick={() => navigate(-1)}
+          className="fixed top-20 left-6 flex items-center bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition z-50 shadow-lg"
+        >
+          <ArrowLeft size={18} className="mr-2" />
+          목록으로 돌아가기
+        </button>
+      )}
+
       <div className={`bg-white shadow-md rounded-lg p-8 max-w-[1000px] w-full mx-auto text-left transition-opacity duration-500 ${fadeIn ? "opacity-100" : "opacity-0"}`}>
         {isCompleted && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
@@ -182,64 +197,66 @@ useEffect(() => {
                 className="bg-gray-700 text-white px-5 py-2 rounded hover:bg-gray-800 transition"
               >
                 닫기
-      </button>
-    </div>
-  </div>
-)}
+              </button>
+            </div>
+          </div>
+        )}
 
-      {loading ? (
-        <div className="text-gray-500">로딩 중...</div>
-      ) : error ? (
-        <div className="text-red-500">{error}</div>
-      ) : studyContent ? (
-        <>  
-        <div className="relative flex justify-between items-center mb-6">
-          <h1 className="text-5xl font-bold text-gray-900 mb-10">
-            {studyContent.title}
-            {isCompleted && (
-              <span className="ml-4 text-green-600 text-xl font-semibold">
-                ✅ 학습 완료
-              </span>
-            )}
-          </h1>
-           {/* 가이드 버튼 */}
-<button
-  onClick={handleGuideClick}
-  className="absolute top-4 right-4 text-gray-500 hover:text-black"
-  title="가이드 보기"
->
-  <HelpCircle size={24} />
-  {showGuideTooltip && (
-    <div className="absolute top-[-2px] right-[-6px] w-[7px] h-[7px] bg-rose-600 rounded-full shadow-sm" />
-  )}
-</button>
-</div>
+        {loading ? (
+          <div className="text-gray-500">로딩 중...</div>
+        ) : error ? (
+          <div className="text-red-500">{error}</div>
+        ) : studyContent ? (
+          <>
+            <div className="relative flex justify-between items-center mb-6">
+              <h1 className="text-5xl font-bold text-gray-900 mb-10">
+                {studyContent.title}
+                {isCompleted && (
+                  <span className="ml-4 text-green-600 text-xl font-semibold">
+                    ✅ 학습 완료
+                  </span>
+                )}
+              </h1>
+              {/* 가이드 버튼 */}
+              <button
+                onClick={handleGuideClick}
+                className="absolute top-4 right-4 text-gray-500 hover:text-black"
+                title="가이드 보기"
+              >
+                <HelpCircle size={24} />
+                {showGuideTooltip && (
+                  <div className="absolute top-[-2px] right-[-6px] w-[7px] h-[7px] bg-rose-600 rounded-full shadow-sm" />
+                )}
+              </button>
+            </div>
 
-          <p className="text-xl text-gray-700 leading-relaxed mb-6">
-            {studyContent.content}
-          </p>
+            <p className="text-xl text-gray-700 leading-relaxed mb-6">
+              {studyContent.content}
+            </p>
 
-          {Array.isArray(studyContent.sections) &&
-            studyContent.sections.length > 0 && (
+            {Array.isArray(studyContent.sections) && studyContent.sections.length > 0 && (
               <div className="mt-6">
                 {studyContent.sections.map((section, index) => (
                   <React.Fragment key={`${section.type}-${index}`}>
                     <div className="mt-4" style={parseStyleString(section.style)}>
+                      {/* 텍스트 */}
                       {section.type === "text" && (
-                        <div className="text-[17px] text-gray-800 [&_b]:font-bold [&_b]:text-green-600"
+                        <div
+                          className="text-[17px] text-gray-800 [&_b]:font-bold [&_b]:text-green-600"
                           dangerouslySetInnerHTML={{ __html: section.content }}
                         />
                       )}
 
-{section.type === "image" && (
+                      {/* 이미지 */}
+                      {section.type === "image" && (
                         <img
                           className="mt-2 w-full max-w-2xl rounded-lg shadow-md mx-auto"
                           src={`http://localhost:8000${section.content}`}
                           alt={section.description || "설명 이미지"}
-                          onError={() => console.error(`Failed to load image: ${section.content}`)}
                         />
                       )}
 
+                      {/* 비디오 */}
                       {section.type === "video" && (
                         <div className="mt-4">
                           <iframe
@@ -252,94 +269,33 @@ useEffect(() => {
                         </div>
                       )}
 
-{section.type === "code" && (
-  <div className="bg-gray-100 p-4 rounded-md mt-4 border border-gray-300 shadow-md">
-    <h2 className="text-lg font-semibold text-gray-800 mb-2">{section.title}</h2>
+                      {/* 코드 */}
+                      {section.type === "code" && (
+                        <div className="bg-gray-100 p-4 rounded-md mt-4 border border-gray-300 shadow-md">
+                          <h2 className="text-lg font-semibold text-gray-800 mb-2">{section.title}</h2>
+                          <SyntaxHighlighter
+                            language={
+                              (() => {
+                                const lang = category?.toLowerCase();
+                                if (lang === "html") return "html";
+                                if (lang === "css") return "css";
+                                if (lang === "javascript" || lang === "js") return "javascript";
+                                if (lang === "python" || lang === "py") return "python";
+                                return "text";
+                              })()
+                            }
+                            style={dracula}
+                            className="rounded-md"
+                            wrapLines={true}
+                            customStyle={{ whiteSpace: "pre-wrap", fontSize: "15px" }}
+                          >
+                            {formatCodeContent(section.content)}
+                          </SyntaxHighlighter>
+                          <p className="mt-2 text-sm text-gray-600">{section.problem_description}</p>
+                        </div>
+                      )}
 
-    {/* ✅ 코드 박스 fade-in 적용 */}
-    <div className="fade-in">
-    <SyntaxHighlighter
-  language={
-    (() => {
-      const lang = category?.toLowerCase();
-      if (lang === "html") return "html";
-      if (lang === "css") return "css";
-      if (lang === "javascript" || lang === "js") return "javascript";
-      if (lang === "python" || lang === "py") return "python";
-      return "text"; // fallback
-    })()
-  }
-  style={dracula}
-  className="rounded-md"
-  wrapLines={true}
-  customStyle={{ whiteSpace: "pre-wrap", fontSize: "15px" }}
->
-  {formatCodeContent(section.content)}
-</SyntaxHighlighter>
-    </div>
-
-    <p className="mt-2 text-sm text-gray-600">{section.problem_description}</p>
-
-    {/* 버튼 영역 */}
-<div className="flex gap-2 mt-4">
-  {showCodeTestButton(category) && (
-    <button
-  onClick={() => {
-    localStorage.setItem("study_scroll_position", window.scrollY);
-    navigate(
-      `/codetest?code=${encodeURIComponent(section.content)}&language=${encodeURIComponent(
-        category
-      )}&title=${encodeURIComponent(
-        studyContent.title
-      )}&problem_description=${encodeURIComponent(section.problem_description || "")}&category=${encodeURIComponent(category)}&${
-        materialId ? `id=${encodeURIComponent(materialId)}` : `exampleId=${encodeURIComponent(exampleId)}`
-      }`
-    );
-  }}
-  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
->
-  코드 테스트 →
-</button>
-  )}
-
-  {showTerminalButton(category, studyContent.title, section.content) ? (
-    <button
-  onClick={() => {
-    localStorage.setItem("study_scroll_position", window.scrollY); // ✅ 스크롤 위치 저장
-    navigate(
-      `/terminal?language=${encodeURIComponent(category)}&code=${encodeURIComponent(
-        section.content
-      )}&title=${encodeURIComponent(
-        studyContent.title
-      )}&problem_description=${encodeURIComponent(
-        section.problem_description || ""
-      )}&category=${encodeURIComponent(category)}&${
-        materialId
-          ? `id=${encodeURIComponent(materialId)}`
-          : `exampleId=${encodeURIComponent(exampleId)}`
-      }`
-    );
-  }}
-  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
->
-  터미널 실습 →
-</button>
-  ) : (
-    category?.toLowerCase() === "javascript" &&
-    (section.content.includes("<html>") || section.content.includes("<body>")) && (
-      <button
-        onClick={() =>
-          window.alert("❗ HTML/DOM 코드가 포함된 학습자료는 실행할 수 없습니다.")
-        }
-        className="bg-gray-400 text-white px-4 py-2 rounded cursor-not-allowed"
-      >
-        실행 불가
-      </button>
-    )
-  )}
-</div>
-</div>
-)}
+                      {/* 퀴즈 */}
                       {section.type === "quiz" && section.content?.question && (
                         <div className="bg-gray-900 text-white p-6 rounded-lg shadow-lg w-full max-w-3xl mt-6 mx-auto">
                           <h2 className="text-2xl font-bold text-center mb-4">퀴즈</h2>
@@ -378,18 +334,6 @@ useEffect(() => {
                               <p className={correctStatus[index] ? "text-green-400" : "text-red-500"}>
                                 {correctStatus[index] ? "✅ 정답입니다!" : "❌ 오답입니다!"}
                               </p>
-                              {correctStatus[index] && (
-                                <p
-                                  className="text-sm text-gray-300 mt-2 [&_b]:font-bold [&_b]:text-green-400"
-                                  dangerouslySetInnerHTML={{ __html: section.content.explanation }}
-                                />
-                              )}
-                              <button
-                                onClick={() => handleRetry(index)}
-                                className="mt-2 bg-gray-500 text-white px-4 py-1 rounded hover:bg-gray-600 transition"
-                              >
-                                다시 시도
-                              </button>
                             </div>
                           )}
                         </div>
@@ -402,12 +346,12 @@ useEffect(() => {
                 ))}
               </div>
             )}
-        </>
-      ) : (
-        <div className="text-gray-500">데이터를 찾을 수 없습니다.</div>
-      )}
-      <StudyMaterialsGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
-    </div>
+          </>
+        ) : (
+          <div className="text-gray-500">데이터를 찾을 수 없습니다.</div>
+        )}
+        <StudyMaterialsGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
+      </div>
     </div>
   );
 };

@@ -1,7 +1,8 @@
+// src/admin/CodingtestManagementPage.jsx
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCodingTestList } from "../api/codingTestApi";
-import { deleteAdminCodingTest } from "../api/adminCodingtestApi";
+import { deleteAdminCodingTest } from "../api/adminCodingtestApi"; // ✅ 파일명 대소문자 맞춤
 import { FaEllipsisV, FaSortUp, FaSortDown } from "react-icons/fa";
 
 const CodingtestManagementPage = () => {
@@ -16,7 +17,11 @@ const CodingtestManagementPage = () => {
 
   const fetchTests = useCallback(async () => {
     try {
-      const res = await getCodingTestList({ page, sort: sortOrder, level: difficultyFilter });
+      const res = await getCodingTestList({
+        page,
+        sort: sortOrder,
+        level: difficultyFilter,
+      });
       setTests(res.problems);
       setTotal(res.total);
     } catch (err) {
@@ -78,10 +83,17 @@ const CodingtestManagementPage = () => {
               <th className="px-4 py-3">제목</th>
               <th className="px-4 py-3">난이도</th>
               <th className="px-4 py-3">카테고리</th>
-              <th className="px-4 py-3 cursor-pointer" onClick={toggleSortOrder}>
+              <th
+                className="px-4 py-3 cursor-pointer"
+                onClick={toggleSortOrder}
+              >
                 <div className="flex items-center gap-1">
                   정답률
-                  {sortOrder === "desc" ? <FaSortDown size={14} /> : <FaSortUp size={14} />}
+                  {sortOrder === "desc" ? (
+                    <FaSortDown size={14} />
+                  ) : (
+                    <FaSortUp size={14} />
+                  )}
                 </div>
               </th>
               <th className="px-4 py-3 text-center">관리</th>
@@ -92,18 +104,22 @@ const CodingtestManagementPage = () => {
               <tr
                 key={test.id}
                 className="border-t cursor-pointer hover:bg-gray-50 transition"
-                onClick={() => navigate(`/admin/codingtest/${test.id}`)}
+                onClick={() => navigate(`/admin/codingtest/${test.id}/preview`)} // ✅ 관리자 프리뷰 뷰로 이동
               >
                 <td className="px-4 py-3">{test.title}</td>
                 <td className="px-4 py-3">Lv.{test.level}</td>
                 <td className="px-4 py-3">{test.category || "-"}</td>
-                <td className="px-4 py-3">{test.correct_rate?.toFixed(2)}%</td>
+                <td className="px-4 py-3">
+                  {test.correct_rate?.toFixed(2)}%
+                </td>
                 <td className="px-4 py-3 text-center relative">
                   <button
                     className="text-gray-600 hover:text-black"
                     onClick={(e) => {
-                      e.stopPropagation();
-                      setDropdownOpenId(dropdownOpenId === test.id ? null : test.id);
+                      e.stopPropagation(); // ✅ 행 클릭 막기
+                      setDropdownOpenId(
+                        dropdownOpenId === test.id ? null : test.id
+                      );
                     }}
                   >
                     <FaEllipsisV />
@@ -113,6 +129,27 @@ const CodingtestManagementPage = () => {
                       className="absolute right-0 mt-2 bg-white border rounded shadow-md z-10 w-32"
                       onClick={(e) => e.stopPropagation()}
                     >
+                      {/* 통계 보기 */}
+                      <button
+                        className="block w-full text-left px-4 py-2 text-sm hover:bg-blue-100 text-blue-600"
+                        onClick={() => {
+                          navigate(`/admin/codingtest/${test.id}`);
+                          setDropdownOpenId(null);
+                        }}
+                      >
+                        통계 보기
+                      </button>
+                      {/* 수정 */}
+                      <button
+                        className="block w-full text-left px-4 py-2 text-sm hover:bg-green-100 text-green-600"
+                        onClick={() => {
+                          navigate(`/admin/codingtest/${test.id}/edit`);
+                          setDropdownOpenId(null);
+                        }}
+                      >
+                        수정
+                      </button>
+                      {/* 삭제 */}
                       <button
                         className="block w-full text-left px-4 py-2 text-sm hover:bg-red-100 text-red-600"
                         onClick={() => handleDelete(test.id)}

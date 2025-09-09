@@ -178,3 +178,14 @@ export const deleteLanguage = async (languageId) => {
     throw error;
   }
 };
+
+
+export const updateAdminCodingTest = async (testId, testData) => {
+  try {
+    const response = await apiClient.put(`/admin/codingtest/${testId}`, testData);
+    return response.data;
+  } catch (error) {
+    console.error("코딩 테스트 문제 수정 실패:", error);
+    throw error;
+  }
+};

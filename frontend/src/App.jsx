@@ -1,3 +1,4 @@
+// src/App.js
 import React, { useState, useEffect } from "react";
 import {
   BrowserRouter as Router,
@@ -29,6 +30,7 @@ import BoardManagementPage from "./admin/BoardManagementPage";
 import UserManagementPage from "./admin/UserManagementPage";
 import ProjectManagementPage from "./admin/ProjectManagementPage";
 import BoardManagementDetailPage from "./admin/BoardManagementDetailPage";
+import AdminCodingTestEditPage from "./admin/AdminCodingTestEditPage";
 
 // 채팅
 import { ChatSocketProvider } from "./context/ChatSocketContext";
@@ -56,7 +58,7 @@ import MyPageQuizHistory from "./pages/mypage/MyPageQuizHistory";
 import MyPageUserQuizHistory from "./pages/mypage/MyPageUserQuizHistory";
 import MyPageCTHistory from "./pages/mypage/MyPageCTHistory";
 import MyPageCommunity from "./pages/mypage/MyPageCommunity";
-import MyPageAttendance from "./pages/mypage/MyPageAttendance"; // 250817 김희준
+import MyPageAttendance from "./pages/mypage/MyPageAttendance";
 
 // 인증
 import Signup from "./pages/loginSignup/Signup";
@@ -89,7 +91,7 @@ import ProjectDocPage from "./pages/project/Doc/ProjectDocPage";
 // ERD UI
 import ErdPage from "./pages/erd/ErdPage";
 
-// 유저 뷰어 페이지 (새로 추가)
+// 유저 뷰어 페이지
 import UserProfileViewerPage from "./pages/user/UserProfileViewerPage";
 
 const observerError = /ResizeObserver loop completed/;
@@ -121,7 +123,6 @@ const App = () => {
     const fetchUserData = async () => {
       try {
         const user = await getCurrentUser();
-        console.log("🔍 user:", user);
         setUserData({
           user_id: user.user_id,
           email: user.email,
@@ -163,10 +164,22 @@ const App = () => {
                   >
                     <Route index element={<AdminDashboardPage />} />
                     <Route path="materials" element={<StudymaterialManagementPage />} />
+
+                    {/* 🔹 관리자 전용 프리뷰 라우트 */}
+                    <Route
+                      path="materials/view"
+                      element={<StudyMaterialsPage isAdminPreview={true} />}
+                    />
+
                     <Route path="projects" element={<ProjectManagementPage />} />
                     <Route path="quizzes" element={<QuizManagementPage />} />
                     <Route path="codingtest" element={<CodingtestManagementPage />} />
                     <Route path="codingtest/:testId" element={<AdminCodingTestDetailPage />} />
+                    <Route path="codingtest/:testId/edit" element={<AdminCodingTestEditPage />} />
+                    <Route
+                      path="codingtest/:testId/preview"
+                      element={<CodingTestDetailPage isAdminPreview={true} />}
+                    />
                     <Route path="board" element={<BoardManagementPage />} />
                     <Route path="users" element={<UserManagementPage />} />
                     <Route path="posts/:postId" element={<BoardManagementDetailPage />} />
@@ -191,7 +204,6 @@ const App = () => {
                   <MainLayout>
                     <Routes>
                       <Route path="/" element={<Home />} />
-
                       {/* 학습자료 */}
                       <Route path="/StudyMaterialsPage" element={<StudyMaterialsPage />} />
                       <Route
@@ -217,7 +229,7 @@ const App = () => {
                         element={<UserQuizResultPage userData={userData} />}
                       />
 
-                      {/* 코딩 테스트 (서비스) */}
+                      {/* 코딩 테스트 */}
                       <Route path="/codingtest" element={<CodingTestPage />} />
                       <Route path="/codetest" element={<CodeTestPage />} />
                       <Route path="/terminal" element={<CodeTestTerminalPage />} />
@@ -241,7 +253,7 @@ const App = () => {
                         <Route path="userquiz-history" element={<MyPageUserQuizHistory />} />
                         <Route path="codingtest" element={<MyPageCTHistory />} />
                         <Route path="community" element={<MyPageCommunity />} />
-                        <Route path="attendance" element={<MyPageAttendance />} /> 
+                        <Route path="attendance" element={<MyPageAttendance />} />
                       </Route>
 
                       {/* 팀프로젝트 */}
@@ -260,7 +272,7 @@ const App = () => {
                       />
                       <Route path="/board" element={<Navigate to="/board/free" />} />
 
-                      {/* 유저 뷰어 페이지 (추가됨) */}
+                      {/* 유저 뷰어 */}
                       <Route path="/user/:userId" element={<UserProfileViewerPage />} />
                     </Routes>
                   </MainLayout>
