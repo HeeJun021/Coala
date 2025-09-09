@@ -48,3 +48,16 @@ export const fetchLanguages = async () => {
         return [];
     }
 };
+
+export const searchStudy = async (query, limit = 50) => {
+  if (!query || !query.trim()) return [];
+  try {
+    const response = await apiClient.get("/api/study/search", {
+      params: { q: query.trim(), limit },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("🚨 Error searching study:", error);
+    return [];
+  }
+};

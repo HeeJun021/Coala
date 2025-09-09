@@ -1,40 +1,52 @@
+// Sidebar.jsx
 import React, { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Library, BookOpenText, Code2, FileCheck } from "lucide-react";
-
 
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
-  const initialCategory = queryParams.get("category") || "HTML";
+
+  // ✅ 초기 카테고리를 기본 "HTML" 이 아닌 빈 문자열로 두어 첫 진입 시 접힘 상태 유지
+  const initialCategory = queryParams.get("category") || "";
   const initialMaterialId = queryParams.get("id") || "";
   const initialExampleId = queryParams.get("exampleId") || "";
+
   const sidebarRef = useRef(null);
 
   const [languages, setLanguages] = useState([]);
   const [materialsMap, setMaterialsMap] = useState({});
   const [examplesMap, setExamplesMap] = useState({});
+
   const [selectedLanguage, setSelectedLanguage] = useState(initialCategory);
   const [selectedMaterialId, setSelectedMaterialId] = useState(initialMaterialId);
   const [selectedExampleId, setSelectedExampleId] = useState(initialExampleId);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [hoveredLanguage, setHoveredLanguage] = useState(null);
-  const [sidebarTop, setSidebarTop] = useState(239);
+
+  // ✅ 호버 기반 펼침 제거, 명시적으로 여닫기 위해 openLanguage 추가
+  //    null 이면 전부 접힘, 특정 언어 문자열이면 그 언어 섹션만 펼침
+  const [openLanguage, setOpenLanguage] = useState(
+    // URL에 category가 있으면 그 언어만 펼치고, 없으면 null(전부 접힘)
+    initialCategory || null
+  );
+
+  // 기존 스크롤 고정 로직 유지
+  const [sidebarTop, setSidebarTop] = useState(150);
   const [isHovering, setIsHovering] = useState(false);
 
   useEffect(() => {
     setSelectedLanguage(initialCategory);
     setSelectedMaterialId(initialMaterialId);
     setSelectedExampleId(initialExampleId);
-    setHoveredLanguage(initialCategory);
 
     let animationFrameId;
 
     const handleScroll = () => {
       if (isHovering) return;
-      const targetTop = window.scrollY + 239;
+      const targetTop = window.scrollY + 150;
       animationFrameId = requestAnimationFrame(() => {
         setSidebarTop((prevTop) => prevTop + (targetTop - prevTop) * 0.3);
       });
@@ -54,25 +66,16 @@ const Sidebar = () => {
             fetch(`http://localhost:8000/api/materials/${lang.language}`, { credentials: "include" }),
             fetch(`http://localhost:8000/api/examples/${lang.language}`, { credentials: "include" }),
           ]);
+
           let materials = await matRes.json();
           let examples = await exRes.json();
 
-          // order를 기준으로 정렬
+          // order 정렬
           materials = materials.sort((a, b) => a.order - b.order);
           examples = examples.sort((a, b) => a.order - b.order);
 
           matMap[lang.language] = materials;
           exMap[lang.language] = examples;
-
-          if (
-            lang.language === initialCategory &&
-            !initialMaterialId &&
-            !initialExampleId &&
-            matMap[lang.language].length > 0
-          ) {
-            setSelectedMaterialId(String(matMap[lang.language][0].material_id));
-            navigate(`/StudyMaterialsPage?category=${encodeURIComponent(lang.language)}&id=${matMap[lang.language][0].material_id}`, { replace: true });
-          }
         }
 
         setMaterialsMap(matMap);
@@ -96,6 +99,24 @@ const Sidebar = () => {
   const handleMouseEnter = () => setIsHovering(true);
   const handleMouseLeave = () => setIsHovering(false);
 
+  // ✅ 언어 헤더 클릭: 토글 동작
+  const handleLanguageHeaderClick = (lang, materials) => {
+    if (openLanguage === lang) {
+      // 이미 열려 있으면 접기
+      setOpenLanguage(null);
+      // 선택된 글은 유지 (메인 컨텐츠는 그대로, 사이드만 접힘)
+      return;
+    }
+    // 닫혀 있던 언어 펼치기
+    setOpenLanguage(lang);
+
+    // 자동 이동/자동 선택 제거: 의도치 않은 첫 글 자동 이동 방지
+    // 단, 사용자가 이미 다른 글을 보고 있다면 selectedLanguage만 동기화
+    if (!selectedMaterialId && !selectedExampleId) {
+      setSelectedLanguage(lang);
+    }
+  };
+
   const handleMaterialClick = (materialId, lang) => {
     if (selectedMaterialId === String(materialId)) {
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -104,7 +125,10 @@ const Sidebar = () => {
     setSelectedMaterialId(String(materialId));
     setSelectedExampleId("");
     setSelectedLanguage(lang);
-    setHoveredLanguage(lang);
+
+    // ✅ 글을 선택하면 해당 언어 섹션은 자동으로 펼쳐진 상태 유지
+    setOpenLanguage(lang);
+
     window.scrollTo({ top: 0, behavior: "smooth" });
     navigate(`/StudyMaterialsPage?category=${encodeURIComponent(lang)}&id=${materialId}`, { replace: false });
   };
@@ -117,7 +141,10 @@ const Sidebar = () => {
     setSelectedExampleId(String(exampleId));
     setSelectedMaterialId("");
     setSelectedLanguage(lang);
-    setHoveredLanguage(lang);
+
+    // ✅ 예제를 선택해도 해당 언어 섹션은 펼침 유지
+    setOpenLanguage(lang);
+
     window.scrollTo({ top: 0, behavior: "smooth" });
     navigate(`/StudyMaterialsPage?category=${encodeURIComponent(lang)}&exampleId=${exampleId}`, { replace: false });
   };
@@ -146,49 +173,43 @@ const Sidebar = () => {
             const examples = examplesMap[lang.language] || [];
             const selectedMaterial = materials.find((m) => String(m.material_id) === selectedMaterialId);
             const selectedExample = examples.find((e) => String(e.example_id) === selectedExampleId);
+
+            const isOpen = openLanguage === lang.language;
+
             return (
-              <div key={lang.language_id}
-                onMouseEnter={() => setHoveredLanguage(lang.language)}
-                onMouseLeave={() => setHoveredLanguage(selectedLanguage)}
-              >
+              <div key={lang.language_id}>
+                {/* 언어 헤더 (클릭으로 토글) */}
                 <div
                   className={`px-6 py-4 cursor-pointer text-[16px] font-semibold transition-all duration-150 ${
-                    selectedLanguage === lang.language
+                    isOpen
                       ? "bg-[#D9D9D9] text-gray-800"
                       : "hover:bg-gray-100 text-gray-600"
                   }`}
-                  onClick={() => {
-                    setSelectedLanguage(lang.language);
-                    if (materials.length > 0 && !selectedMaterialId && !selectedExampleId) {
-                      handleMaterialClick(materials[0].material_id, lang.language);
-                    }
-                  }}
+                  onClick={() => handleLanguageHeaderClick(lang.language, materials)}
                 >
                   <div className="flex flex-col">
                     <span>{lang.language}</span>
-                    {selectedLanguage === lang.language && (selectedMaterial?.title || selectedExample?.title) && (
-                      <div className="flex items-center gap-1 mt-1 px-1">
-                        <span className="text-sm font-normal text-gray-700 break-words leading-snug">
-                          {selectedMaterialId ? selectedMaterial?.title : selectedExample?.title}
-                        </span>
-                        {(selectedMaterial?.is_completed || selectedExample?.is_completed) && (
-                          <FileCheck className="w-4 h-4 text-green-500" />
-                        )}
-                      </div>
-                    )}
+                    {/* 선택된 글 제목 보조표시: 섹션 접혀 있어도 현재 선택 제목은 유지해서 보여줄 수 있음 */}
+                    {(selectedLanguage === lang.language) &&
+                      (selectedMaterial?.title || selectedExample?.title) && (
+                        <div className="flex items-center gap-1 mt-1 px-1">
+                          <span className="text-sm font-normal text-gray-700 break-words leading-snug">
+                            {selectedMaterialId ? selectedMaterial?.title : selectedExample?.title}
+                          </span>
+                          {(selectedMaterial?.is_completed || selectedExample?.is_completed) && (
+                            <FileCheck className="w-4 h-4 text-green-500" />
+                          )}
+                        </div>
+                      )}
                   </div>
                 </div>
 
+                {/* 펼침 영역 */}
                 <div
                   className={`transition-all duration-500 ease-in-out overflow-hidden transform origin-top ${
-                    hoveredLanguage === lang.language || selectedLanguage === lang.language
-                      ? "max-h-[800px] opacity-100 scale-y-100"
-                      : "max-h-0 opacity-0 scale-y-95"
+                    isOpen ? "max-h-[800px] opacity-100 scale-y-100" : "max-h-0 opacity-0 scale-y-95"
                   }`}
-                  style={{
-                    pointerEvents:
-                      hoveredLanguage === lang.language || selectedLanguage === lang.language ? "auto" : "none",
-                  }}
+                  style={{ pointerEvents: isOpen ? "auto" : "none" }}
                 >
                   <div className="px-6 mt-3 mb-1 font-semibold text-gray-700 text-[15px] flex items-center">
                     <BookOpenText className="w-4 h-4 mr-1 text-[#88C078]" />

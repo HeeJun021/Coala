@@ -1,16 +1,8 @@
-import React, { useState, useCallback, memo } from "react";
+import React, { useState, useCallback, memo, useEffect } from "react";
 import { Dialog } from "@headlessui/react";
 import {
-  X,
-  ChevronLeft,
-  ChevronRight,
-  BookOpen,
-  FileText,
-  Code,
-  CheckCircle,
-  PlayCircle,
-  Library,
-  Terminal,
+  X, ChevronLeft, ChevronRight, BookOpen, FileText, Code, CheckCircle,
+  PlayCircle, Library, Terminal
 } from "lucide-react";
 
 // Import images dynamically
@@ -185,9 +177,17 @@ const ContentSection = memo(({ tab, stepIndex, guides }) => {
   );
 });
 
-const StudyMaterialsGuideModal = ({ isOpen, onClose }) => {
-  const [tab, setTab] = useState("기능별 가이드");
-  const [stepIndex, setStepIndex] = useState(0);
+const StudyMaterialsGuideModal = ({ isOpen, onClose, initialTab = "기능별 가이드", initialStep = 0 }) => {
+  const [tab, setTab] = useState(initialTab);
+  const [stepIndex, setStepIndex] = useState(initialStep);
+
+  // 🔁 모달이 열릴 때마다 외부에서 지정한 위치로 리셋
+  useEffect(() => {
+    if (isOpen) {
+      setTab(initialTab);
+      setStepIndex(initialStep);
+    }
+  }, [isOpen, initialTab, initialStep]);
 
   const guides = guideSections[tab];
   const showNavigation = guides.length > 1;
@@ -197,34 +197,19 @@ const StudyMaterialsGuideModal = ({ isOpen, onClose }) => {
     setStepIndex(0);
   }, []);
 
-  const handlePrevStep = useCallback(() => {
-    setStepIndex((prev) => prev - 1);
-  }, []);
-
-  const handleNextStep = useCallback(() => {
-    setStepIndex((prev) => prev + 1);
-  }, []);
+  const handlePrevStep = useCallback(() => setStepIndex((p) => p - 1), []);
+  const handleNextStep = useCallback(() => setStepIndex((p) => p + 1), []);
 
   return (
-    <Dialog
-      open={isOpen}
-      onClose={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center"
-    >
+    <Dialog open={isOpen} onClose={onClose} className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="fixed inset-0 bg-black bg-opacity-40" aria-hidden="true" />
       <div className="relative z-50 bg-white rounded-xl w-[1000px] h-[700px] flex shadow-2xl">
         <TabSection tab={tab} setTab={handleTabChange} />
-
         <div className="flex-1 p-6 relative flex flex-col justify-between overflow-y-auto">
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 text-gray-500 hover:text-gray-800"
-          >
+          <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800">
             <X size={20} />
           </button>
-
           <ContentSection tab={tab} stepIndex={stepIndex} guides={guides} />
-
           {showNavigation && (
             <div className="flex justify-between items-center mt-6">
               <button
@@ -234,11 +219,7 @@ const StudyMaterialsGuideModal = ({ isOpen, onClose }) => {
               >
                 <ChevronLeft size={16} /> 이전
               </button>
-
-              <span className="text-sm text-gray-500">
-                {stepIndex + 1} / {guides.length}
-              </span>
-
+              <span className="text-sm text-gray-500">{stepIndex + 1} / {guides.length}</span>
               <button
                 disabled={stepIndex === guides.length - 1}
                 className="flex items-center gap-1 px-3 py-1 bg-blue-100 rounded hover:bg-blue-200 disabled:opacity-50"
