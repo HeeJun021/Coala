@@ -18,20 +18,7 @@ export default function QuizReviewPage() {
   const [error, setError] = useState(null);
 
   // 🔎 가이드 버튼 (Practice/Test와 동일 동작)
-  const [isGuideOpen, setIsGuideOpen] = useState(false);
-  const [showGuideTooltip, setShowGuideTooltip] = useState(false);
-
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const seen = localStorage.getItem("quiz_guide_seen");
-    if (seen !== "true") setShowGuideTooltip(true);
-  }, []);
-  const handleGuideClick = () => {
-    setIsGuideOpen(true);
-    setShowGuideTooltip(false);
-    localStorage.setItem("quiz_guide_seen", "true");
-  };
 
   // 1) 전체 오답 목록 불러오기
   useEffect(() => {
@@ -72,7 +59,6 @@ export default function QuizReviewPage() {
       });
 
       if (newQuiz && newQuiz.quiz_id) {
-        // ✅ Practice/Test와 라우팅 규격 통일 (쿼리로 모드 표시)
         navigate(`/quizsolve/${newQuiz.quiz_id}?mode=review`);
       }
     } catch (e) {
@@ -88,17 +74,6 @@ export default function QuizReviewPage() {
 
       {/* 본문 카드 (Practice/Test 규격 동일) */}
       <div className="max-w-6xl mx-auto pt-8 mt-8 bg-white shadow-xl rounded-2xl border border-gray-300 p-7 relative">
-        {/* 가이드 버튼 */}
-        <button
-          onClick={handleGuideClick}
-          className="absolute top-4 right-4 text-gray-500 hover:text-black"
-          title="가이드 보기"
-        >
-          <HelpCircle size={24} />
-          {showGuideTooltip && (
-            <div className="absolute top-[-2px] right-[-6px] w-[7px] h-[7px] bg-rose-600 rounded-full shadow-sm" />
-          )}
-        </button>
 
         {/* 타이틀 */}
         <div className="mb-8">

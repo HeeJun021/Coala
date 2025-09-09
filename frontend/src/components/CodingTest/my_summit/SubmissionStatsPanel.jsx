@@ -40,10 +40,6 @@ const SubmissionStatsPanel = ({ stats }) => {
 
   return (
     <div className="max-w-[1025px] mx-auto">
-      <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-        <BarChart3 className="text-green-600" size={22} />
-        내 코딩 테스트 통계
-      </h2>
 
        {/* 상단 통계 박스 */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">

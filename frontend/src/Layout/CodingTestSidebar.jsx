@@ -7,7 +7,7 @@ const CodingTestSidebar = () => {
   const { pathname } = useLocation();
 
   // ===== 부드러운 스크롤 추적 설정 =====
-  const BASE_TOP = 239;      // 시작 기준 Y
+  const BASE_TOP = 32;      // 시작 기준 Y
   const SCROLL_FACTOR = 0.2; // 스크롤 반응 비율(0~1)
   const EASE = 0.15;         // 이징(0.05~0.2 권장)
 
@@ -57,7 +57,7 @@ const CodingTestSidebar = () => {
 
   return (
     <div
-      className="fixed left-[33px] w-[260px] bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden z-40 will-change-transform"
+      className="fixed left-[70px] w-[260px] bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden z-40 will-change-transform"
       style={{ transform: `translateY(${posY}px)` }}
     >
       {/* 헤더 */}
