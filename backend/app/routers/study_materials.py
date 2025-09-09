@@ -10,6 +10,8 @@ from app.models.user import User
 from app.dependencies.auth import get_current_user
 from fastapi import status
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import or_, cast, String
+from app.models.study_example_models import StudyExample
 
 router = APIRouter()
 
@@ -89,3 +91,96 @@ def mark_material_completed(
         db.rollback()
 
     return
+
+@router.get("/api/study/search")
+def search_study(
+    q: str,
+    limit: int = 50,
+    db: Session = Depends(get_db),
+):
+    """
+    학습자료(StudyMaterials) + 예제(StudyExample) 통합 검색
+    - title / content / sections(JSONB::text) ILIKE
+    - 언어명(Language.language) 포함
+    """
+    kw = f"%{q}%"
+
+    # Materials
+    mats = (
+        db.query(
+            StudyMaterials.material_id.label("id"),
+            Language.language.label("language"),
+            StudyMaterials.title.label("title"),
+            StudyMaterials.content.label("content"),
+            cast(StudyMaterials.sections, String).label("sections"),
+        )
+        .join(Language, Language.language_id == StudyMaterials.language_id)
+        .filter(
+            or_(
+                StudyMaterials.title.ilike(kw),
+                StudyMaterials.content.ilike(kw),
+                cast(StudyMaterials.sections, String).ilike(kw),
+            )
+        )
+        .limit(limit)
+        .all()
+    )
+
+    # Examples
+    exs = (
+        db.query(
+            StudyExample.example_id.label("id"),
+            Language.language.label("language"),
+            StudyExample.title.label("title"),
+            StudyExample.content.label("content"),
+            cast(StudyExample.sections, String).label("sections"),
+        )
+        .join(Language, Language.language_id == StudyExample.language_id)
+        .filter(
+            or_(
+                StudyExample.title.ilike(kw),
+                StudyExample.content.ilike(kw),
+                cast(StudyExample.sections, String).ilike(kw),
+            )
+        )
+        .limit(limit)
+        .all()
+    )
+
+    def make_snippet(title: str, content: str, sections: str, q: str, size: int = 120):
+        pool = " ".join(
+            [s for s in [title or "", content or "", sections or ""] if s]
+        )
+        lower = pool.lower()
+        idx = lower.find(q.lower())
+        if idx < 0:
+            return (pool[:size] + ("…" if len(pool) > size else "")).strip()
+        start = max(0, idx - 40)
+        end = min(len(pool), idx + len(q) + 80)
+        return (pool[start:end] + ("…" if end < len(pool) else "")).strip()
+
+    results = []
+    for r in mats:
+        results.append(
+            {
+                "item_type": "material",
+                "id": r.id,
+                "language": r.language,
+                "title": r.title,
+                "snippet": make_snippet(r.title, r.content, r.sections, q),
+            }
+        )
+    for r in exs:
+        results.append(
+            {
+                "item_type": "example",
+                "id": r.id,
+                "language": r.language,
+                "title": r.title,
+                "snippet": make_snippet(r.title, r.content, r.sections, q),
+            }
+        )
+
+    # 간단 정렬: 언어 -> 타입 -> 제목
+    results.sort(key=lambda x: (x["language"].lower(), x["item_type"], x["title"].lower()))
+    return results

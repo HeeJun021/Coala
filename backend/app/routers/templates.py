@@ -358,8 +358,8 @@ def delete_project_template(
 # ============================================================
 
 # ---- Trello → Kanban --------------------------------------
-TRELLO_KEY = os.getenv("TRELLO_KEY")
-TRELLO_TOKEN = os.getenv("TRELLO_TOKEN")
+TRELLO_KEY = os.getenv("311a80081da691e20b84d49c6d291712")
+TRELLO_TOKEN = os.getenv("ATTAdeeeb3ad63e6dfc78abf8e6ee8d13846a229723da0a839f8c107b9dd172d77364D48CBA6")
 
 def _trello_board_id_from_url_or_id(board: str) -> str:
     # https://trello.com/b/{shortlink}/{name} 또는 shortlink 둘 다 허용

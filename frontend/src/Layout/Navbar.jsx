@@ -115,53 +115,38 @@ const Navbar = () => {
               onMouseEnter={() => setHoverIndex(idx)}
             >
               {item.label === "학습자료" ? (
-                <span
-                  onClick={async () => {
-                    try {
-                      const materials = await fetchStudyMaterials(
-                        languages[0]?.language
-                      );
-                      if (materials.length > 0) {
-                        const sortedMaterials = materials.sort((a, b) =>
-                          a.material_id === 2 ? -1 : b.material_id === 2 ? 1 : 0
-                        );
-                        navigate(
-                          `/StudyMaterialsPage?category=${encodeURIComponent(
-                            languages[0]?.language
-                          )}&id=${sortedMaterials[0].material_id}`
-                        );
-                      }
-                    } catch {
-                      alert("오류 발생");
-                    }
-                  }}
-                  className="cursor-pointer text-[17px] font-semibold text-gray-900 transition duration-200 hover:text-green-500 hover:scale-110 hover:font-bold"
-                >
-                  {item.label}
-                </span>
-              ) : item.label === "자율코딩" ? (
-                <span
-                  onClick={async () => {
-                    try {
-                      await initRootCodeFolder();
-                      navigate(item.path);
-                    } catch (err) {
-                      console.error("폴더 생성 오류:", err);
-                      alert("자율코딩 초기화 중 오류가 발생했습니다.");
-                    }
-                  }}
-                  className="cursor-pointer text-[17px] font-semibold text-gray-900 transition duration-200 hover:text-green-500 hover:scale-110 hover:font-bold"
-                >
-                  {item.label}
-                </span>
-              ) : (
-                <Link
-                  to={item.path}
-                  className="text-[17px] font-semibold text-gray-900 transition duration-200 hover:text-green-500 hover:scale-110 hover:font-bold"
-                >
-                  {item.label}
-                </Link>
-              )}
+  <span
+    onClick={() => {
+      // ✅ 파라미터 없이 진입 → Sidebar는 처음에 접힘 상태
+      navigate("/StudyMaterialsPage");
+    }}
+    className="cursor-pointer text-[17px] font-semibold text-gray-900 transition duration-200 hover:text-green-500 hover:scale-110 hover:font-bold"
+  >
+    {item.label}
+  </span>
+) : item.label === "자율코딩" ? (
+  <span
+    onClick={async () => {
+      try {
+        await initRootCodeFolder();
+        navigate(item.path);
+      } catch (err) {
+        console.error("폴더 생성 오류:", err);
+        alert("자율코딩 초기화 중 오류가 발생했습니다.");
+      }
+    }}
+    className="cursor-pointer text-[17px] font-semibold text-gray-900 transition duration-200 hover:text-green-500 hover:scale-110 hover:font-bold"
+  >
+    {item.label}
+  </span>
+) : (
+  <Link
+    to={item.path}
+    className="text-[17px] font-semibold text-gray-900 transition duration-200 hover:text-green-500 hover:scale-110 hover:font-bold"
+  >
+    {item.label}
+  </Link>
+)}
             </div>
           ))}
         </div>
