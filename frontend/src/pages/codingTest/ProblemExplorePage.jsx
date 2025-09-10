@@ -2,7 +2,13 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import CodingTestSidebar from "../../Layout/CodingTestSidebar";
-import { getCodingTestList } from "../../api/codingTestApi";
+import {
+  getCodingTestList,
+  setPreferredCodingLang,
+  getMyPreferredCodingLang,
+} from "../../api/codingTestApi";
+import { useAuth } from "../../context/AuthContext";
+
 // ✅ 아이콘 추가 (PracticeQuiz 톤 앤 매너)
 import {
   Search as SearchIcon,
@@ -11,13 +17,22 @@ import {
   RefreshCw,
 } from "lucide-react";
 
-const LANG_OPTIONS = ["Python", "Java", "JavaScript"];
+const LANG_OPTIONS = [
+  { value: "python", label: "Python" },
+  { value: "java", label: "Java" },
+  { value: "javascript", label: "JavaScript" },
+];
+
 const LEVELS = [1, 2, 3, 4, 5];
 
 export default function ProblemExplorePage() {
   const navigate = useNavigate();
 
-  const [lang, setLang] = useState(LANG_OPTIONS[0]);
+  const { user } = useAuth(); // ✅ 유저 정보
+
+  // value 기반으로 관리 (기본값: python)
+  const [lang, setLang] = useState(LANG_OPTIONS[0].value);
+
   const [level, setLevel] = useState(null);
 
   // 서버 카테고리
@@ -63,8 +78,25 @@ export default function ProblemExplorePage() {
     };
   }, []);
 
+  // ✅ 선호 언어 불러와서 초기값으로 세팅
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        if (!user?.user_id) return; // 비로그인은 스킵
+        const pref = await getMyPreferredCodingLang(); // "python" | "java" | "javascript" | ""
+        if (mounted && pref) setLang(pref);
+      } catch (e) {
+        console.warn("선호 언어 조회 실패:", e);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [user?.user_id]);
+
   const onSearch = () => {
-    const langToParam = lang.toLowerCase();
+    const langToParam = lang;
     const catParam = Array.from(selectedCats).join(",");
 
     const params = new URLSearchParams();
@@ -74,6 +106,19 @@ export default function ProblemExplorePage() {
     if (langToParam) params.set("lang", langToParam);
 
     navigate(`/codingtest?${params.toString()}`);
+  };
+
+  const handlePreferredLangChange = async (e) => {
+    const next = e.target.value; // "python" | "java" | "javascript"
+    setLang(next); // 즉시 UI 반영
+
+    // 로그인 사용자면 DB에 저장
+    if (!user?.user_id || !next) return;
+    try {
+      await setPreferredCodingLang(next);
+    } catch (err) {
+      console.error("선호 언어 저장 실패:", err);
+    }
   };
 
   return (
@@ -103,12 +148,13 @@ export default function ProblemExplorePage() {
             </label>
             <select
               value={lang}
-              onChange={(e) => setLang(e.target.value)}
+              onChange={handlePreferredLangChange}
               className="w-40 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-300 bg-white"
+              title="코딩테스트 기본 언어 설정"
             >
-              {LANG_OPTIONS.map((l) => (
-                <option key={l} value={l}>
-                  {l}
+              {LANG_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
                 </option>
               ))}
             </select>
