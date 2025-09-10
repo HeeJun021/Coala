@@ -119,8 +119,9 @@ const Navbar = () => {
                 <span
                   onClick={async () => {
                     try {
+                      // 루트 폴더 초기화 후 템플릿 선택 페이지로 이동
                       await initRootCodeFolder();
-                      navigate(item.path);
+                      navigate("/self-coding/templates");
                     } catch (err) {
                       console.error("폴더 생성 오류:", err);
                       alert("자율코딩 초기화 중 오류가 발생했습니다.");
