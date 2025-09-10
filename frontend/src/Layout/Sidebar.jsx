@@ -208,11 +208,11 @@ const Sidebar = () => {
     </div>
 
     {/* 오른쪽: 화살표 아이콘 */}
-    {isOpen ? (
-      <ChevronDown className="w-5 h-5 text-gray-600" />
-    ) : (
-      <ChevronRight className="w-5 h-5 text-gray-600" />
-    )}
+{isOpen ? (
+  <ChevronDown className="w-4 h-4 text-gray-500" />
+) : (
+  <ChevronRight className="w-4 h-4 text-gray-500" />
+)}
   </div>
 </div>
 
