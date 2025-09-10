@@ -8,7 +8,6 @@ import QuizSideBar from "../../Layout/QuizSideBar";
 import LanguageFilter from "../../components/quiz/LanguageFilter";
 import RetakeQuizForm from "../../components/quiz/RetakeQuizForm";
 import IncorrectQuestionList from "../../components/quiz/IncorrectQuestionList";
-import { HelpCircle } from "lucide-react";
 
 export default function QuizReviewPage() {
   const [allQuestions, setAllQuestions] = useState([]);

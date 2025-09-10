@@ -25,6 +25,7 @@ import {
   commitChanges,
   mergeBranch,
 } from "../../api/project_gitApi";
+import CommitModal from "./projectgit/CommitModal"; // ✅ 추가
 
 /* ---------------------- Sub Components ---------------------- */
 
@@ -128,7 +129,7 @@ const CreateRepoView = ({ project, onRepoCreated }) => {
 const BranchModal = ({
   isOpen,
   onClose,
-  branches, // [{ name, head_sha, is_default, is_protected }]
+  branches,
   currentBranch,
   onSwitch,
   onCreate,
@@ -204,7 +205,6 @@ const MergeModal = ({ isOpen, onClose, branches, currentBranch, onMerge }) => {
   const [sourceBranch, setSourceBranch] = useState("");
 
   useEffect(() => {
-    // 모달이 열릴 때 선택 가능한 첫 번째 브랜치를 기본값으로 설정
     if (isOpen) {
       const defaultSource = branches.find(b => b.name !== currentBranch)?.name || "";
       setSourceBranch(defaultSource);
@@ -233,32 +233,26 @@ const MergeModal = ({ isOpen, onClose, branches, currentBranch, onMerge }) => {
           </button>
         </div>
         <div className="p-4 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              어떤 브랜치를
-            </label>
-            {/* ▼▼▼ [수정] 드롭다운을 목록 형태로 변경 ▼▼▼ */}
-            <ul className="max-h-48 overflow-y-auto border rounded-md">
-              {availableBranches.length > 0 ? (
-                availableBranches.map((b) => (
-                  <li key={b.name}>
-                    <button
-                      onClick={() => setSourceBranch(b.name)}
-                      className={`w-full text-left px-3 py-2 text-sm ${
-                        sourceBranch === b.name
-                          ? "bg-purple-50 text-green-700 font-semibold"
-                          : "hover:bg-gray-50"
-                      }`}
-                    >
-                      {b.name}
-                    </button>
-                  </li>
-                ))
-              ) : (
-                <li className="px-3 py-2 text-sm text-gray-400">병합할 브랜치가 없습니다</li>
-              )}
-            </ul>
-          </div>
+          <ul className="max-h-48 overflow-y-auto border rounded-md">
+            {availableBranches.length > 0 ? (
+              availableBranches.map((b) => (
+                <li key={b.name}>
+                  <button
+                    onClick={() => setSourceBranch(b.name)}
+                    className={`w-full text-left px-3 py-2 text-sm ${
+                      sourceBranch === b.name
+                        ? "bg-purple-50 text-green-700 font-semibold"
+                        : "hover:bg-gray-50"
+                    }`}
+                  >
+                    {b.name}
+                  </button>
+                </li>
+              ))
+            ) : (
+              <li className="px-3 py-2 text-sm text-gray-400">병합할 브랜치가 없습니다</li>
+            )}
+          </ul>
           <div className="text-center text-gray-500">▼</div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
@@ -282,14 +276,14 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
   const storageKey = `proj:${project.project_id}:gitBranch`;
 
   const [status, setStatus] = useState({ staged: [], unstaged: [] });
-  const [branches, setBranches] = useState([]); // normalized: [{ name, head_sha, is_default, is_protected }]
+  const [branches, setBranches] = useState([]);
   const [currentBranch, setCurrentBranch] = useState(repoInfo?.default_branch || "main");
   const [commits, setCommits] = useState([]);
-  const [commitMsg, setCommitMsg] = useState("");
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isBranchModalOpen, setIsBranchModalOpen] = useState(false);
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
+  const [isCommitModalOpen, setIsCommitModalOpen] = useState(false); // ✅ 추가
 
   const fetchDataForBranch = useCallback(
     async (branch) => {
@@ -317,7 +311,6 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
       setLoading(true);
       try {
         const raw = await listBranches(project.project_id);
-
         const mapped =
           (raw || []).map((b) => ({
             name: b.branch_name,
@@ -325,10 +318,8 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
             is_default: b.branch_name === (repoInfo?.default_branch ?? ""),
             is_protected: !!b.is_protected,
           })) || [];
-
         setBranches(mapped);
 
-        // 우선순위: localStorage 저장된 브랜치 → repoInfo.default_branch → 첫 번째 브랜치
         const saved = localStorage.getItem(storageKey);
         const existsSaved = mapped.find((b) => b.name === saved)?.name;
         const initialBranch =
@@ -339,7 +330,7 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
 
         if (initialBranch) {
           setCurrentBranch(initialBranch);
-          localStorage.setItem(storageKey, initialBranch); 
+          localStorage.setItem(storageKey, initialBranch);
           await fetchDataForBranch(initialBranch);
         }
       } catch (error) {
@@ -349,10 +340,9 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
       }
     };
     loadInitialData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project.project_id, repoInfo, fetchDataForBranch]);
 
-  const handleBranchSwitch = async (newBranch) => {
+    const handleBranchSwitch = async (newBranch) => {
     if (!newBranch || typeof newBranch !== "string") {
       alert("잘못된 브랜치 이름입니다.");
       setIsBranchModalOpen(false);
@@ -381,20 +371,16 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
     }
   };
 
-  // frontend/src/components/project/GitHubPanel.jsx 의 ConnectedView 내부
-
   const handleCreateBranch = async (newBranchName) => {
     if (!newBranchName?.trim()) return;
     setIsSubmitting(true);
     try {
-      // 1. GitHub API로 새 브랜치 생성
       await createBranch(project.project_id, {
         from_branch: currentBranch,
         new_branch: newBranchName.trim(),
       });
 
-      // ▼▼▼ [추가] 브랜치 목록을 즉시 다시 불러와서 상태를 업데이트 ▼▼▼
-      // 이 부분이 있어야 모달을 다시 열었을 때 새 브랜치가 보임
+      // 최신 브랜치 목록 불러오기
       const rawBranches = await listBranches(project.project_id);
       const mappedBranches =
         (rawBranches || []).map((b) => ({
@@ -405,58 +391,50 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
         })) || [];
       setBranches(mappedBranches);
 
-      // 2. 기존 브랜치 이동 함수를 호출해서 새로 만든 브랜치로 이동
+      // 새 브랜치로 바로 이동
       await handleBranchSwitch(newBranchName.trim());
-
     } catch (error) {
       alert(
         `브랜치 생성 실패: ${
           error?.response?.data?.detail || error.message || "알 수 없는 오류"
         }`
       );
-    } finally {
-      // handleBranchSwitch에서 modal을 닫고 submitting을 false로 만드므로 여기선 할 필요 없음
-      // setIsSubmitting(false); 
     }
   };
 
-  const handleCommit = async () => {
-    if (!commitMsg.trim()) {
-      alert("커밋 메시지를 입력하세요.");
+  const handleCommit = async ({ title, message }) => {
+    if (!title.trim()) {
+      alert("커밋 제목을 입력하세요.");
       return;
     }
     if ((status.staged?.length || 0) === 0) {
-      const goOn = window.confirm(
-        "Staged 파일이 없습니다. 그래도 커밋을 시도할까요?"
-      );
+      const goOn = window.confirm("Staged 파일이 없습니다. 그래도 커밋할까요?");
       if (!goOn) return;
     }
     try {
       setIsSubmitting(true);
+      const fullMessage = `${title}\n\n${message || ""}`;
       await commitChanges(project.project_id, {
         branch: currentBranch,
-        message: commitMsg.trim(),
+        message: fullMessage,
         useStagedOnly: true,
       });
-      setCommitMsg("");
       await fetchDataForBranch(currentBranch);
+      setIsCommitModalOpen(false);
       alert("커밋 완료!");
     } catch (e) {
-      alert(
-        e?.response?.data?.detail ||
-          e?.message ||
-          "커밋 중 오류가 발생했습니다."
-      );
+      alert(e?.response?.data?.detail || e?.message || "커밋 중 오류가 발생했습니다.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleMerge = async (sourceBranch) => {
-  const commitMessage = `Merge branch '${sourceBranch}' into ${currentBranch}`;
-  const ok = window.confirm(`'${sourceBranch}' 브랜치를 '${currentBranch}'(으)로 병합합니다.\n\n진행할까요?`);
+    const commitMessage = `Merge branch '${sourceBranch}' into ${currentBranch}`;
+    const ok = window.confirm(
+      `'${sourceBranch}' 브랜치를 '${currentBranch}'(으)로 병합합니다.\n\n진행할까요?`
+    );
     if (!ok) return;
-
     setIsSubmitting(true);
     try {
       await mergeBranch(project.project_id, {
@@ -465,19 +443,19 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
         commit_message: commitMessage,
       });
       alert("병합이 완료되었습니다.");
-      await fetchDataForBranch(currentBranch); // 데이터 새로고침
+      await fetchDataForBranch(currentBranch);
     } catch (error) {
       alert(`병합 실패: ${error?.response?.data?.detail || error.message}`);
     } finally {
       setIsSubmitting(false);
       setIsMergeModalOpen(false);
     }
-  };  
+  };
 
   if (loading) return <div className="text-center py-10">로딩 중...</div>;
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-5xl ml-6">
       {/* Branch / Fetch / Pull / Push */}
       <div className="flex justify-between items-center bg-gray-100 p-2 rounded-lg border">
         <button
@@ -502,19 +480,17 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
             className="px-3 py-1.5 text-sm bg-white border rounded-md hover:bg-gray-50 flex items-center gap-1.5 disabled:opacity-50"
             disabled={isSubmitting}
           >
-            <GitBranch size={14} className="text-purple-600"/> Merge
+            <GitBranch size={14} className="text-purple-600" /> Merge
           </button>
           <button
             disabled
             className="px-3 py-1.5 text-sm bg-white border rounded-md flex items-center gap-1.5 opacity-50 cursor-not-allowed"
-            title="Pull은 서버 미구현"
           >
             <ArrowDown size={14} /> Pull
           </button>
           <button
             disabled
             className="px-3 py-1.5 text-sm bg-white border rounded-md flex items-center gap-1.5 opacity-50 cursor-not-allowed"
-            title="Push는 commit API로 처리됨"
           >
             <ArrowUp size={14} /> Push
           </button>
@@ -524,10 +500,10 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
       {/* Status & Commit */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
         <div>
+          {/* 변경사항 패널 (Unstaged / Staged) */}
           <h4 className="font-semibold text-gray-800 flex items-center gap-2 mb-2">
             <FileDiff size={16} /> 로컬 변경사항
           </h4>
-
           <div className="p-4 bg-gray-50 rounded-lg border text-sm">
             <h5 className="font-medium text-orange-700">
               Unstaged ({status.unstaged?.length || 0})
@@ -542,7 +518,6 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
               <p className="text-gray-400 mt-2 text-xs">변경사항 없음</p>
             )}
           </div>
-
           <div className="p-4 bg-gray-50 rounded-lg border text-sm mt-4">
             <h5 className="font-medium text-green-700">
               Staged ({status.staged?.length || 0})
@@ -560,20 +535,14 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
         </div>
 
         <div>
+          {/* 커밋 패널 */}
           <h4 className="font-semibold text-gray-800 flex items-center gap-2 mb-2">
             <GitCommit size={16} /> 커밋
           </h4>
           <div className="p-4 bg-gray-50 rounded-lg border">
-            <textarea
-              placeholder="커밋 메시지"
-              rows={3}
-              value={commitMsg}
-              onChange={(e) => setCommitMsg(e.target.value)}
-              className="w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-green-600 focus:border-green-600"
-            />
             <button
-              className="mt-2 w-full px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 disabled:opacity-50"
-              onClick={handleCommit}
+              className="w-full px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 disabled:opacity-50"
+              onClick={() => setIsCommitModalOpen(true)}
               disabled={isSubmitting || !currentBranch}
             >
               '{currentBranch}'에 커밋
@@ -582,28 +551,44 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
         </div>
       </div>
 
-      {/* Commits */}
+      {/* 최근 커밋 내역 */}
       <div className="mt-8">
         <h4 className="font-semibold text-gray-800 flex items-center gap-2 mb-2">
           <GitCommit size={16} /> 최근 커밋 내역
         </h4>
         <ul className="space-y-3 text-sm border rounded-lg p-2 bg-white">
-          {commits.map((c) => (
-            <li key={c.sha} className="p-3 border-b last:border-b-0">
-              <p className="font-medium text-gray-900">{c.message}</p>
-              <div className="flex justify-between items-center mt-1">
-                <p className="text-xs text-gray-500">
-                  {c.author} - {new Date(c.date).toLocaleString()}
-                </p>
-                <p className="font-mono text-green-600 text-xs hover:underline cursor-pointer">
-                  {c.sha.substring(0, 7)}
-                </p>
-              </div>
-            </li>
-          ))}
+          {commits.map((c) => {
+            // 메시지를 제목/본문으로 분리 (첫 줄 = 제목, 나머지 = 메시지)
+            const [title, ...rest] = c.message.split("\n");
+            const body = rest.join("\n").trim();
+
+            return (
+              <li key={c.sha} className="p-3 border-b last:border-b-0">
+                {/* 제목 */}
+                <p className="font-medium text-gray-900">{title}</p>
+
+                {/* 메시지(본문) - 작고 연한 색상 */}
+                {body && (
+                  <p className="mt-1 text-xs text-gray-600 whitespace-pre-line">
+                    {body}
+                  </p>
+                )}
+
+                <div className="flex justify-between items-center mt-2">
+                  <p className="text-xs text-gray-500">
+                    {c.author} - {new Date(c.date).toLocaleString()}
+                  </p>
+                  <p className="font-mono text-green-600 text-xs hover:underline cursor-pointer">
+                    {c.sha.substring(0, 7)}
+                  </p>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       </div>
 
+      {/* 모달들 */}
       <BranchModal
         isOpen={isBranchModalOpen}
         onClose={() => setIsBranchModalOpen(false)}
@@ -619,6 +604,12 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
         currentBranch={currentBranch}
         onMerge={handleMerge}
       />
+      {isCommitModalOpen && (
+        <CommitModal
+          onClose={() => setIsCommitModalOpen(false)}
+          onSubmit={handleCommit}
+        />
+      )}
     </div>
   );
 };
@@ -641,8 +632,6 @@ const ErrorView = ({ error, onRetry }) => (
   </div>
 );
 
-/* ---------------------- Main Component ---------------------- */
-
 export default function GitHubPanel({ project, currentUser, onBranchChange }) {
   const [viewMode, setViewMode] = useState("initial");
   const [repoInfo, setRepoInfo] = useState(null);
@@ -652,12 +641,10 @@ export default function GitHubPanel({ project, currentUser, onBranchChange }) {
   const checkStatus = useCallback(async () => {
     setError(null);
     setViewMode("initial");
-
     if (!currentUser || !isUserConnected) {
       setViewMode("connecting");
       return;
     }
-
     try {
       const status = await getRepoConnectionStatus(project.project_id);
       if (status.is_connected) {

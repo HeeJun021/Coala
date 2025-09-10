@@ -1,11 +1,11 @@
+// frontend/src/components/project/projectgit/ProjectGitExplorerPanel.jsx
 import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import {
   FaChevronRight,
   FaChevronDown,
-  FaFolder,
-  FaFile,
   FaSyncAlt,
 } from "react-icons/fa";
+import { Folder as FolderIcon, FileText } from "lucide-react"; // ✅ lucide-react 아이콘
 import { getRepoTree, getFile, createFile, deleteFile } from "../../../api/project_gitApi";
 
 // 헬퍼 컴포넌트: 새 파일/폴더 이름 입력을 위한 별도 컴포넌트
@@ -43,7 +43,6 @@ const CreateInput = ({ initialName, type, onConfirm, onCancel }) => {
   );
 };
 
-
 export default function ProjectGitExplorerPanel({
   projectId,
   branch,
@@ -75,7 +74,9 @@ export default function ProjectGitExplorerPanel({
     }
   }, [projectId, branch]);
 
-  useEffect(() => { refreshTree(); }, [refreshTree]);
+  useEffect(() => {
+    refreshTree();
+  }, [refreshTree]);
 
   const builtTree = useMemo(() => {
     const root = { name: "", path: "", type: "tree", children: {}, files: [] };
@@ -114,11 +115,11 @@ export default function ProjectGitExplorerPanel({
     setCreatingAt(path ?? "");
     setCreateType(type);
   };
-  
+
   const confirmCreate = async (name) => {
     const parentPath = creatingAt ?? "";
     const trimmedName = (name || "").trim();
-    
+
     setCreatingAt(null);
     setCreateType(null);
 
@@ -144,15 +145,15 @@ export default function ProjectGitExplorerPanel({
   const cancelCreate = () => {
     setCreatingAt(null);
     setCreateType(null);
-  }
+  };
 
   const handleDelete = async (path, isDir) => {
     setMenu((m) => ({ ...m, visible: false }));
-    
+
     const message = isDir
       ? `폴더 '${path}'와 내부의 모든 파일/폴더가 영구적으로 삭제됩니다. 정말 삭제할까요?`
       : `파일 '${path}'를 삭제할까요?`;
-    
+
     const ok = window.confirm(message);
     if (!ok) return;
 
@@ -190,10 +191,8 @@ export default function ProjectGitExplorerPanel({
           }}
         >
           {!isRoot && (isExpanded ? <FaChevronDown className="mr-1" /> : <FaChevronRight className="mr-1" />)}
-          <FaFolder className="text-yellow-600 mr-1" />
+          <FolderIcon className="text-yellow-600 mr-1" size={18} /> {/* ✅ lucide-react 폴더 */}
           <span className="text-sm">{isRoot ? rootLabel : node.name}</span>
-
-          {/* ▼▼▼ [수정] 폴더 이름 옆 '+파일', '+폴더' 버튼 제거 ▼▼▼ */}
         </div>
 
         {(isExpanded || isRoot) && (
@@ -201,20 +200,24 @@ export default function ProjectGitExplorerPanel({
             {children.map((c) => <Node key={c.path} node={c} depth={depth + 1} />)}
 
             {files.map((f) => (
-              <div key={f.path}
-                   className="flex items-center cursor-pointer hover:underline pl-4 py-0.5"
-                   onContextMenu={(e) => {
-                     e.stopPropagation();
-                     openMenu(e, f.path);
-                   }}>
-                <FaFile className="mr-1 text-gray-500" />
-                <span className="text-sm flex-1" onClick={() => openFile(f.path)}>{f.name}</span>
+              <div
+                key={f.path}
+                className="flex items-center cursor-pointer hover:underline pl-4 py-0.5"
+                onContextMenu={(e) => {
+                  e.stopPropagation();
+                  openMenu(e, f.path);
+                }}
+              >
+                <FileText className="mr-1 text-gray-500" size={18} /> {/* ✅ lucide-react 파일 */}
+                <span className="text-sm flex-1" onClick={() => openFile(f.path)}>
+                  {f.name}
+                </span>
               </div>
             ))}
-            
+
             {creatingAt === node.path && (
               <CreateInput
-                initialName={createType === 'folder' ? 'new-folder' : 'new-file.txt'}
+                initialName={createType === "folder" ? "new-folder" : "new-file.txt"}
                 type={createType}
                 onConfirm={confirmCreate}
                 onCancel={cancelCreate}
@@ -228,7 +231,7 @@ export default function ProjectGitExplorerPanel({
 
   const ContextMenu = () => {
     if (!menu.visible) return null;
-    const isTargetDir = menu.targetPath === '' || treeItems.some(item => item.path === menu.targetPath && item.type === 'tree');
+    const isTargetDir = menu.targetPath === "" || treeItems.some(item => item.path === menu.targetPath && item.type === "tree");
 
     return (
       <ul
@@ -238,22 +241,22 @@ export default function ProjectGitExplorerPanel({
       >
         {isTargetDir && (
           <>
-            <li className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
-                onClick={() => startCreate(menu.targetPath, "file")}>
+            <li className="px-3 py-2 hover:bg-gray-100 cursor-pointer" onClick={() => startCreate(menu.targetPath, "file")}>
               새 파일
             </li>
-            <li className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
-                onClick={() => startCreate(menu.targetPath, "folder")}>
+            <li className="px-3 py-2 hover:bg-gray-100 cursor-pointer" onClick={() => startCreate(menu.targetPath, "folder")}>
               새 폴더
             </li>
           </>
         )}
-        
+
         {menu.targetPath !== "" && (
           <>
             {isTargetDir && <hr className="my-1 border-gray-200" />}
-            <li className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-red-600"
-                onClick={() => handleDelete(menu.targetPath, isTargetDir)}>
+            <li
+              className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-red-600"
+              onClick={() => handleDelete(menu.targetPath, isTargetDir)}
+            >
               삭제
             </li>
           </>
@@ -268,17 +271,12 @@ export default function ProjectGitExplorerPanel({
         <div className="text-[13px] font-medium text-gray-600">
           파일 구조 {loading && <span className="ml-2 text-xs text-gray-400">(로딩…)</span>}
         </div>
-        <button
-          className="p-1 rounded hover:bg-gray-100 text-gray-600"
-          title="새로고침"
-          onClick={refreshTree}
-        >
+        <button className="p-1 rounded hover:bg-gray-100 text-gray-600" title="새로고침" onClick={refreshTree}>
           <FaSyncAlt />
         </button>
       </div>
 
-      <div className="text-xs pb-4 text-gray-700 whitespace-pre-wrap"
-           onContextMenu={(e) => openMenu(e, "")}>
+      <div className="text-xs pb-4 text-gray-700 whitespace-pre-wrap" onContextMenu={(e) => openMenu(e, "")}>
         <Node node={builtTree} depth={0} />
       </div>
       <ContextMenu />

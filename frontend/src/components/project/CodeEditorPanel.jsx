@@ -1,5 +1,6 @@
+// frontend/src/components/project/CodeEditorPanel.jsx
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { FaChevronLeft, FaChevronRight, FaPlay } from "react-icons/fa";
+import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import {
   getFile,
   saveFile,
@@ -10,39 +11,79 @@ import {
 import { runProjectJs, runProjectPython } from "../../api/projectPreviewApi";
 import ProjectGitExplorerPanel from "./projectgit/ProjectGitExploerPanel";
 import ProjectGitPreviewPanel from "./projectgit/ProjectGitPreviewPanel";
+import CommitModal from "./projectgit/CommitModal"; 
 
-// ▼▼▼ [수정] props에 branch와 onBranchChange 추가 ▼▼▼
+// CodeMirror v6
+import CodeMirror from "@uiw/react-codemirror";
+import { githubLight } from "@uiw/codemirror-theme-github";
+import { javascript } from "@codemirror/lang-javascript";
+import { html as htmlLang } from "@codemirror/lang-html";
+import { css as cssLang } from "@codemirror/lang-css";
+import { python as pythonLang } from "@codemirror/lang-python";
+import { keymap } from "@codemirror/view"; // ⬅ Ctrl/Cmd+S 바인딩용
+
 export default function CodeEditorPanel({ project, branch, onBranchChange }) {
   const projectId = project?.project_id;
 
-  // ▼▼▼ [제거] 자체적으로 관리하던 branch 상태 제거 ▼▼▼
-  // const [branch, setBranch] = useState(null);
-
+  // UI/State
   const [showExplorer, setShowExplorer] = useState(true);
   const sidebarWidth = showExplorer ? 260 : 36;
+
   const [activePath, setActivePath] = useState("");
   const [content, setContent] = useState("");
+  const [originalContent, setOriginalContent] = useState(""); // 마지막 저장/로드 상태
   const [baseSha, setBaseSha] = useState(null);
   const [encoding, setEncoding] = useState("utf-8");
-  const [status, setStatus] = useState({ staged: [], unstaged: [], has_uncommitted: false });
+
+  const [status, setStatus] = useState({
+    staged: [],
+    unstaged: [],
+    has_uncommitted: false,
+  });
+
   const [previewSrcDoc, setPreviewSrcDoc] = useState(null);
   const [previewFilename, setPreviewFilename] = useState("");
   const [showPreview, setShowPreview] = useState(true);
 
-  // ▼▼▼ [제거] Repo 정보(기본 브랜치)를 직접 불러오는 로직 제거 ▼▼▼
-  /*
-  const loadRepoInfo = useCallback(async () => {
-    if (!projectId) return;
-    const info = await getRepoInfo(projectId);
-    // 부모에게서 받은 branch가 없을 때만 초기값 설정
-    if (!branch) {
-      onBranchChange(info.default_branch || "main");
-    }
-  }, [projectId, branch, onBranchChange]);
-  useEffect(() => { loadRepoInfo(); }, [loadRepoInfo]);
-  */
+  const [isCommitModalOpen, setIsCommitModalOpen] = useState(false); // ✅ 모달 상태
 
-  // ▼▼▼ [수정] branch prop이 바뀔 때마다 status 갱신 ▼▼▼
+  // 변경 여부 (파생 값)
+  const unsaved = useMemo(
+    () => content !== originalContent,
+    [content, originalContent]
+  );
+
+  // 현재 파일 확장자
+  const ext = useMemo(
+    () => activePath?.split(".").pop()?.toLowerCase() || "",
+    [activePath]
+  );
+
+  // 실행 가능 확장자
+  const isRunnable = useMemo(() => {
+    if (!activePath) return false;
+    return ["js", "py", "html"].includes(ext);
+  }, [activePath, ext]);
+
+  // CodeMirror 언어 확장
+  const cmLangExtensions = useMemo(() => {
+    switch (ext) {
+      case "js":
+      case "jsx":
+      case "ts":
+      case "tsx":
+        return [javascript({ jsx: true, typescript: ext.startsWith("ts") })];
+      case "html":
+        return [htmlLang()];
+      case "css":
+        return [cssLang()];
+      case "py":
+        return [pythonLang()];
+      default:
+        return []; // plain text
+    }
+  }, [ext]);
+
   const refreshStatus = useCallback(async () => {
     if (!projectId || !branch) return;
     const s = await getStatus(projectId, { branch });
@@ -53,27 +94,59 @@ export default function CodeEditorPanel({ project, branch, onBranchChange }) {
     refreshStatus();
   }, [refreshStatus]);
 
-  // ▼▼▼ [수정] 파일 열 때도 props로 받은 branch 사용 ▼▼▼
+  // 파일 열기
   const handleOpenFile = async (path, fileData) => {
     setActivePath(path);
     const file = fileData || (await getFile(projectId, { path, branch }));
-    setContent(file?.content ?? "");
+    const nextContent = file?.content ?? "";
+    setContent(nextContent);
+    setOriginalContent(nextContent); // 원본 스냅샷 갱신
     setBaseSha(file?.base_sha ?? null);
     setEncoding(file?.encoding ?? "utf-8");
     setPreviewSrcDoc(null);
     setPreviewFilename("");
   };
 
-  // 저장, 스테이징 등 모든 API 호출에서 props.branch를 사용 (기존 코드와 동일)
-  const handleSave = async () => {
-    if (!activePath) return;
+  // 저장
+  const handleSave = useCallback(async () => {
+    if (!activePath || !unsaved) return;
     await saveFile(projectId, {
-      branch, path: activePath, content, encoding,
+      branch,
+      path: activePath,
+      content,
+      encoding,
       expected_base_sha: baseSha ?? undefined,
     });
+    setOriginalContent(content); // 저장 후 원본 갱신
     await refreshStatus();
-  };
+  }, [
+    activePath,
+    unsaved,
+    projectId,
+    branch,
+    content,
+    encoding,
+    baseSha,
+    refreshStatus,
+  ]);
 
+  // ⌨ Ctrl/Cmd+S 단축키 (CodeMirror keymap)
+  const saveKeymap = useMemo(
+    () =>
+      keymap.of([
+        {
+          key: "Mod-s", // Windows Ctrl+S / macOS Cmd+S
+          preventDefault: true,
+          run: () => {
+            handleSave();
+            return true; // 처리됨
+          },
+        },
+      ]),
+    [handleSave]
+  );
+
+  // stage/unstage/commit
   const handleStage = async () => {
     if (!activePath) return;
     await stagePaths(projectId, { branch, paths: [activePath], staged: true });
@@ -86,52 +159,50 @@ export default function CodeEditorPanel({ project, branch, onBranchChange }) {
     await refreshStatus();
   };
 
-  const handleCommit = async () => {
-    const message = window.prompt("커밋 메시지");
-    if (!message) return;
-    await commitChanges(projectId, { branch, message, useStagedOnly: true });
+  const handleCommit = async ({ title, message }) => {
+    const fullMessage = `${title}\n\n${message}`;
+    await commitChanges(projectId, {
+      branch,
+      message: fullMessage,
+      useStagedOnly: true,
+    });
     setBaseSha(null);
     await refreshStatus();
-    // ▼▼▼ [추가] 커밋 후 파일 탐색기 새로고침 트리거 (선택사항) ▼▼▼
-    // refreshExplorer(); 
   };
 
-  const isRunnable = useMemo(() => {
-    if (!activePath) return false;
-    const extension = activePath.split('.').pop()?.toLowerCase();
-    return ['js', 'py', 'html'].includes(extension);
-  }, [activePath]);
-
+  // 실행
   const handleRun = async () => {
     if (!isRunnable) return;
-    const extension = activePath.split(".").pop();
-    
-    let result = null; 
-
     try {
-      if (extension === "js") {
-        result = await runProjectJs(content);
-      } else if (extension === "py") {
-        result = await runProjectPython(content);
-      } else if (extension === "html") {
-        result = content;
+      if (ext === "js") {
+        const result = await runProjectJs(content);
+        setPreviewSrcDoc(result);
+      } else if (ext === "py") {
+        const result = await runProjectPython(content);
+        setPreviewSrcDoc(result);
+      } else if (ext === "html") {
+        setPreviewSrcDoc(content);
       }
-      
-      setPreviewSrcDoc(result);
       setPreviewFilename(activePath);
       setShowPreview(true);
-
     } catch (err) {
-      console.error(`${extension.toUpperCase()} 실행 실패`, err);
+      console.error(`${ext.toUpperCase()} 실행 실패`, err);
       setPreviewSrcDoc({
         success: false,
         stdout: "",
-        stderr: err?.response?.data?.detail || err.message || "알 수 없는 오류가 발생했습니다.",
+        stderr:
+          err?.response?.data?.detail ||
+          err.message ||
+          "알 수 없는 오류가 발생했습니다.",
       });
       setPreviewFilename(activePath);
       setShowPreview(true);
     }
   };
+
+  const onCodeChange = useCallback((value) => {
+    setContent(value);
+  }, []);
 
   return (
     <div className="w-full h-full flex flex-col bg-white">
@@ -139,44 +210,75 @@ export default function CodeEditorPanel({ project, branch, onBranchChange }) {
       <div className="flex flex-row items-stretch gap-2 px-4 py-2 border-b">
         <button
           className="text-gray-500 hover:text-gray-800 my-auto"
-          onClick={() => setShowExplorer(v => !v)}
+          onClick={() => setShowExplorer((v) => !v)}
           title={showExplorer ? "탐색기 접기" : "탐색기 펼치기"}
         >
           {showExplorer ? <FaChevronLeft /> : <FaChevronRight />}
         </button>
 
         <div className="text-sm text-gray-600 flex items-center flex-shrink min-w-0">
-          <span className="font-medium truncate">{activePath || "파일을 선택하세요"}</span>
-          <div className="w-px bg-gray-300 mx-3 self-stretch"></div>
-          {/* 현재 브랜치 표시 */}
-          <span className="flex-shrink-0">{branch || "브랜치 로딩 중..."}</span>
-          <div className="w-px bg-gray-300 mx-3 self-stretch"></div>
-          <span className="flex-shrink-0">Staged: {status.staged?.length || 0}</span>
-          <span className="ml-2 flex-shrink-0">Unstaged: {status.unstaged?.length || 0}</span>
+          <span className="font-medium truncate">
+            {activePath || "파일을 선택하세요"}
+          </span>
+          <div className="w-px bg-gray-300 mx-3 self-stretch" />
+          <span className="flex-shrink-0">
+            {branch || "브랜치 로딩 중..."}
+          </span>
+          <div className="w-px bg-gray-300 mx-3 self-stretch" />
+          <span className="flex-shrink-0">
+            Staged: {status.staged?.length || 0}
+          </span>
+          <span className="ml-2 flex-shrink-0">
+            Unstaged: {status.unstaged?.length || 0}
+          </span>
         </div>
 
         <div className="ml-auto flex items-center gap-2 flex-shrink-0">
-          {/* 버튼들... (기존과 동일) */}
-          <button className="text-[12px] text-blue-600 hover:text-blue-800 px-2 py-0.5 border border-blue-300 rounded disabled:opacity-50"
-                  onClick={handleSave} disabled={!activePath}>💾 저장</button>
-          <button className="text-[12px] text-green-600 hover:text-green-800 px-2 py-0.5 border border-green-300 rounded disabled:opacity-50"
-                  onClick={handleStage} disabled={!activePath}>Staging</button>
-          <button className="text-[12px] text-orange-500 hover:text-orange-700 px-2 py-0.5 border border-orange-300 rounded disabled:opacity-50"
-                  onClick={handleUnstage} disabled={!activePath}>Unstage</button>
-          <button className="text-[12px] text-gray-700 hover:text-black px-2 py-0.5 border border-gray-300 rounded disabled:opacity-50"
-                  onClick={handleCommit} disabled={status.staged?.length === 0}>Commit</button>
-          <button 
-            className="text-[12px] text-purple-600 hover:text-purple-800 px-2 py-0.5 border border-purple-300 rounded flex items-center gap-1 disabled:opacity-50"
-            onClick={handleRun} disabled={!activePath || !isRunnable}>
-            <FaPlay size={8} /> 실행
+          <button
+            className="text-[12px] text-blue-600 hover:text-blue-800 justify-center px-2 py-0.5 w-16 h-6 border border-blue-300 rounded disabled:opacity-50"
+            onClick={handleSave}
+            disabled={!activePath || !unsaved}
+            title={unsaved ? "저장" : "변경 사항 없음"}
+          >
+            Save
+          </button>
+          <button
+            className="text-[12px] text-purple-600 hover:text-purple-800 px-2 py-0.5 w-16 h-6 border border-purple-300 rounded flex items-center justify-center gap-1 disabled:opacity-50"
+            onClick={handleRun}
+            disabled={!activePath || !isRunnable}
+          >
+            Run
+          </button>
+          <button
+            className="text-[12px] text-green-600 hover:text-green-800 justify-center px-2 py-0.5 w-16 h-6 border border-green-300 rounded disabled:opacity-50"
+            onClick={handleStage}
+            disabled={!activePath}
+          >
+            Staging
+          </button>
+          <button
+            className="text-[12px] text-orange-500 hover:text-orange-700 justify-center px-2 py-0.5 w-16 h-6 border border-orange-300 rounded disabled:opacity-50"
+            onClick={handleUnstage}
+            disabled={!activePath}
+          >
+            Unstage
+          </button>
+          <button
+            className="text-[12px] text-gray-700 hover:text-black justify-center px-2 py-0.5 w-16 h-6 border border-gray-300 rounded disabled:opacity-50"
+            onClick={() => setIsCommitModalOpen(true)}
+            disabled={status.staged?.length === 0}
+          >
+            Commit
           </button>
         </div>
       </div>
 
       {/* 본문 (탐색기, 에디터, 미리보기) */}
       <div className="flex flex-1 w-full min-h-0">
-        <div className="border-r transition-all duration-200 ease-out flex-shrink-0"
-             style={{ width: sidebarWidth }}>
+        <div
+          className="border-r transition-all duration-200 ease-out flex-shrink-0"
+          style={{ width: sidebarWidth }}
+        >
           {showExplorer && (
             <ProjectGitExplorerPanel
               className="h-full overflow-auto"
@@ -188,14 +290,24 @@ export default function CodeEditorPanel({ project, branch, onBranchChange }) {
           )}
         </div>
 
-        <div className="relative flex-1 p-4 min-w-0 h-full">
-          <textarea
-            className="w-full h-full border rounded p-3 text-sm font-mono outline-none resize-none disabled:bg-gray-50 disabled:text-gray-400"
-            placeholder={activePath ? "// 코드를 입력하세요" : "// 좌측에서 파일을 선택하면 편집할 수 있어요"}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            disabled={!activePath}
-          />
+        {/* 에디터 */}
+        <div className="flex-1 min-w-0 h-full">
+          {!activePath ? (
+            <div className="w-full h-full flex items-center justify-center text-gray-400">
+              {/* 좌측에서 파일을 선택하면 편집할 수 있어요 */}
+              좌측에서 파일을 선택하면 편집할 수 있어요
+            </div>
+          ) : (
+            <CodeMirror
+              value={content}
+              height="100%"
+              theme={githubLight}
+              // 언어 + Ctrl/Cmd+S keymap
+              extensions={[...cmLangExtensions, saveKeymap]}
+              onChange={onCodeChange}
+              style={{ height: "100%" }}
+            />
+          )}
         </div>
 
         {showPreview && (
@@ -207,6 +319,14 @@ export default function CodeEditorPanel({ project, branch, onBranchChange }) {
           </div>
         )}
       </div>
+
+      {/* Commit Modal */}
+      {isCommitModalOpen && (
+        <CommitModal
+          onClose={() => setIsCommitModalOpen(false)}
+          onSubmit={handleCommit}
+        />
+      )}
     </div>
   );
 }

@@ -264,10 +264,10 @@ const ProjectTasksTab = ({ project }) => {
     <div className="flex max-w-[1400px] mx-auto px-6 py-8">
       <div className="flex-1">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
             <ClipboardList className="w-6 h-6 text-gray-500" />
             {project?.name} 작업
-          </h1>
+          </h2>
           <div className="flex gap-4 mt-4 border-b pb-2"></div>
           <button
             onClick={() => {

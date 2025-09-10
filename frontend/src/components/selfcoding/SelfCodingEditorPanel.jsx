@@ -1,21 +1,20 @@
+// frontend/src/components/selfcoding/SelfCodingEditorPanel.jsx
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { X, FileText } from "lucide-react";
-import { Controlled as CodeMirror } from "react-codemirror2";
 import { getCodeById, updateCodeFile } from "../../api/codeApi";
-import { registerCustomHints } from "../../utils/customHints";
 import {
   runJsPreview,
   runHtmlPreview,
   runPythonPreview,
 } from "../../api/previewApi";
 
-import "codemirror/lib/codemirror.css";
-import "codemirror/theme/eclipse.css";
-import "codemirror/mode/javascript/javascript";
-import "codemirror/mode/htmlmixed/htmlmixed";
-import "codemirror/mode/css/css";
-import "codemirror/mode/python/python";
-import "codemirror/mode/clike/clike";
+// ▼▼▼ CodeMirror v6 (@uiw/react-codemirror) ▼▼▼
+import CodeMirror from "@uiw/react-codemirror";
+import { githubLight } from "@uiw/codemirror-theme-github";
+import { javascript } from "@codemirror/lang-javascript";
+import { html as htmlLang } from "@codemirror/lang-html";
+import { css as cssLang } from "@codemirror/lang-css";
+import { python as pythonLang } from "@codemirror/lang-python";
 
 const SelfCodingEditorPanel = ({
   tabs,
@@ -37,29 +36,20 @@ const SelfCodingEditorPanel = ({
 }) => {
   const editorRef = useRef(null);
   const [originalContent, setOriginalContent] = useState("");
-  const extension = selectedFilename?.split(".").pop();
+  const extension = selectedFilename?.split(".").pop()?.toLowerCase();
 
-  const getLanguageMode = (filename) => {
-    const ext = filename?.split(".").pop();
-    if (ext === "js") return "javascript";
-    if (ext === "html") return "htmlmixed";
-    if (ext === "css") return "css";
-    if (ext === "py") return "python";
-    return "text/plain";
+  // v6용: 파일 확장자 기반으로 언어 extensions 구성
+  const getExtensionsForFile = (filename) => {
+    const ext = filename?.split(".").pop()?.toLowerCase();
+    if (ext === "js" || ext === "jsx" || ext === "ts" || ext === "tsx") {
+      return [javascript({ jsx: true, typescript: ext?.startsWith("ts") })];
+    }
+    if (ext === "html") return [htmlLang()];
+    if (ext === "css") return [cssLang()];
+    if (ext === "py") return [pythonLang()];
+    // 기본값(플레인 텍스트에 가까운 상태)
+    return [];
   };
-
-  const getHintByLanguage = () => {
-    const mode = getLanguageMode(selectedFilename);
-    const hints = window.CodeMirror?.hint;
-    if (mode === "javascript") return hints?.javascript || hints?.anyword;
-    if (mode === "python") return hints?.["python-custom"] || hints?.anyword;
-    if (mode === "text/x-java") return hints?.["java-custom"] || hints?.anyword;
-    return hints?.anyword;
-  };
-
-  useEffect(() => {
-    registerCustomHints();
-  }, []);
 
   const handleSave = useCallback(async () => {
     const codeId = parseInt(activeTabId.replace("code-", ""));
@@ -74,7 +64,7 @@ const SelfCodingEditorPanel = ({
       console.error("코드 저장 실패:", err);
       alert("저장에 실패했습니다.");
     }
-  }, [activeTabId, selectedFileContent, languageId, setOriginalContent, setUnsaved]);
+  }, [activeTabId, selectedFileContent, languageId, setUnsaved]);
 
   const handleRunJs = async () => {
     try {
@@ -170,7 +160,7 @@ const SelfCodingEditorPanel = ({
       );
     }
 
-    if (selectedFilename.endsWith(".js")) {
+    if (selectedFilename?.endsWith(".js")) {
       return (
         <button
           className="text-[12px] text-green-600 hover:text-green-800 px-2 py-0.5 border border-green-300 rounded"
@@ -181,7 +171,7 @@ const SelfCodingEditorPanel = ({
       );
     }
 
-    if (selectedFilename.endsWith(".html")) {
+    if (selectedFilename?.endsWith(".html")) {
       return (
         <button
           className="text-[12px] text-purple-600 hover:text-purple-800 px-2 py-0.5 border border-purple-300 rounded"
@@ -192,7 +182,7 @@ const SelfCodingEditorPanel = ({
       );
     }
 
-    if (selectedFilename.endsWith(".py")) {
+    if (selectedFilename?.endsWith(".py")) {
       return (
         <button
           className="text-[12px] text-yellow-600 hover:text-yellow-800 px-2 py-0.5 border border-yellow-300 rounded"
@@ -212,7 +202,10 @@ const SelfCodingEditorPanel = ({
       <div className="flex items-center overflow-x-auto bg-[#f3f3f3] border-b border-gray-300 px-2 py-1">
         {tabs.map((tab) => {
           const fileName = tab.filename;
-          const emoji = templateDescriptions[templateId]?.emoji || <FileText size={14} className="inline text-gray-600" />;
+          const emoji =
+            templateDescriptions[templateId]?.emoji || (
+              <FileText size={14} className="inline text-gray-600" />
+            );
           const isActive = tab.tabId === activeTabId;
           const isUnsaved = isActive && unsaved;
           return (
@@ -254,51 +247,27 @@ const SelfCodingEditorPanel = ({
         {renderActionButton()}
       </div>
 
-      {/* 코드 에디터 */}
-      <div className="flex-1 p-4 overflow-auto">
-        <CodeMirror
-          ref={editorRef}
-          value={selectedFileContent}
-          options={{
-            mode: getLanguageMode(selectedFilename),
-            theme: "eclipse",
-            lineNumbers: true,
-            tabSize: 2,
-            lineWrapping: true,
-            extraKeys: {
-              "Ctrl-Space": "autocomplete",
-              "Ctrl-S": (cm) => {
-                cm.execCommand("save");
-                handleSave();
-              },
-              "Cmd-S": (cm) => {
-                cm.execCommand("save");
-                handleSave();
-              },
-            },
-            hintOptions: {
-              hint: getHintByLanguage(),
-              completeSingle: false,
-            },
-          }}
-          onBeforeChange={(editor, data, value) => {
-            setSelectedFileContent(value);
-            setUnsaved(value !== originalContent);
-          }}
-          onKeyUp={(editor, event) => {
-            const { key } = event;
-            const isTypingKey = /^[\w.]$/.test(key);
-            const isModifier = event.ctrlKey || event.metaKey || event.altKey;
-
-            if (
-              isTypingKey &&
-              !isModifier &&
-              !editor.state.completionActive
-            ) {
-              editor.showHint();
-            }
-          }}
-        />
+      {/* 코드 에디터 (v6) */}
+      <div className="flex-1 min-h-0">
+        {!selectedFilename ? (
+          <div className="w-full h-full flex items-center justify-center text-gray-400">
+            {/* 좌측에서 파일을 선택하면 편집할 수 있어요 */}
+            파일을 선택하면 편집할 수 있어요
+          </div>
+        ) : (
+          <CodeMirror
+            ref={editorRef}
+            value={selectedFileContent || ""}
+            height="100%"
+            theme={githubLight}
+            extensions={getExtensionsForFile(selectedFilename)}
+            onChange={(val) => {
+              setSelectedFileContent(val);
+              setUnsaved(val !== originalContent);
+            }}
+            style={{ height: "100%" }}
+          />
+        )}
       </div>
     </div>
   );
