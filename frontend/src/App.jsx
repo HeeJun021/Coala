@@ -60,6 +60,11 @@ import MyPageCTHistory from "./pages/mypage/MyPageCTHistory";
 import MyPageCommunity from "./pages/mypage/MyPageCommunity";
 import MyPageAttendance from "./pages/mypage/MyPageAttendance"; // 250817 김희준
 
+// 포트폴리오
+import PortfolioExport from "./components/portfolio/PortfolioExport";
+import PortfolioHistory from "./components/portfolio/PortfolioHistory";
+
+
 // 인증
 import Signup from "./pages/loginSignup/Signup";
 import Login from "./pages/loginSignup/Login";
@@ -258,6 +263,8 @@ const App = () => {
                         <Route path="codingtest" element={<MyPageCTHistory />} />
                         <Route path="community" element={<MyPageCommunity />} />
                         <Route path="attendance" element={<MyPageAttendance />} /> 
+                        <Route path="portfolio" element={<PortfolioExport />} />
+                        <Route path="portfolio/history" element={<PortfolioHistory />} />
                       </Route>
 
                       {/* 팀프로젝트 */}
