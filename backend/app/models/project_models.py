@@ -13,7 +13,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 from app.database import Base
-
+from sqlalchemy import Boolean
 
 class Project(Base):
     __tablename__ = "projects"
@@ -30,7 +30,8 @@ class Project(Base):
     widget_order = Column(JSON, nullable=True)  # 위젯 순서 저장
     topic = Column(String(255), nullable=True)  # 주제(토픽)
     tech_stack = Column(JSON, nullable=True)  # 기술 스택
-
+    is_closed = Column(Boolean, default=False)
+    
     members = relationship("ProjectMembers", back_populates="project")
     activity_logs = relationship("ProjectActivityLog", back_populates="project")
     widgets = relationship("ProjectWidgets", back_populates="project")
