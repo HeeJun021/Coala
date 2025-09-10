@@ -70,6 +70,9 @@ from app.routers import (
     project_git,
     project_preview,
     templates,
+    notion,
+    notion_export,
+    notion_templates,
 )
 
 from app.schemas.user import UserUpdateSchema
@@ -169,6 +172,10 @@ app.include_router(attendance.router)
 # 프로젝트 템플릿
 app.include_router(templates.router)
 
+# 노션
+app.include_router(notion.router)
+app.include_router(notion_export.router)
+app.include_router(notion_templates.router)
 
 # 기본 라우트
 @app.get("/", tags=["Root"])

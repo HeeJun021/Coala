@@ -23,9 +23,13 @@ class User(Base):
     email_verified = Column(Boolean, default=False)
     github_access_token = Column(String, nullable=True)  # GitHub 액세스 토큰 추가
     eucalyptus_balance = Column(Integer, nullable=False, default=100)
+
     
     created_at = Column(TIMESTAMP, server_default=func.now())  # ✅ `CURRENT_TIMESTAMP` → `func.now()`로 변경
     updated_at = Column(TIMESTAMP, default=func.now(), onupdate=func.now())  # ✅ 수정된 시간 자동 업데이트
+    
+    notion_token = Column(Text, nullable=True)              # 암호화된 액세스 토큰 저장
+    notion_workspace = Column(String(255), nullable=True)   # 연결된 워크스페이스 이름
     preferred_coding_lang = Column(
     String(20),
     nullable=False,
