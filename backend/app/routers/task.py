@@ -17,6 +17,14 @@ COLOR_PALETTE = [
     "#b8dee8", "#f0c9a6", "#c9e0b4", "#dab8e0", "#b8e8d4",
 ]
 
+def ensure_project_open(db: Session, project_id: int):
+    proj = db.query(Project).filter(Project.project_id == project_id).first()
+    if not proj:
+        raise HTTPException(status_code=404, detail="Project not found")
+    if proj.is_closed:
+        raise HTTPException(status_code=403, detail="Project is closed (read-only)")
+    return proj
+
 def get_random_color():
     return random.choice(COLOR_PALETTE)
 
@@ -60,6 +68,7 @@ async def get_task_by_id(task_id: int, db: Session = Depends(get_db), current_us
 
 @router.post("/", response_model=TaskResponse)
 async def create_task(task_data: TaskCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    ensure_project_open(db, task_data.project_id)  # ✅ 먼저 차단
     project = db.query(Project).filter(Project.project_id == task_data.project_id).first()
     if not project:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
@@ -124,6 +133,7 @@ async def update_task(task_id: int, task_data: TaskUpdate, db: Session = Depends
     task = db.query(Tasks).filter(Tasks.task_id == task_id).first()
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+    ensure_project_open(db, task.project_id)  # ✅ 소속 프로젝트 상태 확인
     if task.user_id != current_user.user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to update this task")
     
@@ -167,6 +177,7 @@ async def delete_task(
     task = db.query(Tasks).filter(Tasks.task_id == task_id).first()
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+    ensure_project_open(db, task.project_id)
     if task.user_id != current_user.user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to delete this task")
     db.delete(task)

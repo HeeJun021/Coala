@@ -53,7 +53,8 @@ class ProjectItem(BaseModel):
     widgets: ProjectWidget
     widget_order: List[str]
     created_at: datetime
-
+    is_closed: Optional[bool] = False   # ✅ 선택 추가
+     
     class Config:
         from_attributes = True
 

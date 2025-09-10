@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { dracula } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { useAuth } from "../../context/AuthContext";
-import { HelpCircle, Code, PlayCircle, CheckCircle, FileText, Library  } from "lucide-react";
+import { HelpCircle, Code, PlayCircle, CheckCircle, FileText} from "lucide-react";
 import StudyMaterialsGuideModal from "../../components/studymaterials/StudyMaterialsGuideModal";
 import { searchStudy } from "../../api/studyMaterialsApi";
 import { Search } from "lucide-react";
@@ -137,9 +137,8 @@ const StudyMaterialsPage = () => {
 
   // 랜딩 가이드(루시드 아이콘 4카드 + 모달 딥링크)
   const renderLandingGuide = () => (
-    <div className="flex flex-col items-center text-center py-16 px-6">
-      <h1 className="flex items-center text-3xl font-extrabold text-gray-800 tracking-wide">
-  <Library className="w-7 h-7 text-green-600 mr-2" />
+    <div className="flex flex-col items-center text-center py-8 px-6">
+      <h1 className="flex items-center text-3xl font-extrabold text-gray-800 tracking-wide mb-4">
   학습자료
 </h1>
       <p className="text-gray-600 text-lg max-w-xl mb-10 leading-relaxed">

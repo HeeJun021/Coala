@@ -11,13 +11,28 @@ from app.schemas.project_schemas import UpdateMemberRolesRequest
 
 router = APIRouter(prefix="/projects", tags=["Projects"])
 
+
+def ensure_project_open(db: Session, project_id: int) -> Project:
+    proj = db.query(Project).filter(Project.project_id == project_id).first()
+    if not proj:
+        raise HTTPException(status_code=404, detail="Project not found")
+    if proj.is_closed:
+        raise HTTPException(status_code=403, detail="Project is closed (read-only)")
+    return proj
+
+
 # 1. 내 프로젝트 목록 조회
 @router.get("/my")
 def get_my_projects(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     projects = (
         db.query(Project)
         .join(ProjectMembers, Project.project_id == ProjectMembers.project_id)
-        .filter(ProjectMembers.user_id == current_user.user_id)
+        .filter(
+            ProjectMembers.user_id == current_user.user_id,
+            ProjectMembers.status == "accepted",
+            # ❌ Project.is_closed == False  제거
+        )
+        .order_by(Project.is_closed.asc(), Project.created_at.desc())  # ✅ 선택
         .all()
     )
     return [
@@ -28,6 +43,7 @@ def get_my_projects(db: Session = Depends(get_db), current_user: User = Depends(
             "progress": p.progress,
             "topic": p.topic,
             "tech_stack": p.tech_stack,
+            "is_closed": p.is_closed,  # ✅ 추가
             "leader_id": (
                 db.query(ProjectMembers)
                 .filter(ProjectMembers.project_id == p.project_id, ProjectMembers.is_leader == True)
@@ -125,6 +141,7 @@ def update_project(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    ensure_project_open(db, project_id)  # ✅ 종료된 프로젝트면 403
     project = db.query(Project).filter(Project.project_id == project_id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -177,6 +194,7 @@ def update_project(
 # 5. 팀장 권한 이전
 @router.post("/{project_id}/transfer-leader")
 def transfer_leader(project_id: int, data: dict, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    ensure_project_open(db, project_id)  # ✅
     current_leader = db.query(ProjectMembers).filter(
         ProjectMembers.project_id == project_id,
         ProjectMembers.user_id == current_user.user_id,
@@ -250,6 +268,7 @@ def add_member(project_id: int, data: dict, db: Session = Depends(get_db), curre
 # 7. 멤버 방출
 @router.delete("/{project_id}/members/{user_id}")
 def remove_member(project_id: int, user_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    ensure_project_open(db, project_id)
     member = db.query(ProjectMembers).filter(
         ProjectMembers.project_id == project_id,
         ProjectMembers.user_id == user_id
@@ -302,6 +321,7 @@ def update_member_roles(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    ensure_project_open(db, project_id)
     if current_user.user_id != user_id:
         raise HTTPException(status_code=403, detail="You can only update your own roles")
 
@@ -320,6 +340,7 @@ def update_member_roles(
 # 10. 프로젝트 초대 전송
 @router.post("/{project_id}/invite")
 def send_project_invite(project_id: int, data: dict, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    ensure_project_open(db, project_id)
     project = db.query(Project).filter(Project.project_id == project_id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -357,6 +378,7 @@ def send_project_invite(project_id: int, data: dict, db: Session = Depends(get_d
 # 11. 프로젝트 초대 수락
 @router.post("/{project_id}/accept")
 def accept_project_invite(project_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    ensure_project_open(db, project_id)
     member = db.query(ProjectMembers).filter(
         ProjectMembers.project_id == project_id,
         ProjectMembers.user_id == current_user.user_id,
@@ -379,6 +401,7 @@ def accept_project_invite(project_id: int, db: Session = Depends(get_db), curren
 # 12. 프로젝트 초대 거절
 @router.post("/{project_id}/reject")
 def reject_project_invite(project_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    ensure_project_open(db, project_id)
     member = db.query(ProjectMembers).filter(
         ProjectMembers.project_id == project_id,
         ProjectMembers.user_id == current_user.user_id,
@@ -398,3 +421,54 @@ def reject_project_invite(project_id: int, db: Session = Depends(get_db), curren
     db.commit()
     return {"message": "Invitation rejected successfully"}
 
+@router.post("/{project_id}/leave")
+def leave_project(project_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    ensure_project_open(db, project_id)
+    member = db.query(ProjectMembers).filter(
+        ProjectMembers.project_id == project_id,
+        ProjectMembers.user_id == current_user.user_id
+    ).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Not a project member")
+
+    if member.is_leader:
+        # ✅ 팀장은 탈퇴 불가 (권한 이전 필요)
+        raise HTTPException(status_code=403, detail="Leader cannot leave before transferring leadership")
+
+    # 팀원 탈퇴 처리
+    db.delete(member)
+    db.add(ProjectActivityLog(
+        project_id=project_id,
+        actor_id=current_user.user_id,
+        action=f"{current_user.nickname}이(가) 프로젝트에서 탈퇴함",
+        created_at=datetime.now()
+    ))
+    db.commit()
+    return {"message": "Left project successfully"}
+
+@router.post("/{project_id}/close")
+def close_project(project_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    project = db.query(Project).filter(Project.project_id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    leader = db.query(ProjectMembers).filter(
+        ProjectMembers.project_id == project_id,
+        ProjectMembers.user_id == current_user.user_id,
+        ProjectMembers.is_leader == True
+    ).first()
+    if not leader:
+        raise HTTPException(status_code=403, detail="Only leader can close")
+
+    if project.is_closed:
+        return {"message": "Already closed"}
+
+    project.is_closed = True
+    db.add(ProjectActivityLog(
+        project_id=project_id,
+        actor_id=current_user.user_id,
+        action=f"{current_user.nickname}이(가) 프로젝트를 종료함",
+        created_at=datetime.now()
+    ))
+    db.commit()
+    return {"message": "Project closed"}

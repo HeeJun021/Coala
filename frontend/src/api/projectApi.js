@@ -82,3 +82,13 @@ export const updateMemberRoles = async (projectId, userId, roles) => {
   const response = await apiClient.patch(`/projects/${projectId}/members/${userId}/roles`, roles);
   return response.data;
 };
+
+export const leaveProject = async (projectId) => {
+  const res = await apiClient.post(`/projects/${projectId}/leave`);
+  return res.data;
+};
+
+export const closeProject = async (projectId) => {
+  const res = await apiClient.post(`/projects/${projectId}/close`);
+  return res.data;
+};
