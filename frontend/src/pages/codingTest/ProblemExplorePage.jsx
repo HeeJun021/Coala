@@ -3,6 +3,13 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import CodingTestSidebar from "../../Layout/CodingTestSidebar";
 import { getCodingTestList } from "../../api/codingTestApi";
+// ✅ 아이콘 추가 (PracticeQuiz 톤 앤 매너)
+import {
+  Search as SearchIcon,
+  Tags,
+  X as XIcon,
+  RefreshCw,
+} from "lucide-react";
 
 const LANG_OPTIONS = ["Python", "Java", "JavaScript"];
 const LEVELS = [1, 2, 3, 4, 5];
@@ -26,8 +33,8 @@ export default function ProblemExplorePage() {
     setSelectedCats(next);
   };
 
-  // 압축 UI 상태
-  const filteredCats = categories; // 그냥 전체 사용
+  // 압축 UI 상태 (검색/더보기 제거 후 전체 사용)
+  const filteredCats = categories;
 
   // 카테고리 로딩
   useEffect(() => {
@@ -39,8 +46,7 @@ export default function ProblemExplorePage() {
         const res = await getCodingTestList({
           page: 1,
           sort: "desc",
-          // 필요 시 언어별 카테고리만 보고싶으면 아래 라인 사용
-          // lang: lang.toLowerCase(),
+          // lang: lang.toLowerCase(), // 필요 시 언어별 카테고리만
         });
         const list =
           res?.category_counts?.map((c) => c.category).filter(Boolean) ?? [];
@@ -55,7 +61,7 @@ export default function ProblemExplorePage() {
     return () => {
       mounted = false;
     };
-  }, []); // 언어별로 달라지게 하려면 deps에 lang 추가
+  }, []);
 
   const onSearch = () => {
     const langToParam = lang.toLowerCase();
@@ -80,12 +86,19 @@ export default function ProblemExplorePage() {
         <div className="max-w-5xl mx-auto pt-8 mt-8 bg-white shadow-xl rounded-2xl border border-gray-300 p-7 relative">
           {/* 헤더 */}
           <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-extrabold text-gray-900">문제 탐색</h1>
+            <h1 className="text-3xl font-extrabold text-gray-900 flex items-center gap-2 tracking-wide">
+              문제 탐색
+            </h1>
           </div>
+          <p className="text-gray-500 text-sm mt-6 text-left">
+            원하는 <span className="font-medium text-gray-700">문제 유형</span>
+            과 <span className="font-medium text-gray-700">난이도</span>를
+            선택해 자유롭게 탐색해보세요!
+          </p>
 
           {/* 언어 선택 */}
           <div className="mt-8">
-            <label className="block text-gray-700 font-medium mb-2">
+            <label className="text-gray-700 font-medium mb-2 flex items-center gap-2">
               언어 선택
             </label>
             <select
@@ -103,7 +116,7 @@ export default function ProblemExplorePage() {
 
           {/* 난이도 선택 */}
           <div className="mt-8">
-            <p className="text-gray-700 font-medium mb-3">
+            <p className="text-gray-700 font-medium mb-3 flex items-center gap-2">
               난이도를 선택하세요.
             </p>
             <div className="flex flex-wrap gap-3">
@@ -131,9 +144,19 @@ export default function ProblemExplorePage() {
           {/* 카테고리 선택 */}
           <div className="mt-8">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-gray-700 font-medium">
+              <p className="text-gray-700 font-medium flex items-center gap-2">
+                <Tags className="w-5 h-5 text-green-600" />
                 문제 유형을 선택하세요.
               </p>
+
+              {/* 선택 개수 뱃지 (기능 변경 없음, 시각만) */}
+              <span className="text-xs text-gray-500">
+                선택됨{" "}
+                <span className="font-semibold text-gray-700">
+                  {selectedCats.size}
+                </span>
+                개
+              </span>
             </div>
 
             {loadingCats ? (
@@ -144,7 +167,7 @@ export default function ProblemExplorePage() {
               <div className="text-sm text-rose-600">{catErr}</div>
             ) : (
               <>
-                {/* 자동 채움 그리드: 한 화면에 최대한 많이 */}
+                {/* 자동 채움 그리드 */}
                 <div className="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(140px,1fr))]">
                   {filteredCats.map((name) => {
                     const active = selectedCats.has(name);
@@ -154,7 +177,7 @@ export default function ProblemExplorePage() {
                         type="button"
                         onClick={() => toggleCat(name)}
                         className={[
-                          "w-full truncate px-3 py-1.5 rounded-md text-xs font-medium border transition-colors text-left",
+                          "w-full truncate px-3 py-1.5 rounded-md text-xs font-medium border transition-colors text-left flex items-center gap-1.5",
                           active
                             ? "bg-green-100 text-green-800 border-green-300"
                             : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100",
@@ -167,32 +190,38 @@ export default function ProblemExplorePage() {
                   })}
                 </div>
 
-                {/* 선택 요약 */}
+                {/* ✅ 선택된 카테고리 칩 (선택 시에만 노출) */}
                 {selectedCats.size > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {Array.from(selectedCats)
-                      .slice(0, 10)
-                      .map((n) => (
+                  <div className="transition-all duration-300 overflow-hidden mt-4">
+                    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-green-100 bg-green-50/50 px-3 py-2">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCats(new Set())}
+                        className="flex items-center gap-1 text-xs text-green-600 hover:text-green-700"
+                        title="선택 초기화"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        초기화
+                      </button>
+
+                      {Array.from(selectedCats).map((c) => (
                         <span
-                          key={n}
-                          className="inline-flex items-center rounded-full border border-green-200 bg-green-50 text-green-700 px-2.5 py-1 text-xs"
+                          key={c}
+                          className="inline-flex items-center rounded-full border border-green-200 bg-white text-green-700 px-2.5 py-1 text-xs shadow-sm"
                         >
-                          {n}
+                          {c}
                           <button
                             type="button"
-                            onClick={() => toggleCat(n)}
+                            onClick={() => toggleCat(c)}
                             className="ml-1 hover:text-green-900"
-                            aria-label={`${n} 제거`}
+                            aria-label={`${c} 제거`}
+                            title="제거"
                           >
-                            ×
+                            <XIcon className="w-3.5 h-3.5" />
                           </button>
                         </span>
                       ))}
-                    {selectedCats.size > 10 && (
-                      <span className="text-xs text-gray-500">
-                        외 {selectedCats.size - 10}개…
-                      </span>
-                    )}
+                    </div>
                   </div>
                 )}
               </>
@@ -204,8 +233,9 @@ export default function ProblemExplorePage() {
             <button
               type="button"
               onClick={onSearch}
-              className="px-5 py-2 rounded-md bg-green-600 text-white font-semibold hover:bg-green-700 shadow"
+              className="px-5 py-2 rounded-md bg-green-600 text-white font-semibold hover:bg-green-700 shadow inline-flex items-center gap-2"
             >
+              <SearchIcon className="w-4 h-4" />
               검색
             </button>
           </div>

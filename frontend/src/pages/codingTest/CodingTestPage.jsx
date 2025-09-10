@@ -43,9 +43,9 @@ const CodingTestPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const LANG_OPTIONS = [
-    { value: "python", label: "PYTHON" },
-    { value: "java", label: "JAVA" },
-    { value: "javascript", label: "JAVASCRIPT" },
+    { value: "python", label: "Python" },
+    { value: "java", label: "Java" },
+    { value: "javascript", label: "JavaScript" },
   ];
 
   // ✅ 탐색 페이지에서 넘어온 언어 파라미터
