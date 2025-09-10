@@ -1,13 +1,9 @@
 // src/components/MyPageSidebar.jsx
 import React, { useMemo, useState, useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
-  UserCog,
-  ListTodo,
-  BarChart3,
   ChevronDown,
   ChevronRight,
-  FileText,
 } from "lucide-react";
 
 const MyPageSidebar = () => {
@@ -21,16 +17,15 @@ const MyPageSidebar = () => {
       {
         key: "account",
         title: "로그인 정보",
-        icon: <UserCog className="w-4 h-4 text-sky-600" />,
         items: [
           { label: "계정 정보 및 관리", to: "/mypage/modify" },
           { label: "개인정보 보호 설정", to: "/mypage/setting" },
+          { label: "출석체크", to: "/mypage/attendance" },
         ],
       },
       {
         key: "activity",
         title: "활동 내역",
-        icon: <ListTodo className="w-4 h-4 text-green-600" />,
         items: [
           { label: "퀴즈 이력", to: "/mypage/quiz-history" },
           { label: "사용자 퀴즈 이력", to: "/mypage/userquiz-history" },
@@ -39,18 +34,8 @@ const MyPageSidebar = () => {
         ],
       },
       {
-        key: "records",
-        title: "학습 성과 및 기록",
-        icon: <BarChart3 className="w-4 h-4 text-yellow-600" />,
-        items: [
-          { label: "오답노트", to: "/mypage/wrong-notes" },
-          { label: "출석체크", to: "/mypage/attendance" },
-        ],
-      },
-      {
         key: "portfolio",
         title: "포트폴리오",
-        icon: <FileText className="w-4 h-4 text-purple-600" />,
         items: [
           { label: "포트폴리오 추출", to: "/mypage/portfolio", exact: true },
           { label: "포트폴리오 추출 내역", to: "/mypage/portfolio/history", exact: true },

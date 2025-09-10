@@ -122,12 +122,12 @@ export default function ProblemExplorePage() {
   };
 
   return (
-    <div className="relative min-h-screen">
+    <div className="w-full min-h-screen pt-4 pl-[144px]" data-scroll-root>
       {/* 사이드바 */}
       <CodingTestSidebar />
 
       {/* 본문 */}
-      <div className="ml-[100px] p-6 bg-[#F9FAFB] min-h-screen">
+      <div className=" bg-[#F9FAFB] min-h-screen">
         <div className="max-w-5xl mx-auto pt-8 mt-8 bg-white shadow-xl rounded-2xl border border-gray-300 p-7 relative">
           {/* 헤더 */}
           <div className="flex items-center justify-between">

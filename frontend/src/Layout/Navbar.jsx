@@ -90,7 +90,7 @@ const Navbar = () => {
     {
       label: "마이페이지",
       path: user ? "/mypage/modify" : "/login",
-      children: ["정보 변경", "내 학습 현황", "커뮤니티 이력"],
+      children: ["로그인 정보", "활동 내역", "포트폴리오"],
     },
   ];
 
@@ -355,9 +355,9 @@ const Navbar = () => {
 
                   if (item.label === "마이페이지") {
                     let link = "";
-                    if (child === "정보 변경") link = "/mypage/modify";
-                    if (child === "내 학습 현황") link = "/mypage/quiz-history";
-                    if (child === "커뮤니티 이력") link = "/mypage/community";
+                    if (child === "로그인 정보") link = "/mypage/modify";
+                    if (child === "활동 내역") link = "/mypage/quiz-history";
+                    if (child === "포트폴리오") link = "/mypage/community";
                     if (link) {
                       return (
                         <Link
