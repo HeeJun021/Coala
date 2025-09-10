@@ -1,7 +1,7 @@
 // Sidebar.jsx
 import React, { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Library, BookOpenText, Code2, FileCheck } from "lucide-react";
+import { BookOpenText, Code2, FileCheck, ChevronRight, ChevronDown } from "lucide-react";
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -162,7 +162,6 @@ const Sidebar = () => {
       className="absolute left-[70px] w-[260px] bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden z-40"
     >
       <div className="h-[56px] flex items-center px-6 bg-[#88C078] rounded-t-2xl shadow-sm">
-        <Library className="w-5 h-5 text-white mr-2" />
         <h1 className="text-[18px] font-semibold text-black tracking-wide">학습자료</h1>
       </div>
 
@@ -184,29 +183,38 @@ const Sidebar = () => {
               <div key={lang.language_id}>
                 {/* 언어 헤더 (클릭으로 토글) */}
                 <div
-                  className={`px-6 py-4 cursor-pointer text-[16px] font-semibold transition-all duration-150 ${
-                    isOpen
-                      ? "bg-[#D9D9D9] text-gray-800"
-                      : "hover:bg-gray-100 text-gray-600"
-                  }`}
-                  onClick={() => handleLanguageHeaderClick(lang.language, materials)}
-                >
-                  <div className="flex flex-col">
-                    <span>{lang.language}</span>
-                    {/* 선택된 글 제목 보조표시: 섹션 접혀 있어도 현재 선택 제목은 유지해서 보여줄 수 있음 */}
-                    {(selectedLanguage === lang.language) &&
-                      (selectedMaterial?.title || selectedExample?.title) && (
-                        <div className="flex items-center gap-1 mt-1 px-1">
-                          <span className="text-sm font-normal text-gray-700 break-words leading-snug">
-                            {selectedMaterialId ? selectedMaterial?.title : selectedExample?.title}
-                          </span>
-                          {(selectedMaterial?.is_completed || selectedExample?.is_completed) && (
-                            <FileCheck className="w-4 h-4 text-green-500" />
-                          )}
-                        </div>
-                      )}
-                  </div>
-                </div>
+  className={`px-6 py-4 cursor-pointer text-[16px] font-semibold transition-all duration-150 ${
+    isOpen
+      ? "bg-[#D9D9D9] text-gray-800"
+      : "hover:bg-gray-100 text-gray-600"
+  }`}
+  onClick={() => handleLanguageHeaderClick(lang.language, materials)}
+>
+  <div className="flex items-center justify-between">
+    {/* 왼쪽: 언어명 + 선택된 글 제목 */}
+    <div className="flex flex-col">
+      <span>{lang.language}</span>
+      {(selectedLanguage === lang.language) &&
+        (selectedMaterial?.title || selectedExample?.title) && (
+          <div className="flex items-center gap-1 mt-1 px-1">
+            <span className="text-sm font-normal text-gray-700 break-words leading-snug">
+              {selectedMaterialId ? selectedMaterial?.title : selectedExample?.title}
+            </span>
+            {(selectedMaterial?.is_completed || selectedExample?.is_completed) && (
+              <FileCheck className="w-4 h-4 text-green-500" />
+            )}
+          </div>
+        )}
+    </div>
+
+    {/* 오른쪽: 화살표 아이콘 */}
+    {isOpen ? (
+      <ChevronDown className="w-5 h-5 text-gray-600" />
+    ) : (
+      <ChevronRight className="w-5 h-5 text-gray-600" />
+    )}
+  </div>
+</div>
 
                 {/* 펼침 영역 */}
                 <div

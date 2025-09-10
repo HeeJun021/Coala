@@ -1,7 +1,7 @@
 // Asana 스타일: 날짜순 그룹 + 완료 여부 + 작업 생성자 포함 수신함 (Lucide 아이콘 적용)
 import React, { useState, useEffect } from "react";
 import { getMyTasks } from "../../api/taskApi";
-import { getProjectActivity } from "../../api/projectApi";
+import { getProjectActivity, getMyProjects } from "../../api/projectApi"; // ✅ getMyProjects 추가
 import {
   ClipboardList,
   ClipboardCheck,
@@ -32,16 +32,38 @@ const groupByDate = (notifications) => {
 const InboxTab = ({ projects = [] }) => {
   const [notifications, setNotifications] = useState([]);
   const [filter, setFilter] = useState("all");
+  const [myProjects, setMyProjects] = useState([]); // ✅ 로컬 상태
+
+  // ✅ 프로젝트 미지정 시 내부에서 내 프로젝트를 로드
+  useEffect(() => {
+    const ensureProjects = async () => {
+      try {
+        if (projects.length > 0) {
+          setMyProjects(projects);
+        } else {
+          const list = await getMyProjects();
+          setMyProjects(list || []);
+        }
+      } catch (err) {
+        console.error("내 프로젝트 로딩 실패", err);
+        setMyProjects([]);
+      }
+    };
+    ensureProjects();
+  }, [projects]);
 
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const [tasks, projectActivity] = await Promise.all([
-          getMyTasks(),
-          Promise.all(projects.map((project) => getProjectActivity(project.project_id))),
-        ]);
+        // 내 작업
+        const tasks = await getMyTasks();
 
-        const taskNotifications = tasks.map((task) => ({
+        // 프로젝트 활동 (프로젝트가 없을 수도 있으니 안전하게)
+        const activityArrays = await Promise.all(
+          (myProjects || []).map((p) => getProjectActivity(p.project_id))
+        );
+
+        const taskNotifications = (tasks || []).map((task) => ({
           id: `task-${task.task_id}`,
           type: "task",
           content: task.title,
@@ -50,20 +72,24 @@ const InboxTab = ({ projects = [] }) => {
           completed: task.completed,
           creator: task.creator_nickname || "시스템",
           projectName:
-            projects.find((p) => p.project_id === task.project_id)?.name || "알 수 없음",
+            (myProjects || []).find((p) => p.project_id === task.project_id)?.name ||
+            "알 수 없음",
         }));
 
-        const activityNotifications = projectActivity.flat().map((activity) => ({
-          id: `activity-${activity.id}`,
-          type: "activity",
-          content: activity.text,
-          date: activity.date,
-          projectId: activity.project_id,
-          completed: false,
-          creator: activity.actor_nickname || "시스템",
-          projectName:
-            projects.find((p) => p.project_id === activity.project_id)?.name || "알 수 없음",
-        }));
+        const activityNotifications = activityArrays
+          .flat()
+          .map((activity) => ({
+            id: `activity-${activity.id}`,
+            type: "activity",
+            content: activity.text,
+            date: activity.date,
+            projectId: activity.project_id,
+            completed: false,
+            creator: activity.actor_nickname || "시스템",
+            projectName:
+              (myProjects || []).find((p) => p.project_id === activity.project_id)?.name ||
+              "알 수 없음",
+          }));
 
         const all = [...taskNotifications, ...activityNotifications].sort(
           (a, b) => new Date(b.date) - new Date(a.date)
@@ -74,8 +100,9 @@ const InboxTab = ({ projects = [] }) => {
       }
     };
 
-    if (projects.length > 0) fetchNotifications();
-  }, [projects]);
+    // ✅ 이제 프로젝트 미선택이어도(=myProjects가 비어 있어도) 내 작업만이라도 표시됨
+    fetchNotifications();
+  }, [myProjects]);
 
   const filtered = notifications.filter((n) => {
     if (filter === "all") return true;
