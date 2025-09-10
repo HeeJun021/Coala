@@ -15,19 +15,26 @@ import {
   Search,
   X,
   ChevronDown,
-  Coffee,     // JAVA
-  Braces,     // JavaScript
-  Code,       // Python
+  RefreshCw,
+  Coffee, // JAVA
+  Braces, // JavaScript
+  Code, // Python
 } from "lucide-react";
 
 const getLevelClass = (level) => {
   switch (level) {
-    case 1: return "bg-green-200 text-green-800";
-    case 2: return "bg-lime-200 text-lime-800";
-    case 3: return "bg-yellow-200 text-yellow-800";
-    case 4: return "bg-orange-200 text-orange-800";
-    case 5: return "bg-rose-200 text-rose-800";
-    default: return "bg-gray-200 text-gray-600";
+    case 1:
+      return "bg-green-200 text-green-800";
+    case 2:
+      return "bg-lime-200 text-lime-800";
+    case 3:
+      return "bg-yellow-200 text-yellow-800";
+    case 4:
+      return "bg-orange-200 text-orange-800";
+    case 5:
+      return "bg-rose-200 text-rose-800";
+    default:
+      return "bg-gray-200 text-gray-600";
   }
 };
 
@@ -36,12 +43,17 @@ const CodingTestPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const LANG_OPTIONS = [
-    { value: "python", label: "PYTHON" },
-    { value: "java", label: "JAVA" },
-    { value: "javascript", label: "JAVASCRIPT" },
+    { value: "python", label: "Python" },
+    { value: "java", label: "Java" },
+    { value: "javascript", label: "JavaScript" },
   ];
+
+  // ✅ 탐색 페이지에서 넘어온 언어 파라미터
+  const langParam = searchParams.get("lang") || "";
+
   const [preferredLang, setPreferredLang] = useState(
-    user?.preferred_coding_lang || ""
+    // 초기엔 URL의 lang이 있으면 우선 적용
+    langParam || user?.preferred_coding_lang || ""
   );
 
   const [problems, setProblems] = useState([]);
@@ -68,6 +80,9 @@ const CodingTestPage = () => {
     [category]
   );
 
+  // ✅ lang 유지용 객체 (URL 이동 시 계속 유지)
+  const keepLang = langParam ? { lang: langParam } : {};
+
   const removeCommittedCat = (cat) => {
     const next = committedCats.filter((c) => c !== cat);
     setSearchParams({
@@ -77,6 +92,7 @@ const CodingTestPage = () => {
       status,
       sort,
       ...(next.length ? { category: next.join(",") } : {}),
+      ...keepLang, // ✅ lang 유지
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -88,10 +104,12 @@ const CodingTestPage = () => {
       level,
       status,
       sort,
+      ...keepLang, // ✅ lang 유지
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // ✅ 문제/카테고리 목록 로딩 (lang도 함께 전달해서 서버가 언어별 데이터 계산 가능)
   useEffect(() => {
     const fetchProblems = async () => {
       try {
@@ -102,17 +120,18 @@ const CodingTestPage = () => {
           status,
           category,
           sort,
+          ...(langParam && { lang: langParam }),
           ...(user?.user_id && { user_id: user.user_id }),
         });
-        setProblems(res.problems);
-        setTotalCount(res.total);
-        setCategoryCounts(res.category_counts);
+        setProblems(res.problems || []);
+        setTotalCount(res.total || 0);
+        setCategoryCounts(res.category_counts || []);
       } catch (err) {
         console.error("문제 목록 불러오기 실패:", err);
       }
     };
     fetchProblems();
-  }, [page, search, level, status, category, sort, user]);
+  }, [page, search, level, status, category, sort, langParam, user]);
 
   useEffect(() => {
     setSelectedCats(category ? category.split(",") : []);
@@ -127,11 +146,22 @@ const CodingTestPage = () => {
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, [catOpen]);
 
+  // ✅ 선호 언어 초기 동기화
+  // - URL의 langParam이 있으면 그걸 우선 사용하고(이미 초기값에 반영됨),
+  // - 없으면 유저 컨텍스트 또는 서버 저장값을 조회.
   useEffect(() => {
     let mounted = true;
+    if (langParam) {
+      // URL에서 관리 중이면 별도 조회 불필요
+      return () => {
+        mounted = false;
+      };
+    }
     if (!user?.user_id) {
       setPreferredLang("");
-      return () => { mounted = false; };
+      return () => {
+        mounted = false;
+      };
     }
     (async () => {
       try {
@@ -142,15 +172,20 @@ const CodingTestPage = () => {
         console.warn("선호 언어 조회 실패:", e);
       }
     })();
-    return () => { mounted = false; };
-  }, [user?.user_id, user?.preferred_coding_lang]);
+    return () => {
+      mounted = false;
+    };
+  }, [user?.user_id, user?.preferred_coding_lang, langParam]);
 
+  // ✅ 사용자가 드롭다운으로 선호 언어를 바꾸면 서버에 저장
   const handlePreferredLangChange = async (e) => {
     const next = e.target.value;
     setPreferredLang(next);
     if (!user?.user_id || !next) return;
     try {
       await setPreferredCodingLang(next);
+      // 필요하면 URL에도 동기화하고 싶을 때 주석 해제:
+      // setSearchParams({ page, search, level, status, category, sort, lang: next });
     } catch (err) {
       console.error("선호 언어 저장 실패:", err);
     }
@@ -172,6 +207,7 @@ const CodingTestPage = () => {
       status,
       sort,
       ...(selectedCats.length ? { category: selectedCats.join(",") } : {}),
+      ...keepLang, // ✅ lang 유지
     });
     setCatOpen(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -185,6 +221,7 @@ const CodingTestPage = () => {
       status,
       category,
       sort,
+      ...keepLang, // ✅ lang 유지
     });
   };
 
@@ -200,6 +237,7 @@ const CodingTestPage = () => {
       status,
       category,
       sort,
+      ...keepLang, // ✅ lang 유지
     });
   };
 
@@ -211,6 +249,7 @@ const CodingTestPage = () => {
       status,
       category,
       sort: sort === "desc" ? "asc" : "desc",
+      ...keepLang, // ✅ lang 유지
     });
   };
 
@@ -220,10 +259,10 @@ const CodingTestPage = () => {
 
   return (
     <div className="w-full min-h-screen pt-4 pl-[144px] bg-[#F9FAFB]">
-      {/* 좌측 사이드바 (퀴즈 규격과 동일 위치/폭을 사용하는 컴포넌트) */}
+      {/* 좌측 사이드바 */}
       <CodingTestSidebar />
 
-      {/* 본문 카드 — 퀴즈 페이지 규격으로 통일 */}
+      {/* 본문 카드 */}
       <div className="max-w-5xl mx-auto pt-8 mt-8 bg-white shadow-xl rounded-2xl border border-gray-300 p-7 relative">
         {/* 페이지 헤더 */}
         <div className="mb-6">
@@ -234,7 +273,7 @@ const CodingTestPage = () => {
               </h1>
             </div>
 
-            {/* 지원 언어 배지 */}
+            {/* 지원 언어 배지 (표시용 UI 그대로) */}
             <div className="hidden md:flex items-center gap-2">
               <span className="text-xs text-gray-500">지원 언어</span>
 
@@ -256,7 +295,9 @@ const CodingTestPage = () => {
           </div>
 
           <p className="text-sm text-gray-500 pt-2 leading-relaxed">
-            문제를 풀며 <span className="text-green-600 font-medium">알고리즘 사고력</span>을 키워보세요.
+            문제를 풀며{" "}
+            <span className="text-green-600 font-medium">알고리즘 사고력</span>
+            을 키워보세요.
           </p>
         </div>
 
@@ -326,6 +367,7 @@ const CodingTestPage = () => {
                       category,
                       sort,
                       level: e.target.value,
+                      ...keepLang, // ✅ lang 유지
                     })
                   }
                   className="h-9 border border-gray-300 rounded-md px-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-300 w-[120px]"
@@ -360,8 +402,12 @@ const CodingTestPage = () => {
                 {catOpen && (
                   <div className="absolute left-0 top-full mt-2 z-50 w-[28rem] max-w-[calc(100vw-2rem)] rounded-xl border border-gray-200 bg-white shadow-2xl p-4">
                     <div className="mb-3">
-                      <div className="text-sm font-semibold text-gray-800">카테고리</div>
-                      <div className="text-xs text-gray-500">중복 선택할 수 있어요</div>
+                      <div className="text-sm font-semibold text-gray-800">
+                        카테고리
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        중복 선택할 수 있어요
+                      </div>
                     </div>
 
                     <div className="max-h-72 overflow-y-auto pr-1">
@@ -425,6 +471,7 @@ const CodingTestPage = () => {
                         category,
                         sort,
                         status: e.target.value,
+                        ...keepLang, // ✅ lang 유지
                       })
                     }
                     className="h-9 border border-gray-300 rounded-md px-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-300 w-[120px]"
@@ -435,6 +482,44 @@ const CodingTestPage = () => {
                   </select>
                 </div>
               )}
+            </div>
+          </div>
+          {/* ✅ 선택된 카테고리 칩 (적용하기 이후에만 노출) */}
+          <div
+            className={`transition-all duration-300 overflow-hidden ${
+              committedCats.length
+                ? "max-h-24 mt-1 opacity-100"
+                : "max-h-0 opacity-0"
+            }`}
+          >
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-green-100 bg-green-50/50 px-3 py-2">
+              <button
+                type="button"
+                onClick={clearCommittedCats}
+                className="flex items-center gap-1 text-xs text-green-600 hover:text-green-700"
+                title="선택 초기화"
+              >
+                <RefreshCw className="w-3 h-3" />
+                초기화
+              </button>
+
+              {committedCats.map((c) => (
+                <span
+                  key={c}
+                  className="inline-flex items-center rounded-full border border-green-200 bg-white text-green-700 px-2.5 py-1 text-xs shadow-sm"
+                >
+                  {c}
+                  <button
+                    type="button"
+                    onClick={() => removeCommittedCat(c)}
+                    className="ml-1 hover:text-green-900"
+                    aria-label={`${c} 제거`}
+                    title="제거"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
             </div>
           </div>
 
@@ -526,6 +611,7 @@ const CodingTestPage = () => {
                     status,
                     category,
                     sort,
+                    ...keepLang, // ✅ lang 유지
                   });
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }}

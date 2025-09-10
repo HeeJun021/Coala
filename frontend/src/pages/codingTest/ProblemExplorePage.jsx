@@ -1,45 +1,124 @@
-import React, { useState } from "react";
+// src/pages/codingtest/ProblemExplorePage.jsx
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import CodingTestSidebar from "../../Layout/CodingTestSidebar";
+import {
+  getCodingTestList,
+  setPreferredCodingLang,
+  getMyPreferredCodingLang,
+} from "../../api/codingTestApi";
+import { useAuth } from "../../context/AuthContext";
 
-const LANG_OPTIONS = ["Python", "Java", "JavaScript"];
-const LEVELS = [1, 2, 3, 4, 5];
+// ✅ 아이콘 추가 (PracticeQuiz 톤 앤 매너)
+import {
+  Search as SearchIcon,
+  Tags,
+  X as XIcon,
+  RefreshCw,
+} from "lucide-react";
 
-// 임시 카테고리 (UI용 목데이터)
-const CATEGORIES = [
-  "카테고리 1",
-  "카테고리 2",
-  "카테고리 3",
-  "카테고리 4",
-  "카테고리 5",
-  "카테고리 6",
-  "카테고리 7",
-  "카테고리 8",
-  "카테고리 9",
-  "카테고리 1",
-  "카테고리 2",
-  "카테고리 3",
-  "카테고리 4",
-  "카테고리 5",
-  "카테고리 6",
-  "카테고리 7",
-  "카테고리 8",
-  "카테고리 9",
+const LANG_OPTIONS = [
+  { value: "python", label: "Python" },
+  { value: "java", label: "Java" },
+  { value: "javascript", label: "JavaScript" },
 ];
 
-const ProblemExplorePage = () => {
-  const [lang, setLang] = useState(LANG_OPTIONS[0]);
-  const [level, setLevel] = useState(null);
-  const [selectedCats, setSelectedCats] = useState(new Set());
+const LEVELS = [1, 2, 3, 4, 5];
 
+export default function ProblemExplorePage() {
+  const navigate = useNavigate();
+
+  const { user } = useAuth(); // ✅ 유저 정보
+
+  // value 기반으로 관리 (기본값: python)
+  const [lang, setLang] = useState(LANG_OPTIONS[0].value);
+
+  const [level, setLevel] = useState(null);
+
+  // 서버 카테고리
+  const [categories, setCategories] = useState([]);
+  const [loadingCats, setLoadingCats] = useState(true);
+  const [catErr, setCatErr] = useState("");
+
+  // 선택 상태
+  const [selectedCats, setSelectedCats] = useState(new Set());
   const toggleCat = (name) => {
     const next = new Set(selectedCats);
     next.has(name) ? next.delete(name) : next.add(name);
     setSelectedCats(next);
   };
 
+  // 압축 UI 상태 (검색/더보기 제거 후 전체 사용)
+  const filteredCats = categories;
+
+  // 카테고리 로딩
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setLoadingCats(true);
+        setCatErr("");
+        const res = await getCodingTestList({
+          page: 1,
+          sort: "desc",
+          // lang: lang.toLowerCase(), // 필요 시 언어별 카테고리만
+        });
+        const list =
+          res?.category_counts?.map((c) => c.category).filter(Boolean) ?? [];
+        if (mounted) setCategories(list);
+      } catch (e) {
+        if (mounted) setCatErr("카테고리를 불러오지 못했습니다.");
+        console.error(e);
+      } finally {
+        if (mounted) setLoadingCats(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // ✅ 선호 언어 불러와서 초기값으로 세팅
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        if (!user?.user_id) return; // 비로그인은 스킵
+        const pref = await getMyPreferredCodingLang(); // "python" | "java" | "javascript" | ""
+        if (mounted && pref) setLang(pref);
+      } catch (e) {
+        console.warn("선호 언어 조회 실패:", e);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [user?.user_id]);
+
   const onSearch = () => {
-    // TODO: API 연동 시 여기서 lang/level/selectedCats 사용
-    console.log({ lang, level, categories: Array.from(selectedCats) });
+    const langToParam = lang;
+    const catParam = Array.from(selectedCats).join(",");
+
+    const params = new URLSearchParams();
+    params.set("page", "1");
+    if (level) params.set("level", String(level));
+    if (catParam) params.set("category", catParam);
+    if (langToParam) params.set("lang", langToParam);
+
+    navigate(`/codingtest?${params.toString()}`);
+  };
+
+  const handlePreferredLangChange = async (e) => {
+    const next = e.target.value; // "python" | "java" | "javascript"
+    setLang(next); // 즉시 UI 반영
+
+    // 로그인 사용자면 DB에 저장
+    if (!user?.user_id || !next) return;
+    try {
+      await setPreferredCodingLang(next);
+    } catch (err) {
+      console.error("선호 언어 저장 실패:", err);
+    }
   };
 
   return (
@@ -49,25 +128,33 @@ const ProblemExplorePage = () => {
 
       {/* 본문 */}
       <div className="ml-[100px] p-6 bg-[#F9FAFB] min-h-screen">
-        <div className="max-w-5xl mx-auto bg-white rounded-xl border border-gray-200 shadow-lg mt-6 px-8 py-10">
+        <div className="max-w-5xl mx-auto pt-8 mt-8 bg-white shadow-xl rounded-2xl border border-gray-300 p-7 relative">
           {/* 헤더 */}
           <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-extrabold text-gray-900">문제 탐색</h1>
+            <h1 className="text-3xl font-extrabold text-gray-900 flex items-center gap-2 tracking-wide">
+              문제 탐색
+            </h1>
           </div>
+          <p className="text-gray-500 text-sm mt-6 text-left">
+            원하는 <span className="font-medium text-gray-700">문제 유형</span>
+            과 <span className="font-medium text-gray-700">난이도</span>를
+            선택해 자유롭게 탐색해보세요!
+          </p>
 
           {/* 언어 선택 */}
           <div className="mt-8">
-            <label className="block text-gray-700 font-medium mb-2">
+            <label className="text-gray-700 font-medium mb-2 flex items-center gap-2">
               언어 선택
             </label>
             <select
               value={lang}
-              onChange={(e) => setLang(e.target.value)}
+              onChange={handlePreferredLangChange}
               className="w-40 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-300 bg-white"
+              title="코딩테스트 기본 언어 설정"
             >
-              {LANG_OPTIONS.map((l) => (
-                <option key={l} value={l}>
-                  {l}
+              {LANG_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
                 </option>
               ))}
             </select>
@@ -75,7 +162,7 @@ const ProblemExplorePage = () => {
 
           {/* 난이도 선택 */}
           <div className="mt-8">
-            <p className="text-gray-700 font-medium mb-3">
+            <p className="text-gray-700 font-medium mb-3 flex items-center gap-2">
               난이도를 선택하세요.
             </p>
             <div className="flex flex-wrap gap-3">
@@ -102,29 +189,89 @@ const ProblemExplorePage = () => {
 
           {/* 카테고리 선택 */}
           <div className="mt-8">
-            <p className="text-gray-700 font-medium mb-3">
-              문제 유형을 선택하세요.
-            </p>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {CATEGORIES.map((name, idx) => {
-                const active = selectedCats.has(`${name}-${idx}`);
-                return (
-                  <button
-                    key={`${name}-${idx}`}
-                    type="button"
-                    onClick={() => toggleCat(`${name}-${idx}`)}
-                    className={[
-                      "px-4 py-2 rounded-md text-sm font-medium border transition-colors text-left",
-                      active
-                        ? "bg-green-100 text-green-800 border-green-300"
-                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100",
-                    ].join(" ")}
-                  >
-                    {name}
-                  </button>
-                );
-              })}
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-gray-700 font-medium flex items-center gap-2">
+                <Tags className="w-5 h-5 text-green-600" />
+                문제 유형을 선택하세요.
+              </p>
+
+              {/* 선택 개수 뱃지 (기능 변경 없음, 시각만) */}
+              <span className="text-xs text-gray-500">
+                선택됨{" "}
+                <span className="font-semibold text-gray-700">
+                  {selectedCats.size}
+                </span>
+                개
+              </span>
             </div>
+
+            {loadingCats ? (
+              <div className="text-sm text-gray-500">
+                카테고리를 불러오는 중…
+              </div>
+            ) : catErr ? (
+              <div className="text-sm text-rose-600">{catErr}</div>
+            ) : (
+              <>
+                {/* 자동 채움 그리드 */}
+                <div className="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(140px,1fr))]">
+                  {filteredCats.map((name) => {
+                    const active = selectedCats.has(name);
+                    return (
+                      <button
+                        key={name}
+                        type="button"
+                        onClick={() => toggleCat(name)}
+                        className={[
+                          "w-full truncate px-3 py-1.5 rounded-md text-xs font-medium border transition-colors text-left flex items-center gap-1.5",
+                          active
+                            ? "bg-green-100 text-green-800 border-green-300"
+                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100",
+                        ].join(" ")}
+                        title={name}
+                      >
+                        {name}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* ✅ 선택된 카테고리 칩 (선택 시에만 노출) */}
+                {selectedCats.size > 0 && (
+                  <div className="transition-all duration-300 overflow-hidden mt-4">
+                    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-green-100 bg-green-50/50 px-3 py-2">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCats(new Set())}
+                        className="flex items-center gap-1 text-xs text-green-600 hover:text-green-700"
+                        title="선택 초기화"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        초기화
+                      </button>
+
+                      {Array.from(selectedCats).map((c) => (
+                        <span
+                          key={c}
+                          className="inline-flex items-center rounded-full border border-green-200 bg-white text-green-700 px-2.5 py-1 text-xs shadow-sm"
+                        >
+                          {c}
+                          <button
+                            type="button"
+                            onClick={() => toggleCat(c)}
+                            className="ml-1 hover:text-green-900"
+                            aria-label={`${c} 제거`}
+                            title="제거"
+                          >
+                            <XIcon className="w-3.5 h-3.5" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </div>
 
           {/* 검색 버튼 */}
@@ -132,8 +279,9 @@ const ProblemExplorePage = () => {
             <button
               type="button"
               onClick={onSearch}
-              className="px-5 py-2 rounded-md bg-green-600 text-white font-semibold hover:bg-green-700 shadow"
+              className="px-5 py-2 rounded-md bg-green-600 text-white font-semibold hover:bg-green-700 shadow inline-flex items-center gap-2"
             >
+              <SearchIcon className="w-4 h-4" />
               검색
             </button>
           </div>
@@ -141,6 +289,4 @@ const ProblemExplorePage = () => {
       </div>
     </div>
   );
-};
-
-export default ProblemExplorePage;
+}
