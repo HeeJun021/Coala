@@ -73,6 +73,8 @@ from app.routers import (
     notion,
     notion_export,
     notion_templates,
+    notion_shared,
+    notion_publish
 )
 
 from app.schemas.user import UserUpdateSchema
@@ -174,8 +176,10 @@ app.include_router(templates.router)
 
 # 노션
 app.include_router(notion.router)
-app.include_router(notion_export.router)
-app.include_router(notion_templates.router)
+app.include_router(notion_templates.router)       # 인제스트/목록/상세
+app.include_router(notion_export.router)          # 내보내기
+app.include_router(notion_shared.router)          # 공유
+app.include_router(notion_publish.router)
 
 # 기본 라우트
 @app.get("/", tags=["Root"])

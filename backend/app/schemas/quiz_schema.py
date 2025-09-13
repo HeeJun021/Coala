@@ -63,7 +63,7 @@ class IncorrectQuestionResponse(QuestionResponse):
     incorrect_attempts: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True  # ✅ v2에서는 이걸 사용
         
 class CreateQuizFromQuestionsRequest(BaseModel):
     title: str
