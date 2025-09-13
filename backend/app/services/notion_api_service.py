@@ -64,14 +64,13 @@ EMPTY_PAYLOAD_TYPES = {"divider", "table_of_contents", "breadcrumb"}
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _placeholder_image_url() -> str:
-    # 환경변수로 커스텀 가능 (CDN 등에 올린 파일 권장)
-    # 없으면 placehold.co 사용 (안정적으로 이미지 반환)
-    url = os.getenv("PLACEHOLDER_IMAGE_URL")
+    # NOTION_PLACEHOLDER_IMAGE 우선, 없으면 PLACEHOLDER_IMAGE_URL, 둘 다 없으면 기본값
+    url = os.getenv("NOTION_PLACEHOLDER_IMAGE") or os.getenv("PLACEHOLDER_IMAGE_URL")
     if url:
         return url
-    # 한글 텍스트가 들어간 기본 플레이스홀더
     text = quote("이미지를 넣어주세요")
     return f"https://placehold.co/1200x800?text={text}"
+
 
 def _is_public_url(u: str) -> bool:
     try:
@@ -243,24 +242,32 @@ def _transform_block_for_create(
     ):
         _fix_rich_text_in(typ)
 
-    # leaf(미디어/임베드) 타입: children 금지
     if typ == "image":
         payload_in = b.get("image", {}) or {}
         norm = _normalize_media_payload("image", payload_in)
+
+        # 정상적인 이미지가 없는 경우 → placeholder 강제 삽입
         if norm is None:
-            # 이 케이스는 이제 거의 없음(placeholder 반환되므로)
-            b["type"] = "paragraph"
-            b.pop("image", None)
-            b["paragraph"] = {"rich_text": [{"type": "text", "text": {"content": "[이미지 제거됨]"}}]}
+            placeholder_url = os.getenv("NOTION_PLACEHOLDER_IMAGE")
+            if placeholder_url:
+                b["type"] = "image"
+                b["image"] = {"type": "external", "external": {"url": placeholder_url}}
+                b.pop("children", None)  # children 금지
+                return b
+            else:
+                # fallback: 빈 문단
+                b["type"] = "paragraph"
+                b.pop("image", None)
+                b["paragraph"] = {
+                    "rich_text": [
+                        {"type": "text", "text": {"content": "[이미지 자리 비워짐]"}}
+                    ]
+                }
         else:
             b["image"] = norm
-            # 캡션에 안내 문구(원래 캡션 유지하고 없으면 추가)
-            caption = (payload_in.get("caption") or [])
-            if not caption:
-                caption = [{"type": "text", "text": {"content": "이미지를 넣어주세요"}}]
-            b["image"]["caption"] = caption
-            b.pop("children", None)
+            b.pop("children", None)  # children 금지
             return b
+
 
 
     elif typ in ("video", "file", "pdf", "audio", "bookmark", "embed"):
