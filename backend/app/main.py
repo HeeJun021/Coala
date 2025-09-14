@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()  # 기본 위치 .env 로드 (필요하면 load_dotenv(dotenv_path="/path/.env"))
+
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
