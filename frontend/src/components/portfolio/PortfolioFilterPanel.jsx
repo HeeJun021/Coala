@@ -1,33 +1,42 @@
+// frontend/src/components/portfolio/PortfolioFilterPanel.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { SlidersHorizontal, UserSquare2, ChevronDown, RefreshCw } from "lucide-react";
+import { SlidersHorizontal, UserSquare2, ChevronDown, Crown, Users, PlayCircle, Square, CheckCircle2 } from "lucide-react";
+import { getProjectMembers } from "../../api/projectApi";
+import { getCurrentUser } from "../../api/authApi";
 
 /**
- * 포트폴리오 필터 패널
- * - 기간/태그 제거
- * - 프로젝트 선택: 코딩테스트 카테고리 스타일(팝오버)
- * - 역할 선택(프론트엔드/백엔드/풀스택)
- * - AI 메모/지시사항 입력란 (filters.ai_notes 로 상위 전달)
+ * 포트폴리오 필터 패널 (단일 프로젝트 선택 + 내 역할 자동 표시)
+ * - 프로젝트: 단일 선택, 항목 클릭 시 즉시 반영 & 팝오버 닫힘
+ * - 역할: 선택 UI 제거 → 선택한 프로젝트에서 '내 역할'을 자동 조회하여 칩으로 표시
+ * - role_preset: 내 역할에 따라 자동 결정(풀스택 > 프론트엔드 > 백엔드 > "")
  *
- * Props:
- *  - onFiltersChange?: (filters) => void
- *  - projects?: { id?: number; project_id?: number; name?: string; project_name?: string }[]
+ * filters 스키마(기존 유지):
+ *  {
+ *    include_projects: true,
+ *    include_quiz: true,
+ *    include_codingtest: true,
+ *    include_tech: true,
+ *    project_ids: [<선택된ID>] 또는 [],
+ *    role_preset: "frontend" | "backend" | "fullstack" | "",
+ *    ai_notes: string
+ *  }
  */
-export default function PortfolioFilterPanel({ onFiltersChange, projects = [] }) {
-  // 섹션 토글(필요 시 확장)
+export default function PortfolioFilterPanel({ onFiltersChange, projects = [], showAINotes = true }) {
+  // 섹션 on/off (기존 값 유지)
   const [includeProjects] = useState(true);
   const [includeQuiz] = useState(true);
   const [includeCodingtest] = useState(true);
   const [includeTech] = useState(true);
 
-  // 프로젝트 선택 — 코딩테스트 ‘카테고리’ 패턴
+  // 프로젝트 단일 선택
   const [projOpen, setProjOpen] = useState(false);
   const projPanelRef = useRef(null);
-  const [selectedProjectIds, setSelectedProjectIds] = useState([]);
-  const [committedProjectIds, setCommittedProjectIds] = useState([]);
+  const [selectedProjectId, setSelectedProjectId] = useState(null);
 
-  // 역할 선택 (프론트엔드/백엔드/풀스택)
-  const ROLE_OPTIONS = ["프론트엔드", "백엔드", "풀스택"];
-  const [rolePreset, setRolePreset] = useState("프론트엔드");
+  // 내 역할(배열) & role_preset(자동)
+  const [myRoles, setMyRoles] = useState([]);
+  const [isLeader, setIsLeader] = useState(false);
+  const [rolePreset, setRolePreset] = useState(""); 
 
   // AI 메모/지시사항
   const [aiNotes, setAiNotes] = useState("");
@@ -42,52 +51,39 @@ export default function PortfolioFilterPanel({ onFiltersChange, projects = [] })
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, [projOpen]);
 
-  // 안전한 id/name 추출기 (API 키 변동 대비)
+  // 안전한 id/name 추출
   const getPid = (p) => (p?.id ?? p?.project_id);
   const getPname = (p) => (p?.name ?? p?.project_name ?? "이름 없음");
+  const getPdesc = (p) => String(p?.description ?? p?.desc ?? p?.project_desc ?? "").trim();
 
-  const toggleProject = (rawPid) => {
-    const pid = rawPid ?? null;
-    if (pid === null || pid === undefined) return;
-    setSelectedProjectIds((prev) =>
-      prev.includes(pid) ? prev.filter((id) => id !== pid) : [...prev, pid]
-    );
-  };
+  const validProjects = useMemo(() => projects.filter((p) => getPid(p) != null), [projects]);
+  const activeProjects = useMemo(() => validProjects.filter((p) => !Boolean(p?.is_closed)), [validProjects]);
+  const closedProjects = useMemo(() => validProjects.filter((p) =>  Boolean(p?.is_closed)), [validProjects]);
 
-  const resetProjects = () => setSelectedProjectIds([]);
-
-  const applyProjects = () => {
-    // undefined/null 제거 + 중복 제거
-    const deduped = Array.from(
-      new Set(selectedProjectIds.filter((x) => x !== null && x !== undefined))
-    );
-    setCommittedProjectIds(deduped);
-    setProjOpen(false);
-  };
-
-  // 상위로 전달할 filters
+  // 필터 산출 (role_preset은 자동 계산된 값 사용)
   const filters = useMemo(() => {
     return {
-      // 섹션 토글
       include_projects: includeProjects,
       include_quiz: includeQuiz,
       include_codingtest: includeCodingtest,
       include_tech: includeTech,
-      // 프로젝트 (확정값만)
-      project_ids: committedProjectIds,
-      // 역할(레이아웃/톤 대신)
-      role_preset: rolePreset, // ← 백엔드에서 이 키를 사용하세요
-      // AI 메모/지시사항
-      ai_notes: aiNotes?.trim() || "",
+      project_ids: selectedProjectId ? [selectedProjectId] : [],
+      role_preset: rolePreset,
+      ai_notes: showAINotes ? (aiNotes?.trim() || "") : "",
+      my_roles: Array.isArray(myRoles) ? myRoles : [],
+      is_leader: !!isLeader,                     
     };
   }, [
     includeProjects,
     includeQuiz,
     includeCodingtest,
     includeTech,
-    committedProjectIds,
+    selectedProjectId,
     rolePreset,
     aiNotes,
+    showAINotes,
+    myRoles,
+    isLeader,
   ]);
 
   // 상위로 변경 통지
@@ -95,11 +91,80 @@ export default function PortfolioFilterPanel({ onFiltersChange, projects = [] })
     onFiltersChange?.(filters);
   }, [filters, onFiltersChange]);
 
+  // 항목 클릭 시 즉시 선택 & 닫힘
+  const handlePickProject = (pid) => {
+    if (pid === null || pid === undefined) return;
+    setSelectedProjectId(pid);
+    setProjOpen(false);
+  };
+
+  // 현재 선택 프로젝트명
+  const selectedProjectName =
+    projects.length && selectedProjectId
+      ? getPname(projects.find((p) => getPid(p) === selectedProjectId))
+      : "";
+
+      const selectedProjectDesc =
+   projects.length && selectedProjectId
+     ? getPdesc(projects.find((p) => getPid(p) === selectedProjectId))
+     : "";
+
+
+    useEffect(() => {
+    const loadMyRole = async () => {
+      if (!selectedProjectId) {
+        setMyRoles([]);
+        setRolePreset("");
+       setIsLeader(false);
+        return;
+      }
+      try {
+        let myId = null;
+        try {
+          const me = await getCurrentUser(); // { user_id } 가정
+          myId = Number(me?.user_id ?? me?.id ?? null);
+        } catch {
+          const myIdStr = localStorage.getItem("userId");
+          myId = myIdStr ? Number(myIdStr) : null;
+        }
+
+        const members = await getProjectMembers(selectedProjectId);
+        const meMember = members.find((m) => Number(m?.user_id) === Number(myId));
+
+        const raw = meMember?.roles;
+        let rolesArr =
+          Array.isArray(raw)
+            ? raw
+            : typeof raw === "string"
+              ? raw.split(",").map((s) => s.trim()).filter(Boolean)
+              : [];
+
+       // 팀장 여부 저장
+       setIsLeader(meMember?.is_leader === true);
+
+        setMyRoles(rolesArr);
+
+        const has = (re) => rolesArr.some((r) => re.test(r));
+        if (has(/풀스택|full\s*stack/i)) setRolePreset("fullstack");
+        else if (has(/프론트|front\s*end/i)) setRolePreset("frontend");
+        else if (has(/백엔드|back\s*end/i)) setRolePreset("backend");
+        else setRolePreset("");
+
+      } catch (e) {
+        console.error("내 역할 조회 실패", e);
+        setMyRoles([]);
+        setRolePreset("");
+       setIsLeader(false);
+      }
+    };
+
+    loadMyRole();
+  }, [selectedProjectId]);
+
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-gray-900">포트폴리오 필터</h2>
-        <div className="text-sm text-gray-500">* 연결이 완료되어 필터 사용 가능</div>
+      <div className="flex items-center justify-between">
       </div>
 
       {/* 기본 필터 */}
@@ -110,181 +175,226 @@ export default function PortfolioFilterPanel({ onFiltersChange, projects = [] })
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* 프로젝트 선택 (축소된 드롭다운) */}
+          {/* ▶ 프로젝트 단일 선택 */}
           <div className="md:col-span-1 flex flex-col gap-1 relative" ref={projPanelRef}>
             <label className="block text-sm text-gray-600 mb-1">프로젝트</label>
-            <button
-              type="button"
-              onClick={() => {
-                // 팝오버 열 때 확정 상태로 초기화 + 이상치 제거
-                setSelectedProjectIds(
-                  committedProjectIds.filter((x) => x !== null && x !== undefined)
-                );
-                setProjOpen((v) => !v);
-              }}
-              className="h-9 inline-flex items-center gap-2 border border-gray-300 rounded-md px-2.5 text-sm bg-white hover:border-green-400 focus:outline-none focus:ring-2 focus:ring-green-300 w-[220px] justify-between"
-              title="프로젝트 다중 선택"
-            >
-              <span className="truncate text-left text-[13px]">
-                {committedProjectIds.length
-                  ? `${committedProjectIds.length}개 선택됨`
-                  : "선택하기"}
-              </span>
-              <ChevronDown className="w-4 h-4 text-gray-500 shrink-0" />
-            </button>
 
-            {projOpen && (
-              <div className="absolute left-0 top-full mt-2 z-50 w-[22rem] max-w-[calc(100vw-2rem)] rounded-xl border border-gray-200 bg-white shadow-2xl p-3">
-                <div className="mb-2">
-                  <div className="text-sm font-semibold text-gray-800">프로젝트</div>
-                  <div className="text-xs text-gray-500">중복 선택 가능</div>
-                </div>
+<div className="relative" ref={projPanelRef}>
+  {/* 버튼 + 미리보기 설명 (가로 배치) */}
+  <div className="flex items-center gap-3">
+    <button
+      type="button"
+      onClick={() => setProjOpen((v) => !v)}
+      className="h-9 inline-flex items-center gap-2 border border-gray-300 rounded-md px-2.5 text-sm bg-white hover:border-green-400 focus:outline-none focus:ring-2 focus:ring-green-300 w-[220px] justify-between"
+      title="프로젝트 선택"
+    >
+      <span className="truncate text-left text-[13px]">
+        {selectedProjectId ? (selectedProjectName || "(이름 없음)") : " 프로젝트 선택"}
+      </span>
+      <ChevronDown className="w-4 h-4 text-gray-500 shrink-0" />
+    </button>
 
-                <div className="max-h-56 overflow-y-auto pr-1">
-                  <div className="flex flex-wrap gap-2">
-                    {projects.length === 0 ? (
-                      <span className="text-sm text-gray-500">프로젝트가 없습니다.</span>
-                    ) : (
-                      projects.map((p) => {
-                        const pid = getPid(p);
-                        const pname = getPname(p);
-                        const valid = pid !== null && pid !== undefined;
-                        const active = valid && selectedProjectIds.includes(pid);
-                        return (
-                          <button
-                            key={valid ? pid : `invalid-${pname}`}
-                            type="button"
-                            onClick={() => valid && toggleProject(pid)}
-                            className={[
-                              "inline-flex items-center rounded-full border px-2 py-0.5 text-[12px] transition-colors",
-                              active
-                                ? "border-green-300 bg-green-50 text-green-700"
-                                : "border-gray-200 bg-gray-50 text-gray-600 hover:border-green-300",
-                              !valid && "opacity-50 cursor-not-allowed",
-                            ].join(" ")}
-                            title={pname}
-                          >
-                            {pname}
-                          </button>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
+    {/* ▶ 선택된 프로젝트의 설명: 아주 은은하게, 한 줄 말줄임 */}
+    {selectedProjectId && selectedProjectDesc && (
+      <span
+   className="hidden md:block text-[12px] text-gray-600/90 italic"
+   title={selectedProjectDesc}
+ >
+        {selectedProjectDesc}
+      </span>
+    )}
+  </div>
 
-                <div className="mt-3 flex items-center justify-between">
+  {projOpen && (
+  <div className="absolute left-0 top-full mt-2 z-50 w-[28rem] max-w-[calc(100vw-2rem)] rounded-2xl border border-gray-200 bg-white shadow-xl ring-1 ring-black/5 p-3 backdrop-blur-[2px]">
+    {/* 헤더 */}
+    <div className="mb-2 flex items-center justify-between">
+      <div className="text-sm font-semibold text-gray-800">프로젝트 선택</div>
+      <div className="text-[11px] text-gray-500">
+        진행중 {activeProjects.length} · 종료됨 {closedProjects.length}
+      </div>
+    </div>
+
+    <div className="max-h-72 overflow-y-auto pr-1 space-y-3">
+      {/* 진행중 섹션 */}
+      <div>
+        <div className="flex items-center gap-1.5 mb-1.5">
+          <PlayCircle className="w-3.5 h-3.5 text-green-600" />
+          <span className="text-xs font-semibold text-gray-700">진행중</span>
+        </div>
+
+        {activeProjects.length === 0 ? (
+          <div className="px-2 py-2 text-xs text-gray-500">진행중 프로젝트가 없습니다.</div>
+        ) : (
+          <ul className="space-y-1">
+            {activeProjects.map((p) => {
+              const pid = getPid(p);
+              const name = getPname(p);
+              const desc = getPdesc(p);
+              const selected = selectedProjectId === pid;
+              return (
+                <li key={pid}>
                   <button
                     type="button"
-                    onClick={resetProjects}
-                    className="text-xs text-gray-500 hover:text-gray-700 underline"
+                    onClick={() => handlePickProject(pid)}
+                    className={[
+                      "w-full text-left px-3 py-2 rounded-lg border transition-colors",
+                      selected
+                        ? "border-green-300 bg-green-50/60"
+                        : "border-transparent hover:bg-gray-50"
+                    ].join(" ")}
+                    title={name}
                   >
-                    선택 초기화
+                    <div className="flex items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[13px] font-medium text-gray-900 truncate">{name}</span>
+                          {selected && <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />}
+                        </div>
+                        {desc && (
+                          <div className="text-[11px] text-gray-500/90 italic truncate mt-0.5" title={desc}>
+                            {desc}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
+      {/* 종료됨 섹션 */}
+      <div className="pt-3 border-t border-gray-100/80">
+        <div className="flex items-center gap-1.5 mb-1.5">
+          <Square className="w-3.5 h-3.5 text-gray-500" />
+          <span className="text-xs font-semibold text-gray-700">종료됨</span>
+        </div>
+
+        {closedProjects.length === 0 ? (
+          <div className="px-2 py-2 text-xs text-gray-500">종료된 프로젝트가 없습니다.</div>
+        ) : (
+          <ul className="space-y-1">
+            {closedProjects.map((p) => {
+              const pid = getPid(p);
+              const name = getPname(p);
+              const desc = getPdesc(p);
+              const selected = selectedProjectId === pid;
+              return (
+                <li key={pid}>
                   <button
                     type="button"
-                    onClick={applyProjects}
-                    className="h-8 rounded-md bg-green-600 px-3 text-xs text-white hover:bg-green-700"
+                    onClick={() => handlePickProject(pid)}
+                    className={[
+                      "w-full text-left px-3 py-2 rounded-lg border transition-colors",
+                      selected
+                        ? "border-green-300 bg-green-50"
+                        : "border-transparent hover:bg-gray-50"
+                    ].join(" ")}
+                    title={name}
                   >
-                    적용하기
+                    <div className="flex items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[13px] font-medium text-gray-900 truncate">{name}</span>
+                          {selected && <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />}
+                        </div>
+                        {desc && (
+                          <div className="text-[11px] text-gray-500/90 italic truncate mt-0.5" title={desc}>
+                            {desc}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </button>
-                </div>
-              </div>
-            )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+    </div>
+  </div>
+)}
+</div>
 
-            {/* 확정된 프로젝트 칩 */}
-            <div
-              className={`transition-all duration-300 overflow-hidden ${
-                committedProjectIds.length ? "max-h-20 mt-2 opacity-100" : "max-h-0 opacity-0"
-              }`}
-            >
-              <div className="flex flex-wrap items-center gap-2 rounded-lg border border-green-100 bg-green-50/50 px-2 py-1.5">
-                <button
-                  type="button"
-                  onClick={() => setCommittedProjectIds([])}
-                  className="flex items-center gap-1 text-[11px] text-green-600 hover:text-green-700"
-                  title="선택 초기화"
-                >
-                  <RefreshCw className="w-3 h-3" />
-                  초기화
-                </button>
+<p className="mt-1 text-xs text-gray-500">
+  프로젝트는 하나만 선택할 수 있어요.
+</p>
 
-                {committedProjectIds.map((pid) => {
-                  const name =
-                    getPname(projects.find((p) => getPid(p) === pid)) || pid;
-                  return (
-                    <span
-                      key={pid}
-                      className="inline-flex items-center rounded-full border border-green-200 bg-white text-green-700 px-2 py-0.5 text-[11px] shadow-sm"
-                    >
-                      {name}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setCommittedProjectIds((prev) =>
-                            prev.filter((id) => id !== pid)
-                          )
-                        }
-                        className="ml-1 hover:text-green-900"
-                        aria-label={`${name} 제거`}
-                        title="제거"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
           </div>
 
-          {/* 오른쪽 컬럼은 비움 */}
+          {/* 오른쪽 컬럼은 기존처럼 비워둠 */}
           <div className="md:col-span-2" />
         </div>
       </section>
 
-      {/* 역할 선택 */}
-      <section className="mb-6">
-        <div className="flex items-center gap-2 mb-3">
-          <UserSquare2 size={18} />
-          <h3 className="font-semibold">역할 선택</h3>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          {ROLE_OPTIONS.map((opt) => (
-            <button
-              key={opt}
-              type="button"
-              onClick={() => setRolePreset(opt)}
-              className={`px-3 py-2 rounded-xl border hover:bg-gray-50 ${
-                rolePreset === opt
-                  ? "border-green-600 text-green-700"
-                  : "border-gray-300 text-gray-700"
-              }`}
-            >
-              {opt}
-            </button>
-          ))}
-        </div>
-        <p className="mt-2 text-xs text-gray-500">
-          선택한 역할에 맞춰 포트폴리오 텍스트의 강조 포인트가 달라집니다. (예: 프론트엔드는 UI/상호작용, 백엔드는 성능/확장성, 풀스택은 전체 흐름)
-        </p>
-      </section>
+      {/* ✅ 역할 표시(자동) : 팀장/팀원 배지 + 역할 배지 */}
+<section className="mb-6">
+  <div className="flex items-center gap-2 mb-3">
+    <UserSquare2 size={18} />
+    <h3 className="font-semibold">내 역할</h3>
+  </div>
 
-      {/* AI 메모/지시사항 입력 */}
-      <section>
-        <label className="block text-sm font-semibold text-gray-800 mb-2">
-          AI에게 전달할 메모/지시사항
-        </label>
-        <textarea
-          value={aiNotes}
-          onChange={(e) => setAiNotes(e.target.value)}
-          rows={5}
-          placeholder={
-            "예:\n- 프론트엔드 중심으로 프로젝트 역할을 강조해주세요.\n- 숫자 지표(트래픽, 전환율)를 문장마다 포함해주세요.\n- 최근 해커톤 우승 프로젝트는 맨 위에 배치해주세요."
-          }
-          className="w-full border rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-200 resize-y"
-        />
-        <div className="mt-1 text-xs text-gray-400">{aiNotes.length}자 입력됨</div>
-      </section>
+  {/* 카드형 표시 */}
+  <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4">
+    {!selectedProjectId ? (
+      <p className="text-sm text-gray-500">프로젝트를 먼저 선택하세요.</p>
+    ) : (
+      <div className="flex flex-col gap-3">
+        {/* 상단: 팀장/팀원 상태 배지 */}
+        <div className="flex items-center gap-2">
+          {isLeader ? (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-50 text-yellow-800 border border-yellow-200">
+              <Crown className="w-3.5 h-3.5" />
+              팀장
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-50 text-slate-700 border border-slate-200">
+              <Users className="w-3.5 h-3.5" />
+              팀원
+            </span>
+          )}
+        </div>
+
+        {/* 하단: 역할 목록(뱃지) */}
+        <div className="flex flex-wrap items-center gap-2">
+          {myRoles.length > 0 ? (
+            myRoles.map((role) => (
+              <span
+                key={role}
+                className="px-2.5 py-1 rounded-full text-xs border border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100"
+              >
+                {role}
+              </span>
+            ))
+          ) : (
+            <span className="text-sm text-gray-500">역할 정보가 없습니다.</span>
+          )}
+        </div>
+      </div>
+    )}
+  </div>
+</section>
+
+    {/* ✅ Export 페이지에서만 AI 메모를 받기 위해 조건부 렌더 */}
+  {showAINotes && (
+    <section>
+      <label className="block text-sm font-semibold text-gray-800 mb-2">
+        AI에게 전달할 메모/지시사항
+      </label>
+      <textarea
+        value={aiNotes}
+        onChange={(e) => setAiNotes(e.target.value)}
+        rows={5}
+        placeholder={"예:\n- 프론트엔드 중심으로 프로젝트 역할을 강조해주세요.\n- 주요 기능과 내가 맡은 부분을 간단히 정리해주세요.\n- 협업 과정과 사용한 기술 스택을 자연스럽게 녹여주세요."}
+        className="w-full border rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-200 resize-y"
+      />
+      <div className="mt-1 text-xs text-gray-400">{aiNotes.length}자 입력됨</div>
+    </section>
+  )}
     </div>
   );
 }

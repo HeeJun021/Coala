@@ -357,7 +357,7 @@ const Navbar = () => {
                     let link = "";
                     if (child === "로그인 정보") link = "/mypage/modify";
                     if (child === "활동 내역") link = "/mypage/quiz-history";
-                    if (child === "포트폴리오") link = "/mypage/community";
+                    if (child === "포트폴리오") link = "/mypage/portfolio";
                     if (link) {
                       return (
                         <Link

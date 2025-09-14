@@ -1,7 +1,7 @@
 // src/components/portfolio/NotionTargetPageSelectModal.jsx
 import React, { useEffect, useState } from "react";
 import { listSharedPages } from "../../api/notionApi";
-import { Search, RefreshCw, X, ExternalLink } from "lucide-react";
+import { Search, RefreshCw, X, ExternalLink, MapPin } from "lucide-react";
 
 export default function NotionTargetPageSelectModal({ open, onClose, onSelect }) {
   const [q, setQ] = useState("");
@@ -29,12 +29,22 @@ export default function NotionTargetPageSelectModal({ open, onClose, onSelect })
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">붙여넣을 대상 페이지 선택</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-700" aria-label="닫기">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+       <div className="flex items-center justify-between mb-4">
+  {/* 좌측 그룹: 아이콘 + 제목 */}
+  <div className="flex items-center gap-2">
+    <MapPin className="w-5 h-5 text-gray-700" />
+    <h3 className="text-lg font-semibold">붙여넣을 대상 페이지 선택</h3>
+  </div>
+
+  {/* 우측: 닫기 버튼 */}
+  <button
+    onClick={onClose}
+    className="text-gray-400 hover:text-gray-700"
+    aria-label="닫기"
+  >
+    <X className="w-5 h-5" />
+  </button>
+</div>
 
         <div className="flex items-center gap-2 mb-3">
           <div className="flex-1 flex items-center gap-2 border rounded-lg px-3 py-2">

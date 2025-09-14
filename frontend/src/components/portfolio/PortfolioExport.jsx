@@ -4,7 +4,7 @@ import NotionConnectPanel from "./NotionConnectPanel";
 import PortfolioFilterPanel from "./PortfolioFilterPanel";
 import { getNotionStatus, disconnectNotion, publishToNotion } from "../../api/notionApi";
 import { getMyProjects } from "../../api/projectApi";
-import { X, Upload, MapPin } from "lucide-react";
+import { X, Upload, MapPin, Layers, CheckCircle2 } from "lucide-react";
 import NotionTemplateSelectModal from "./NotionTemplateSelectModal";
 import NotionTargetPageSelectModal from "./NotionTargetPageSelectModal";
 
@@ -32,6 +32,22 @@ export default function PortfolioExport() {
   const [pageOpen, setPageOpen] = useState(false);
 
   const [publishing, setPublishing] = useState(false);
+
+  const [aiNotes, setAiNotes] = useState("");
+
+  // 템플릿 선택 시 상태 반영
+const handleSelectTemplate = useCallback((id, title) => {
+   setTemplateId(id ?? null);
+   setTemplateTitle(title ?? "");
+   setTplOpen(false);
+ }, []);
+
+// 대상 페이지 선택 시 상태 반영
+const handleSelectTarget = useCallback((id, title) => {
+   setTargetPageId(id ?? null);
+   setTargetPageTitle(title ?? "");
+   setPageOpen(false);
+ }, []);
 
   const refreshStatus = useCallback(async () => {
     try {
@@ -90,11 +106,11 @@ export default function PortfolioExport() {
     try {
       setPublishing(true);
       const res = await publishToNotion({
-        template_id: templateId,
-        target_page_id: targetPageId,
-        title: pageTitle.trim(),
-        filters: filters || {},
-      });
+   template_id: templateId,
+   target_page_id: targetPageId,
+   title: pageTitle.trim(),
+   filters: { ...filters, ai_notes: aiNotes }, // Export의 메모 반영
+ });
       if (res?.ok) {
         alert("노션에 성공적으로 퍼블리시되었습니다.");
       } else {
@@ -130,138 +146,258 @@ export default function PortfolioExport() {
     );
   }
 
-  return (
-    <div className="relative">
-      {/* 상단 상태 바 */}
-      <div className="w-full max-w-6xl mx-auto mb-4 flex items-center justify-between">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-          <span className="text-sm font-semibold">노션 연결됨</span>
-          {workspaceName ? <span className="text-sm">({workspaceName})</span> : null}
-        </div>
-        <button
-          onClick={handleDisconnect}
-          disabled={disconnecting}
-          className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl border text-sm transition ${
-            disconnecting ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                          : "bg-white hover:bg-gray-50 text-gray-700 border-gray-300"
-          }`}
-          title="노션 연동 해제"
-        >
-          <X size={16} />
-          {disconnecting ? "해제 중..." : "연결 해제"}
-        </button>
-      </div>
+return (
+  <div>
+    {/* 상단 히어로/스텝퍼 */}
+    
+    <div className="bg-gradient-to-b">
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        <div className="flex items-center justify-between">
+   {/* 좌: 타이틀 */}
+   <div>
+     <h1 className="text-2xl font-bold text-gray-900">포트폴리오 퍼블리시</h1>
+     <p className="text-sm text-gray-500 mt-1">
+       프로젝트를 선택하고 템플릿과 대상 페이지를 정한 뒤 노션으로 퍼블리시하세요.
+     </p>
+   </div>
 
-      {/* 카드 */}
-      <div className="w-full max-w-6xl mx-auto bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
-        {/* 필터 */}
-        <div className="mb-2">
-          {projectsLoading && <div className="text-sm text-gray-500 mb-4">프로젝트 불러오는 중...</div>}
-          <PortfolioFilterPanel projects={projects} onFiltersChange={setFilters} />
-        </div>
+   {/* 우: 노션 연결 상태 + 해제 */}
+   {connected && (
+     <div className="flex items-center gap-4">
+       <div className="inline-flex items-center gap-2 text-sm text-emerald-700" title="노션 연결 상태">
+         <CheckCircle2 className="w-4 h-4" />
+         <span>노션 연결됨{workspaceName ? ` · ${workspaceName}` : ""}</span>
+       </div>
+       <button
+         type="button"
+         onClick={handleDisconnect}
+         className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-rose-600"
+         title="노션 연동 해제"
+       >
+         <X className="w-4 h-4" />
+         연동 해제
+       </button>
+     </div>
+   )}
+ </div>
 
-        <div className="h-px bg-gray-200 my-8" />
-
-        {/* 템플릿/대상 선택 */}
-        <div className="grid md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              템플릿 선택 <span className="text-red-500">*</span>
-            </label>
-            <div className="flex items-center gap-2 mb-3">
-              <button
-                type="button"
-                onClick={() => setTplOpen(true)}
-                className="inline-flex items-center gap-2 h-10 px-3 rounded-md border bg-white hover:bg-gray-50"
+        {/* 스텝퍼 */}
+        <ol className="mt-4 flex flex-wrap items-center gap-2 text-[13px]">
+          {["제목","대상 페이지","템플릿","필터","퍼블리시"].map((label, i) => {
+            const step = i + 1;
+            // 간단한 진행상태: 선택/입력 여부로 색상만 달리 표시
+            const done =
+     (step === 1 && !!(pageTitle?.trim())) ||
+     (step === 2 && !!targetPageId) ||
+     (step === 3 && !!templateId) ||
+     (step === 4 && (filters?.project_ids?.length > 0)) ||
+     false;
+            return (
+              <li
+                key={label}
+                className={[
+                  "inline-flex items-center gap-2 px-2.5 py-1 rounded-full border",
+                  done
+                    ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                    : "bg-gray-100 border-gray-200 text-gray-700"
+                ].join(" ")}
               >
-                템플릿 검색/선택
-              </button>
-              {templateTitle && (
-                <span className="inline-flex items-center gap-2 text-sm px-2.5 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700">
-                  선택됨: {templateTitle}
-                  <button
-                    className="ml-1 text-emerald-700/70 hover:text-emerald-900"
-                    onClick={() => { setTemplateId(null); setTemplateTitle(""); }}
-                    title="선택 해제"
-                  >
-                    ×
-                  </button>
+                <span className="w-5 h-5 inline-flex items-center justify-center rounded-full text-[11px] font-semibold bg-white border border-gray-200">
+                  {step}
                 </span>
-              )}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              붙여넣을 페이지 선택 <span className="text-red-500">*</span>
-            </label>
-            <div className="flex items-center gap-2 mb-3">
-              <button
-                type="button"
-                onClick={() => setPageOpen(true)}
-                className="inline-flex items-center gap-2 h-10 px-3 rounded-md border bg-white hover:bg-gray-50"
-              >
-                <MapPin className="w-4 h-4" /> 대상 페이지 선택
-              </button>
-              {targetPageTitle && (
-                <span className="inline-flex items-center gap-2 text-sm px-2.5 py-1 rounded-full border border-sky-200 bg-sky-50 text-sky-700">
-                  선택됨: {targetPageTitle}
-                  <button
-                    className="ml-1 text-sky-700/70 hover:text-sky-900"
-                    onClick={() => { setTargetPageId(null); setTargetPageTitle(""); }}
-                    title="선택 해제"
-                  >
-                    ×
-                  </button>
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* 제목 */}
-        <div className="mt-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            생성될 페이지 제목 <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            value={pageTitle}
-            onChange={(e) => setPageTitle(e.target.value)}
-            placeholder="예) 2025 포트폴리오 - 홍길동"
-            className="w-full mb-2 px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-200"
-          />
-          <p className="text-xs text-gray-500">
-            대상 페이지는 노션에서 코알라 통합앱에 <b>공유(초대)</b>되어 있어야 합니다.
-          </p>
-        </div>
-
-        {/* CTA */}
-        <div className="mt-8">
-          <button
-            onClick={handlePublish}
-            disabled={publishing}
-            className={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-white font-medium transition ${
-              publishing ? "bg-green-300 cursor-not-allowed" : "bg-green-600 hover:bg-green-700 shadow-md"
-            }`}
-          >
-            <Upload size={18} />
-            {publishing ? "노션에 퍼블리시 중..." : "노션에 퍼블리시"}
-          </button>
-        </div>
+                {label}
+              </li>
+            );
+          })}
+        </ol>
       </div>
-
-      {/* 모달들 */}
-      <NotionTemplateSelectModal
-        open={tplOpen}
-        onClose={() => setTplOpen(false)}
-        onSelect={(id, title) => { setTemplateId(id); setTemplateTitle(title); setTplOpen(false); }}
-      />
-      <NotionTargetPageSelectModal
-        open={pageOpen}
-        onClose={() => setPageOpen(false)}
-        onSelect={(id, title) => { setTargetPageId(id); setTargetPageTitle(title); setPageOpen(false); }}
-      />
     </div>
-  );
+
+    {/* 본문 12col 레이아웃 */}
+    <div className="max-w-6xl mx-auto px-4 py-6 grid grid-cols-12 gap-6">
+      {/* 좌측 메인 */}
+      <div className="col-span-12 lg:col-span-8 space-y-6">
+        {/* 연결 안 됨 → Connect 패널만 */}
+        {!connected ? (
+          <div className="rounded-2xl border border-gray-200 bg-white shadow-xl p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">노션 계정 연결 필요</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              퍼블리시하려면 먼저 노션 계정을 연결해주세요.
+            </p>
+            <NotionConnectPanel onDisconnect={refreshStatus} onConnected={refreshStatus} />
+          </div>
+        ) : (
+          <>
+          {/* 섹션 카드: 제목/대상/템플릿 묶음 (1-3단계) */}
+            <section className="rounded-2xl border border-gray-200 bg-white shadow-xl">
+              <header className="px-6 pt-5 pb-3 border-b border-gray-100">
+                <h3 className="text-base font-semibold text-gray-900">
+      포트폴리오 페이지 설정
+    </h3>
+              </header>
+
+              <div className="p-6 space-y-5">
+                {/* 1) 제목 */}
+ <div className="flex flex-col gap-2">
+   <span className="text-sm text-gray-600">노션 페이지 제목</span>
+   <input
+     value={pageTitle}
+     onChange={(e) => setPageTitle(e.target.value)}
+     placeholder="예: 엘리베이터형 자판기 시스템 – 포트폴리오"
+     className="h-10 rounded-xl border border-gray-300 bg-white px-3 text-sm hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+   />
+ </div>
+
+ {/* 2) 대상 페이지 */}
+ <div className="flex flex-col gap-2">
+   <span className="text-sm text-gray-600">대상 페이지</span>
+   <button
+     type="button"
+     onClick={() => setPageOpen(true)}
+     className="h-10 inline-flex items-center justify-between gap-2 rounded-xl border border-gray-300 bg-white px-3 text-sm hover:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-200"
+   >
+     <div className="truncate text-left flex items-center gap-2">
+       <MapPin className="w-4 h-4" />
+       <span className="truncate">{targetPageTitle || "붙여넣을 대상 페이지 선택"}</span>
+     </div>
+     <span className="text-[11px] text-gray-400">{targetPageId ? "선택됨" : ""}</span>
+   </button>
+ </div>
+
+ {/* 3) 템플릿 */}
+ <div className="flex flex-col gap-2">
+   <span className="text-sm text-gray-600">템플릿</span>
+   <button
+     type="button"
+     onClick={() => setTplOpen(true)}
+     className="h-10 inline-flex items-center justify-between gap-2 rounded-xl border border-gray-300 bg-white px-3 text-sm hover:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+   >
+     <div className="truncate text-left flex items-center gap-2">
+       <Layers className="text-emerald-600 w-4 h-4" />
+       <span className="truncate">{templateTitle || "템플릿 검색/선택"}</span>
+     </div>
+     <span className="text-[11px] text-gray-400">{templateId ? "선택됨" : ""}</span>
+   </button>
+ </div>
+{/* 4) AI 설명 입력 (새로 추가) */}
+<div className="flex flex-col gap-2">
+      <span className="text-sm text-gray-600">AI 설명 입력</span>
+      <textarea
+        value={aiNotes}
+        onChange={(e) => setAiNotes(e.target.value)}
+        rows={4}
+        placeholder={"예:\n- 프론트엔드 중심으로 내 역할을 강조해줘.\n- 내가 맡은 기능을 간단히 정리해줘.\n- 협업 과정과 사용 기술을 자연스럽게 언급해줘."}
+        className="w-full border rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200 resize-y"
+      />
+      <div className="mt-1 text-xs text-gray-400">{aiNotes.length}자 입력됨</div>
+    </div>
+              
+              </div>
+            </section>
+            {/* 섹션 카드: 필터 + 퍼블리시 (4-5단계) */}
+            <section className="rounded-2xl border border-gray-200 bg-white shadow-xl">
+              <header className="px-6 pt-5 pb-3 border-b border-gray-100">
+                  <h3 className="text-base font-semibold text-gray-900">프로젝트 범위 설정</h3>
+              </header>
+              <div className="p-6">
+                <PortfolioFilterPanel projects={projects} onFiltersChange={setFilters} showAINotes={false} />
+
+    {/* ✅ 퍼블리시 버튼을 이곳으로 이동 */}
+    <div className="pt-4">
+      <button
+        type="button"
+        onClick={handlePublish}
+        disabled={
+          publishing ||
+          !(filters?.project_ids?.length > 0 && templateId && targetPageId && pageTitle?.trim())
+        }
+        className={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-white font-medium transition ${
+          publishing
+            ? "bg-emerald-400 cursor-not-allowed"
+            : "bg-emerald-600 hover:bg-emerald-700 shadow-lg"
+        }`}
+      >
+        {publishing ? "퍼블리시 중…" : (<><Upload className="w-4 h-4" /> 노션에 퍼블리시</>)}
+      </button>
+    </div>
+              </div>
+            </section>
+
+            
+          </>
+        )}
+      </div>
+
+      {/* 우측 요약(Sticky) */}
+      <aside className="col-span-12 lg:col-span-4">
+        <div className="lg:sticky lg:top-6 space-y-6">
+          <section className="rounded-2xl border border-gray-200 bg-white shadow-lg p-5">
+            <h4 className="text-sm font-semibold text-gray-900">요약</h4>
+            <ul className="mt-3 space-y-3 text-sm">
+              <li className="flex gap-3">
+                <span className="w-16 shrink-0 text-gray-500">프로젝트</span>
+                <div className="flex-1 text-gray-900">
+                  {(() => {
+                    const pid = filters?.project_ids?.[0];
+                    const found = (projects || []).find((p) => (p?.id ?? p?.project_id) === pid);
+                    const name = found?.name ?? found?.project_name ?? "(미선택)";
+                    return name || "(미선택)";
+                  })()}
+                </div>
+              </li>
+              <li className="flex gap-3">
+                <span className="w-16 shrink-0 text-gray-500">역할</span>
+               <div className="flex-1">
+                  {Array.isArray(filters?.my_roles) && filters.my_roles.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {filters.my_roles.map((r) => (
+                        <span
+                          key={r}
+                          className="px-2 py-0.5 rounded-full text-xs border bg-gray-50 text-gray-700"
+                          title={r}
+                        >
+                          {r}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-gray-400">없음</span>
+                  )}
+                </div>
+              </li>
+              <li className="flex gap-3">
+                <span className="w-16 shrink-0 text-gray-500">템플릿</span>
+                <div className="flex-1 text-gray-900">
+                  {templateTitle || "(미선택)"}
+                </div>
+              </li>
+              <li className="flex gap-3">
+                <span className="w-16 shrink-0 text-gray-500">대상</span>
+                <div className="flex-1 text-gray-900">
+                  {targetPageTitle || "(미선택)"}
+                </div>
+              </li>
+              <li className="flex gap-3">
+                <span className="w-16 shrink-0 text-gray-500">제목</span>
+                <div className="flex-1 text-gray-900">
+                  {pageTitle?.trim() || "(미입력)"}
+                </div>
+              </li>
+            </ul>
+
+            {/* 간단한 유효성 가이드 */}
+            <div className="mt-4 text-xs text-gray-500">
+              필수: 프로젝트 1개, 템플릿, 대상 페이지, 제목
+            </div>
+          </section>
+        </div>
+      </aside>
+    </div>
+
+    {/* 기존 모달 호출은 그대로 */}
+    <NotionTemplateSelectModal open={tplOpen} onClose={() => setTplOpen(false)} onSelect={handleSelectTemplate} />
+
+    <NotionTargetPageSelectModal open={pageOpen} onClose={() => setPageOpen(false)} onSelect={handleSelectTarget} />
+  </div>
+);
 }
