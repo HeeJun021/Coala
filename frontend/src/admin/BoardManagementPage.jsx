@@ -1,181 +1,140 @@
-// frontend/src/admin/BoardManagementDetailPage.jsx
-import React, { useEffect, useState, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { getBoardDetail } from "../api/boardApi";
-import { getComments } from "../api/commentApi";
-import { deleteAdminComment, deleteAdminPost, fetchAdminUserDetail } from "../api/adminApi";
+// frontend/src/admin/BoardManagementPage.jsx
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { fetchAdminPosts, deleteAdminPost } from "../api/adminApi";
+import { MoreVertical } from "lucide-react";
 
-/**
- * 관리자용 게시글 상세 페이지
- * - 작성자 표시는 여러 응답 포맷을 커버하기 위해 폴백 체인 + 필요 시 사용자 상세 조회
- * - 댓글 삭제 시 내용만 "삭제된 댓글입니다."로 대체
- */
-const BoardManagementDetailPage = () => {
-  const { postId } = useParams();
+const BOARD_TYPES = [
+  { key: "free", label: "자유게시판" },
+  { key: "code", label: "코드게시판" },
+  { key: "project", label: "프로젝트 게시판" },
+];
+
+const BoardManagementPage = () => {
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [boardType, setBoardType] = useState("free");
+  const [menuOpen, setMenuOpen] = useState(null); // 더보기 메뉴 열림 상태
   const navigate = useNavigate();
 
-  const [post, setPost] = useState(null);
-  const [author, setAuthor] = useState({ name: "알 수 없음", loading: true });
-  const [comments, setComments] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  /** 응답에서 작성자 닉네임/이름을 최대한 뽑아내기 */
-  const extractAuthorName = useCallback((p) => {
-    return (
-      p?.author_nickname ??
-      p?.user?.nickname ??
-      p?.author?.nickname ??
-      p?.author_name ??
-      p?.user?.name ??
-      p?.author?.name ??
-      null
-    );
-  }, []);
-
-  /** 응답에서 user id 후보 뽑기 */
-  const extractAuthorId = useCallback((p) => {
-    return (
-      p?.user_id ??
-      p?.author_id ??
-      p?.writer_id ??
-      p?.user?.user_id ??
-      p?.author?.user_id ??
-      null
-    );
-  }, []);
-
-  /** 게시글/댓글 로드 + 작성자 명 결정 */
-  const loadData = useCallback(async () => {
+  const loadPosts = async () => {
     setLoading(true);
-    setAuthor({ name: "알 수 없음", loading: true });
-
     try {
-      const [postData, commentData] = await Promise.all([
-        getBoardDetail(postId),
-        getComments(postId),
-      ]);
-
-      setPost(postData);
-      setComments(commentData);
-
-      // 1차: 응답에서 바로 이름/닉네임 찾기
-      const foundName = extractAuthorName(postData);
-      if (foundName) {
-        setAuthor({ name: foundName, loading: false });
-        return;
-      }
-
-      // 2차: id가 있으면 사용자 API로 조회
-      const uid = extractAuthorId(postData);
-      if (uid) {
-        try {
-          const user = await fetchAdminUserDetail(uid);
-          const finalName =
-            user?.nickname ?? user?.name ?? user?.display_name ?? "알 수 없음";
-          setAuthor({ name: finalName, loading: false });
-          return;
-        } catch {
-          // 조회 실패해도 화면은 계속 진행
-        }
-      }
-
-      // 3차: 모두 실패
-      setAuthor({ name: "알 수 없음", loading: false });
-    } catch (error) {
-      console.error("게시글/댓글 불러오기 실패:", error);
-      setAuthor({ name: "알 수 없음", loading: false });
+      const data = await fetchAdminPosts(boardType);
+      setPosts(data);
+    } catch (err) {
+      console.error("게시글 목록 불러오기 실패:", err);
+      setPosts([]);
     } finally {
       setLoading(false);
     }
-  }, [postId, extractAuthorName, extractAuthorId]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  /** 댓글 삭제: 내용만 대체 */
-  const handleDeleteComment = async (commentId) => {
-    if (!window.confirm("이 댓글을 삭제하시겠습니까?")) return;
-    try {
-      await deleteAdminComment(commentId);
-      setComments((prev) =>
-        prev.map((c) =>
-          c.comment_id === commentId ? { ...c, content: "삭제된 댓글입니다." } : c
-        )
-      );
-    } catch (err) {
-      console.error("댓글 삭제 실패:", err);
-      alert("댓글 삭제에 실패했습니다.");
-    }
   };
 
-  /** 게시글 삭제 */
-  const handleDeletePost = async () => {
-    if (!window.confirm("이 게시글을 삭제하시겠습니까?")) return;
+  useEffect(() => {
+    loadPosts();
+  }, [boardType]);
+
+  const handleDeletePost = async (postId) => {
+    if (!window.confirm("정말 이 게시글을 삭제하시겠습니까?")) return;
     try {
       await deleteAdminPost(postId);
       alert("게시글이 삭제되었습니다.");
-      navigate("/admin/board", { replace: true });
+      loadPosts();
     } catch (err) {
       console.error("게시글 삭제 실패:", err);
-      alert("게시글 삭제에 실패했습니다.");
+      alert("삭제 실패");
     }
   };
 
-  if (loading) return <div className="p-8">로딩 중...</div>;
-  if (!post) return <div className="p-8 text-red-600">게시글을 찾을 수 없습니다.</div>;
+  if (loading) return <div className="p-6">로딩 중...</div>;
 
   return (
     <div className="p-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">📝 게시글 상세</h1>
-        <button onClick={handleDeletePost} className="text-sm text-red-500 hover:underline">
-          삭제
-        </button>
+      <h1 className="text-2xl font-bold mb-6">📋 게시판 관리</h1>
+
+      {/* 게시판 타입 선택 */}
+      <div className="mb-4 flex gap-2">
+        {BOARD_TYPES.map((bt) => (
+          <button
+            key={bt.key}
+            onClick={() => setBoardType(bt.key)}
+            className={`px-4 py-2 rounded ${
+              boardType === bt.key
+                ? "bg-green-600 text-white"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
+          >
+            {bt.label}
+          </button>
+        ))}
       </div>
 
-      <div className="bg-white shadow p-6 rounded mb-6">
-        <h2 className="text-xl font-semibold mb-2 text-gray-800">{post.title}</h2>
-        <p className="text-sm text-gray-500 mb-4">
-          작성자: {author.loading ? "불러오는 중..." : author.name} | 게시판: {post.board_type} | 작성일:{" "}
-          {new Date(post.created_at).toLocaleString()}
-        </p>
-        <p className="whitespace-pre-line text-gray-700 leading-relaxed">{post.content}</p>
-      </div>
-
-      <div className="bg-white shadow p-6 rounded">
-        <h3 className="text-lg font-semibold mb-4">💬 댓글 목록</h3>
-        {comments.length === 0 ? (
-          <p className="text-gray-500">댓글이 없습니다.</p>
-        ) : (
-          <ul className="space-y-4">
-            {comments.map((comment) => (
-              <li
-                key={comment.comment_id}
-                className="border p-4 rounded flex justify-between items-start hover:bg-gray-50"
-              >
-                <div>
-                  <p className="text-sm text-gray-800 whitespace-pre-line">{comment.content}</p>
-                  <p className="text-xs text-gray-500 mt-2">
-                    작성자: {comment.user?.nickname || "알 수 없음"} | 작성일:{" "}
-                    {new Date(comment.created_at).toLocaleString()}
-                  </p>
-                </div>
-                {comment.content !== "삭제된 댓글입니다." && (
+      {/* 게시글 목록 */}
+      {posts.length === 0 ? (
+        <p className="text-gray-500">게시글이 없습니다.</p>
+      ) : (
+        <table className="w-full border-collapse border">
+          <thead>
+            <tr className="bg-gray-100">
+              <th className="border p-2">ID</th>
+              <th className="border p-2">제목</th>
+              <th className="border p-2">작성자</th>
+              <th className="border p-2">작성일</th>
+              <th className="border p-2">관리</th>
+            </tr>
+          </thead>
+          <tbody>
+            {posts.map((post) => (
+              <tr key={post.post_id} className="hover:bg-gray-50">
+                <td className="border p-2">{post.post_id}</td>
+                <td
+                  className="border p-2 cursor-pointer"
+                  onClick={() => navigate(`/admin/posts/${post.post_id}`)}
+                >
+                  {post.title}
+                </td>
+                <td className="border p-2">
+                  {post.author_nickname || "알 수 없음"}
+                </td>
+                <td className="border p-2">
+                  {new Date(post.created_at).toLocaleString()}
+                </td>
+                <td className="border p-2 relative">
+                  {/* 더보기 버튼 */}
                   <button
-                    onClick={() => handleDeleteComment(comment.comment_id)}
-                    className="text-xs text-red-500 hover:underline mt-1"
+                    onClick={() =>
+                      setMenuOpen(menuOpen === post.post_id ? null : post.post_id)
+                    }
+                    className="p-1 rounded hover:bg-gray-200"
                   >
-                    삭제
+                    <MoreVertical size={18} />
                   </button>
-                )}
-              </li>
+
+                  {/* 드롭다운 메뉴 */}
+                  {menuOpen === post.post_id && (
+                    <div className="absolute right-0 mt-2 w-28 bg-white border rounded shadow-md z-10">
+                      <button
+                        onClick={() => navigate(`/admin/posts/${post.post_id}`)}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+                      >
+                        수정
+                      </button>
+                      <button
+                        onClick={() => handleDeletePost(post.post_id)}
+                        className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-gray-100"
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  )}
+                </td>
+              </tr>
             ))}
-          </ul>
-        )}
-      </div>
+          </tbody>
+        </table>
+      )}
     </div>
   );
 };
 
-export default BoardManagementDetailPage;
+export default BoardManagementPage;

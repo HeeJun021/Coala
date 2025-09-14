@@ -12,7 +12,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { getCurrentUser } from "./api/authApi";
 import ScrollToTop from "./components/ScrollToTop";
 
-// 전역 UI: 채팅 패널 열림/방 선택 상태
+// 전역 UI
 import { ChatUIProvider } from "./context/ChatUIContext";
 
 // 레이아웃
@@ -88,10 +88,10 @@ import SelfCodingTemplatePage from "./pages/selfcoding/SelfCodingTemplatePage";
 import TeamProjectPage from "./pages/project/TeamProjectPage";
 import ProjectDocPage from "./pages/project/Doc/ProjectDocPage";
 
-// ERD UI
+// ERD
 import ErdPage from "./pages/erd/ErdPage";
 
-// 유저 뷰어 페이지
+// 유저 뷰어
 import UserProfileViewerPage from "./pages/user/UserProfileViewerPage";
 
 const observerError = /ResizeObserver loop completed/;
@@ -165,7 +165,7 @@ const App = () => {
                     <Route index element={<AdminDashboardPage />} />
                     <Route path="materials" element={<StudymaterialManagementPage />} />
 
-                    {/* 🔹 관리자 전용 프리뷰 라우트 */}
+                    {/* 관리자 전용 프리뷰 */}
                     <Route
                       path="materials/view"
                       element={<StudyMaterialsPage isAdminPreview={true} />}
@@ -180,9 +180,12 @@ const App = () => {
                       path="codingtest/:testId/preview"
                       element={<CodingTestDetailPage isAdminPreview={true} />}
                     />
+
+                    {/* 📌 게시판 관리 */}
                     <Route path="board" element={<BoardManagementPage />} />
+                    <Route path="board/:postId" element={<BoardManagementDetailPage />} />
+
                     <Route path="users" element={<UserManagementPage />} />
-                    <Route path="posts/:postId" element={<BoardManagementDetailPage />} />
                   </Route>
                 </>
               )}
@@ -193,17 +196,18 @@ const App = () => {
               <Route path="/codingtest/:id" element={<CodingTestDetailPage />} />
               <Route path="/codingtest/correct/:testId" element={<CorrectSolutionsPage />} />
 
-              {/* ERD 페이지 전체화면 */}
+              {/* ERD 전체화면 */}
               <Route path="/team-project/:projectId/erd/:erdId" element={<ErdPage />} />
               <Route path="/erd" element={<ErdPage />} />
 
-              {/* 공통 레이아웃 포함 영역 */}
+              {/* 공통 레이아웃 */}
               <Route
                 path="/*"
                 element={
                   <MainLayout>
                     <Routes>
                       <Route path="/" element={<Home />} />
+
                       {/* 학습자료 */}
                       <Route path="/StudyMaterialsPage" element={<StudyMaterialsPage />} />
                       <Route
