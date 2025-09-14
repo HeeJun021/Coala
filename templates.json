@@ -1,0 +1,19 @@
+﻿{
+    "value":  [
+                  {
+                      "id":  2,
+                      "key":  "resume-basic",
+                      "title":  "???(??)",
+                      "version":  1,
+                      "description":  ""
+                  },
+                  {
+                      "id":  1,
+                      "key":  "portfolio-basic",
+                      "title":  "?????(??)",
+                      "version":  1,
+                      "description":  ""
+                  }
+              ],
+    "Count":  2
+}
