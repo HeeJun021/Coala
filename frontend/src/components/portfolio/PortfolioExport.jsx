@@ -257,7 +257,7 @@ return (
      className="h-10 inline-flex items-center justify-between gap-2 rounded-xl border border-gray-300 bg-white px-3 text-sm hover:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-200"
    >
      <div className="truncate text-left flex items-center gap-2">
-       <MapPin className="w-4 h-4" />
+       <MapPin className="w-4 h-4 text-yellow-500" />
        <span className="truncate">{targetPageTitle || "붙여넣을 대상 페이지 선택"}</span>
      </div>
      <span className="text-[11px] text-gray-400">{targetPageId ? "선택됨" : ""}</span>

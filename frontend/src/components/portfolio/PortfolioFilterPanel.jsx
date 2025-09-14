@@ -1,6 +1,6 @@
 // frontend/src/components/portfolio/PortfolioFilterPanel.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { SlidersHorizontal, UserSquare2, ChevronDown, Crown, Users, PlayCircle, Square, CheckCircle2 } from "lucide-react";
+import { SlidersHorizontal, UserSquare2, ChevronDown, Crown, Users, PlayCircle, Square, CheckCircle2, Tag, FileText, LayoutDashboard, Settings as SettingsIcon } from "lucide-react";
 import { getProjectMembers } from "../../api/projectApi";
 import { getCurrentUser } from "../../api/authApi";
 
@@ -32,6 +32,7 @@ export default function PortfolioFilterPanel({ onFiltersChange, projects = [], s
   const [projOpen, setProjOpen] = useState(false);
   const projPanelRef = useRef(null);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
+  const [teamMembers, setTeamMembers] = useState([]);
 
   // 내 역할(배열) & role_preset(자동)
   const [myRoles, setMyRoles] = useState([]);
@@ -55,6 +56,14 @@ export default function PortfolioFilterPanel({ onFiltersChange, projects = [], s
   const getPid = (p) => (p?.id ?? p?.project_id);
   const getPname = (p) => (p?.name ?? p?.project_name ?? "이름 없음");
   const getPdesc = (p) => String(p?.description ?? p?.desc ?? p?.project_desc ?? "").trim();
+  const getPtopic = (p) => (p?.topic ?? "");
+  const getPtech = (p) => {
+    const raw = p?.tech_stack;
+    if (Array.isArray(raw)) return raw;
+    if (typeof raw === "string") return raw.split(",").map((s) => s.trim()).filter(Boolean);
+    return [];
+  };
+
 
   const validProjects = useMemo(() => projects.filter((p) => getPid(p) != null), [projects]);
   const activeProjects = useMemo(() => validProjects.filter((p) => !Boolean(p?.is_closed)), [validProjects]);
@@ -109,6 +118,16 @@ export default function PortfolioFilterPanel({ onFiltersChange, projects = [], s
      ? getPdesc(projects.find((p) => getPid(p) === selectedProjectId))
      : "";
 
+     const selectedProjectTopic =
+    projects.length && selectedProjectId
+      ? getPtopic(projects.find((p) => getPid(p) === selectedProjectId))
+      : "";
+
+  const selectedProjectTech =
+    projects.length && selectedProjectId
+      ? getPtech(projects.find((p) => getPid(p) === selectedProjectId))
+      : [];
+
 
     useEffect(() => {
     const loadMyRole = async () => {
@@ -116,6 +135,7 @@ export default function PortfolioFilterPanel({ onFiltersChange, projects = [], s
         setMyRoles([]);
         setRolePreset("");
        setIsLeader(false);
+       setTeamMembers([]);
         return;
       }
       try {
@@ -129,6 +149,20 @@ export default function PortfolioFilterPanel({ onFiltersChange, projects = [], s
         }
 
         const members = await getProjectMembers(selectedProjectId);
+        // ✅ 개요 카드에서 쓸 팀원(역할) 저장
+        setTeamMembers(
+          (members || []).map((m) => ({
+            user_id: Number(m?.user_id),
+            nickname: m?.nickname || "이름 없음",
+            is_leader: m?.is_leader === true,
+            roles: Array.isArray(m?.roles)
+              ? m.roles
+              : typeof m?.roles === "string"
+                ? m.roles.split(",").map((s) => s.trim()).filter(Boolean)
+                : [],
+          }))
+        );
+
         const meMember = members.find((m) => Number(m?.user_id) === Number(myId));
 
         const raw = meMember?.roles;
@@ -193,16 +227,6 @@ export default function PortfolioFilterPanel({ onFiltersChange, projects = [], s
       </span>
       <ChevronDown className="w-4 h-4 text-gray-500 shrink-0" />
     </button>
-
-    {/* ▶ 선택된 프로젝트의 설명: 아주 은은하게, 한 줄 말줄임 */}
-    {selectedProjectId && selectedProjectDesc && (
-      <span
-   className="hidden md:block text-[12px] text-gray-600/90 italic"
-   title={selectedProjectDesc}
- >
-        {selectedProjectDesc}
-      </span>
-    )}
   </div>
 
   {projOpen && (
@@ -327,8 +351,98 @@ export default function PortfolioFilterPanel({ onFiltersChange, projects = [], s
           </div>
 
           {/* 오른쪽 컬럼은 기존처럼 비워둠 */}
-          <div className="md:col-span-2" />
-        </div>
+          <div className="md:col-span-2">
+        {selectedProjectId && (
+          <div className="rounded-2xl border border-gray-200 bg-white/80 backdrop-blur-[2px] p-4 shadow-sm">
+            <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-800">
+              <LayoutDashboard className="w-4 h-4 text-indigo-600" />
+              <span>프로젝트 개요</span>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-4 text-[13px]">
+              {/* 설명 */}
+              <div>
+                <div className="text-gray-500 flex items-center gap-1.5">
+   <FileText className="w-3.5 h-3.5 text-black-500" />
+   <span>설명</span>
+ </div>
+                 <div className="mt-1 text-gray-800 leading-6 whitespace-pre-wrap break-all">
+                  {selectedProjectDesc || <span className="text-gray-400">-</span>}
+                </div>
+              </div>
+
+              {/* 팀원(역할) */}
+              <div>
+                <div className="text-gray-500 flex items-center gap-1.5">
+   <Users className="w-3.5 h-3.5 text-blue-500" />
+   <span>팀원(역할)</span>
+ </div>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {(teamMembers || []).map((m) => (
+                    <span
+                      key={m.user_id}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border bg-gray-50 text-gray-700 max-w-full"
+                      title={`${m.nickname}${m.roles?.length ? ` · ${m.roles.join(", ")}` : ""}`}
+                    >
+                      <span className="font-medium break-all">{m.nickname}</span>
+                      {Array.isArray(m.roles) && m.roles.length > 0 && (
+                        <span className="text-[11px] text-gray-400 break-all">
+                          ({m.roles.join(", ")})
+                        </span>
+                      )}
+                      {m.is_leader && <Crown className="w-3 h-3 text-amber-500" />}
+                    </span>
+                  ))}
+                  {(!teamMembers || teamMembers.length === 0) && (
+                    <span className="text-gray-400">-</span>
+                  )}
+                </div>
+              </div>
+
+              {/* 프로젝트 주제 */}
+              <div>
+                <div className="text-gray-500 flex items-center gap-1.5">
+   <Tag className="w-3.5 h-3.5 text-emerald-600" />
+   <span>프로젝트 주제</span>
+ </div>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {selectedProjectTopic ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border bg-white text-gray-700">
+                      <Tag className="w-3.5 h-3.5 text-emerald-600" />
+                       <span className="break-all">{selectedProjectTopic}</span>
+                    </span>
+                  ) : (
+                    <span className="text-gray-400">-</span>
+                  )}
+                </div>
+              </div>
+
+              {/* 기술 스택 */}
+              <div>
+                <div className="text-gray-500 flex items-center gap-1.5">
+   <SettingsIcon className="w-3.5 h-3.5 text-green-600" />
+   <span>기술 스택</span>
+ </div>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {selectedProjectTech && selectedProjectTech.length > 0 ? (
+                    selectedProjectTech.map((t, i) => (
+                      <span
+                        key={`${t}-${i}`}
+                        className="px-2 py-0.5 rounded-md border bg-white text-gray-700 max-w-full"
+                        title={t}
+                      >
+                        <span className="break-all">{t}</span>
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-gray-400">-</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>        )}
+      </div>
+      </div>
       </section>
 
       {/* ✅ 역할 표시(자동) : 팀장/팀원 배지 + 역할 배지 */}
@@ -353,7 +467,7 @@ export default function PortfolioFilterPanel({ onFiltersChange, projects = [], s
             </span>
           ) : (
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-50 text-slate-700 border border-slate-200">
-              <Users className="w-3.5 h-3.5" />
+              <Users className="w-3.5 h-3.5 text-blue-500" />
               팀원
             </span>
           )}

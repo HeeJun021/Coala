@@ -32,7 +32,7 @@ export default function NotionTargetPageSelectModal({ open, onClose, onSelect })
        <div className="flex items-center justify-between mb-4">
   {/* 좌측 그룹: 아이콘 + 제목 */}
   <div className="flex items-center gap-2">
-    <MapPin className="w-5 h-5 text-gray-700" />
+    <MapPin className="w-5 h-5 text-yellow-500" />
     <h3 className="text-lg font-semibold">붙여넣을 대상 페이지 선택</h3>
   </div>
 
