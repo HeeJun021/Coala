@@ -4,27 +4,10 @@ import { deleteBoard } from "../../api/boardApi";
 import { likeBoard, unlikeBoard } from "../../api/likeApi";
 import { reportBoard } from "../../api/reportApi";
 import ApplyModal from "../../components/ApplyModal";
-import { Heart, AlertCircle, Edit, Trash2 } from "lucide-react";
-import UserNameWithProfile from "../../components/board/profcard/UserNameWithProfile";
+import BoardDetailLayout from "../../components/board/BoardDetailLayout";
+import BoardDetailTemplate from "./BoardDetailTemplate";
 
-// ... (나머지는 동일)
-
-
-// 작성자 이름 폴백 추출기
-const getAuthorName = (post, fallback = "알 수 없음") => {
-  if (!post) return fallback;
-  return (
-    post.author_nickname ??
-    post.user?.nickname ??
-    post.author?.nickname ??
-    post.author_name ??
-    post.user?.name ??
-    post.author?.name ??
-    fallback
-  );
-};
-
-const ProjectBoardDetail = ({ post, user, authorName: injected }) => {
+const ProjectBoardDetail = ({ post, user }) => {
   const navigate = useNavigate();
   const { boardType, postId } = useParams();
 
@@ -33,8 +16,8 @@ const ProjectBoardDetail = ({ post, user, authorName: injected }) => {
   const [showApplyModal, setShowApplyModal] = useState(false);
 
   const isAuthor = user?.user_id === (post?.user_id ?? post?.author_id);
-  const authorName = injected ?? getAuthorName(post);
 
+  // ✅ 좋아요 처리
   const handleLike = async () => {
     if (!user) return alert("로그인이 필요합니다.");
     try {
@@ -52,6 +35,7 @@ const ProjectBoardDetail = ({ post, user, authorName: injected }) => {
     }
   };
 
+  // ✅ 신고 처리
   const handleReport = async () => {
     try {
       await reportBoard({
@@ -60,125 +44,61 @@ const ProjectBoardDetail = ({ post, user, authorName: injected }) => {
         reason: "부적절한 게시글",
       });
       alert("게시글이 신고되었습니다.");
-    } catch (err) {
+    } catch {
       alert("이미 신고하셨습니다!");
     }
   };
 
+  // ✅ 수정 / 삭제 처리
   const handleEdit = () => navigate(`/board/${boardType}/edit/${postId}`);
 
   const handleDelete = async () => {
-    const confirmDelete = window.confirm("정말 삭제하시겠습니까?");
-    if (!confirmDelete) return;
+    if (!window.confirm("정말 삭제하시겠습니까?")) return;
     try {
       await deleteBoard(postId);
       alert("삭제되었습니다.");
       navigate(`/board/${boardType}`);
-    } catch (err) {
+    } catch {
       alert("삭제 실패!");
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-8 bg-white min-h-screen">
-      {/* 상단: 게시판 이름 + 뒤로가기 */}
-      <div className="flex justify-between items-center border-b pb-4 mb-6">
-        <h1 className="text-xl font-bold text-green-700">프로젝트 게시판</h1>
-        <button
-          onClick={() => navigate(-1)}
-          className="px-4 py-1 bg-gray-200 text-sm rounded-md"
-        >
-          ← 뒤로가기
-        </button>
-      </div>
+    <BoardDetailLayout title="프로젝트 게시판" onBack={() => navigate(-1)}>
+      <BoardDetailTemplate
+        boardName="project"
+        post={post}
+        user={user}
+        liked={liked}
+        likeCount={likeCount}
+        handleLike={handleLike}
+        handleReport={handleReport}
+        isAuthor={isAuthor}
+        handleEdit={handleEdit}
+        handleDelete={handleDelete}
+        commentType="none"  // ✅ 댓글 완전히 비활성화
+      />
 
-      {/* 본문: 제목 + 작성자 정보 */}
-      <div className="mb-6">
-        <h2 className="text-2xl font-semibold mb-2">{post?.title}</h2>
-        <div className="flex items-center text-sm text-gray-500">
-          {/* ✅ 작성자 이름 클릭 시 미니프로필 */}
-          {post?.author_id ? (
-            <UserNameWithProfile
-              userId={post.author_id}
-              nickname={authorName || "작성자"}
-            />
-          ) : (
-            <span className="font-medium">{authorName}</span>
-          )}
-          <span className="mx-2">|</span>
-          <span>
-            {post?.created_at
-              ? new Date(post.created_at).toLocaleString()
-              : ""}
-          </span>
-        </div>
-      </div>
-
-      {/* 내용 */}
-      <div className="mb-6 whitespace-pre-line text-gray-700 leading-relaxed">
-        {post?.content}
-      </div>
-
-      {/* 액션 버튼 */}
-      <div className="flex items-center gap-4 border-t pt-4 mb-8">
-        <button onClick={handleLike} className="text-red-500" title="좋아요">
-          <Heart
-            size={20}
-            fill={liked ? "currentColor" : "none"}
-            stroke="currentColor"
-          />
-        </button>
-        <span className="text-sm">{likeCount}명 좋아요</span>
-        <button
-          onClick={handleReport}
-          className="text-gray-500 flex items-center gap-1 text-sm"
-          title="신고"
-        >
-          <AlertCircle size={16} className="text-gray-500" />
-          신고
-        </button>
-        {isAuthor && (
-          <>
-            <button
-              onClick={handleEdit}
-              className="text-yellow-600 flex items-center gap-1 text-sm"
-            >
-              <Edit size={16} className="text-yellow-600" />
-              수정
-            </button>
-            <button
-              onClick={handleDelete}
-              className="text-red-600 flex items-center gap-1 text-sm"
-            >
-              <Trash2 size={16} className="text-red-600" />
-              삭제
-            </button>
-          </>
-        )}
-      </div>
-
-      {/* 작성자일 경우 지원자 보기 버튼 / 아니면 참여 신청 */}
-      <div className="flex justify-end">
+      {/* ✅ 지원/지원자 버튼 */}
+      <div className="flex justify-end mt-6">
         {isAuthor ? (
           <button
-            onClick={() =>
-              navigate(`/board/${boardType}/applicants/${postId}`)
-            }
-            className="px-4 py-2 bg-green-600 text-white rounded-md"
+            onClick={() => navigate(`/board/${boardType}/applicants/${postId}`)}
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
           >
             지원자 보기
           </button>
         ) : (
           <button
             onClick={() => setShowApplyModal(true)}
-            className="px-4 py-2 bg-green-600 text-white rounded-md"
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
           >
             참여 신청하기
           </button>
         )}
       </div>
 
-      {/* ApplyModal 표시 */}
+      {/* ✅ 참여 신청 모달 */}
       {showApplyModal && (
         <ApplyModal
           onClose={() => setShowApplyModal(false)}
@@ -186,7 +106,7 @@ const ProjectBoardDetail = ({ post, user, authorName: injected }) => {
           user={user}
         />
       )}
-    </div>
+    </BoardDetailLayout>
   );
 };
 
