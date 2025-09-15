@@ -72,32 +72,19 @@ export default function PortfolioFilterPanel({
   // 안전한 id/name 추출
   const getPid = (p) => p?.id ?? p?.project_id;
   const getPname = (p) => p?.name ?? p?.project_name ?? "이름 없음";
-  const getPdesc = (p) =>
-    String(p?.description ?? p?.desc ?? p?.project_desc ?? "").trim();
+  const getPdesc = (p) => String(p?.description ?? p?.desc ?? p?.project_desc ?? "").trim();
   const getPtopic = (p) => p?.topic ?? "";
   const getPtech = (p) => {
     const raw = p?.tech_stack;
     if (Array.isArray(raw)) return raw;
     if (typeof raw === "string")
-      return raw
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
+      return raw.split(",").map((s) => s.trim()).filter(Boolean);
     return [];
   };
 
-  const validProjects = useMemo(
-    () => projects.filter((p) => getPid(p) != null),
-    [projects]
-  );
-  const activeProjects = useMemo(
-    () => validProjects.filter((p) => !Boolean(p?.is_closed)),
-    [validProjects]
-  );
-  const closedProjects = useMemo(
-    () => validProjects.filter((p) => Boolean(p?.is_closed)),
-    [validProjects]
-  );
+  const validProjects = useMemo(() => projects.filter((p) => getPid(p) != null), [projects]);
+  const activeProjects = useMemo(() => validProjects.filter((p) => !Boolean(p?.is_closed)), [validProjects]);
+  const closedProjects = useMemo(() => validProjects.filter((p) => Boolean(p?.is_closed)), [validProjects]);
 
   // 필터 산출 (role_preset은 자동 계산된 값 사용)
   const filters = useMemo(() => {
@@ -137,7 +124,7 @@ export default function PortfolioFilterPanel({
     setProjOpen(false);
   };
 
-  // 현재 선택 프로젝트명
+  // 현재 선택 프로젝트 정보
   const selectedProjectName =
     projects.length && selectedProjectId
       ? getPname(projects.find((p) => getPid(p) === selectedProjectId))
@@ -158,6 +145,7 @@ export default function PortfolioFilterPanel({
       ? getPtech(projects.find((p) => getPid(p) === selectedProjectId))
       : [];
 
+  // 내 역할/팀원 로딩
   useEffect(() => {
     const loadMyRole = async () => {
       if (!selectedProjectId) {
@@ -178,7 +166,8 @@ export default function PortfolioFilterPanel({
         }
 
         const members = await getProjectMembers(selectedProjectId);
-        // ✅ 개요 카드에서 쓸 팀원(역할) 저장
+
+        // 개요 카드에서 쓸 팀원(역할)
         setTeamMembers(
           (members || []).map((m) => ({
             user_id: Number(m?.user_id),
@@ -187,31 +176,21 @@ export default function PortfolioFilterPanel({
             roles: Array.isArray(m?.roles)
               ? m.roles
               : typeof m?.roles === "string"
-              ? m.roles
-                  .split(",")
-                  .map((s) => s.trim())
-                  .filter(Boolean)
+              ? m.roles.split(",").map((s) => s.trim()).filter(Boolean)
               : [],
           }))
         );
 
-        const meMember = members.find(
-          (m) => Number(m?.user_id) === Number(myId)
-        );
+        const meMember = members.find((m) => Number(m?.user_id) === Number(myId));
 
         const raw = meMember?.roles;
         let rolesArr = Array.isArray(raw)
           ? raw
           : typeof raw === "string"
-          ? raw
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean)
+          ? raw.split(",").map((s) => s.trim()).filter(Boolean)
           : [];
 
-        // 팀장 여부 저장
         setIsLeader(meMember?.is_leader === true);
-
         setMyRoles(rolesArr);
 
         const has = (re) => rolesArr.some((r) => re.test(r));
@@ -243,14 +222,11 @@ export default function PortfolioFilterPanel({
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* ▶ 프로젝트 단일 선택 */}
-          <div
-            className="md:col-span-1 flex flex-col gap-1 relative"
-            ref={projPanelRef}
-          >
+          <div className="md:col-span-1 flex flex-col gap-1 relative" ref={projPanelRef}>
             <label className="block text-sm text-gray-600 mb-1">프로젝트</label>
 
-            <div className="relative" ref={projPanelRef}>
-              {/* 버튼 + 미리보기 설명 (가로 배치) */}
+            <div className="relative">
+              {/* 버튼 */}
               <div className="flex items-center gap-3">
                 <button
                   type="button"
@@ -259,9 +235,7 @@ export default function PortfolioFilterPanel({
                   title="프로젝트 선택"
                 >
                   <span className="truncate text-left text-[13px]">
-                    {selectedProjectId
-                      ? selectedProjectName || "(이름 없음)"
-                      : " 프로젝트 선택"}
+                    {selectedProjectId ? (selectedProjectName || "(이름 없음)") : " 프로젝트 선택"}
                   </span>
                   <ChevronDown className="w-4 h-4 text-gray-500 shrink-0" />
                 </button>
@@ -271,12 +245,9 @@ export default function PortfolioFilterPanel({
                 <div className="absolute left-0 top-full mt-2 z-50 w-[28rem] max-w-[calc(100vw-2rem)] rounded-2xl border border-gray-200 bg-white shadow-xl ring-1 ring-black/5 p-3 backdrop-blur-[2px]">
                   {/* 헤더 */}
                   <div className="mb-2 flex items-center justify-between">
-                    <div className="text-sm font-semibold text-gray-800">
-                      프로젝트 선택
-                    </div>
+                    <div className="text-sm font-semibold text-gray-800">프로젝트 선택</div>
                     <div className="text-[11px] text-gray-500">
-                      진행중 {activeProjects.length} · 종료됨{" "}
-                      {closedProjects.length}
+                      진행중 {activeProjects.length} · 종료됨 {closedProjects.length}
                     </div>
                   </div>
 
@@ -285,15 +256,11 @@ export default function PortfolioFilterPanel({
                     <div>
                       <div className="flex items-center gap-1.5 mb-1.5">
                         <PlayCircle className="w-3.5 h-3.5 text-green-600" />
-                        <span className="text-xs font-semibold text-gray-700">
-                          진행중
-                        </span>
+                        <span className="text-xs font-semibold text-gray-700">진행중</span>
                       </div>
 
                       {activeProjects.length === 0 ? (
-                        <div className="px-2 py-2 text-xs text-gray-500">
-                          진행중 프로젝트가 없습니다.
-                        </div>
+                        <div className="px-2 py-2 text-xs text-gray-500">진행중 프로젝트가 없습니다.</div>
                       ) : (
                         <ul className="space-y-1">
                           {activeProjects.map((p) => {
@@ -317,18 +284,11 @@ export default function PortfolioFilterPanel({
                                   <div className="flex items-start gap-2">
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-1.5">
-                                        <span className="text-[13px] font-medium text-gray-900 truncate">
-                                          {name}
-                                        </span>
-                                        {selected && (
-                                          <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
-                                        )}
+                                        <span className="text-[13px] font-medium text-gray-900 truncate">{name}</span>
+                                        {selected && <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />}
                                       </div>
                                       {desc && (
-                                        <div
-                                          className="text-[11px] text-gray-500/90 italic truncate mt-0.5"
-                                          title={desc}
-                                        >
+                                        <div className="text-[11px] text-gray-500/90 italic truncate mt-0.5" title={desc}>
                                           {desc}
                                         </div>
                                       )}
@@ -346,15 +306,11 @@ export default function PortfolioFilterPanel({
                     <div className="pt-3 border-t border-gray-100/80">
                       <div className="flex items-center gap-1.5 mb-1.5">
                         <Square className="w-3.5 h-3.5 text-gray-500" />
-                        <span className="text-xs font-semibold text-gray-700">
-                          종료됨
-                        </span>
+                        <span className="text-xs font-semibold text-gray-700">종료됨</span>
                       </div>
 
                       {closedProjects.length === 0 ? (
-                        <div className="px-2 py-2 text-xs text-gray-500">
-                          종료된 프로젝트가 없습니다.
-                        </div>
+                        <div className="px-2 py-2 text-xs text-gray-500">종료된 프로젝트가 없습니다.</div>
                       ) : (
                         <ul className="space-y-1">
                           {closedProjects.map((p) => {
@@ -378,18 +334,11 @@ export default function PortfolioFilterPanel({
                                   <div className="flex items-start gap-2">
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-1.5">
-                                        <span className="text-[13px] font-medium text-gray-900 truncate">
-                                          {name}
-                                        </span>
-                                        {selected && (
-                                          <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
-                                        )}
+                                        <span className="text-[13px] font-medium text-gray-900 truncate">{name}</span>
+                                        {selected && <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />}
                                       </div>
                                       {desc && (
-                                        <div
-                                          className="text-[11px] text-gray-500/90 italic truncate mt-0.5"
-                                          title={desc}
-                                        >
+                                        <div className="text-[11px] text-gray-500/90 italic truncate mt-0.5" title={desc}>
                                           {desc}
                                         </div>
                                       )}
@@ -407,117 +356,103 @@ export default function PortfolioFilterPanel({
               )}
             </div>
 
-            <p className="mt-1 text-xs text-gray-500">
-              프로젝트는 하나만 선택할 수 있어요.
-            </p>
+            <p className="mt-1 text-xs text-gray-500">프로젝트는 하나만 선택할 수 있어요.</p>
           </div>
 
-          {/* 오른쪽 컬럼은 기존처럼 비워둠 */}
-          <div className="md:col-span-2">
-            {selectedProjectId && (
-              <div className="rounded-2xl border border-gray-200 bg-white/80 backdrop-blur-[2px] p-4 shadow-sm">
-                <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-800">
-                  <LayoutDashboard className="w-4 h-4 text-indigo-600" />
-                  <span>프로젝트 개요</span>
+          {/* (기존 오른쪽 칼럼 비움) */}
+          <div className="md:col-span-2" />
+        </div>
+
+        {/* ▼ 프로젝트 개요: 프로젝트 선택 블록 '아래'로 이동 + 팀원 → 설명 순서 */}
+        {selectedProjectId && (
+          <div className="mt-5 rounded-2xl border border-gray-200 bg-white shadow-sm p-5">
+            <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-800">
+              <LayoutDashboard className="w-4 h-4 text-indigo-600" />
+              <span>프로젝트 개요</span>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-5 text-[13px]">
+              {/* 1) 팀원(역할) */}
+              <div>
+                <div className="text-gray-500 flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5 text-blue-500" />
+                  <span>팀원(역할)</span>
                 </div>
-
-                <div className="grid sm:grid-cols-2 gap-4 text-[13px]">
-                  {/* 설명 */}
-                  
-
-                  {/* 팀원(역할) */}
-                  <div>
-                    <div className="text-gray-500 flex items-center gap-1.5">
-                      <Users className="w-3.5 h-3.5 text-blue-500" />
-                      <span>팀원(역할)</span>
-                    </div>
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      {(teamMembers || []).map((m) => (
-                        <span
-                          key={m.user_id}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border bg-gray-50 text-gray-700 max-w-full"
-                          title={`${m.nickname}${
-                            m.roles?.length ? ` · ${m.roles.join(", ")}` : ""
-                          }`}
-                        >
-                          <span className="font-medium break-all">
-                            {m.nickname}
-                          </span>
-                          {Array.isArray(m.roles) && m.roles.length > 0 && (
-                            <span className="text-[11px] text-gray-400 break-all">
-                              ({m.roles.join(", ")})
-                            </span>
-                          )}
-                          {m.is_leader && (
-                            <Crown className="w-3 h-3 text-amber-500" />
-                          )}
-                        </span>
-                      ))}
-                      {(!teamMembers || teamMembers.length === 0) && (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="text-gray-500 flex items-center gap-1.5">
-                      <FileText className="w-3.5 h-3.5 text-black-500" />
-                      <span>설명</span>
-                    </div>
-                    <div className="mt-1 text-gray-800 leading-6 whitespace-pre-wrap break-all">
-                      {selectedProjectDesc || (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* 프로젝트 주제 */}
-                  <div>
-                    <div className="text-gray-500 flex items-center gap-1.5">
-                      <Tag className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>프로젝트 주제</span>
-                    </div>
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      {selectedProjectTopic ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border bg-white text-gray-700">
-                          <Tag className="w-3.5 h-3.5 text-emerald-600" />
-                          <span className="break-all">
-                            {selectedProjectTopic}
-                          </span>
-                        </span>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* 기술 스택 */}
-                  <div>
-                    <div className="text-gray-500 flex items-center gap-1.5">
-                      <SettingsIcon className="w-3.5 h-3.5 text-green-600" />
-                      <span>기술 스택</span>
-                    </div>
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      {selectedProjectTech && selectedProjectTech.length > 0 ? (
-                        selectedProjectTech.map((t, i) => (
-                          <span
-                            key={`${t}-${i}`}
-                            className="px-2 py-0.5 rounded-md border bg-white text-gray-700 max-w-full"
-                            title={t}
-                          >
-                            <span className="break-all">{t}</span>
-                          </span>
-                        ))
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </div>
-                  </div>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {(teamMembers || []).length > 0 ? (
+                    teamMembers.map((m) => (
+                      <span
+                        key={m.user_id}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border bg-gray-50 text-gray-700 max-w-full"
+                        title={`${m.nickname}${m.roles?.length ? ` · ${m.roles.join(", ")}` : ""}`}
+                      >
+                        <span className="font-medium break-all">{m.nickname}</span>
+                        {Array.isArray(m.roles) && m.roles.length > 0 && (
+                          <span className="text-[11px] text-gray-400 break-all">({m.roles.join(", ")})</span>
+                        )}
+                        {m.is_leader && <Crown className="w-3 h-3 text-amber-500" />}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-gray-400">-</span>
+                  )}
                 </div>
               </div>
-            )}
+
+              {/* 2) 설명 */}
+              <div>
+                <div className="text-gray-500 flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-black-500" />
+                  <span>설명</span>
+                </div>
+                <div className="mt-1 text-gray-800 leading-6 whitespace-pre-wrap break-words">
+                  {selectedProjectDesc || <span className="text-gray-400">-</span>}
+                </div>
+              </div>
+
+              {/* 3) 프로젝트 주제 */}
+              <div>
+                <div className="text-gray-500 flex items-center gap-1.5">
+                  <Tag className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>프로젝트 주제</span>
+                </div>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {selectedProjectTopic ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border bg-white text-gray-700">
+                      <Tag className="w-3.5 h-3.5 text-emerald-600" />
+                      <span className="break-all">{selectedProjectTopic}</span>
+                    </span>
+                  ) : (
+                    <span className="text-gray-400">-</span>
+                  )}
+                </div>
+              </div>
+
+              {/* 4) 기술 스택 */}
+              <div>
+                <div className="text-gray-500 flex items-center gap-1.5">
+                  <SettingsIcon className="w-3.5 h-3.5 text-green-600" />
+                  <span>기술 스택</span>
+                </div>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {selectedProjectTech && selectedProjectTech.length > 0 ? (
+                    selectedProjectTech.map((t, i) => (
+                      <span
+                        key={`${t}-${i}`}
+                        className="px-2 py-0.5 rounded-md border bg-white text-gray-700 max-w-full"
+                        title={t}
+                      >
+                        <span className="break-all">{t}</span>
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-gray-400">-</span>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </section>
 
       {/* ✅ 역할 표시(자동) : 팀장/팀원 배지 + 역할 배지 */}
@@ -560,9 +495,7 @@ export default function PortfolioFilterPanel({
                     </span>
                   ))
                 ) : (
-                  <span className="text-sm text-gray-500">
-                    역할 정보가 없습니다.
-                  </span>
+                  <span className="text-sm text-gray-500">역할 정보가 없습니다.</span>
                 )}
               </div>
             </div>
@@ -585,9 +518,7 @@ export default function PortfolioFilterPanel({
             }
             className="w-full border rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-200 resize-y"
           />
-          <div className="mt-1 text-xs text-gray-400">
-            {aiNotes.length}자 입력됨
-          </div>
+          <div className="mt-1 text-xs text-gray-400">{aiNotes.length}자 입력됨</div>
         </section>
       )}
     </div>
