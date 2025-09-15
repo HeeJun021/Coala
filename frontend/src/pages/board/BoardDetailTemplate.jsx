@@ -9,7 +9,6 @@ import AlertModal from "../../components/AlertModal";
 import { Heart, Edit, Trash2, AlertCircle, Reply } from "lucide-react";
 
 const BoardDetailTemplate = ({
-  boardName,
   post,
   user,
   liked,
@@ -46,140 +45,114 @@ const BoardDetailTemplate = ({
 
   if (!post) return <div className="p-8">로딩 중...</div>;
 
-  // ✅ 디버깅용: 실제 post 구조 확인
-  console.log("🟢 post 데이터:", post);
-
-  const safeHandleCommentSubmit = (content) => {
-    if (typeof handleCommentSubmit === "function") {
-      handleCommentSubmit(content);
-    } else {
-      console.warn("⚠️ handleCommentSubmit is not a function");
-    }
-  };
-
-  const handleImportCode = async () => {
-    if (!currentUser) {
-      return;
-    }
-
-    try {
-      await apiClient.post(
-        `/board/post/${post.post_id}/import_code`,
-        {},
-        {
-          params: { user_id: currentUser.user_id },
-          withCredentials: true,
-        }
-      );
-      setModalMessage("코드가 성공적으로 복사되었습니다!");
-      setIsModalOpen(true);
-      window.dispatchEvent(new Event("refreshDirectory"));
-    } catch (err) {
-      console.error("코드 가져오기 실패:", err);
-    }
-  };
-
   return (
-    <div className="max-w-4xl mx-auto p-8 bg-white min-h-screen">
-      {/* ✅ 작성자 표시 */}
-      <div className="flex items-center gap-2 mb-4 text-gray-600 text-sm">
-        <span>작성자:</span>
-        {post?.author_id ? (
-          <UserNameWithProfile
-            userId={post.author_id}
-            nickname={
-              post.author_nickname ||
-              post.nickname ||
-              post.user?.nickname ||
-              post.author?.nickname ||
-              post.author_name ||
-              "작성자"
-            }
-          />
-        ) : (
-          <span className="font-semibold">
-            {post?.author_nickname || post?.author_name || "알 수 없음"}
-          </span>
-        )}
-      </div>
+    <div className="max-w-4xl mx-auto py-12 px-6">
+      {/* 📌 게시글 카드 */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-12">
+        {/* 제목 */}
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">{post.title}</h1>
 
-      <h2 className="text-2xl font-semibold mb-4">{post.title}</h2>
-      <p className="mb-6 whitespace-pre-line">{post.content}</p>
-
-      {post.code && (
-        <div className="mb-6 relative">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm text-gray-600">
-              코드 파일: {post.code_filename || "code.js"}
+        {/* 작성자 + 작성일 */}
+        <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+          {post?.author_id ? (
+            <UserNameWithProfile
+              userId={post.author_id}
+              nickname={post.author_nickname || "작성자"}
+            />
+          ) : (
+            <span className="font-medium text-gray-700">
+              {post.author_nickname || post.author_name || "알 수 없음"}
             </span>
-            <button
-              onClick={handleImportCode}
-              className="text-sm bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+          )}
+          <span>·</span>
+          <span>
+            {post?.created_at ? new Date(post.created_at).toLocaleString() : ""}
+          </span>
+        </div>
+
+        {/* 제목과 본문 구분선 */}
+        <hr className="border-gray-200 mb-6" />
+
+        {/* 본문 */}
+        <div className="prose prose-gray max-w-none mb-6">
+          <p className="whitespace-pre-line text-gray-800 leading-relaxed">
+            {post.content}
+          </p>
+        </div>
+
+        {/* 코드 블록 */}
+        {post.code && (
+          <div className="mb-8 border rounded-lg overflow-hidden">
+            <div className="flex justify-between items-center px-4 py-2 bg-gray-100 text-sm text-gray-600">
+              <span>{post.code_filename || "code.js"}</span>
+              <button className="bg-green-600 px-3 py-1 rounded text-white text-xs hover:bg-green-700">
+                코드 가져오기
+              </button>
+            </div>
+            <SyntaxHighlighter
+              language={post.code_language || "javascript"}
+              style={dracula}
+              customStyle={{
+                margin: 0,
+                borderRadius: "0 0 8px 8px",
+                fontSize: "14px",
+              }}
             >
-              코드 가져오기
-            </button>
+              {post.code}
+            </SyntaxHighlighter>
           </div>
-          <SyntaxHighlighter
-            language={post.code_language || "javascript"}
-            style={dracula}
-            className="rounded-md"
-            wrapLines={true}
-            customStyle={{ whiteSpace: "pre-wrap", fontSize: "15px" }}
-          >
-            {post.code}
-          </SyntaxHighlighter>
-        </div>
-      )}
-
-      {/* 좋아요/신고/수정/삭제 */}
-      <div className="flex items-center gap-4 text-sm text-gray-600 mt-4">
-        <div
-          className="flex items-center gap-1 text-red-500 cursor-pointer"
-          onClick={handleLike}
-        >
-          <Heart
-            size={18}
-            fill={liked ? "currentColor" : "none"}
-            stroke="currentColor"
-          />
-          <span className="text-gray-700">{likeCount}명 좋아요</span>
-        </div>
-
-        <button
-          onClick={handleReport}
-          className="flex items-center gap-1 text-gray-500 hover:underline"
-        >
-          <AlertCircle size={16} />
-          신고
-        </button>
-
-        {isAuthor && (
-          <>
-            <button
-              onClick={handleEdit}
-              className="flex items-center gap-1 text-yellow-600 hover:underline"
-            >
-              <Edit size={16} />
-              수정
-            </button>
-            <button
-              onClick={handleDelete}
-              className="flex items-center gap-1 text-red-600 hover:underline"
-            >
-              <Trash2 size={16} />
-              삭제
-            </button>
-          </>
         )}
+
+        {/* 액션 바 */}
+        <div className="flex items-center gap-6 text-sm text-gray-600 border-t pt-4">
+          <button
+            onClick={handleLike}
+            className="flex items-center gap-1 transition hover:text-red-500"
+          >
+            <Heart
+              size={18}
+              fill={liked ? "currentColor" : "none"}
+              stroke="currentColor"
+              className={liked ? "text-red-500" : "text-gray-400 group-hover:text-red-500"}
+            />
+            <span className={liked ? "text-red-500" : "text-gray-500"}>
+              {likeCount}
+            </span>
+          </button>
+          <button
+            onClick={handleReport}
+            className="flex items-center gap-1 hover:text-red-500 transition"
+          >
+            <AlertCircle size={16} /> 신고
+          </button>
+          {isAuthor && (
+            <>
+              <button
+                onClick={handleEdit}
+                className="flex items-center gap-1 hover:text-yellow-600 transition"
+              >
+                <Edit size={16} /> 수정
+              </button>
+              <button
+                onClick={handleDelete}
+                className="flex items-center gap-1 hover:text-red-600 transition"
+              >
+                <Trash2 size={16} /> 삭제
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
-      {/* 댓글 목록 */}
-      {commentType !== "none" && parentComments.length > 0 && (
-        <div className="mt-8">
-          <h3 className="text-lg font-semibold mb-2">댓글 목록</h3>
-          <ul className="space-y-4 mt-4">
+      {/* 📌 댓글 섹션 (기존 기능 유지) */}
+      {commentType !== "none" && (
+        <div>
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">댓글</h2>
+
+          {/* 댓글 목록 */}
+          <ul className="space-y-4">
             {parentComments.map((c) => (
-              <li key={c.comment_id} className="border p-2 rounded-md">
+              <li key={c.comment_id} className="border p-3 rounded-md">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="text-xs text-gray-500 mb-1">
@@ -245,20 +218,34 @@ const BoardDetailTemplate = ({
                           className="text-gray-400 cursor-pointer"
                           onClick={() => handleCommentReport(c.comment_id)}
                         />
-                        <Heart
-                          size={16}
-                          fill={
-                            commentLikes[c.comment_id]?.liked
-                              ? "currentColor"
-                              : "none"
-                          }
-                          stroke="currentColor"
-                          className="text-red-500 cursor-pointer"
+                        <button
                           onClick={() => handleCommentLike(c.comment_id)}
-                        />
-                        <span className="text-xs">
-                          {commentLikes[c.comment_id]?.count || 0}
-                        </span>
+                          className="flex items-center gap-1 transition hover:text-red-500"
+                        >
+                          <Heart
+                            size={16}
+                            fill={
+                              commentLikes[c.comment_id]?.liked
+                                ? "currentColor"
+                                : "none"
+                            }
+                            stroke="currentColor"
+                            className={
+                              commentLikes[c.comment_id]?.liked
+                                ? "text-red-500"
+                                : "text-gray-400"
+                            }
+                          />
+                          <span
+                            className={
+                              commentLikes[c.comment_id]?.liked
+                                ? "text-red-500"
+                                : "text-gray-500"
+                            }
+                          >
+                            {commentLikes[c.comment_id]?.count || 0}
+                          </span>
+                        </button>
                       </>
                     )}
                   </div>
@@ -352,20 +339,34 @@ const BoardDetailTemplate = ({
                                 className="text-gray-400 cursor-pointer"
                                 onClick={() => handleReplyReport(r.comment_id)}
                               />
-                              <Heart
-                                size={16}
-                                fill={
-                                  commentLikes[r.comment_id]?.liked
-                                    ? "currentColor"
-                                    : "none"
-                                }
-                                stroke="currentColor"
-                                className="text-red-500 cursor-pointer"
+                              <button
                                 onClick={() => handleCommentLike(r.comment_id)}
-                              />
-                              <span className="text-xs">
-                                {commentLikes[r.comment_id]?.count || 0}
-                              </span>
+                                className="flex items-center gap-1 transition hover:text-red-500"
+                              >
+                                <Heart
+                                  size={16}
+                                  fill={
+                                    commentLikes[r.comment_id]?.liked
+                                      ? "currentColor"
+                                      : "none"
+                                  }
+                                  stroke="currentColor"
+                                  className={
+                                    commentLikes[r.comment_id]?.liked
+                                      ? "text-red-500"
+                                      : "text-gray-400"
+                                  }
+                                />
+                                <span
+                                  className={
+                                    commentLikes[r.comment_id]?.liked
+                                      ? "text-red-500"
+                                      : "text-gray-500"
+                                  }
+                                >
+                                  {commentLikes[r.comment_id]?.count || 0}
+                                </span>
+                              </button>
                             </div>
                           </>
                         )}
@@ -375,38 +376,36 @@ const BoardDetailTemplate = ({
               </li>
             ))}
           </ul>
-        </div>
-      )}
 
-      {/* 댓글 작성 */}
-      {commentType !== "none" && (
-        <div className="pt-6 mt-6 border-t border-gray-200">
-          <h3 className="text-lg font-semibold mb-2">댓글 작성</h3>
-          {commentType === "code" ? (
-            <CommentEditor onSubmit={safeHandleCommentSubmit} />
-          ) : (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const content = e.target.comment.value.trim();
-                if (!content) return alert("내용을 입력하세요.");
-                safeHandleCommentSubmit(content);
-                e.target.comment.value = "";
-              }}
-            >
-              <textarea
-                name="comment"
-                placeholder="댓글을 입력하세요"
-                className="w-full border p-2 h-24"
-              />
-              <button
-                type="submit"
-                className="mt-2 px-4 py-2 bg-green-600 text-white rounded-md"
+          {/* 댓글 작성 */}
+          <div className="pt-6 mt-6 border-t border-gray-200">
+            <h3 className="text-lg font-semibold mb-2">댓글 작성</h3>
+            {commentType === "code" ? (
+              <CommentEditor onSubmit={handleCommentSubmit} />
+            ) : (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const content = e.target.comment.value.trim();
+                  if (!content) return alert("내용을 입력하세요.");
+                  handleCommentSubmit(content);
+                  e.target.comment.value = "";
+                }}
               >
-                댓글 등록
-              </button>
-            </form>
-          )}
+                <textarea
+                  name="comment"
+                  placeholder="댓글을 입력하세요"
+                  className="w-full border p-2 h-24"
+                />
+                <button
+                  type="submit"
+                  className="mt-2 px-4 py-2 bg-green-600 text-white rounded-md"
+                >
+                  댓글 등록
+                </button>
+              </form>
+            )}
+          </div>
         </div>
       )}
 

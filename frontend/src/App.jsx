@@ -1,3 +1,4 @@
+// src/App.js
 import React, { useState, useEffect } from "react";
 import {
   BrowserRouter as Router,
@@ -11,7 +12,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { getCurrentUser } from "./api/authApi";
 import ScrollToTop from "./components/ScrollToTop";
 
-// 전역 UI: 채팅 패널 열림/방 선택 상태
+// 전역 UI
 import { ChatUIProvider } from "./context/ChatUIContext";
 
 // 레이아웃
@@ -29,6 +30,7 @@ import BoardManagementPage from "./admin/BoardManagementPage";
 import UserManagementPage from "./admin/UserManagementPage";
 import ProjectManagementPage from "./admin/ProjectManagementPage";
 import BoardManagementDetailPage from "./admin/BoardManagementDetailPage";
+import AdminCodingTestEditPage from "./admin/AdminCodingTestEditPage";
 
 // 채팅
 import { ChatSocketProvider } from "./context/ChatSocketContext";
@@ -58,12 +60,11 @@ import MyPageQuizHistory from "./pages/mypage/MyPageQuizHistory";
 import MyPageUserQuizHistory from "./pages/mypage/MyPageUserQuizHistory";
 import MyPageCTHistory from "./pages/mypage/MyPageCTHistory";
 import MyPageCommunity from "./pages/mypage/MyPageCommunity";
-import MyPageAttendance from "./pages/mypage/MyPageAttendance"; // 250817 김희준
+import MyPageAttendance from "./pages/mypage/MyPageAttendance";
 
 // 포트폴리오
 import PortfolioExport from "./components/portfolio/PortfolioExport";
 import PortfolioHistory from "./components/portfolio/PortfolioHistory";
-
 
 // 인증
 import Signup from "./pages/loginSignup/Signup";
@@ -95,11 +96,10 @@ import SelfCodingTemplatePage from "./pages/selfcoding/SelfCodingTemplatePage";
 import TeamProjectPage from "./pages/project/TeamProjectPage";
 import ProjectDocPage from "./pages/project/Doc/ProjectDocPage";
 
-// ERD UI
+// ERD
 import ErdPage from "./pages/erd/ErdPage";
 
-
-// 유저 뷰어 페이지 (새로 추가)
+// 유저 뷰어 페이지
 import UserProfileViewerPage from "./pages/user/UserProfileViewerPage";
 
 // 프로젝트 템플릿
@@ -134,7 +134,6 @@ const App = () => {
     const fetchUserData = async () => {
       try {
         const user = await getCurrentUser();
-        console.log("🔍 user:", user);
         setUserData({
           user_id: user.user_id,
           email: user.email,
@@ -176,13 +175,28 @@ const App = () => {
                   >
                     <Route index element={<AdminDashboardPage />} />
                     <Route path="materials" element={<StudymaterialManagementPage />} />
+
+                    {/* 관리자 전용 프리뷰 */}
+                    <Route
+                      path="materials/view"
+                      element={<StudyMaterialsPage isAdminPreview={true} />}
+                    />
+
                     <Route path="projects" element={<ProjectManagementPage />} />
                     <Route path="quizzes" element={<QuizManagementPage />} />
                     <Route path="codingtest" element={<CodingtestManagementPage />} />
                     <Route path="codingtest/:testId" element={<AdminCodingTestDetailPage />} />
+                    <Route path="codingtest/:testId/edit" element={<AdminCodingTestEditPage />} />
+                    <Route
+                      path="codingtest/:testId/preview"
+                      element={<CodingTestDetailPage isAdminPreview={true} />}
+                    />
+
+                    {/* 📌 게시판 관리 */}
                     <Route path="board" element={<BoardManagementPage />} />
+                    <Route path="board/:postId" element={<BoardManagementDetailPage />} />
+
                     <Route path="users" element={<UserManagementPage />} />
-                    <Route path="posts/:postId" element={<BoardManagementDetailPage />} />
                   </Route>
                 </>
               )}
@@ -193,11 +207,11 @@ const App = () => {
               <Route path="/codingtest/:id" element={<CodingTestDetailPage />} />
               <Route path="/codingtest/correct/:testId" element={<CorrectSolutionsPage />} />
 
-              {/* ERD 페이지 전체화면 */}
+              {/* ERD 전체화면 */}
               <Route path="/team-project/:projectId/erd/:erdId" element={<ErdPage />} />
               <Route path="/erd" element={<ErdPage />} />
 
-              {/* 공통 레이아웃 포함 영역 */}
+              {/* 공통 레이아웃 */}
               <Route
                 path="/*"
                 element={
@@ -232,7 +246,7 @@ const App = () => {
                         element={<UserQuizResultPage userData={userData} />}
                       />
 
-                      {/* 코딩 테스트 (서비스) */}
+                      {/* 코딩 테스트 */}
                       <Route path="/codingtest" element={<CodingTestPage />} />
                       <Route path="/codetest" element={<CodeTestPage />} />
                       <Route path="/terminal" element={<CodeTestTerminalPage />} />
@@ -262,7 +276,7 @@ const App = () => {
                         <Route path="userquiz-history" element={<MyPageUserQuizHistory />} />
                         <Route path="codingtest" element={<MyPageCTHistory />} />
                         <Route path="community" element={<MyPageCommunity />} />
-                        <Route path="attendance" element={<MyPageAttendance />} /> 
+                        <Route path="attendance" element={<MyPageAttendance />} />
                         <Route path="portfolio" element={<PortfolioExport />} />
                         <Route path="portfolio/history" element={<PortfolioHistory />} />
                       </Route>
@@ -286,7 +300,7 @@ const App = () => {
                       />
                       <Route path="/board" element={<Navigate to="/board/free" />} />
 
-                      {/* 유저 뷰어 페이지 (추가됨) */}
+                      {/* 유저 뷰어 */}
                       <Route path="/user/:userId" element={<UserProfileViewerPage />} />
                     </Routes>
                   </MainLayout>

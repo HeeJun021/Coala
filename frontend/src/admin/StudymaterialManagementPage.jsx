@@ -1,9 +1,18 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { fetchStudyMaterialSummary, deleteStudyMaterial, fetchStudyMaterialById, fetchStudyExamples, updateStudyMaterial, updateStudyExample, deleteStudyExample, updateLanguage, createLanguage, deleteLanguage } from "../api/adminApi";
-import { fetchLanguages } from "../api/studyMaterialsApi";
-import { FaEllipsisV } from "react-icons/fa";
 import axios from "axios";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import { useCallback, useEffect, useState } from "react";
+import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
+import { FaEllipsisV } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import {
+  deleteStudyExample,
+  deleteStudyMaterial,
+  fetchStudyExamples,
+  fetchStudyMaterialById,
+  fetchStudyMaterialSummary,
+  updateStudyExample,
+  updateStudyMaterial
+} from "../api/adminApi";
+import { fetchLanguages } from "../api/studyMaterialsApi";
 
 const StudyMaterialManagementPage = () => {
   const [materials, setMaterials] = useState([]);
@@ -21,11 +30,10 @@ const StudyMaterialManagementPage = () => {
     is_example: false,
   });
   const [error, setError] = useState("");
-  const [showLanguageForm, setShowLanguageForm] = useState(false);
-  const [editLanguageId, setEditLanguageId] = useState(null);
-  const [newLanguage, setNewLanguage] = useState("");
-  const [editLanguage, setEditLanguage] = useState("");
 
+  const navigate = useNavigate();
+
+  // 📌 데이터 로드
   const fetchMaterials = useCallback(async () => {
     try {
       const res = await fetchStudyMaterialSummary(language);
@@ -46,6 +54,47 @@ const StudyMaterialManagementPage = () => {
     }
   }, []);
 
+  useEffect(() => {
+    fetchMaterials();
+    fetchLanguagesData();
+  }, [fetchMaterials, fetchLanguagesData]);
+
+  // 📌 외부 클릭 시 드롭다운 닫기
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest(".dropdown")) setDropdownOpenId(null);
+    };
+    window.addEventListener("click", handleClickOutside);
+    return () => window.removeEventListener("click", handleClickOutside);
+  }, []);
+
+  // 📌 Drag&Drop
+  const onDragEnd = async (result) => {
+    if (!result.destination) return;
+    const items = Array.from(materials);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+    const updatedMaterials = items.map((item, index) => ({ ...item, order: index + 1 }));
+    setMaterials(updatedMaterials);
+
+    try {
+      const updatePayload = updatedMaterials.map((item) => ({
+        id: item.material_id || item.example_id,
+        order: item.order,
+        is_example: !!item.example_id,
+      }));
+      await axios.post(
+        `${process.env.REACT_APP_API_URL || "http://localhost:8000"}/admin/study-materials/update-order`,
+        { materials: updatePayload }
+      );
+    } catch (err) {
+      console.error("순서 업데이트 실패:", err);
+      setError("순서 업데이트 실패: " + err.message);
+      fetchMaterials();
+    }
+  };
+
+  // 📌 CRUD 핸들러
   const handleEdit = async (id, isExample) => {
     try {
       let data;
@@ -92,12 +141,7 @@ const StudyMaterialManagementPage = () => {
     }
   };
 
-  const handleClickOutside = useCallback((e) => {
-    if (!e.target.closest(".dropdown")) {
-      setDropdownOpenId(null);
-    }
-  }, []);
-
+  // 📌 섹션 관리
   const addSection = () => {
     setFormData({
       ...formData,
@@ -111,7 +155,10 @@ const StudyMaterialManagementPage = () => {
   const updateSection = (index, field, value) => {
     const newSections = [...formData.sections];
     if (field === "content" && newSections[index].type === "quiz") {
-      newSections[index][field] = typeof value === "object" ? value : { question: "", options: [], correct_answer: "", explanation: "" };
+      newSections[index][field] =
+        typeof value === "object"
+          ? value
+          : { question: "", options: [], correct_answer: "", explanation: "" };
     } else {
       newSections[index][field] = value;
     }
@@ -131,39 +178,22 @@ const StudyMaterialManagementPage = () => {
     uploadData.append("file", file);
     const uploadUrl = `${process.env.REACT_APP_API_URL || "http://localhost:8000"}/admin/upload/image`;
     try {
-      console.log("이미지 업로드 요청:", { url: uploadUrl, file: { name: file.name, size: file.size, type: file.type } });
       const response = await axios.post(uploadUrl, uploadData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      console.log("이미지 업로드 성공:", response.data);
       updateSection(index, "content", response.data.image_path);
       setError("");
     } catch (err) {
       console.error("이미지 업로드 실패:", err.response?.data || err.message);
-      setError(`이미지 업로드 실패: ${err.response?.status || "알 수 없음"} - ${err.response?.data?.detail || err.message}`);
+      setError(`이미지 업로드 실패: ${err.message}`);
     }
   };
 
+  // 📌 저장
   const handleSubmit = async () => {
     if (!formData.title || !formData.content || !formData.language_id) {
       setError("제목, 본문, 언어를 입력하세요.");
       return;
-    }
-    for (const section of formData.sections) {
-      if (section.type === "quiz") {
-        if (!section.content?.question || !section.content?.options || section.content.options.length < 2 || !section.content?.correct_answer) {
-          setError("퀴즈 섹션은 질문, 최소 2개 옵션, 정답이 필요합니다.");
-          return;
-        }
-        if (!section.content.options.includes(section.content.correct_answer)) {
-          setError("퀴즈 정답은 옵션 중 하나여야 합니다.");
-          return;
-        }
-      }
-      if (section.type === "image" && !section.content) {
-        setError("이미지 섹션에 이미지를 업로드하세요.");
-        return;
-      }
     }
     try {
       const payload = {
@@ -173,7 +203,6 @@ const StudyMaterialManagementPage = () => {
         sections: formData.sections,
         is_example: formData.is_example,
       };
-      console.log("제출 payload:", JSON.stringify(payload, null, 2));
       if (isEditMode) {
         if (formData.is_example) {
           await updateStudyExample(formData.id, payload);
@@ -189,534 +218,306 @@ const StudyMaterialManagementPage = () => {
         await axios.post(url, payload);
         alert(`${formData.is_example ? "예제" : "학습자료"}가 추가되었습니다.`);
       }
-      setFormData({
-        id: null,
-        language_id: 1,
-        title: "",
-        content: "",
-        sections: [],
-        is_example: false,
-      });
+      setFormData({ id: null, language_id: 1, title: "", content: "", sections: [], is_example: false });
       setShowForm(false);
       setIsEditMode(false);
       fetchMaterials();
     } catch (err) {
-      console.error(`${isEditMode ? "수정" : "추가"} 실패:`, err.response?.data || err.message);
-      setError(`${isEditMode ? "수정" : "추가"} 실패: ${err.response?.status || "알 수 없음"} - ${err.response?.data?.detail || err.message}`);
+      console.error("저장 실패:", err);
+      setError("저장 실패: " + err.message);
     }
   };
 
-  const onDragEnd = async (result) => {
-    if (!result.destination) return;
-
-    const items = Array.from(materials);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-
-    const updatedMaterials = items.map((item, index) => ({
-      ...item,
-      order: index + 1,
-    }));
-
-    setMaterials(updatedMaterials);
-
-    try {
-      const updatePayload = updatedMaterials.map((item) => ({
-        id: item.material_id || item.example_id,
-        order: item.order,
-        is_example: !!item.example_id,
-      }));
-      await axios.post(`${process.env.REACT_APP_API_URL || "http://localhost:8000"}/admin/study-materials/update-order`, { materials: updatePayload });
-      console.log("순서 업데이트 성공");
-    } catch (err) {
-      console.error("순서 업데이트 실패:", err);
-      setError("순서 업데이트 실패: " + err.message);
-      fetchMaterials();
+  // 📌 프리뷰 이동
+  const handlePreview = (material) => {
+    if (material.is_example) {
+      navigate(`/admin/materials/view?category=${language}&exampleId=${material.example_id}`);
+    } else {
+      navigate(`/admin/materials/view?category=${language}&id=${material.material_id}`);
     }
   };
-
-  const handleAddLanguage = async () => {
-    if (!newLanguage.trim()) {
-      setError("언어를 입력하세요.");
-      return;
-    }
-    try {
-      await createLanguage({ language: newLanguage });
-      alert(`언어 '${newLanguage}'가 추가되었습니다.`);
-      setNewLanguage("");
-      fetchLanguagesData();
-    } catch (err) {
-      console.error("언어 추가 실패:", err.response?.data || err.message);
-      setError(`언어 추가 실패: ${err.response?.status || "알 수 없음"} - ${err.response?.data?.detail || err.message}`);
-    }
-  };
-
-  const handleUpdateLanguage = async () => {
-    if (!editLanguage.trim() || !editLanguageId) {
-      setError("언어를 입력하세요.");
-      return;
-    }
-    try {
-      await updateLanguage(editLanguageId, { language: editLanguage });
-      alert(`언어 '${editLanguage}'로 수정되었습니다.`);
-      setEditLanguage("");
-      setEditLanguageId(null);
-      setShowLanguageForm(false);
-      fetchLanguagesData();
-    } catch (err) {
-      console.error("언어 수정 실패:", err.response?.data || err.message);
-      setError(`언어 수정 실패: ${err.response?.status || "알 수 없음"} - ${err.response?.data?.detail || err.message}`);
-    }
-  };
-
-  const handleDeleteLanguage = async (languageId) => {
-    const confirmed = window.confirm("이 언어와 연관된 모든 학습 자료 및 예제가 삭제됩니다. 계속하시겠습니까?");
-    if (!confirmed) return;
-    try {
-      await deleteLanguage(languageId);
-      alert("언어와 연관된 모든 자료가 삭제되었습니다.");
-      fetchLanguagesData();
-      if (languages.find((lang) => lang.value === parseInt(languageId))) {
-        setLanguage(languages[0]?.label || "HTML");
-        fetchMaterials();
-      }
-    } catch (err) {
-      console.error("언어 삭제 실패:", err.response?.data || err.message);
-      setError(`언어 삭제 실패: ${err.response?.status || "알 수 없음"} - ${err.response?.data?.detail || err.message}`);
-    }
-  };
-
-  useEffect(() => {
-    fetchMaterials();
-    fetchLanguagesData();
-  }, [fetchMaterials, fetchLanguagesData]);
-
-  useEffect(() => {
-    window.addEventListener("click", handleClickOutside);
-    return () => window.removeEventListener("click", handleClickOutside);
-  }, [handleClickOutside]);
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold mb-6">학습자료 관리</h1>
-      {error && <div className="text-red-500 mb-4">{error}</div>}
+    <div className="p-6 bg-[#f9fafb] min-h-screen">
+      <div className="bg-white shadow-md rounded-lg p-8 max-w-[1100px] w-full mx-auto">
+        <h1 className="text-2xl font-bold mb-6">📚 학습자료 관리</h1>
+        {error && <div className="text-red-500 mb-4">{error}</div>}
 
-      <div className="mb-4 flex items-center">
-        <select
-          value={language}
-          onChange={(e) => setLanguage(e.target.value)}
-          className="px-3 py-1 border rounded mr-4"
-        >
-          {languages.map((lang) => (
-            <option key={lang.value} value={lang.label}>{lang.label}</option>
-          ))}
-        </select>
-        <button
-          className="ml-4 bg-blue-500 text-white px-4 py-2 rounded"
-          onClick={() => {
-            setShowForm(!showForm);
-            setIsEditMode(false);
-            setFormData({
-              id: null,
-              language_id: 1,
-              title: "",
-              content: "",
-              sections: [],
-              is_example: false,
-            });
-          }}
-        >
-          {showForm ? "폼 닫기" : "새 자료 추가"}
-        </button>
-        <button
-          className="ml-4 bg-yellow-500 text-white px-4 py-2 rounded"
-          onClick={() => {
-            setShowLanguageForm(!showLanguageForm);
-            setEditLanguageId(null);
-            setEditLanguage("");
-          }}
-        >
-          언어 수정
-        </button>
-        <div className="ml-4">
-          <input
-            type="text"
-            value={newLanguage}
-            onChange={(e) => setNewLanguage(e.target.value)}
-            placeholder="새 언어 입력"
-            className="px-3 py-1 border rounded mr-2"
-          />
-          <button
-            className="bg-green-500 text-white px-4 py-2 rounded"
-            onClick={handleAddLanguage}
+        {/* 언어 관리 */}
+        <div className="mb-6 flex flex-wrap gap-3 items-center">
+          <select
+            value={language}
+            onChange={(e) => setLanguage(e.target.value)}
+            className="px-3 py-2 border rounded"
           >
-            언어 추가
+            {languages.map((lang) => (
+              <option key={lang.value} value={lang.label}>{lang.label}</option>
+            ))}
+          </select>
+          <button
+            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+            onClick={() => {
+              setShowForm(!showForm);
+              setIsEditMode(false);
+              setFormData({ id: null, language_id: 1, title: "", content: "", sections: [], is_example: false });
+            }}
+          >
+            {showForm ? "폼 닫기" : "새 자료 추가"}
           </button>
         </div>
-      </div>
 
-      {showLanguageForm && (
-        <div className="mb-8 p-4 bg-gray-100 rounded">
-          <h2 className="text-xl font-semibold mb-4">언어 수정</h2>
-          <div className="mb-4">
-            <label className="block mb-1">수정할 언어 선택:</label>
-            <select
-              value={editLanguageId || ""}
-              onChange={(e) => {
-                const langId = parseInt(e.target.value);
-                const lang = languages.find((l) => l.value === langId);
-                setEditLanguageId(langId);
-                setEditLanguage(lang ? lang.label : "");
-              }}
-              className="w-full px-3 py-1 border rounded mb-2"
-            >
-              <option value="">선택</option>
-              {languages.map((lang) => (
-                <option key={lang.value} value={lang.value}>{lang.label}</option>
-              ))}
-            </select>
-            <label className="block mb-1">새 언어 이름:</label>
-            <input
-              type="text"
-              value={editLanguage}
-              onChange={(e) => setEditLanguage(e.target.value)}
-              className="w-full px-3 py-1 border rounded mb-2"
-            />
-            <button
-              className="bg-blue-500 text-white px-4 py-2 rounded"
-              onClick={handleUpdateLanguage}
-            >
-              저장
-            </button>
-            <button
-              className="ml-2 bg-gray-500 text-white px-4 py-2 rounded"
-              onClick={() => setShowLanguageForm(false)}
-            >
-              취소
-            </button>
-            {editLanguageId && (
-              <button
-                className="ml-2 bg-red-500 text-white px-4 py-2 rounded"
-                onClick={() => handleDeleteLanguage(editLanguageId)}
-              >
-                삭제
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      <div className="bg-white rounded shadow overflow-hidden">
+        {/* 목록 (카드형) */}
         <DragDropContext onDragEnd={onDragEnd}>
           <Droppable droppableId="materials">
             {(provided) => (
-              <table
-                className="w-full table-auto text-left"
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-              >
-                <thead className="bg-navbar text-white">
-                  <tr>
-                    <th className="px-4 py-3">유형</th>
-                    <th className="px-4 py-3">제목</th>
-                    <th className="px-4 py-3">조회수</th>
-                    <th className="px-4 py-3 text-center">관리</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {materials.length === 0 ? (
-                    <tr>
-                      <td colSpan="4" className="px-4 py-3 text-center">데이터가 없습니다.</td>
-                    </tr>
-                  ) : (
-                    materials.map((material, index) => (
-                      <Draggable
-                        key={`${material.is_example ? "example" : "material"}-${material.material_id || material.example_id}`}
-                        draggableId={`${material.is_example ? "example" : "material"}-${material.material_id || material.example_id}`}
-                        index={index}
-                      >
-                        {(provided) => (
-                          <tr
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            className="border-t hover:bg-gray-50"
-                          >
-                            <td className="px-4 py-3">{material.is_example ? "예제" : "학습자료"}</td>
-                            <td className="px-4 py-3">{material.title}</td>
-                            <td className="px-4 py-3">{material.read_count || 0}</td>
-                            <td className="px-4 py-3 text-center relative dropdown">
-                              <button
-                                className="text-gray-600 hover:text-black"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setDropdownOpenId(dropdownOpenId === (material.material_id || material.example_id) ? null : (material.material_id || material.example_id));
-                                }}
-                              >
-                                <FaEllipsisV />
-                              </button>
-                              {dropdownOpenId === (material.material_id || material.example_id) && (
-                                <div className="absolute right-0 mt-2 bg-white border rounded shadow-md z-10 w-32">
-                                  <button
-                                    className="block w-full text-left px-4 py-2 text-sm hover:bg-blue-100 text-blue-600"
-                                    onClick={() => handleEdit(material.material_id || material.example_id, material.is_example)}
-                                  >
-                                    수정
-                                  </button>
-                                  <button
-                                    className="block w-full text-left px-4 py-2 text-sm hover:bg-red-100 text-red-600"
-                                    onClick={() => handleDelete(material.material_id || material.example_id, material.is_example)}
-                                  >
-                                    삭제
-                                  </button>
-                                </div>
-                              )}
-                            </td>
-                          </tr>
-                        )}
-                      </Draggable>
-                    ))
-                  )}
-                  {provided.placeholder}
-                </tbody>
-              </table>
+              <div ref={provided.innerRef} {...provided.droppableProps} className="grid gap-6">
+                {materials.length === 0 ? (
+                  <p className="text-gray-500">데이터가 없습니다.</p>
+                ) : (
+                  materials.map((material, index) => (
+                    <Draggable
+                      key={`${material.is_example ? "example" : "material"}-${material.material_id || material.example_id}`}
+                      draggableId={`${material.is_example ? "example" : "material"}-${material.material_id || material.example_id}`}
+                      index={index}
+                    >
+                      {(provided) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          className="bg-white rounded-lg shadow p-6 relative hover:shadow-lg transition cursor-pointer"
+                          onClick={() => handlePreview(material)}
+                        >
+                          <h2 className="text-xl font-bold text-gray-900">{material.title}</h2>
+                          <p className="text-sm text-gray-600 mt-1">{material.is_example ? "예제" : "학습자료"}</p>
+                          <p className="text-sm text-gray-500 mt-1">조회수 {material.read_count || 0}</p>
+
+                          {/* 드롭다운 */}
+                          <div className="absolute top-4 right-4 dropdown">
+                            <button
+                              className="text-gray-600 hover:text-black"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDropdownOpenId(
+                                  dropdownOpenId === (material.material_id || material.example_id)
+                                    ? null
+                                    : (material.material_id || material.example_id)
+                                );
+                              }}
+                            >
+                              <FaEllipsisV />
+                            </button>
+                            {dropdownOpenId === (material.material_id || material.example_id) && (
+                              <div className="absolute right-0 mt-2 bg-white border rounded shadow-md z-10 w-32">
+                                <button
+                                  className="block w-full text-left px-4 py-2 text-sm hover:bg-blue-100 text-blue-600"
+                                  onClick={() => handleEdit(material.material_id || material.example_id, material.is_example)}
+                                >
+                                  수정
+                                </button>
+                                <button
+                                  className="block w-full text-left px-4 py-2 text-sm hover:bg-red-100 text-red-600"
+                                  onClick={() => handleDelete(material.material_id || material.example_id, material.is_example)}
+                                >
+                                  삭제
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </Draggable>
+                  ))
+                )}
+                {provided.placeholder}
+              </div>
             )}
           </Droppable>
         </DragDropContext>
-      </div>
 
-      {showForm && (
-        <div className="mb-8 p-4 bg-gray-100 rounded">
-          <h2 className="text-xl font-semibold mb-4">
-            {isEditMode ? `수정: ${formData.title}` : `새 ${formData.is_example ? "예제" : "학습자료"} 추가`}
-          </h2>
-          <div className="mb-4">
-            <label className="block mb-1">타입:</label>
-            <select
-              value={formData.is_example}
-              onChange={(e) => setFormData({ ...formData, is_example: e.target.value === "true" })}
-              className="px-3 py-1 border rounded"
-              disabled={isEditMode}
-            >
-              <option value="false">학습자료</option>
-              <option value="true">예제</option>
-            </select>
-          </div>
-          <div className="mb-4">
-            <label className="block mb-1">언어:</label>
-            <select
-              value={formData.language_id}
-              onChange={(e) => setFormData({ ...formData, language_id: parseInt(e.target.value) })}
-              className="px-3 py-1 border rounded"
-            >
-              {languages.map((lang) => (
-                <option key={lang.value} value={lang.value}>{lang.label}</option>
-              ))}
-            </select>
-          </div>
-          <div className="mb-4">
-            <label className="block mb-1">제목:</label>
-            <input
-              type="text"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-3 py-1 border rounded"
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block mb-1">내용:</label>
-            <textarea
-              value={formData.content}
-              onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-              className="w-full px-3 py-1 border rounded"
-            />
-          </div>
-          <div className="mb-4">
-            <h3 className="font-semibold mb-2">섹션</h3>
-            {formData.sections.map((section, index) => (
-              <div key={index} className="mb-4 p-4 bg-white rounded shadow">
-                <label className="block mb-1">섹션 타입:</label>
-                <select
-                  value={section.type}
-                  onChange={(e) => {
-                    const newType = e.target.value;
-                    const newSection = { ...section, type: newType };
-                    if (newType === "quiz" && !section.content?.question) {
-                      newSection.content = { question: "", options: [], correct_answer: "", explanation: "" };
-                    }
-                    updateSection(index, "type", newType);
-                  }}
-                  className="px-3 py-1 border rounded mb-2"
-                >
-                  <option value="">선택</option>
-                  <option value="text">텍스트</option>
-                  <option value="code">코드</option>
-                  <option value="image">이미지</option>
-                  <option value="quiz">퀴즈</option>
-                  <option value="definition">정의</option>
-                  <option value="video">비디오</option>
-                </select>
-                {section.type === "text" && (
-                  <div>
-                    <label className="block mb-1">내용:</label>
+        {/* 추가/수정 폼 */}
+        {showForm && (
+          <div className="mt-8 bg-gray-50 p-6 rounded-lg shadow">
+            <h2 className="text-xl font-semibold mb-4">
+              {isEditMode ? `수정: ${formData.title}` : `새 ${formData.is_example ? "예제" : "학습자료"} 추가`}
+            </h2>
+
+            {/* 기본 입력 */}
+            <div className="mb-4">
+              <label className="block mb-1">타입:</label>
+              <select
+                value={formData.is_example}
+                onChange={(e) => setFormData({ ...formData, is_example: e.target.value === "true" })}
+                className="px-3 py-2 border rounded"
+                disabled={isEditMode}
+              >
+                <option value="false">학습자료</option>
+                <option value="true">예제</option>
+              </select>
+            </div>
+            <div className="mb-4">
+              <label className="block mb-1">언어:</label>
+              <select
+                value={formData.language_id}
+                onChange={(e) => setFormData({ ...formData, language_id: parseInt(e.target.value) })}
+                className="px-3 py-2 border rounded"
+              >
+                {languages.map((lang) => (
+                  <option key={lang.value} value={lang.value}>{lang.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="mb-4">
+              <label className="block mb-1">제목:</label>
+              <input
+                type="text"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                className="w-full px-3 py-2 border rounded"
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block mb-1">내용:</label>
+              <textarea
+                value={formData.content}
+                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                className="w-full px-3 py-2 border rounded"
+              />
+            </div>
+
+            {/* 섹션 관리 */}
+            <div className="mb-4">
+              <h3 className="font-semibold mb-2">섹션</h3>
+              {formData.sections.map((section, index) => (
+                <div key={index} className="mb-4 p-4 bg-white rounded shadow">
+                  <label className="block mb-1">섹션 타입:</label>
+                  <select
+                    value={section.type}
+                    onChange={(e) => updateSection(index, "type", e.target.value)}
+                    className="px-3 py-2 border rounded mb-2"
+                  >
+                    <option value="">선택</option>
+                    <option value="text">텍스트</option>
+                    <option value="code">코드</option>
+                    <option value="image">이미지</option>
+                    <option value="quiz">퀴즈</option>
+                    <option value="definition">정의</option>
+                    <option value="video">비디오</option>
+                  </select>
+
+                  {/* 타입별 UI */}
+                  {section.type === "text" && (
                     <textarea
                       value={section.content}
                       onChange={(e) => updateSection(index, "content", e.target.value)}
-                      className="w-full px-3 py-1 border rounded"
+                      className="w-full px-3 py-2 border rounded"
                     />
-                  </div>
-                )}
-                {section.type === "code" && (
-                  <>
-                    <label className="block mb-1">코드 제목:</label>
-                    <input
-                      type="text"
-                      value={section.title}
-                      onChange={(e) => updateSection(index, "title", e.target.value)}
-                      className="w-full px-3 py-1 border rounded mb-2"
-                    />
-                    <label className="block mb-1">코드 내용:</label>
-                    <textarea
-                      value={section.content}
-                      onChange={(e) => updateSection(index, "content", e.target.value)}
-                      className="w-full px-3 py-1 border rounded mb-2"
-                    />
-                    <label className="block mb-1">문제 설명:</label>
-                    <input
-                      type="text"
-                      value={section.problem_description}
-                      onChange={(e) => updateSection(index, "problem_description", e.target.value)}
-                      className="w-full px-3 py-1 border rounded"
-                    />
-                  </>
-                )}
-                {section.type === "image" && (
-                  <>
-                    <label className="block mb-1">이미지 업로드 (최대 5MB):</label>
-                    {section.content && section.content.startsWith("http") && (
-                      <p className="text-red-500 mb-2">유효하지 않은 외부 URL({section.content})이 감지되었습니다. 새 이미지를 업로드하여 교체하세요.</p>
-                    )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleImageUpload(e.target.files[0], index)}
-                      className="mb-2"
-                    />
-                    {section.content && (
-                      <img
-                        src={section.content.startsWith("http") ? section.content : `${process.env.REACT_APP_API_URL || "http://localhost:8000"}${section.content}`}
-                        alt="Preview"
-                        className="max-w-xs mt-2"
-                        onError={(e) => {
-                          console.error(`이미지 로드 실패: ${section.content}`);
-                          e.target.src = "/fallback-image.png";
-                        }}
+                  )}
+                  {section.type === "code" && (
+                    <>
+                      <input
+                        type="text"
+                        placeholder="코드 제목"
+                        value={section.title}
+                        onChange={(e) => updateSection(index, "title", e.target.value)}
+                        className="w-full px-3 py-2 border rounded mb-2"
                       />
-                    )}
-                    <label className="block mb-1">설명:</label>
-                    <input
-                      type="text"
-                      value={section.description}
-                      onChange={(e) => updateSection(index, "description", e.target.value)}
-                      className="w-full px-3 py-1 border rounded"
-                    />
-                  </>
-                )}
-                {section.type === "quiz" && (
-                  <>
-                    <label className="block mb-1">질문:</label>
-                    <input
-                      type="text"
-                      value={section.content.question || ""}
-                      onChange={(e) => updateSection(index, "content", { ...section.content, question: e.target.value })}
-                      className="w-full px-3 py-1 border rounded mb-2"
-                    />
-                    <label className="block mb-1">옵션 (쉼표로 구분):</label>
-                    <input
-                      type="text"
-                      value={section.content.options ? section.content.options.join(",") : ""}
-                      onChange={(e) =>
-                        updateSection(index, "content", { ...section.content, options: e.target.value.split(",").map((opt) => opt.trim()) })
-                      }
-                      className="w-full px-3 py-1 border rounded mb-2"
-                    />
-                    <label className="block mb-1">정답:</label>
-                    <input
-                      type="text"
-                      value={section.content.correct_answer || ""}
-                      onChange={(e) => updateSection(index, "content", { ...section.content, correct_answer: e.target.value })}
-                      className="w-full px-3 py-1 border rounded mb-2"
-                    />
-                    <label className="block mb-1">설명:</label>
-                    <input
-                      type="text"
-                      value={section.content.explanation || ""}
-                      onChange={(e) => updateSection(index, "content", { ...section.content, explanation: e.target.value })}
-                      className="w-full px-3 py-1 border rounded"
-                    />
-                  </>
-                )}
-                {section.type === "definition" && (
-                  <>
-                    <label className="block mb-1">정의 (JSON 형식):</label>
-                    <textarea
-                      value={JSON.stringify(section.content, null, 2)}
-                      onChange={(e) => {
-                        try {
-                          updateSection(index, "content", JSON.parse(e.target.value));
-                        } catch {
-                          setError("유효한 JSON 형식이 아닙니다.");
-                        }
-                      }}
-                      className="w-full px-3 py-1 border rounded"
-                    />
-                  </>
-                )}
-                {section.type === "video" && (
-                  <>
-                    <label className="block mb-1">비디오 URL:</label>
-                    <input
-                      type="text"
-                      value={section.content}
-                      onChange={(e) => updateSection(index, "content", e.target.value)}
-                      className="w-full px-3 py-1 border rounded mb-2"
-                    />
-                    <label className="block mb-1">설명:</label>
-                    <input
-                      type="text"
-                      value={section.description}
-                      onChange={(e) => updateSection(index, "description", e.target.value)}
-                      className="w-full px-3 py-1 border rounded"
-                    />
-                  </>
-                )}
-                <label className="block mb-1">스타일:</label>
-                <input
-                  type="text"
-                  value={section.style}
-                  onChange={(e) => updateSection(index, "style", e.target.value)}
-                  className="w-full px-3 py-1 border rounded"
-                />
-                <button
-                  className="mt-2 text-red-600"
-                  onClick={() => setFormData({
-                    ...formData,
-                    sections: formData.sections.filter((_, i) => i !== index),
-                  })}
-                >
-                  섹션 삭제
-                </button>
-              </div>
-            ))}
-            <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={addSection}>
-              섹션 추가
+                      <textarea
+                        placeholder="코드 내용"
+                        value={section.content}
+                        onChange={(e) => updateSection(index, "content", e.target.value)}
+                        className="w-full px-3 py-2 border rounded mb-2"
+                      />
+                      <input
+                        type="text"
+                        placeholder="문제 설명"
+                        value={section.problem_description}
+                        onChange={(e) => updateSection(index, "problem_description", e.target.value)}
+                        className="w-full px-3 py-2 border rounded"
+                      />
+                    </>
+                  )}
+                  {section.type === "image" && (
+                    <>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(e.target.files[0], index)}
+                        className="mb-2"
+                      />
+                      {section.content && (
+                        <img
+                          src={`${process.env.REACT_APP_API_URL || "http://localhost:8000"}${section.content}`}
+                          alt="미리보기"
+                          className="max-w-xs mt-2 rounded"
+                        />
+                      )}
+                    </>
+                  )}
+                  {section.type === "quiz" && (
+                    <>
+                      <input
+                        type="text"
+                        placeholder="질문"
+                        value={section.content.question || ""}
+                        onChange={(e) => updateSection(index, "content", { ...section.content, question: e.target.value })}
+                        className="w-full px-3 py-2 border rounded mb-2"
+                      />
+                      <input
+                        type="text"
+                        placeholder="옵션 (쉼표로 구분)"
+                        value={section.content.options ? section.content.options.join(",") : ""}
+                        onChange={(e) => updateSection(index, "content", {
+                          ...section.content,
+                          options: e.target.value.split(",").map((opt) => opt.trim())
+                        })}
+                        className="w-full px-3 py-2 border rounded mb-2"
+                      />
+                      <input
+                        type="text"
+                        placeholder="정답"
+                        value={section.content.correct_answer || ""}
+                        onChange={(e) => updateSection(index, "content", { ...section.content, correct_answer: e.target.value })}
+                        className="w-full px-3 py-2 border rounded mb-2"
+                      />
+                      <input
+                        type="text"
+                        placeholder="설명"
+                        value={section.content.explanation || ""}
+                        onChange={(e) => updateSection(index, "content", { ...section.content, explanation: e.target.value })}
+                        className="w-full px-3 py-2 border rounded"
+                      />
+                    </>
+                  )}
+
+                  <button
+                    className="mt-3 text-red-600"
+                    onClick={() =>
+                      setFormData({ ...formData, sections: formData.sections.filter((_, i) => i !== index) })
+                    }
+                  >
+                    섹션 삭제
+                  </button>
+                </div>
+              ))}
+              <button
+                className="bg-blue-500 text-white px-4 py-2 rounded"
+                onClick={addSection}
+              >
+                섹션 추가
+              </button>
+            </div>
+
+            {/* 저장 버튼 */}
+            <button
+              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+              onClick={handleSubmit}
+            >
+              {isEditMode ? "수정 저장" : "저장"}
             </button>
           </div>
-          <button className="bg-green-500 text-white px-4 py-2 rounded" onClick={handleSubmit}>
-            {isEditMode ? "수정 저장" : "저장"}
-          </button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
