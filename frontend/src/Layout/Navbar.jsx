@@ -26,6 +26,55 @@ const Navbar = () => {
     window.location.reload();
   };
 
+  const goSelfCoding = React.useCallback(
+    async (panel /* 'explorer' | 'git' | undefined */) => {
+      const seenKey = "selfcoding_first_seen";
+      const firstVisit = !localStorage.getItem(seenKey);
+
+      try {
+        // 폴더 생성/초기화 호출은 항상 수행 (최초에도 반드시 호출)
+        const res = await initRootCodeFolder();
+
+        // 서버가 created 플래그를 주는 경우도 함께 사용(보조 판단)
+        const createdFlag =
+          Boolean(res?.created) ||
+          Boolean(res?.is_created) ||
+          res?.status === "created" ||
+          res?.statusCode === 201 ||
+          res?.wasCreated === true ||
+          Boolean(res?.data?.created);
+
+        // 최초 방문이거나(로컬 기준) 서버가 방금 생성했다고 하면 → 템플릿으로
+        if (firstVisit || createdFlag) {
+          localStorage.setItem(seenKey, "1");
+          navigate("/self-coding/templates");
+          return;
+        }
+
+        // 그 외에는 기존 페이지로 (패널 옵션 유지)
+        if (panel === "git") {
+          navigate("/self-coding", { state: { panel: "git" } });
+        } else if (panel === "explorer") {
+          navigate("/self-coding", { state: { panel: "explorer" } });
+        } else {
+          navigate("/self-coding");
+        }
+      } catch (err) {
+        console.error("자율코딩 초기화 오류:", err);
+
+        // ⚠️ 최초 방문인데 서버 오류가 나더라도 UX상 템플릿로 한번 보내줌
+        if (firstVisit) {
+          localStorage.setItem(seenKey, "1");
+          navigate("/self-coding/templates");
+          return;
+        }
+
+        alert("자율코딩 초기화 중 오류가 발생했습니다.");
+      }
+    },
+    [navigate]
+  );
+
   const handleLanguageClick = async (language) => {
     try {
       const materials = await fetchStudyMaterials(language);
@@ -115,38 +164,30 @@ const Navbar = () => {
               onMouseEnter={() => setHoverIndex(idx)}
             >
               {item.label === "학습자료" ? (
-  <span
-    onClick={() => {
-      // ✅ 파라미터 없이 진입 → Sidebar는 처음에 접힘 상태
-      navigate("/StudyMaterialsPage");
-    }}
-    className="cursor-pointer text-[17px] font-semibold text-gray-900 transition duration-200 hover:text-green-500 hover:scale-110 hover:font-bold"
-  >
-    {item.label}
-  </span>
-) : item.label === "자율코딩" ? (
-  <span
-    onClick={async () => {
-      try {
-        await initRootCodeFolder();
-        navigate(item.path);
-      } catch (err) {
-        console.error("폴더 생성 오류:", err);
-        alert("자율코딩 초기화 중 오류가 발생했습니다.");
-      }
-    }}
-    className="cursor-pointer text-[17px] font-semibold text-gray-900 transition duration-200 hover:text-green-500 hover:scale-110 hover:font-bold"
-  >
-    {item.label}
-  </span>
-) : (
-  <Link
-    to={item.path}
-    className="text-[17px] font-semibold text-gray-900 transition duration-200 hover:text-green-500 hover:scale-110 hover:font-bold"
-  >
-    {item.label}
-  </Link>
-)}
+              <span
+                onClick={() => {
+                  // 파라미터 없이 진입 → Sidebar는 처음에 접힘 상태
+                  navigate("/StudyMaterialsPage");
+                }}
+                className="cursor-pointer text-[17px] font-semibold text-gray-900 transition duration-200 hover:text-green-500 hover:scale-110 hover:font-bold"
+              >
+                {item.label}
+              </span>
+            ) : item.label === "자율코딩" ? (
+              <span
+                onClick={() => goSelfCoding()} // 최초면 /self-coding/templates, 아니면 /self-coding
+                className="cursor-pointer text-[17px] font-semibold text-gray-900 transition duration-200 hover:text-green-500 hover:scale-110 hover:font-bold"
+              >
+                {item.label}
+              </span>
+            ) : (
+              <Link
+                to={item.path}
+                className="text-[17px] font-semibold text-gray-900 transition duration-200 hover:text-green-500 hover:scale-110 hover:font-bold"
+              >
+                {item.label}
+              </Link>
+            )}
             </div>
           ))}
         </div>
@@ -251,16 +292,7 @@ const Navbar = () => {
                       return (
                         <span
                           key={i}
-                          onClick={async () => {
-                            try {
-                              await initRootCodeFolder();
-                              navigate("/self-coding", {
-                                state: { panel: "explorer" },
-                              });
-                            } catch (err) {
-                              alert("초기화 실패");
-                            }
-                          }}
+                          onClick={() => goSelfCoding("explorer")} // ✅ 최초면 템플릿, 아니면 explorer 패널
                           className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
                             hoverIndex === idx ? "" : "opacity-50"
                           }`}
@@ -269,21 +301,11 @@ const Navbar = () => {
                         </span>
                       );
                     }
-
                     if (child === "Github") {
                       return (
                         <span
                           key={i}
-                          onClick={async () => {
-                            try {
-                              await initRootCodeFolder();
-                              navigate("/self-coding", {
-                                state: { panel: "git" },
-                              });
-                            } catch (err) {
-                              alert("초기화 실패");
-                            }
-                          }}
+                          onClick={() => goSelfCoding("git")} // 최초면 템플릿, 아니면 git 패널
                           className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
                             hoverIndex === idx ? "" : "opacity-50"
                           }`}
