@@ -224,7 +224,7 @@ const handleSelectTarget = useCallback((id, title) => {
     } finally {
       setPublishing(false);
     }
-  }, [templateId, targetPageId, pageTitle, filters]);
+  }, [templateId, targetPageId, pageTitle, filters, aiNotes]);
 
   if (loading) {
     return (
