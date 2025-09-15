@@ -1,3 +1,4 @@
+// frontend/src/components/portfolio/PortfolioExport.jsx
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import NotionConnectPanel from "./NotionConnectPanel";
 import PortfolioFilterPanel from "./PortfolioFilterPanel";
@@ -16,7 +17,6 @@ export default function PortfolioExport() {
 
   // 프로젝트/필터
   const [projects, setProjects] = useState([]);
-  const [projectsLoading, setProjectsLoading] = useState(false);
   const [filters, setFilters] = useState({});
 
   // 선택 상태: 템플릿/대상 페이지/제목
@@ -40,14 +40,14 @@ export default function PortfolioExport() {
   // 단일 프로젝트 선택값(필터에서 첫 번째만 사용)
   const selectedProjectId = useMemo(() => filters?.project_ids?.[0] ?? null, [filters]);
 
-  // 템플릿 선택 시 상태 반영
+  // 템플릿 선택
   const handleSelectTemplate = useCallback((id, title) => {
     setTemplateId(id ?? null);
     setTemplateTitle(title ?? "");
     setTplOpen(false);
   }, []);
 
-  // 대상 페이지 선택 시 상태 반영
+  // 대상 페이지 선택
   const handleSelectTarget = useCallback((id, title) => {
     setTargetPageId(id ?? null);
     setTargetPageTitle(title ?? "");
@@ -74,14 +74,11 @@ export default function PortfolioExport() {
     if (!connected) return;
     (async () => {
       try {
-        setProjectsLoading(true);
         const list = await getMyProjects();
         setProjects(Array.isArray(list) ? list : []);
       } catch (e) {
         console.error("프로젝트 로드 실패:", e);
         setProjects([]);
-      } finally {
-        setProjectsLoading(false);
       }
     })();
   }, [connected]);
@@ -115,7 +112,6 @@ export default function PortfolioExport() {
     if (!canPublish) {
       return alert("프로젝트 1개, 템플릿, 대상 페이지, 제목을 모두 설정하세요.");
     }
-
     try {
       setPublishing(true);
       setResult(null);
@@ -123,9 +119,9 @@ export default function PortfolioExport() {
         template_id: templateId,
         target_page_id: targetPageId,
         title: pageTitle.trim(),
-        project_id: selectedProjectId,    // ✅ 단일 프로젝트
-        ai_prompt: aiNotes || null,       // ✅ AI 설명
-        extra_kv: null,                   // (옵션) 추가 KV 사용 시 객체 전달
+        project_id: selectedProjectId,   // ✅ 단일 프로젝트
+        ai_prompt: aiNotes || null,      // ✅ AI 설명
+        extra_kv: null,
       });
       setResult(res);
       if (res?.ok) {
@@ -233,178 +229,155 @@ export default function PortfolioExport() {
       <div className="max-w-6xl mx-auto px-4 py-6 grid grid-cols-12 gap-6">
         {/* 좌측 메인 */}
         <div className="col-span-12 lg:col-span-8 space-y-6">
-          {/* 연결 안 됨 → Connect 패널만 */}
-          {!connected ? (
-            <div className="rounded-2xl border border-gray-200 bg-white shadow-xl p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">노션 계정 연결 필요</h2>
-              <p className="text-sm text-gray-500 mb-4">
-                퍼블리시하려면 먼저 노션 계정을 연결해주세요.
-              </p>
-              <NotionConnectPanel onDisconnect={refreshStatus} onConnected={refreshStatus} />
+          {/* 섹션 카드: 제목/대상/템플릿 묶음 */}
+          <section className="rounded-2xl border border-gray-200 bg-white shadow-xl">
+            <header className="px-6 pt-5 pb-3 border-b border-gray-100">
+              <h3 className="text-base font-semibold text-gray-900">포트폴리오 페이지 설정</h3>
+            </header>
+
+            <div className="p-6 space-y-5">
+              {/* 1) 제목 */}
+              <div className="flex flex-col gap-2">
+                <span className="text-sm text-gray-600">노션 페이지 제목</span>
+                <input
+                  value={pageTitle}
+                  onChange={(e) => setPageTitle(e.target.value)}
+                  placeholder="예: 엘리베이터형 자판기 시스템 – 포트폴리오"
+                  className="h-10 rounded-xl border border-gray-300 bg-white px-3 text-sm hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                />
+              </div>
+
+              {/* 2) 대상 페이지 */}
+              <div className="flex flex-col gap-2">
+                <span className="text-sm text-gray-600">대상 페이지</span>
+                <button
+                  type="button"
+                  onClick={() => setPageOpen(true)}
+                  className="h-10 inline-flex items-center justify-between gap-2 rounded-xl border border-gray-300 bg-white px-3 text-sm hover:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-200"
+                >
+                  <div className="truncate text-left flex items-center gap-2">
+                    <MapPin className="w-4 h-4" />
+                    <span className="truncate">{targetPageTitle || "붙여넣을 대상 페이지 선택"}</span>
+                  </div>
+                  <span className="text-[11px] text-gray-400">{targetPageId ? "선택됨" : ""}</span>
+                </button>
+              </div>
+
+              {/* 3) 템플릿 */}
+              <div className="flex flex-col gap-2">
+                <span className="text-sm text-gray-600">템플릿</span>
+                <button
+                  type="button"
+                  onClick={() => setTplOpen(true)}
+                  className="h-10 inline-flex items-center justify-between gap-2 rounded-xl border border-gray-300 bg-white px-3 text-sm hover:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                >
+                  <div className="truncate text-left flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-emerald-600" />
+                    <span className="truncate">{templateTitle || "템플릿 검색/선택"}</span>
+                  </div>
+                  <span className="text-[11px] text-gray-400">{templateId ? "선택됨" : ""}</span>
+                </button>
+              </div>
+
+              {/* 4) AI 설명 입력 */}
+              <div className="flex flex-col gap-2">
+                <span className="text-sm text-gray-600">AI 설명 입력</span>
+                <textarea
+                  value={aiNotes}
+                  onChange={(e) => setAiNotes(e.target.value)}
+                  rows={4}
+                  placeholder={
+                    "예:\n- 프론트엔드 중심으로 내 역할을 강조해줘.\n- 맡은 기능을 간단히 정리해줘.\n- 협업 과정과 사용 기술을 자연스럽게 언급해줘."
+                  }
+                  className="w-full border rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200 resize-y"
+                />
+                <div className="mt-1 text-xs text-gray-400">{aiNotes.length}자 입력됨</div>
+              </div>
             </div>
-          ) : (
-            <>
-              {/* 섹션 카드: 제목/대상/템플릿 묶음 (1-3단계) */}
-              <section className="rounded-2xl border border-gray-200 bg-white shadow-xl">
-                <header className="px-6 pt-5 pb-3 border-b border-gray-100">
-                  <h3 className="text-base font-semibold text-gray-900">포트폴리오 페이지 설정</h3>
-                </header>
+          </section>
 
-                <div className="p-6 space-y-5">
-                  {/* 1) 제목 */}
-                  <div className="flex flex-col gap-2">
-                    <span className="text-sm text-gray-600">노션 페이지 제목</span>
-                    <input
-                      value={pageTitle}
-                      onChange={(e) => setPageTitle(e.target.value)}
-                      placeholder="예: 엘리베이터형 자판기 시스템 – 포트폴리오"
-                      className="h-10 rounded-xl border border-gray-300 bg-white px-3 text-sm hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                    />
-                  </div>
+          {/* 섹션 카드: 필터 + 퍼블리시 */}
+          <section className="rounded-2xl border border-gray-200 bg-white shadow-xl">
+            <header className="px-6 pt-5 pb-3 border-b border-gray-100">
+              <h3 className="text-base font-semibold text-gray-900">프로젝트 범위 설정</h3>
+            </header>
+            <div className="p-6">
+              <PortfolioFilterPanel projects={projects} onFiltersChange={setFilters} showAINotes={false} />
+              <div className="pt-4">
+                <button
+                  type="button"
+                  onClick={handlePublish}
+                  disabled={publishing || !canPublish}
+                  className={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-white font-medium transition ${
+                    publishing ? "bg-emerald-400 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-700 shadow-lg"
+                  }`}
+                >
+                  {publishing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      퍼블리시 중…
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4" /> 노션에 퍼블리시
+                    </>
+                  )}
+                </button>
+              </div>
 
-                  {/* 2) 대상 페이지 */}
-                  <div className="flex flex-col gap-2">
-                    <span className="text-sm text-gray-600">대상 페이지</span>
-                    <button
-                      type="button"
-                      onClick={() => setPageOpen(true)}
-                      className="h-10 inline-flex items-center justify-between gap-2 rounded-xl border border-gray-300 bg-white px-3 text-sm hover:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-200"
-                    >
-                      <div className="truncate text-left flex items-center gap-2">
-                        <MapPin className="w-4 h-4" />
-                        <span className="truncate">{targetPageTitle || "붙여넣을 대상 페이지 선택"}</span>
+              {result && (
+                <div className="mt-4 rounded-xl border p-4">
+                  {result.ok ? (
+                    <div className="text-sm text-gray-700">
+                      <div className="flex items-center gap-2 text-emerald-700 font-medium">
+                        <CheckCircle2 className="w-4 h-4" />
+                        퍼블리시 성공
                       </div>
-                      <span className="text-[11px] text-gray-400">{targetPageId ? "선택됨" : ""}</span>
-                    </button>
-                  </div>
-
-                  {/* 3) 템플릿 */}
-                  <div className="flex flex-col gap-2">
-                    <span className="text-sm text-gray-600">템플릿</span>
-                    <button
-                      type="button"
-                      onClick={() => setTplOpen(true)}
-                      className="h-10 inline-flex items-center justify-between gap-2 rounded-xl border border-gray-300 bg-white px-3 text-sm hover:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                    >
-                      <div className="truncate text-left flex items-center gap-2">
-                        <Layers className="text-emerald-600 w-4 h-4" />
-                        <span className="truncate">{templateTitle || "템플릿 검색/선택"}</span>
+                      <div className="mt-1">
+                        생성된 페이지 ID:&nbsp;
+                        <span className="font-mono">{result.created_page_id}</span>
+                        {result.export_history_id ? (
+                          <span className="ml-2 text-gray-500">(history #{result.export_history_id})</span>
+                        ) : null}
                       </div>
-                      <span className="text-[11px] text-gray-400">{templateId ? "선택됨" : ""}</span>
-                    </button>
-                  </div>
-
-                  {/* 4) AI 설명 입력 */}
-                  <div className="flex flex-col gap-2">
-                    <span className="text-sm text-gray-600">AI 설명 입력</span>
-                    <textarea
-                      value={aiNotes}
-                      onChange={(e) => setAiNotes(e.target.value)}
-                      rows={4}
-                      placeholder={
-                        "예:\n- 프론트엔드 중심으로 내 역할을 강조해줘.\n- 맡은 기능을 간단히 정리해줘.\n- 협업 과정과 사용 기술을 자연스럽게 언급해줘."
-                      }
-                      className="w-full border rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200 resize-y"
-                    />
-                    <div className="mt-1 text-xs text-gray-400">{aiNotes.length}자 입력됨</div>
-                  </div>
-                </div>
-              </section>
-
-              {/* 섹션 카드: 필터 + 퍼블리시 (4-5단계) */}
-              <section className="rounded-2xl border border-gray-200 bg-white shadow-xl">
-                <header className="px-6 pt-5 pb-3 border-b border-gray-100">
-                  <h3 className="text-base font-semibold text-gray-900">프로젝트 범위 설정</h3>
-                </header>
-                <div className="p-6">
-                  {/* 주의: PortfolioFilterPanel에서 다중 선택이라도, 실제 퍼블리시는 첫 번째 값만 사용 */}
-                  <PortfolioFilterPanel
-                    projects={projects}
-                    onFiltersChange={setFilters}
-                    showAINotes={false}
-                  />
-
-                  {/* 퍼블리시 버튼 */}
-                  <div className="pt-4">
-                    <button
-                      type="button"
-                      onClick={handlePublish}
-                      disabled={publishing || !canPublish}
-                      className={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-white font-medium transition ${
-                        publishing
-                          ? "bg-emerald-400 cursor-not-allowed"
-                          : "bg-emerald-600 hover:bg-emerald-700 shadow-lg"
-                      }`}
-                    >
-                      {publishing ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          퍼블리시 중…
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="w-4 h-4" /> 노션에 퍼블리시
-                        </>
-                      )}
-                    </button>
-                  </div>
-
-                  {/* 결과 표시(선택) */}
-                  {result && (
-                    <div className="mt-4 rounded-xl border p-4">
-                      {result.ok ? (
-                        <div className="text-sm text-gray-700">
-                          <div className="flex items-center gap-2 text-emerald-700 font-medium">
-                            <CheckCircle2 className="w-4 h-4" />
-                            퍼블리시 성공
+                      {!!(result.missing_keys?.length) && (
+                        <div className="mt-2">
+                          <div className="font-medium">누락된 키(“작성 필요”로 표시됨):</div>
+                          <div className="mt-1 flex flex-wrap gap-2">
+                            {result.missing_keys.map((k) => (
+                              <span key={k} className="text-xs bg-red-50 text-red-700 border border-red-200 rounded-full px-2 py-0.5">
+                                {k}
+                              </span>
+                            ))}
                           </div>
-                          <div className="mt-1">
-                            생성된 페이지 ID:&nbsp;
-                            <span className="font-mono">{result.created_page_id}</span>
-                            {result.export_history_id ? (
-                              <span className="ml-2 text-gray-500">(history #{result.export_history_id})</span>
-                            ) : null}
-                          </div>
-                          {!!(result.missing_keys?.length) && (
-                            <div className="mt-2">
-                              <div className="font-medium">누락된 키(“작성 필요”로 표시됨):</div>
-                              <div className="mt-1 flex flex-wrap gap-2">
-                                {result.missing_keys.map((k) => (
-                                  <span key={k} className="text-xs bg-red-50 text-red-700 border border-red-200 rounded-full px-2 py-0.5">
-                                    {k}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
                         </div>
-                      ) : (
-                        <div className="text-sm text-gray-700">
-                          <div className="flex items-center gap-2 text-rose-700 font-medium">
-                            <AlertTriangle className="w-4 h-4" />
-                            퍼블리시 실패
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-700">
+                      <div className="flex items-center gap-2 text-rose-700 font-medium">
+                        <AlertTriangle className="w-4 h-4" />
+                        퍼블리시 실패
+                      </div>
+                      <div className="mt-1 text-gray-600">{result.message || "실패 원인을 확인해주세요."}</div>
+                      {!!(result.missing_keys?.length) && (
+                        <div className="mt-2">
+                          <div className="font-medium">누락 키:</div>
+                          <div className="mt-1 flex flex-wrap gap-2">
+                            {result.missing_keys.map((k) => (
+                              <span key={k} className="text-xs bg-red-50 text-red-700 border border-red-200 rounded-full px-2 py-0.5">
+                                {k}
+                              </span>
+                            ))}
                           </div>
-                          <div className="mt-1 text-gray-600">{result.message || "실패 원인을 확인해주세요."}</div>
-                          {!!(result.missing_keys?.length) && (
-                            <div className="mt-2">
-                              <div className="font-medium">누락 키:</div>
-                              <div className="mt-1 flex flex-wrap gap-2">
-                                {result.missing_keys.map((k) => (
-                                  <span key={k} className="text-xs bg-red-50 text-red-700 border border-red-200 rounded-full px-2 py-0.5">
-                                    {k}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
                         </div>
                       )}
                     </div>
                   )}
                 </div>
-              </section>
-            </>
-          )}
+              )}
+            </div>
+          </section>
         </div>
 
         {/* 우측 요약(Sticky) */}
@@ -464,7 +437,6 @@ export default function PortfolioExport() {
                 </li>
               </ul>
 
-              {/* 간단한 유효성 가이드 */}
               <div className="mt-4 text-xs text-gray-500">
                 필수: 프로젝트 1개, 템플릿, 대상 페이지, 제목
               </div>
@@ -479,7 +451,6 @@ export default function PortfolioExport() {
         onClose={() => setTplOpen(false)}
         onSelect={handleSelectTemplate}
       />
-
       <NotionTargetPageSelectModal
         open={pageOpen}
         onClose={() => setPageOpen(false)}
