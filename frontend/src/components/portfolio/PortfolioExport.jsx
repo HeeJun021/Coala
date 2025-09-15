@@ -4,9 +4,97 @@ import NotionConnectPanel from "./NotionConnectPanel";
 import PortfolioFilterPanel from "./PortfolioFilterPanel";
 import { getNotionStatus, disconnectNotion, publishToNotion } from "../../api/notionApi";
 import { getMyProjects } from "../../api/projectApi";
-import { X, Upload, MapPin, Layers, CheckCircle2 } from "lucide-react";
+import { X, Upload, MapPin, Layers, CheckCircle2, Loader2, AlertTriangle, ExternalLink } from "lucide-react";
 import NotionTemplateSelectModal from "./NotionTemplateSelectModal";
 import NotionTargetPageSelectModal from "./NotionTargetPageSelectModal";
+
+function PublishProgressModal({
+  open,
+  status = "loading", // "loading" | "success" | "error"
+  title,
+  subtitle,
+  onClose,
+  onOpenNotion, // optional
+}) {
+  if (!open) return null;
+
+  const isLoading = status === "loading";
+  const isSuccess = status === "success";
+  const isError = status === "error";
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true">
+      <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-gray-200 p-6">
+        {/* 헤더 */}
+        <div className="flex items-center gap-3">
+          <div className={`w-12 h-12 rounded-full border flex items-center justify-center
+              ${isLoading ? "bg-emerald-50 border-emerald-200" : ""}
+              ${isSuccess ? "bg-emerald-50 border-emerald-200" : ""}
+              ${isError ? "bg-rose-50 border-rose-200" : ""}`}>
+            {isLoading && <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />}
+            {isSuccess && <CheckCircle2 className="w-7 h-7 text-emerald-600" />}
+            {isError && <AlertTriangle className="w-7 h-7 text-rose-600" />}
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">
+              {isLoading ? (title || "노션에 퍼블리시 중…")
+               : isSuccess ? "노션에 성공적으로 퍼블리시되었습니다."
+               : "퍼블리시에 실패했습니다."}
+            </h3>
+            <p className="text-sm text-gray-500 mt-0.5">
+              {isLoading ? (subtitle || "잠시만 기다려 주세요. 완료되면 자동으로 상태가 바뀝니다.")
+               : isSuccess ? "아래 버튼으로 노션에서 결과를 확인할 수 있어요."
+               : "권한/공유 설정 또는 네트워크 상태를 확인한 뒤 다시 시도해 주세요."}
+            </p>
+          </div>
+        </div>
+
+        {/* 진행 안내 (로딩시에만) */}
+        {isLoading && (
+          <div className="mt-5">
+            <ul className="mt-4 text-xs text-gray-500 space-y-1 list-disc list-inside">
+              <li>템플릿 로딩</li>
+              <li>데이터 바인딩 및 AI 설명 적용</li>
+              <li>노션 페이지에 블록 삽입</li>
+            </ul>
+          </div>
+        )}
+
+        {/* 액션 */}
+        <div className="mt-6 flex items-center justify-end gap-2">
+          {isSuccess && (
+            <>
+              {onOpenNotion && (
+                <button
+                  onClick={onOpenNotion}
+                  className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white"
+                >
+                  노션에서 열기 <ExternalLink className="w-4 h-4" />
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="px-3 py-2 rounded-xl border bg-white hover:bg-gray-50 text-gray-700"
+              >
+                닫기
+              </button>
+            </>
+          )}
+
+          {isError && (
+            <button
+              onClick={onClose}
+              className="px-3 py-2 rounded-xl border bg-white hover:bg-gray-50 text-gray-700"
+            >
+              닫기
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 export default function PortfolioExport() {
   // 연결 상태
@@ -34,6 +122,11 @@ export default function PortfolioExport() {
   const [publishing, setPublishing] = useState(false);
 
   const [aiNotes, setAiNotes] = useState("");
+
+  const [publishStatus, setPublishStatus] = useState("idle"); // "idle" | "loading" | "success" | "error"
+ const [publishModalOpen, setPublishModalOpen] = useState(false);
+ const [publishedPageUrl, setPublishedPageUrl] = useState("");
+ const [publishedPageId, setPublishedPageId] = useState("");
 
   // 템플릿 선택 시 상태 반영
 const handleSelectTemplate = useCallback((id, title) => {
@@ -105,6 +198,10 @@ const handleSelectTarget = useCallback((id, title) => {
 
     try {
       setPublishing(true);
+      setPublishModalOpen(true);
+      setPublishStatus("loading");
+      setPublishedPageUrl("");
+      setPublishedPageId("");
       const res = await publishToNotion({
    template_id: templateId,
    target_page_id: targetPageId,
@@ -112,13 +209,18 @@ const handleSelectTarget = useCallback((id, title) => {
    filters: { ...filters, ai_notes: aiNotes }, // Export의 메모 반영
  });
       if (res?.ok) {
-        alert("노션에 성공적으로 퍼블리시되었습니다.");
+        // 백엔드 응답 형식에 맞게 page_url / page_id 추출
+        const url = res.page_url || res.url || "";
+        const pid = res.page_id || res.id || "";
+        setPublishedPageUrl(url);
+        setPublishedPageId(pid);
+        setPublishStatus("success");
       } else {
-        alert("퍼블리시에 실패했습니다.");
+        setPublishStatus("error");
       }
     } catch (e) {
       console.error(e);
-      alert("퍼블리시에 실패했습니다. 권한/공유 설정을 확인하세요.");
+      setPublishStatus("error");
     } finally {
       setPublishing(false);
     }
@@ -317,7 +419,7 @@ return (
             : "bg-emerald-600 hover:bg-emerald-700 shadow-lg"
         }`}
       >
-        {publishing ? "퍼블리시 중…" : (<><Upload className="w-4 h-4" /> 노션에 퍼블리시</>)}
+        <><Upload className="w-4 h-4" /> 노션에 퍼블리시</>
       </button>
     </div>
               </div>
@@ -398,6 +500,30 @@ return (
     <NotionTemplateSelectModal open={tplOpen} onClose={() => setTplOpen(false)} onSelect={handleSelectTemplate} />
 
     <NotionTargetPageSelectModal open={pageOpen} onClose={() => setPageOpen(false)} onSelect={handleSelectTarget} />
+
+      <PublishProgressModal
+  open={publishModalOpen}
+  status={publishStatus}
+  title="노션에 퍼블리시 중…"
+  subtitle={
+    [pageTitle && `제목: ${pageTitle}`, templateTitle && `템플릿: ${templateTitle}`, targetPageTitle && `대상: ${targetPageTitle}`]
+      .filter(Boolean)
+      .join(" · ")
+  }
+  onClose={() => {
+    setPublishModalOpen(false);
+    setPublishStatus("idle");
+  }}
+  onOpenNotion={() => {
+    if (publishedPageUrl) {
+      window.open(publishedPageUrl, "_blank", "noopener,noreferrer");
+    } else if (publishedPageId) {
+      // 페이지 ID만 있을 경우 노션 URL 구성 (공유 설정에 따라 접근 제한될 수 있음)
+      const compact = String(publishedPageId).replace(/-/g, "");
+      window.open(`https://www.notion.so/${compact}`, "_blank", "noopener,noreferrer");
+    }
+  }}
+/>
   </div>
 );
 }
