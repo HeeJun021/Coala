@@ -1,9 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { FaUserCircle } from "react-icons/fa";
-import { Eye, RotateCw } from "lucide-react";
+import {
+  ChevronLeft,
+  RotateCw,
+  Copy as CopyIcon,
+  Check as CheckIcon,
+} from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useParams, useNavigate } from "react-router-dom";
-import { getCorrectSolutions, getCodingTestDetail } from "../../api/codingTestApi";
+import {
+  getCorrectSolutions,
+  getCodingTestDetail,
+} from "../../api/codingTestApi";
 import Editor from "react-simple-code-editor";
 import Prism from "prismjs";
 import "prismjs/components/prism-javascript";
@@ -11,8 +19,10 @@ import "prismjs/components/prism-python";
 import "prismjs/components/prism-java";
 
 const getPrismLang = (lang) => {
-  if (lang.toLowerCase() === "python") return "python";
-  if (lang.toLowerCase() === "java") return "java";
+  if (!lang) return "javascript";
+  const low = String(lang).toLowerCase();
+  if (low === "python") return "python";
+  if (low === "java") return "java";
   return "javascript";
 };
 
@@ -30,6 +40,9 @@ const CorrectSolutionsPage = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+
+  // 복사 상태 (인덱스별)
+  const [copiedIndex, setCopiedIndex] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -52,7 +65,7 @@ const CorrectSolutionsPage = () => {
   const filteredSolutions = solutions.filter((sol) => {
     const matchesLanguage =
       selectedLang === "전체" ||
-      sol.language.toLowerCase() === selectedLang.toLowerCase();
+      sol.language?.toLowerCase() === selectedLang.toLowerCase();
     const matchesTab = activeTab === "all" || sol.user_id === user?.user_id;
     return matchesLanguage && matchesTab;
   });
@@ -63,22 +76,46 @@ const CorrectSolutionsPage = () => {
     currentPage * itemsPerPage
   );
 
+  const handleCopy = async (code, idx) => {
+    try {
+      await navigator.clipboard.writeText(code ?? "");
+      setCopiedIndex(idx);
+      setTimeout(() => setCopiedIndex(null), 3000);
+    } catch (e) {
+      console.error("클립보드 복사 실패:", e);
+    }
+  };
+
+  // 언어 뱃지 텍스트
+  const renderLangLabel = (lang) => {
+    const l = (lang || "").toLowerCase();
+    if (l === "python") return "Python";
+    if (l === "java") return "Java";
+    if (l === "javascript") return "JavaScript";
+    return "Code";
+  };
+
   return (
     <div className="w-full min-h-screen bg-white text-gray-900 flex flex-col">
-      {/* 상단 헤더 */}
-      <header className="flex items-center justify-between bg-gray-100 px-6 py-4 border-b">
-        <h1 className="text-xl font-bold">{problemTitle}</h1>
+      {/* 상단 헤더 (CodingTestHeader와 크기/톤 맞춤) */}
+      <header className="flex items-center justify-between bg-gray-100 border-b border-gray-300 px-6 py-3">
+        {/* 왼쪽: 뒤로가기 + 제목 */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="text-gray-500 hover:text-gray-700 transition"
+            aria-label="뒤로가기"
+            title="뒤로가기"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+          <h1 className="text-xl font-bold text-gray-800">{problemTitle}</h1>
+        </div>
+
+        {/* 오른쪽: 다시 풀기 */}
         <div className="flex gap-2">
           <button
             className="flex items-center gap-1 bg-green-600 text-white hover:bg-green-700 px-3 py-1 text-sm rounded"
-            onClick={() => navigate(`/codingtest/${testId}`)}
-          >
-            <Eye className="w-4 h-4" />
-            문제 보기
-          </button>
-
-          <button
-            className="flex items-center gap-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1 text-sm rounded"
             onClick={() => navigate(`/codingtest/${testId}`)}
           >
             <RotateCw className="w-4 h-4" />
@@ -96,7 +133,10 @@ const CorrectSolutionsPage = () => {
                 ? "bg-green-600 text-white"
                 : "bg-gray-200 text-gray-800"
             }`}
-            onClick={() => setActiveTab("all")}
+            onClick={() => {
+              setActiveTab("all");
+              setCurrentPage(1);
+            }}
           >
             모든 풀이
           </button>
@@ -106,7 +146,10 @@ const CorrectSolutionsPage = () => {
                 ? "bg-green-600 text-white"
                 : "bg-gray-200 text-gray-800"
             }`}
-            onClick={() => setActiveTab("mine")}
+            onClick={() => {
+              setActiveTab("mine");
+              setCurrentPage(1);
+            }}
           >
             나의 풀이
           </button>
@@ -145,6 +188,7 @@ const CorrectSolutionsPage = () => {
           <div className="flex flex-col gap-10 mb-10">
             {currentItems.map((sol, index) => (
               <div key={index} className="max-w-4xl mx-auto w-full">
+                {/* 작성자 */}
                 <div className="text-sm text-gray-600 mb-2 flex items-center">
                   {sol.profile_image_url ? (
                     <img
@@ -158,22 +202,70 @@ const CorrectSolutionsPage = () => {
                   <span>{sol.nickname}</span>
                 </div>
 
-                <div className="bg-gray-100 rounded-md p-4">
-                  <Editor
-                    value={sol.code}
-                    onValueChange={() => {}}
-                    highlight={(code) =>
-                      Prism.highlight(
-                        code,
-                        Prism.languages[getPrismLang(sol.language)],
-                        sol.language
-                      )
-                    }
-                    padding={12}
-                    readOnly
-                    textareaClassName="editor-textarea"
-                    preClassName="editor-pre"
-                  />
+                {/* ▶ 코드 카드: SelfCodingEditorPanel 톤 매칭 */}
+                <div className="rounded-md border border-gray-300 overflow-hidden bg-white">
+                  {/* 상단 바: 연회색, 좌측 파일/언어, 우측 복사 버튼 */}
+                  <div className="flex items-center justify-between bg-[#f3f3f3] border-b border-gray-300 px-3 py-1">
+                    <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                      {/* 언어 뱃지 */}
+                      <span className="px-2 py-0.5 rounded text-[12px] border border-gray-300 bg-white text-gray-700">
+                        {renderLangLabel(sol.language)}
+                      </span>
+                      {sol.filename && (
+                        <span className="text-gray-700">{sol.filename}</span>
+                      )}
+                    </div>
+
+                    {/* 복사 버튼 (배지형) */}
+                    <button
+                      onClick={() => handleCopy(sol.code, index)}
+                      className={`text-[12px] px-2 py-0.5 rounded border shadow-sm transition flex items-center gap-1 ${
+                        copiedIndex === index
+                          ? "bg-[#e2e8f0] text-gray-700 border-gray-300"
+                          : "bg-[#edf2f7] text-gray-800 hover:bg-[#e2e8f0] border-gray-300"
+                      }`}
+                      aria-label="코드 복사"
+                      title="코드 복사"
+                    >
+                      {copiedIndex === index ? (
+                        <>
+                          <CheckIcon className="w-4 h-4" />
+                          복사됨
+                        </>
+                      ) : (
+                        <>
+                          <CopyIcon className="w-4 h-4" />
+                          복사
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* 코드 영역: githubLight 느낌(화이트 배경 + 얇은 보더 느낌 유지) */}
+                  <div className="p-3">
+                    <Editor
+                      value={sol.code}
+                      onValueChange={() => {}}
+                      highlight={(code) =>
+                        Prism.highlight(
+                          code,
+                          Prism.languages[getPrismLang(sol.language)],
+                          getPrismLang(sol.language)
+                        )
+                      }
+                      padding={12}
+                      readOnly
+                      textareaClassName="editor-textarea"
+                      preClassName="editor-pre"
+                      style={{
+                        fontFamily:
+                          "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+                        fontSize: "0.85rem",
+                        backgroundColor: "#ffffff",
+                        lineHeight: 1.55,
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             ))}
@@ -186,7 +278,7 @@ const CorrectSolutionsPage = () => {
                 key={i}
                 onClick={() => {
                   setCurrentPage(i + 1);
-                  window.scrollTo({ top: 0 });
+                  window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
                 className={`px-3 py-1 rounded border text-sm ${
                   currentPage === i + 1

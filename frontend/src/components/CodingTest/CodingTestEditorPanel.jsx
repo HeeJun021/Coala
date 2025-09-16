@@ -1,22 +1,15 @@
-import React, { useEffect } from "react";
+// frontend/src/components/codingtest/CodingTestEditorPanel.jsx
+import React from "react";
 import { ResizableBox } from "react-resizable";
-import { Controlled as CodeMirror } from "react-codemirror2";
-import "codemirror/lib/codemirror.css";
-import "codemirror/theme/eclipse.css";
 
-// 언어 모드
-import "codemirror/mode/javascript/javascript";
-import "codemirror/mode/python/python";
-import "codemirror/mode/clike/clike";
-
-// 자동완성 모듈
-import "codemirror/addon/hint/show-hint.css";
-import "codemirror/addon/hint/show-hint";
-import "codemirror/addon/hint/javascript-hint";
-import "codemirror/addon/hint/anyword-hint";
-
-// 커스텀 힌트 등록 함수
-import { registerCustomHints } from "../../utils/customHints";
+// ▼ CodeMirror v6 (@uiw/react-codemirror)
+import CodeMirror from "@uiw/react-codemirror";
+import { githubLight } from "@uiw/codemirror-theme-github"; // 셀프코딩과 동일 톤
+import { javascript } from "@codemirror/lang-javascript";
+import { python } from "@codemirror/lang-python";
+import { autocompletion } from "@codemirror/autocomplete";
+import { EditorView, lineNumbers } from "@codemirror/view";
+import { EditorState } from "@codemirror/state";
 
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { cleanStderr } from "../../utils/cleanStderr";
@@ -30,85 +23,41 @@ const CodingTestEditorPanel = ({
   isSubmitResult,
   isRunning,
 }) => {
-  useEffect(() => {
-    registerCustomHints();
-  }, []);
-
-  const getLanguageMode = (lang) => {
-  if (lang === "javascript") return "javascript";
-  if (lang === "python") return "python";
-  if (lang === "java") return "text/x-java";
-  if (lang === "c") return "text/x-csrc";
-  if (lang === "cpp") return "text/x-c++src";
-  return "plaintext";
-};
-
-
-
-  const getHintByLanguage = () => {
-  const mode = getLanguageMode();
-  const hints = window.CodeMirror?.hint;
-
-  if (mode === "javascript") return hints?.javascript || hints?.anyword;
-  if (mode === "python") return hints?.["python-custom"] || hints?.anyword;
-  if (mode === "text/x-java") return hints?.["java-custom"] || hints?.anyword;
-  return hints?.anyword;
-};
-
+  // v6 확장 구성 (필요 언어만 — Java/C++은 패키지 충돌 우려로 제외)
+  const getExtensions = (lang) => {
+    const base = [
+      lineNumbers(),
+      EditorView.lineWrapping,
+      EditorState.tabSize.of(4),
+      autocompletion(),
+    ];
+    if (lang === "python") return [...base, python()];
+    // default: javascript
+    return [...base, javascript({ jsx: true })];
+  };
 
   return (
     <div className="w-[60%] flex flex-col border-l border-gray-200 bg-white">
-      {/* 코드 에디터 */}
-      <div className="flex-1 overflow-auto bg-white editor-scrollbar">
-        <CodeMirror
-          value={code}
-          options={{
-            mode: getLanguageMode(language),
-            theme: "eclipse",
-            lineNumbers: true,
-            lineWrapping: true,
-            indentUnit: 4,
-            tabSize: 4,
-            smartIndent: true,
-            extraKeys: {
-              Enter: (cm) => {
-                const cursor = cm.getCursor();
-                const lineContent = cm.getLine(cursor.line);
-                const indentMatch = lineContent.match(/^\s*/);
-                cm.replaceSelection("\n" + (indentMatch ? indentMatch[0] : ""), "end");
-              },
-              Backspace: (cm) => {
-                const cursor = cm.getCursor();
-                const lineContent = cm.getLine(cursor.line);
-                const indentUnit = cm.getOption("indentUnit") || 4;
-                const beforeCursor = lineContent.slice(0, cursor.ch);
-                const isIndentSpace = /^[\s]+$/.test(beforeCursor);
-
-                if (isIndentSpace && cursor.ch % indentUnit === 0) {
-                  const from = { line: cursor.line, ch: cursor.ch - indentUnit };
-                  const to = { line: cursor.line, ch: cursor.ch };
-                  cm.replaceRange("", from, to);
-                } else {
-                  cm.execCommand("delCharBefore");
-                }
-              },
-              "Ctrl-Space": "autocomplete",
-            },
-            hintOptions: {
-              hint: getHintByLanguage(),
-              completeSingle: false,
-            },
-          }}
-          onBeforeChange={(editor, data, value) => {
-            setCode(value);
-          }}
-          onKeyUp={(editor, event) => {
-            const { key } = event;
-            if (!editor.state.completionActive && /^[\w.]$/.test(key)) {
-              editor.showHint();
-            }
-          }}
-        />
+      {/* 코드 에디터 영역 */}
+      <div className="flex-1 min-h-0 bg-white editor-scrollbar">
+        <div className="mt-0 border border-gray-200 rounded overflow-hidden">
+          {/* 스코프 클래스 ct-v6-editor 추가 → 아래 CSS가 이 범위에만 적용됨 */}
+          <div className="cm-v6-gutter-v5">
+            <CodeMirror
+              value={code}
+              height="100%"
+              theme={githubLight}
+              extensions={getExtensions((language || "javascript").toLowerCase())}
+              onChange={(val) => setCode(val)}
+              style={{
+                // 셀프코딩과 동일한 텍스트 톤
+                fontFamily: "'JetBrains Mono','Fira Code',monospace",
+                fontSize: 15,
+                lineHeight: 1.6,
+              }}
+            />
+          </div>
+        </div>
       </div>
 
       {/* 실행 결과 */}
@@ -146,9 +95,7 @@ const CodingTestEditorPanel = ({
           {isRunning ? (
             <div className="text-sm mt-3 flex items-center gap-2 text-teal-600">
               <Loader2 className="w-4 h-4 animate-spin text-teal-500" />
-              {isSubmitResult
-                ? "제출 실행 중입니다..."
-                : "테스트케이스 실행 중입니다..."}
+              {isSubmitResult ? "제출 실행 중입니다..." : "테스트케이스 실행 중입니다..."}
             </div>
           ) : executionResults.length === 0 ? (
             <div className="text-gray-500 text-sm mt-3">
@@ -174,7 +121,9 @@ const CodingTestEditorPanel = ({
                       <td className="px-3 py-2 border-r border-gray-300 whitespace-pre-line">
                         {result.input.replace(/\\n/g, "\n")}
                       </td>
-                      <td className="px-3 py-2 border-r border-gray-300">{result.expected_output}</td>
+                      <td className="px-3 py-2 border-r border-gray-300">
+                        {result.expected_output}
+                      </td>
                       <td className="px-3 py-2 border-r border-gray-300">
                         {result.passed ? (
                           <div className="flex items-center gap-1 text-teal-600 font-medium">

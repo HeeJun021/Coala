@@ -3,8 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@codemirror/lang-cpp": "^6.0.3",
     "@codemirror/lang-css": "^6.3.1",
     "@codemirror/lang-html": "^6.4.9",
+    "@codemirror/lang-java": "^6.0.2",
     "@codemirror/lang-javascript": "^6.2.4",
     "@codemirror/lang-python": "^6.2.1",
     "@fullcalendar/core": "^6.1.17",
@@ -45,6 +47,7 @@
     "@toast-ui/editor": "^3.2.2",
     "@toast-ui/editor-plugin-code-syntax-highlight": "^3.1.0",
     "@toast-ui/react-editor": "^3.2.3",
+    "@uiw/codemirror-theme-dracula": "^4.25.1",
     "@uiw/codemirror-theme-github": "^4.25.1",
     "@uiw/react-codemirror": "^4.25.1",
     "ajv": "^8.17.1",
