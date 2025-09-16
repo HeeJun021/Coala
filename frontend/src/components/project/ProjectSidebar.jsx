@@ -91,55 +91,55 @@ const ProjectSidebar = ({
   return (
     <aside className="w-64 bg-white text-gray-800 flex flex-col px-4 py-6 border-r border-gray-200 shadow-sm">
       {/* 섹션: 작업 메뉴 */}
-      <div className="space-y-3 text-sm mb-5">
-        <div className="text-gray-500 uppercase tracking-wide mb-1">작업</div>
+      <div className="space-y-3 mb-5">
+   <div className="text-gray-700 uppercase tracking-wide text-[16px] font-semibold mb-2">작업</div>
 
         {/* 대시보드 */}
         <div
           onClick={() => handleTabClick("dashboard")}
-          className={`flex items-center gap-2 text-left px-2 py-1 rounded cursor-pointer transition ${
-            activeTab === "dashboard"
-              ? "bg-gray-200 font-medium text-black"
-              : "text-gray-800 hover:text-black"
-          }`}
+          className={`flex items-center gap-2 text-left px-2 py-1.5 rounded cursor-pointer transition text-[15px] ${
+     activeTab === "dashboard"
+       ? "bg-gray-200 font-semibold text-black"
+       : "text-gray-800 hover:text-black font-medium"
+   }`}
         >
-          <LayoutDashboard size={16} className="text-yellow-500" />
-          <span>대시보드</span>
+          <LayoutDashboard size={18} className="text-yellow-500" />
+          <span className="leading-none">대시보드</span>
         </div>
 
         {/* 내 작업 */}
         <div
           onClick={() => handleTabClick("my-tasks")}
-          className={`flex items-center gap-2 text-left px-2 py-1 rounded cursor-pointer transition ${
+          className={`flex items-center gap-2 text-left px-2 py-1.5 rounded cursor-pointer transition text-[15px] ${
             activeTab === "my-tasks"
-              ? "bg-gray-200 font-medium text-black"
-              : "text-gray-800 hover:text-black"
+              ? "bg-gray-200 font-semibold text-black"
+              : "text-gray-800 hover:text-black font-medium"
           }`}
         >
-          <ListTodo size={16} className="text-emerald-500" />
-          <span>내 작업</span>
+          <ListTodo size={18} className="text-emerald-500" />
+          <span className="leading-none">내 작업</span>
         </div>
 
         {/* 수신함 */}
         <div
           onClick={() => handleTabClick("inbox")}
-          className={`flex items-center gap-2 text-left px-2 py-1 rounded cursor-pointer transition ${
+          className={`flex items-center gap-2 text-left px-2 py-1.5 rounded cursor-pointer transition text-[15px] ${
             activeTab === "inbox"
-              ? "bg-gray-200 font-medium text-black"
-              : "text-gray-800 hover:text-black"
+              ? "bg-gray-200 font-semibold text-black"
+              : "text-gray-800 hover:text-black font-medium"
           }`}
         >
-          <Inbox size={16} className="text-blue-500" />
-          <span>수신함</span>
+          <Inbox size={18} className="text-blue-500" />
+          <span className="leading-none">수신함</span>
         </div>
       </div>
 
       <hr className="my-2 border-gray-300" />
 
       {/* 섹션: 프로젝트 목록 */}
-      <div className="text-sm flex-1 flex flex-col justify-between">
+      <div className="flex-1 flex flex-col justify-between">
         <div>
-          <div className="flex items-center justify-between text-gray-500 uppercase tracking-wide mb-2">
+          <div className="flex items-center justify-between text-gray-700 uppercase tracking-wide text-[16px] font-semibold mb-2">
             {/* 왼쪽: 프로젝트 + 가이드 버튼 */}
             <div className="flex items-center gap-1">
               <span>프로젝트</span>

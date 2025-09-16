@@ -26,7 +26,7 @@ const MainLayout = ({ children }) => {
   }, [pathname, isTeamProject]);
 
   return (
-    <div className={`layout flex ${isTeamProject ? "h-screen" : "h-full"}`}>
+    <div className={`layout flex ${isTeamProject ? "min-h-screen" : "h-full"} overflow-x-hidden`}>
       <Navbar />
 
       {showSidebar && <Sidebar className="w-64 flex-shrink-0" />}
@@ -37,8 +37,10 @@ const MainLayout = ({ children }) => {
         id="coala-main"
         className={`content flex-1 ${
           isTeamProject
-            ? "min-h-screen px-0"
-            : "overflow-y-auto px-4"
+            ? "min-h-screen px-0 overflow-y-visible"
+            : showSidebar
+            ? "min-h-screen px-0"        // ✅ 내부 스크롤 OFF
+            : "overflow-y-auto px-4"      // 그 외 페이지는 기존처럼 내부 스크롤
         }`}
       >
         {children}

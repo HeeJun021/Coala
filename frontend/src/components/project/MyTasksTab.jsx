@@ -261,8 +261,9 @@ const MyTasksTab = ({ projects: propProjects }) => {
   };
 
   return (
-    <div className="flex max-w-[1400px] mx-auto px-6 py-8">
-      <div className="flex-1">
+    <div className="bg-white min-h-screen py-10 px-6">
+     <div className="max-w-screen-lg mx-auto">
+       <div className="flex-1">
         <div className="mb-6">
           <h1 className="text-3xl font-bold">내 작업</h1>
           <div className="flex gap-4 mt-4 border-b pb-2">
@@ -731,6 +732,7 @@ const MyTasksTab = ({ projects: propProjects }) => {
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 };

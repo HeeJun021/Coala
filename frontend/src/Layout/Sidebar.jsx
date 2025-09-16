@@ -38,23 +38,12 @@ const Sidebar = () => {
 }, [initialCategory]);
 
   // 기존 스크롤 고정 로직 유지
-  const [sidebarTop, setSidebarTop] = useState(120);
   const [isHovering, setIsHovering] = useState(false);
 
   useEffect(() => {
     setSelectedLanguage(initialCategory);
     setSelectedMaterialId(initialMaterialId);
     setSelectedExampleId(initialExampleId);
-
-    let animationFrameId;
-
-    const handleScroll = () => {
-      if (isHovering) return;
-      const targetTop = window.scrollY + 120;
-      animationFrameId = requestAnimationFrame(() => {
-        setSidebarTop((prevTop) => prevTop + (targetTop - prevTop) * 0.3);
-      });
-    };
 
     const fetchAll = async () => {
       try {
@@ -93,11 +82,7 @@ const Sidebar = () => {
     };
 
     fetchAll();
-    window.addEventListener("scroll", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      cancelAnimationFrame(animationFrameId);
-    };
+    return () => {};
   }, [isHovering, initialCategory, initialMaterialId, initialExampleId, navigate]);
 
   const handleMouseEnter = () => setIsHovering(true);
@@ -153,127 +138,124 @@ const Sidebar = () => {
     navigate(`/StudyMaterialsPage?category=${encodeURIComponent(lang)}&exampleId=${exampleId}`, { replace: false });
   };
 
-  return (
-    <div
-      ref={sidebarRef}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      style={{ top: `${sidebarTop}px`, transition: "top 0.1s ease-out" }}
-      className="absolute left-[70px] w-[260px] bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden z-40"
-    >
-      <div className="h-[56px] flex items-center px-6 bg-[#88C078] rounded-t-2xl shadow-sm">
-        <h1 className="text-[18px] font-semibold text-black tracking-wide">학습자료</h1>
-      </div>
-
-      {loading ? (
-        <div className="h-[54px] flex items-center px-6 text-gray-500">로딩 중...</div>
-      ) : error ? (
-        <div className="h-[54px] flex items-center px-6 text-red-500">{error}</div>
-      ) : (
-        <div className="divide-y divide-gray-100">
-          {languages.map((lang) => {
-            const materials = materialsMap[lang.language] || [];
-            const examples = examplesMap[lang.language] || [];
-            const selectedMaterial = materials.find((m) => String(m.material_id) === selectedMaterialId);
-            const selectedExample = examples.find((e) => String(e.example_id) === selectedExampleId);
-
-            const isOpen = openLanguage === lang.language;
-
-            return (
-              <div key={lang.language_id}>
-                {/* 언어 헤더 (클릭으로 토글) */}
-                <div
-  className={`px-6 py-4 cursor-pointer text-[16px] font-semibold transition-all duration-150 ${
-    isOpen
-      ? "bg-[#D9D9D9] text-gray-800"
-      : "hover:bg-gray-100 text-gray-600"
-  }`}
-  onClick={() => handleLanguageHeaderClick(lang.language, materials)}
->
-  <div className="flex items-center justify-between">
-    {/* 왼쪽: 언어명 + 선택된 글 제목 */}
-    <div className="flex flex-col">
-      <span>{lang.language}</span>
-      {(selectedLanguage === lang.language) &&
-        (selectedMaterial?.title || selectedExample?.title) && (
-          <div className="flex items-center gap-1 mt-1 px-1">
-            <span className="text-sm font-normal text-gray-700 break-words leading-snug">
-              {selectedMaterialId ? selectedMaterial?.title : selectedExample?.title}
-            </span>
-            {(selectedMaterial?.is_completed || selectedExample?.is_completed) && (
-              <FileCheck className="w-4 h-4 text-green-500" />
-            )}
-          </div>
-        )}
+return (
+  <aside
+    ref={sidebarRef}
+    onMouseEnter={handleMouseEnter}
+    onMouseLeave={handleMouseLeave}
+    className="fixed left-[70px] top-[150px] w-[260px] bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden z-40"
+  >
+    <div className="h-[56px] flex items-center px-6 bg-[#88C078] rounded-t-2xl shadow-sm">
+      <h1 className="text-[18px] font-semibold text-black tracking-wide">학습자료</h1>
     </div>
 
-    {/* 오른쪽: 화살표 아이콘 */}
-{isOpen ? (
-  <ChevronDown className="w-4 h-4 text-gray-500" />
-) : (
-  <ChevronRight className="w-4 h-4 text-gray-500" />
-)}
-  </div>
-</div>
+    {loading ? (
+      <div className="h-[54px] flex items-center px-6 text-gray-500">로딩 중...</div>
+    ) : error ? (
+      <div className="h-[54px] flex items-center px-6 text-red-500">{error}</div>
+    ) : (
+      <div className="divide-y divide-gray-100">
+        {languages.map((lang) => {
+          const materials = materialsMap[lang.language] || [];
+          const examples = examplesMap[lang.language] || [];
+          const selectedMaterial = materials.find((m) => String(m.material_id) === selectedMaterialId);
+          const selectedExample = examples.find((e) => String(e.example_id) === selectedExampleId);
 
-                {/* 펼침 영역 */}
-                <div
-                  className={`transition-all duration-500 ease-in-out overflow-hidden transform origin-top ${
-                    isOpen ? "max-h-[800px] opacity-100 scale-y-100" : "max-h-0 opacity-0 scale-y-95"
-                  }`}
-                  style={{ pointerEvents: isOpen ? "auto" : "none" }}
-                >
-                  <div className="px-6 mt-3 mb-1 font-semibold text-gray-700 text-[15px] flex items-center">
-                    <BookOpenText className="w-4 h-4 mr-1 text-[#88C078]" />
-                    {lang.language} 학습자료
+          const isOpen = openLanguage === lang.language;
+
+          return (
+            <div key={lang.language_id}>
+              {/* 언어 헤더 (클릭으로 토글) */}
+              <div
+                className={`px-6 py-4 cursor-pointer text-[16px] font-semibold transition-all duration-150 ${
+                  isOpen ? "bg-[#D9D9D9] text-gray-800" : "hover:bg-gray-100 text-gray-600"
+                }`}
+                onClick={() => handleLanguageHeaderClick(lang.language, materials)}
+              >
+                <div className="flex items-center justify-between">
+                  {/* 왼쪽: 언어명 + 선택된 글 제목 */}
+                  <div className="flex flex-col">
+                    <span>{lang.language}</span>
+                    {selectedLanguage === lang.language &&
+                      (selectedMaterial?.title || selectedExample?.title) && (
+                        <div className="flex items-center gap-1 mt-1 px-1">
+                          <span className="text-sm font-normal text-gray-700 break-words leading-snug">
+                            {selectedMaterialId ? selectedMaterial?.title : selectedExample?.title}
+                          </span>
+                          {(selectedMaterial?.is_completed || selectedExample?.is_completed) && (
+                            <FileCheck className="w-4 h-4 text-green-500" />
+                          )}
+                        </div>
+                      )}
                   </div>
 
-                  {materials.map((material) => (
-                    <div
-                      key={material.material_id}
-                      className={`flex items-center justify-between text-[14px] rounded-md mx-4 px-3 py-2 cursor-pointer transition-all duration-150 ${
-                        selectedMaterialId === String(material.material_id)
-                          ? "bg-[#D9D9D9] text-gray-800 font-semibold"
-                          : "text-gray-600 hover:bg-gray-100"
-                      }`}
-                      onClick={() => handleMaterialClick(material.material_id, lang.language)}
-                    >
-                      <span className="break-words">{material.title}</span>
-                      {material.is_completed && <FileCheck className="w-4 h-4 text-green-500 ml-2" />}
-                    </div>
-                  ))}
-
-                  <div className="px-6 mt-4 mb-1 font-semibold text-gray-700 text-[15px] flex items-center">
-                    <Code2 className="w-4 h-4 mr-1 text-[#88C078]" />
-                    {lang.language} 예제
-                  </div>
-
-                  {examples.length ? (
-                    examples.map((example) => (
-                      <div
-                        key={example.example_id}
-                        className={`flex items-center justify-between text-[14px] rounded-md mx-4 px-3 py-2 cursor-pointer transition-all duration-150 ${
-                          selectedExampleId === String(example.example_id)
-                            ? "bg-[#D9D9D9] text-gray-800 font-semibold"
-                            : "text-gray-600 hover:bg-gray-100"
-                        }`}
-                        onClick={() => handleExampleClick(example.example_id, lang.language)}
-                      >
-                        <span className="break-words">{example.title}</span>
-                        {example.is_completed && <FileCheck className="w-4 h-4 text-green-500 ml-2" />}
-                      </div>
-                    ))
+                  {/* 오른쪽: 화살표 아이콘 */}
+                  {isOpen ? (
+                    <ChevronDown className="w-4 h-4 text-gray-500" />
                   ) : (
-                    <div className="px-6 text-gray-400 text-sm">예제가 없습니다.</div>
+                    <ChevronRight className="w-4 h-4 text-gray-500" />
                   )}
                 </div>
               </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
+
+              {/* 펼침 영역 */}
+              <div
+                className={`transition-all duration-500 ease-in-out overflow-hidden transform origin-top ${
+                  isOpen ? "max-h-[800px] opacity-100 scale-y-100" : "max-h-0 opacity-0 scale-y-95"
+                }`}
+                style={{ pointerEvents: isOpen ? "auto" : "none" }}
+              >
+                <div className="px-6 mt-3 mb-1 font-semibold text-gray-700 text-[15px] flex items-center">
+                  <BookOpenText className="w-4 h-4 mr-1 text-[#88C078]" />
+                  {lang.language} 학습자료
+                </div>
+
+                {materials.map((material) => (
+                  <div
+                    key={material.material_id}
+                    className={`flex items-center justify-between text-[14px] rounded-md mx-4 px-3 py-2 cursor-pointer transition-all duration-150 ${
+                      selectedMaterialId === String(material.material_id)
+                        ? "bg-[#D9D9D9] text-gray-800 font-semibold"
+                        : "text-gray-600 hover:bg-gray-100"
+                    }`}
+                    onClick={() => handleMaterialClick(material.material_id, lang.language)}
+                  >
+                    <span className="break-words">{material.title}</span>
+                    {material.is_completed && <FileCheck className="w-4 h-4 text-green-500 ml-2" />}
+                  </div>
+                ))}
+
+                <div className="px-6 mt-4 mb-1 font-semibold text-gray-700 text-[15px] flex items-center">
+                  <Code2 className="w-4 h-4 mr-1 text-[#88C078]" />
+                  {lang.language} 예제
+                </div>
+
+                {examples.length ? (
+                  examples.map((example) => (
+                    <div
+                      key={example.example_id}
+                      className={`flex items-center justify-between text-[14px] rounded-md mx-4 px-3 py-2 cursor-pointer transition-all duration-150 ${
+                        selectedExampleId === String(example.example_id)
+                          ? "bg-[#D9D9D9] text-gray-800 font-semibold"
+                          : "text-gray-600 hover:bg-gray-100"
+                      }`}
+                      onClick={() => handleExampleClick(example.example_id, lang.language)}
+                    >
+                      <span className="break-words">{example.title}</span>
+                      {example.is_completed && <FileCheck className="w-4 h-4 text-green-500 ml-2" />}
+                    </div>
+                  ))
+                ) : (
+                  <div className="px-6 text-gray-400 text-sm">예제가 없습니다.</div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    )}
+  </aside>
+);
 };
 
 export default Sidebar;

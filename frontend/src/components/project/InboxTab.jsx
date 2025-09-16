@@ -112,9 +112,9 @@ const InboxTab = ({ projects = [] }) => {
   const grouped = groupByDate(filtered);
 
   return (
-    <div className="px-10 py-8 w-full max-w-[1000px] mx-auto">
-      <h2 className="text-[28px] font-bold text-gray-900 mb-6">수신함</h2>
-
+    <div className="bg-[#f9f9f970] min-h-screen py-10 px-6">
+     <div className="max-w-screen-lg mx-auto">
+       <h2 className="text-[28px] font-bold text-gray-900 mb-6">수신함</h2>
       {/* 필터 */}
       <div className="flex gap-2 mb-6">
         {[
@@ -196,6 +196,7 @@ const InboxTab = ({ projects = [] }) => {
       <div className="mt-16 text-center text-sm text-gray-400 hover:underline cursor-pointer">
         모든 알림 보관
       </div>
+    </div>
     </div>
   );
 };
