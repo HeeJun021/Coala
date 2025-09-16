@@ -255,7 +255,7 @@ const StudyMaterialsPage = ({ isAdminPreview }) => {
     ["html", "css"].includes(category?.toLowerCase());
 
   return (
-    <div className="p-6 bg-[#f9fafb] min-h-screen">
+    <div className="p-6 bg-[#f9fafb] w-full min-h-screen pt-12 pl-[164px]">
       {isAdminPreview && (
         <button
           onClick={() => navigate(-1)}
@@ -266,7 +266,7 @@ const StudyMaterialsPage = ({ isAdminPreview }) => {
         </button>
       )}
 
-      <div className={`max-w-5xl mx-auto bg-white shadow-xl rounded-2xl border border-gray-300 p-7 relative transition-opacity duration-500 ${fadeIn ? "opacity-100" : "opacity-0"}`}>
+      <div className={`max-w-5xl mx-auto bg-white shadow-xl rounded-2xl border border-gray-300 p-7 relative transition-opacity duration-500 ${fadeIn ? "opacity-100" : "opacity-0"}` }>
         <div className="mb-6 relative" ref={searchRef}>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />

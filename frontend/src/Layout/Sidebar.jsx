@@ -38,7 +38,7 @@ const Sidebar = () => {
 }, [initialCategory]);
 
   // 기존 스크롤 고정 로직 유지
-  const [sidebarTop, setSidebarTop] = useState(150);
+  const [sidebarTop, setSidebarTop] = useState(120);
   const [isHovering, setIsHovering] = useState(false);
 
   useEffect(() => {
