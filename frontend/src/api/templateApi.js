@@ -25,3 +25,18 @@ export const createTemplateFromCatalog = async (projectId, catalogId) =>
 // ✅ 추가: Trello 보드에서 바로 템플릿 생성
 export const importTemplateFromTrello = async (projectId, { board, title }) =>
   (await apiClient.post(`/projects/${projectId}/templates/import/trello`, { board, title })).data;
+
+export async function materializeTemplate({ templateId, folderName, overwrite = false, idempotencyKey }) {
+  const payload = {
+    template_id: templateId,
+    overwrite: !!overwrite,
+  };
+  if (folderName) payload.folder_name = folderName;
+  if (idempotencyKey) payload.idempotency_key = idempotencyKey;
+
+  const { data } = await apiClient.post("/freecode/templates/materialize", payload, {
+    // 쿠키 기반 인증이면 필요 없음. 토큰 헤더를 쓰면 아래 참고
+    // headers: { Authorization: `Bearer ${token}` }
+  });
+  return data; // { top_folder_id, created_folders, created_files, open_files }
+}

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../Layout/Navbar";
 import {
@@ -16,6 +16,8 @@ import {
   FileText as FileIcon,
   ChevronRight,
 } from "lucide-react";
+import { materializeTemplate } from "../../api/templateApi";
+
 
 /* ---------------------------
    템플릿 스펙 (백엔드 생성용)
@@ -193,18 +195,50 @@ const MiniFileTree = ({ treeObj, maxDepth = 3 }) => {
 const SelfCodingTemplatePage = () => {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [creatingId, setCreatingId] = useState(null);
 
   // 스크롤 제거: 전체 뷰 고정
-  const contentStyle = { height: "calc(100vh - 70px)" };
+  const contentStyle = { height: "calc(100vh)" };
+
+  useEffect(() => { // 얘로 스크롤 고정했음 -> 안되는 거 있으면 없애기
+    const root = document.getElementById("root");
+    if (root) root.style.overflow = "hidden";
+    return () => {
+      if (root) root.style.overflow = "auto";
+    };
+  }, []);
 
   const filtered = useMemo(() => {
     if (selectedCategory === "all") return TEMPLATE_META;
     return TEMPLATE_META.filter((t) => t.category === selectedCategory);
   }, [selectedCategory]);
 
-  const handleTemplateClick = (templateId) => {
-    navigate("/self-coding", { state: { templateId } });
+  const handleTemplateClick = async (templateId) => {
+    try {
+      setCreatingId(templateId);
+      const idempotencyKey = crypto?.randomUUID?.() || String(Date.now());
+
+      const resp = await materializeTemplate({
+        templateId,
+        overwrite: false,
+        idempotencyKey,
+      });
+
+      navigate("/self-coding", {
+        state: {
+          panel: "explorer",
+          openFiles: resp.open_files,
+          topFolderId: resp.top_folder_id,
+        },
+      });
+    } catch (e) {
+      console.error(e);
+      alert("템플릿 생성에 실패했습니다. 다시 시도해주세요.");
+    } finally {
+      setCreatingId(null);
+    }
   };
+
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-white">
@@ -253,7 +287,7 @@ const SelfCodingTemplatePage = () => {
                 className="
                   group relative rounded-2xl border border-gray-200 p-5 bg-white
                   shadow-sm hover:shadow-lg transition cursor-pointer flex flex-col
-                  overflow-visible min-h-[300px]
+                  overflow-visible min-h-[240px]
                 "
                 onClick={() => handleTemplateClick(id)}
               >
