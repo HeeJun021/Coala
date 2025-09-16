@@ -10,10 +10,6 @@ import "prismjs/components/prism-javascript";
 import "prismjs/components/prism-python";
 import "prismjs/components/prism-java";
 
-// 라인 넘버 플러그인
-import "prismjs/plugins/line-numbers/prism-line-numbers.css";
-import "prismjs/plugins/line-numbers/prism-line-numbers.js";
-
 // API
 import {
   getCodingTestDetail,
@@ -30,7 +26,6 @@ import ResultModal from "../../components/CodingTest/modal/ResultModal";
 import WrongNoteEditor from "../../components/WrongNoteEditor";
 
 // 스타일
-import "react-resizable/css/styles.css";
 import "../../index.css";
 
 // 리팩토링 임포트
@@ -89,7 +84,9 @@ const CodingTestDetailPage = () => {
         // 3) 코드 & 언어 세팅
         const formattedCode = starter.code.replace(/\\n/g, "\n");
         setCode(formattedCode);
-        setLanguage((starter.language || "python").toLowerCase());
+        const nextLang = (starter.language || "python").toLowerCase();
+        setCode(formattedCode);
+        setLanguage((prev) => (prev === nextLang ? prev : nextLang));
       } catch (err) {
         console.error("❌ 문제/스타터코드 불러오기 실패:", err);
       }
@@ -112,7 +109,7 @@ const CodingTestDetailPage = () => {
     } catch (err) {
       console.error("제출 내역 불러오기 실패:", err);
     }
-  }, [codingTestId, user]);
+  }, [codingTestId, user?.user_id]);
 
   useEffect(() => {
     fetchSubmissions();
@@ -223,7 +220,7 @@ const CodingTestDetailPage = () => {
       }, 1000);
     } catch (err) {
       console.error("제출 중 오류:", err);
-      alert("제출 실패");
+      setShowRefreshMessage(true); // 필요하면 별도 에러 메시지 상태 만들어도 OK
       setIsRunning(false);
     } finally {
       setIsSubmitting(false);
@@ -257,23 +254,30 @@ const CodingTestDetailPage = () => {
     );
   };
 
-  const highlightWithLineNumbers = (code) =>
-    Prism.highlight(code, Prism.languages.javascript, "javascript")
+  const highlightWithLineNumbers = (code) => {
+    const prismKey = getPrismLang(language); // "python" | "java" | "javascript"
+    const langObj = Prism.languages[prismKey] ?? Prism.languages.javascript;
+    return Prism.highlight(code, langObj, prismKey)
       .split("\n")
       .map(
         (line, i) =>
           `<span class="${
             selectedLine === i + 1 ? "selected-line" : ""
-          }" data-line="${i + 1}">${line}</span>`
+          }" data-line-number="${i + 1}">${line}</span>`
       )
       .join("\n");
+  };
 
   const handleClick = (e) => {
-    const lineNumber = e.target.getAttribute("data-line-number");
-    if (lineNumber) {
-      setSelectedLine(Number(lineNumber));
-    }
+    const target = e.target.closest("[data-line-number]");
+    const lineNumber = target?.getAttribute("data-line-number");
+    if (lineNumber) setSelectedLine(Number(lineNumber));
   };
+
+  // 코드/언어 변경 시 선택 라인 초기화
+  useEffect(() => {
+    setSelectedLine(null);
+  }, [code, language]);
 
   const handleLanguageChange = async (e) => {
     const newLang = e.target.value;
