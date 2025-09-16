@@ -38,7 +38,7 @@ const Sidebar = () => {
 }, [initialCategory]);
 
   // 기존 스크롤 고정 로직 유지
-  const [sidebarTop, setSidebarTop] = useState(150);
+  const [sidebarTop, setSidebarTop] = useState(120);
   const [isHovering, setIsHovering] = useState(false);
 
   useEffect(() => {
@@ -50,7 +50,7 @@ const Sidebar = () => {
 
     const handleScroll = () => {
       if (isHovering) return;
-      const targetTop = window.scrollY + 150;
+      const targetTop = window.scrollY + 120;
       animationFrameId = requestAnimationFrame(() => {
         setSidebarTop((prevTop) => prevTop + (targetTop - prevTop) * 0.3);
       });

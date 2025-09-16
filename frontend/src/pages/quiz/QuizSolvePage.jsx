@@ -57,7 +57,6 @@ const QuizSolvePage = ({ userData }) => {
       } else {
         updatedAnswers.push({ questionId, userAnswer: value });
       }
-
       return updatedAnswers;
     });
   };
@@ -102,7 +101,8 @@ const QuizSolvePage = ({ userData }) => {
   return (
     <div className="bg-white min-h-screen py-10 px-4">
       <div className="max-w-4xl mx-auto">
-        <h2 className="text-3xl font-bold text-gray-900 text-center mb-6">
+        {/* 페이지 타이틀: ContentTitle 규격 */}
+        <h2 className="text-2xl font-bold text-gray-800 text-center mb-5">
           {quizData.title}
         </h2>
 
@@ -112,10 +112,15 @@ const QuizSolvePage = ({ userData }) => {
               key={question.question_id}
               className="border border-gray-200 shadow-sm rounded-xl p-6"
             >
-              <p className="text-lg font-bold text-gray-900 mb-2">
+              {/* 섹션 제목: text-base font-semibold */}
+              <p className="text-base font-semibold text-gray-900 mb-2">
                 문제 {index + 1}
               </p>
-              <p className="text-gray-800 mb-4">{question.question_text}</p>
+
+              {/* 문제 본문: text-sm leading-relaxed */}
+              <p className="text-sm text-gray-800 leading-relaxed mb-4">
+                {question.question_text}
+              </p>
 
               {/* OX 문제 */}
               {question.question_type === 1 && (
@@ -123,12 +128,12 @@ const QuizSolvePage = ({ userData }) => {
                   {["O", "X"].map((value) => (
                     <label
                       key={value}
-                      className={`flex items-center gap-2 px-4 py-2 border rounded-full cursor-pointer 
+                      className={`flex items-center gap-2 px-4 py-2 border rounded-full cursor-pointer text-sm
                       ${
                         answers.find((a) => a.questionId === question.question_id)?.userAnswer ===
                         value
                           ? "bg-[#A7DA9B] text-white"
-                          : "bg-gray-100"
+                          : "bg-gray-100 text-gray-800"
                       }`}
                     >
                       <input
@@ -154,12 +159,12 @@ const QuizSolvePage = ({ userData }) => {
                   {question.choices.map((choice, idx) => (
                     <label
                       key={idx}
-                      className={`block px-4 py-2 border rounded-lg cursor-pointer 
+                      className={`block px-4 py-2 border rounded-lg cursor-pointer text-sm
                       ${
                         answers.find((a) => a.questionId === question.question_id)?.userAnswer ===
                         choice
                           ? "bg-[#A7DA9B] text-white"
-                          : "bg-gray-100"
+                          : "bg-gray-100 text-gray-800"
                       }`}
                     >
                       <input
@@ -184,7 +189,7 @@ const QuizSolvePage = ({ userData }) => {
                 <input
                   type="text"
                   placeholder="정답을 입력하세요"
-                  className="w-full mt-2 border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#A7DA9B]"
+                  className="w-full mt-2 border border-gray-300 rounded-md px-4 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#A7DA9B]"
                   value={
                     answers.find((a) => a.questionId === question.question_id)?.userAnswer || ""
                   }
@@ -197,7 +202,7 @@ const QuizSolvePage = ({ userData }) => {
 
         <div className="flex justify-center mt-10">
           <button
-            className="px-6 py-2 border border-navbar text-navbar font-semibold rounded-lg hover:bg-[#f1f9f1] transition"
+            className="px-5 py-2 rounded-md bg-green-600 text-white font-semibold hover:bg-green-700 shadow inline-flex items-center gap-2"
             onClick={handleSubmitQuiz}
             disabled={submitting}
           >

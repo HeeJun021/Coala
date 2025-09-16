@@ -4,7 +4,7 @@ import { useAuth } from "../../../context/AuthContext";
 
 const MiniProfileCard = ({ user, isFollowing, onFollowToggle, onSendMessage }) => {
   const navigate = useNavigate();
-  const { user: currentUser } = useAuth(); // 현재 로그인된 사용자
+  const { user: currentUser } = useAuth();
   const [message, setMessage] = useState("");
 
   const handleSend = () => {
@@ -14,54 +14,63 @@ const MiniProfileCard = ({ user, isFollowing, onFollowToggle, onSendMessage }) =
     setMessage("");
   };
 
-  // ✅ 프로필 이미지 클릭 핸들러
   const handleProfileClick = () => {
     if (!user) return;
-    if (currentUser?.user_id === user.user_id) {
-      // 자기 자신 → 마이페이지 수정
-      navigate("/mypage/modify");
-    } else {
-      // 다른 사용자 → 뷰어 페이지
-      navigate(`/user/${user.user_id}`);
-    }
+    if (currentUser?.user_id === user.user_id) navigate("/mypage/modify");
+    else navigate(`/user/${user.user_id}`);
   };
 
+  // 팔로우 버튼 스타일 (사이트 톤)
+  const followBtnClass = isFollowing
+    ? "bg-green-600 text-white hover:bg-green-700"
+    : "bg-white text-green-700 border border-green-600 hover:bg-green-50";
+
   return (
-    <div className="rounded-2xl shadow-lg w-[260px] bg-[#fdfaec] border border-gray-400 overflow-hidden z-50 p-3">
-      {/* 상단 헤더 */}
-      <div className="bg-green-600 text-white px-4 py-2 flex justify-between items-center">
-        <span className="font-bold text-sm">{user.nickname}</span>
+    <div className="w-[280px] rounded-2xl bg-white border border-gray-300 shadow-xl p-4 z-50">
+      {/* 헤더: 아바타 + 닉네임 + 팔로우 버튼 */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <img
+            src={user?.profile_image_url || "/default-profile.png"}
+            alt="프로필 이미지"
+            className="w-14 h-14 rounded-full object-cover border border-gray-200 shadow cursor-pointer hover:opacity-90 transition"
+            onClick={handleProfileClick}
+          />
+          <div className="min-w-0">
+            <div
+              className="font-semibold text-gray-900 cursor-pointer hover:underline truncate"
+              onClick={handleProfileClick}
+              title={user?.nickname}
+            >
+              {user?.nickname}
+            </div>
+            <div className="text-xs text-gray-500">
+              @{user?.username || user?.nickname || "user"}
+            </div>
+          </div>
+        </div>
+
         <button
           type="button"
-          className="bg-white text-green-600 text-xs px-2 py-1 rounded-md hover:bg-gray-100 transition"
+          className={`px-3 py-1.5 text-xs rounded-md transition ${followBtnClass}`}
           onClick={onFollowToggle}
         >
           {isFollowing ? "팔로우 취소" : "팔로우"}
         </button>
       </div>
 
-      {/* 프로필 이미지 */}
-      <div className="flex justify-center my-3">
-        <img
-          src={user.profile_image_url || "/default-profile.png"}
-          alt="프로필 이미지"
-          className="w-16 h-16 rounded-full object-cover border border-gray-300 shadow-sm cursor-pointer hover:opacity-80 transition"
-          onClick={handleProfileClick} // ✅ 클릭 시 이동
-        />
-      </div>
-
-      {/* 자기소개 */}
-      <p className="text-center text-sm text-gray-700 mb-3">
-        {user.bio || "자기소개가 없습니다."}
+      {/* 소개 */}
+      <p className="mt-3 text-sm text-gray-700 leading-relaxed">
+        {user?.bio || "자기소개가 없습니다."}
       </p>
 
       {/* 기술 스택 */}
-      <div className="flex flex-wrap justify-center gap-2 mb-3">
-        {user.skills?.length > 0 ? (
+      <div className="mt-3 flex flex-wrap gap-2">
+        {user?.skills?.length ? (
           user.skills.map((skill) => (
             <span
               key={skill}
-              className="text-xs bg-gray-100 px-2 py-1 rounded-full border border-gray-300"
+              className="text-[11px] px-2 py-1 rounded-full border border-gray-200 bg-gray-50 text-gray-700"
             >
               {skill}
             </span>
@@ -71,33 +80,35 @@ const MiniProfileCard = ({ user, isFollowing, onFollowToggle, onSendMessage }) =
         )}
       </div>
 
-      {/* 채팅 메시지 입력 */}
-      <div className="px-3 pb-2 border-t pt-2">
+      {/* 메시지 입력 */}
+      <div className="mt-4 border-t border-gray-200 pt-3">
         <label className="text-xs text-gray-500 block mb-1">
-          @{user.nickname} 님에게 메시지 보내기
+          @{user?.nickname} 님에게 메시지 보내기
         </label>
-        <input
-          type="text"
-          autoComplete="off"
-          className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md mb-2 focus:outline-none focus:ring-2 focus:ring-green-400 transition"
-          placeholder="메시지를 입력하세요"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              handleSend();
-            }
-          }}
-        />
-        <button
-          type="button"
-          className="w-full bg-green-500 text-white text-xs py-1.5 rounded-md hover:bg-green-600 transition disabled:opacity-50"
-          onClick={handleSend}
-          disabled={!message.trim()}
-        >
-          전송
-        </button>
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            autoComplete="off"
+            className="flex-1 h-9 px-3 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-300"
+            placeholder="메시지를 입력하세요"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
+          />
+          <button
+            type="button"
+            className="w-full bg-green-500 text-white text-sm py-1.5 rounded-md hover:bg-green-800 transition disabled:opacity-50 flex items-center justify-center"
+            onClick={handleSend}
+            disabled={!message.trim()}
+          >
+            전송
+          </button>
+        </div>
       </div>
     </div>
   );

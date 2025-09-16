@@ -66,7 +66,7 @@ const MyPageCommunity = () => {
       <div className="w-[250px]"> </div>
 
       <div className="flex-1 p-6 max-w-6xl mx-auto">
-        <h2 className="text-xl font-semibold mt-4 flex items-center gap-2">
+        <h2 className="text-2xl font-semibold mt-4 flex items-center gap-2">
           커뮤니티 활동 내역
         </h2>
 

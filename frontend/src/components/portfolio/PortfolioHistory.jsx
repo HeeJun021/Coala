@@ -52,14 +52,20 @@ export default function PortfolioHistory() {
     window.open(`https://www.notion.so/${pageId.replaceAll("-", "")}`, "_blank", "noopener");
   };
 
-  return (
-    <div className="w-full min-h-screen pt-4 pl-[164px] bg-[#F9FAFB]">
-      <div className="max-w-5xl mx-auto pt-8 mt-8 bg-white shadow-xl rounded-2xl border border-gray-300 p-7 relative">
+return (
+  <div className="relative min-h-screen">
+    {/* 사이드바 영역 확보 */}
+    <div className="w-full min-h-screen pt-4 pl-[164px]">
+      {/* 메인 카드 컨테이너 (PortfolioExport와 동일 규격) */}
+      <div className="max-w-5xl mx-auto mt-3 bg-white shadow-xl rounded-2xl border border-gray-300 p-7">
+
         {/* 타이틀 */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-extrabold text-gray-800 mb-4 tracking-wide">포트폴리오 제출 내역</h1>
-          <p className="text-gray-500 text-sm">노션으로 내보낸 기록을 한눈에 확인하세요.</p>
-        </div>
+        <header className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-800">포트폴리오 추출 내역</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            노션으로 내보낸 기록을 한눈에 확인하세요.
+          </p>
+        </header>
 
         {/* 헤더 라인 */}
         <div className="flex justify-between items-center mb-4">
@@ -67,7 +73,9 @@ export default function PortfolioHistory() {
             <History className="w-5 h-5 text-green-600" />
             <h2 className="text-lg font-semibold">
               내보내기 목록{" "}
-              <span className="text-sm font-normal text-gray-500">· 총 <strong>{total}</strong>건</span>
+              <span className="text-sm font-normal text-gray-500">
+                · 총 <strong>{total}</strong>건
+              </span>
             </h2>
           </div>
         </div>
@@ -146,7 +154,9 @@ export default function PortfolioHistory() {
                 <button
                   onClick={() => goPage(page - 1)}
                   className={`px-3 py-2 rounded-md flex items-center justify-center ${
-                    page === 1 ? "bg-gray-200 text-gray-500 cursor-not-allowed" : "bg-green-600 text-white hover:bg-green-700"
+                    page === 1
+                      ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                      : "bg-green-600 text-white hover:bg-green-700"
                   }`}
                   disabled={page === 1}
                   aria-label="이전 페이지"
@@ -159,7 +169,9 @@ export default function PortfolioHistory() {
                     key={p}
                     onClick={() => goPage(p)}
                     className={`px-3 py-1.5 rounded-md border text-sm ${
-                      page === p ? "bg-green-600 text-white" : "hover:bg-gray-100 text-gray-700"
+                      page === p
+                        ? "bg-green-600 text-white"
+                        : "hover:bg-gray-100 text-gray-700"
                     }`}
                     aria-current={page === p ? "page" : undefined}
                   >
@@ -170,7 +182,9 @@ export default function PortfolioHistory() {
                 <button
                   onClick={() => goPage(page + 1)}
                   className={`px-3 py-2 rounded-md flex items-center justify-center ${
-                    page === totalPages ? "bg-gray-200 text-gray-500 cursor-not-allowed" : "bg-green-600 text-white hover:bg-green-700"
+                    page === totalPages
+                      ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                      : "bg-green-600 text-white hover:bg-green-700"
                   }`}
                   disabled={page === totalPages}
                   aria-label="다음 페이지"
@@ -183,5 +197,7 @@ export default function PortfolioHistory() {
         )}
       </div>
     </div>
-  );
+  </div>
+);
+
 }

@@ -1,5 +1,5 @@
 import React from "react";
-import { FileText } from "lucide-react";
+import { Play  } from "lucide-react";
 
 const SelfCodingPreviewPanel = ({
   previewFilename,
@@ -20,11 +20,11 @@ const SelfCodingPreviewPanel = ({
     <div className="flex flex-col w-full h-full bg-white">
       {/* 상단 실행 파일 이름 표시 */}
       <div className="flex items-center bg-[#f3f3f3] border-b border-gray-300 px-3 py-1 text-sm font-medium text-gray-700">
-        <FileText className="mr-2 text-gray-600" />
+        <Play  className="mr-2 text-gray-600" />
         {previewFilename ? (
           <span>{previewFilename}</span>
         ) : (
-          <span className="italic text-gray-400">최근 실행 결과 없음</span>
+          <span className="text-gray-700">실행 결과</span>
         )}
       </div>
 
@@ -35,12 +35,12 @@ const SelfCodingPreviewPanel = ({
             <div className="space-y-4">
               {/* stdout */}
               <div>
-                <span className="text-blue-700 font-bold">📥 실행 결과</span>
+                <span className="text-blue-700 font-bold">실행 결과</span>
                 <div
                   className={`mt-1 ${
                     stdout?.trim() !== ""
                       ? "text-green-700 bg-gray-100"
-                      : "text-gray-400 italic"
+                      : "text-gray-400"
                   } rounded p-2`}
                 >
                   {stdout?.trim() !== "" ? stdout : "(없음)"}
@@ -68,7 +68,7 @@ const SelfCodingPreviewPanel = ({
             />
           )
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm italic">
+          <div className="w-full h-full flex items-center justify-center text-gray-400">
             실행 결과가 없습니다.
           </div>
         )}

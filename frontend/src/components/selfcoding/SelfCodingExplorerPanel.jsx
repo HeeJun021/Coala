@@ -897,13 +897,13 @@ const handleFolderToggle = async (node) => {
   return (
     <div className="p-4">
       <div
-        className="text-sm text-green-700 font-medium flex items-center gap-2 cursor-pointer mb-4 hover:underline"
+        className="text-[16px] text-green-700 font-medium flex items-center gap-2 cursor-pointer mb-4 hover:underline"
         onClick={() => navigate("/self-coding/templates")}
       >
         <PlusCircle className="text-green-600" /> 템플릿 새로 만들기
       </div>
       <div
-        className="text-[13px] font-medium text-gray-600 flex items-center cursor-pointer mb-1"
+        className="text-[16px] font-medium text-gray-700 flex items-center cursor-pointer mb-1"
         onClick={() => setShowFileTree((prev) => !prev)}
       >
         {showFileTree ? (
@@ -911,7 +911,7 @@ const handleFolderToggle = async (node) => {
         ) : (
           <ChevronRight className="mr-1 text-gray-500" />
         )}
-        파일 구조
+        파일 탐색기
       </div>
       {showFileTree && folderTree && (
         <div className="text-xs pb-4 text-gray-700 whitespace-pre-wrap">

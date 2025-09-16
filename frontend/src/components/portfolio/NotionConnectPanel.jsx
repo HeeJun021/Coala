@@ -47,7 +47,7 @@ export default function NotionConnectPanel({ connected, workspaceName, onConnect
         </div>
 
         <div className="flex-1">
-          <h2 className="text-xl font-bold text-gray-900 mb-2">노션 계정 연결</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">노션 계정 연결</h2>
 
           {!isConnected ? (
             <>

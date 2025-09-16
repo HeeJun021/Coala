@@ -72,7 +72,7 @@ const CodingTestSidebar = () => {
           className={`${baseItem} ${isExplore ? activeCls : idleCls}`}
           onClick={() => go("/problem-explore")}   // ✅ 여기로 이동
         >
-          문제탐색
+          문제 탐색
         </button>
 
         <button
@@ -80,7 +80,7 @@ const CodingTestSidebar = () => {
           className={`${baseItem} ${isAllProblems ? activeCls : idleCls}`}
           onClick={() => go("/codingtest")}
         >
-          모든 문제
+          문제 목록
         </button>
 
         <button

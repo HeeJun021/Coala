@@ -132,6 +132,7 @@ const TeamProjectPage = () => {
           project={selectedProject}
           onNameChange={() => fetchProjects()}
           defaultTab={normalizedSubTab || normalizedTab}
+          currentUser={currentUser}
         />
       );
     }
@@ -147,7 +148,6 @@ const TeamProjectPage = () => {
             project={selectedProject}
             onNameChange={() => fetchProjects()}
             defaultTab={normalizedSubTab || normalizedTab}
-            // ▼▼▼ [핵심 수정] currentUser를 props로 전달! ▼▼▼
             currentUser={currentUser}
           />
         );

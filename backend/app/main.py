@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()  # 기본 위치 .env 로드 (필요하면 load_dotenv(dotenv_path="/path/.env"))
+
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
@@ -74,7 +77,8 @@ from app.routers import (
     notion_export,
     notion_templates,
     notion_shared,
-    notion_publish
+    notion_publish,
+    code_templates
 )
 
 from app.schemas.user import UserUpdateSchema
@@ -124,6 +128,7 @@ app.include_router(code_runner.router)
 app.include_router(code_terminal.router)
 app.include_router(code_execution.router, prefix="/code")  # WebSocket용이면 prefix 유지 가능
 app.include_router(code.router)
+app.include_router(code_templates.router)
 app.include_router(preview.router)
 app.include_router(github.router)
 app.include_router(task.router)

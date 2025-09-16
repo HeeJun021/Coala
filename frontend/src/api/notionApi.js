@@ -34,12 +34,22 @@ export async function getTemplate(templateId) {
   return data; // { id, key, title, version, doc_json }
 }
 
-/** ---------- 퍼블리시 (가공+붙여넣기) ---------- */
-export async function publishToNotion({ template_id, target_page_id, title }) {
+// Notion 퍼블리시
+export async function publishToNotion({
+  template_id,
+  target_page_id,
+  title,
+  project_id,
+  ai_prompt,
+  extra_kv,
+}) {
   const { data } = await apiClient.post("/notion/publish", {
     template_id,
     target_page_id,
     title,
+    project_id,
+    ai_prompt,
+    extra_kv,
   });
-  return data; // { ok, created_page_id }
+  return data; // { ok, created_page_id, export_history_id, missing_keys, message }
 }
