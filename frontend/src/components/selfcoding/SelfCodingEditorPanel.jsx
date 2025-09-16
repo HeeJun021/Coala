@@ -70,7 +70,10 @@ const SelfCodingEditorPanel = ({
     try {
       const result = await runJsPreview(selectedFileContent);
       console.log("🔥 runJs 결과:", result);
-      const escapedCode = selectedFileContent.replace(/<\/script>/g, "<\\/script>");
+      const escapedCode = selectedFileContent.replace(
+        /<\/script>/g,
+        "<\\/script>"
+      );
       const jsOutput = `
         <html>
           <body style="font-family:monospace; padding:20px;">
@@ -146,7 +149,13 @@ const SelfCodingEditorPanel = ({
       }
     };
     fetchContent();
-  }, [activeTabId, setSelectedFilename, setSelectedFileContent, setUnsaved, setLanguageId]);
+  }, [
+    activeTabId,
+    setSelectedFilename,
+    setSelectedFileContent,
+    setUnsaved,
+    setLanguageId,
+  ]);
 
   const renderActionButton = () => {
     if (unsaved || extension === "css") {
@@ -198,52 +207,53 @@ const SelfCodingEditorPanel = ({
 
   return (
     <div className="flex flex-col w-full h-full bg-white border-r border-gray-200">
-            <div className="flex items-center bg-[#f3f3f3] border-b border-gray-300 px-3 py-1 text-sm font-medium text-gray-700">
-              <FileText className="mr-2 text-gray-600" />
-              <span className=" text-gray-700">코드 에디터</span>
-
+      <div className="flex items-center bg-[#f3f3f3] border-b border-gray-300 px-3 py-1 text-sm font-medium text-gray-700">
+        <FileText className="mr-2 text-gray-600" />
+        <span className=" text-gray-700">코드 에디터</span>
       </div>
       {/* 탭 영역 */}
-        <div className="flex items-center overflow-x-auto whitespace-nowrap bg-[#f3f3f3] border-b border-gray-300 px-2 pt-1">
-          {tabs.map((tab) => {
-            const fileName = tab.filename;
-            const emoji =
-              templateDescriptions[templateId]?.emoji || (
-                <FileText size={14} className="inline text-gray-600" />
-              );
-            const isActive = tab.tabId === activeTabId;
-            const isUnsaved = isActive && unsaved;
+      <div className="flex items-center overflow-x-auto whitespace-nowrap bg-[#f3f3f3] border-b border-gray-300 px-2 pt-1">
+        {tabs.map((tab) => {
+          const fileName = tab.filename;
+          const emoji = templateDescriptions[templateId]?.emoji || (
+            <FileText size={14} className="inline text-gray-600" />
+          );
+          const isActive = tab.tabId === activeTabId;
+          const isUnsaved = isActive && unsaved;
 
-            return (
-              <div
-                key={tab.tabId}
-                onClick={() => setActiveTabId(tab.tabId)}
-                className={`inline-flex items-center px-3 py-1 mr-1 rounded-t-md text-sm font-medium border cursor-pointer flex-shrink-0
-                  ${isActive
-                    ? "bg-white text-black border-t border-l border-r border-gray-300"
-                    : "bg-[#e0e0e0] text-gray-600 hover:bg-[#d5d5d5] border border-transparent"}`}
-              >
-                <span className="mr-2 flex items-center">{emoji}</span>
-                <span className="truncate max-w-[160px]">
-                  {fileName}{isUnsaved && " ●"}
-                </span>
-                <X
-                  className="ml-2 text-xs hover:text-red-500 shrink-0"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setTabs((prev) => prev.filter((t) => t.tabId !== tab.tabId));
-                    if (activeTabId === tab.tabId) {
-                      const nextTab = tabs.find((t) => t.tabId !== tab.tabId);
-                      setActiveTabId(nextTab?.tabId || "");
-                      setSelectedFilename(nextTab?.filename || "");
-                      setSelectedFileContent("");
-                    }
-                  }}
-                />
-              </div>
-            );
-          })}
-        </div>
+          return (
+            <div
+              key={tab.tabId}
+              onClick={() => setActiveTabId(tab.tabId)}
+              className={`inline-flex items-center px-3 py-1 mr-1 rounded-t-md text-sm font-medium border cursor-pointer flex-shrink-0
+                  ${
+                    isActive
+                      ? "bg-white text-black border-t border-l border-r border-gray-300"
+                      : "bg-[#e0e0e0] text-gray-600 hover:bg-[#d5d5d5] border border-transparent"
+                  }`}
+            >
+              <span className="mr-2 flex items-center">{emoji}</span>
+              <span className="truncate max-w-[160px]">
+                {fileName}
+                {isUnsaved && " ●"}
+              </span>
+              <X
+                className="ml-2 text-xs hover:text-red-500 shrink-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setTabs((prev) => prev.filter((t) => t.tabId !== tab.tabId));
+                  if (activeTabId === tab.tabId) {
+                    const nextTab = tabs.find((t) => t.tabId !== tab.tabId);
+                    setActiveTabId(nextTab?.tabId || "");
+                    setSelectedFilename(nextTab?.filename || "");
+                    setSelectedFileContent("");
+                  }
+                }}
+              />
+            </div>
+          );
+        })}
+      </div>
 
       {/* 파일명 및 액션 버튼 */}
       <div className="flex justify-between items-center px-4 py-1 text-xs text-gray-500 border-b border-gray-200 bg-white font-mono">
@@ -259,18 +269,25 @@ const SelfCodingEditorPanel = ({
             파일을 선택하면 편집할 수 있어요
           </div>
         ) : (
-          <CodeMirror
-            ref={editorRef}
-            value={selectedFileContent || ""}
-            height="100%"
-            theme={githubLight}
-            extensions={getExtensionsForFile(selectedFilename)}
-            onChange={(val) => {
-              setSelectedFileContent(val);
-              setUnsaved(val !== originalContent);
-            }}
-            style={{ height: "100%" }}
-          />
+          <div className="cm-v6-gutter-v5">
+            <CodeMirror
+              ref={editorRef}
+              value={selectedFileContent || ""}
+              height="100%"
+              theme={githubLight}
+              extensions={getExtensionsForFile(selectedFilename)}
+              onChange={(val) => {
+                setSelectedFileContent(val);
+                setUnsaved(val !== originalContent);
+              }}
+              style={{
+                height: "100%",
+                fontFamily: "'JetBrains Mono','Fira Code',monospace",
+                fontSize: 15,
+                lineHeight: 1.6,
+              }}
+            />
+          </div>
         )}
       </div>
     </div>

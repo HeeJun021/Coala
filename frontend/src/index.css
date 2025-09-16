@@ -189,19 +189,19 @@ body,
   background: #f1f5f9;
 }
 
-/* Gutter (라인 넘버 영역) */
-.CodeMirror-gutters {
-  background-color: #f1f5f9;
-  color: #94a3b8;
-  border-right: 1px solid #e5e7eb;
-  font-family: "JetBrains Mono", monospace;
-  font-size: 13px;
+/* === CodeMirror v6 — 라인 넘버를 v5 톤으로 (두 에디터 공통) === */
+.cm-v6-gutter-v5 .cm-gutters {
+  background-color: #f1f5f9 !important;       /* v5: slate-50 느낌 */
+  color: #94a3b8 !important;                   /* v5: slate-400 */
+  border-right: 1px solid #e5e7eb !important;  /* v5: slate-200 */
+  font-family: "JetBrains Mono", monospace !important;
+  font-size: 13px !important;
 }
 
-/* 라인 넘버 강조 (활성 라인) */
-.CodeMirror-linenumber {
-  padding: 0 4px;
+.cm-v6-gutter-v5 .cm-lineNumbers .cm-gutterElement {
+  padding: 0 4px !important;                   /* v5 padding */
 }
+
 .CodeMirror-hints {
   font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
   font-size: 14px !important;
