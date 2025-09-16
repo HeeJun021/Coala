@@ -68,7 +68,6 @@
   font-weight: normal;
   font-style: normal;
 }
-@import "prismjs/themes/prism.css";
 
 @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono&family=Fira+Code&display=swap");
 
@@ -103,7 +102,7 @@ html,
 body,
 #root {
   height: 100%;
-  overflow: hideen;
+  overflow: hidden;
 }
 
 /* 코딩테스트 & 에디터 스크롤바 커스텀 */
