@@ -163,7 +163,7 @@ const WrongNoteEditor = ({
         }`}
       >
         {failedSubmissions.length > 0 && (
-          <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
             <Ban className="w-5 h-5 text-[#e11d48]" />
             제출 오답 내역
           </h2>
@@ -211,7 +211,7 @@ const WrongNoteEditor = ({
                   >
                     <div className="ml-6 mt-2">
                       <div className="flex justify-between items-center mb-2">
-                        <h4 className="text-sm font-semibold">
+                        <h4 className="text-base font-semibold">
                           <ClipboardList
                             className="w-4 h-4 inline-block mr-1"
                             style={{ color: "#1d4ed8" }}
@@ -250,7 +250,7 @@ const WrongNoteEditor = ({
                           </button>
                         )}
                       </div>
-                      <div className="text-sm space-y-2">
+                      <div className="text-base space-y-2">
                         {(() => {
                           let parsed = [];
                           try {
@@ -276,7 +276,7 @@ const WrongNoteEditor = ({
                           }
 
                           return (
-                            <div className="text-sm space-y-4 pl-6 mt-1">
+                            <div className="text-base space-y-4 pl-6 mt-1">
                               {failedCases.slice(0, 2).map((r, idx) => (
                                 <div key={idx} className="text-gray-800">
                                   <p className="text-base font-semibold">
@@ -338,7 +338,7 @@ const WrongNoteEditor = ({
                       onKeyDown={async (e) => {
                         if (e.key === "Enter") await handleTitleSave();
                       }}
-                      className="bg-white border border-gray-300 rounded px-2 py-1 text-gray-800 text-sm"
+                      className="bg-white border border-gray-300 rounded px-2 py-1 text-gray-800 text-base"
                     />
                   ) : (
                     <>

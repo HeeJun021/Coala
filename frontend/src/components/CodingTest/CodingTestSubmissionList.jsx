@@ -35,7 +35,7 @@ const CodingTestSubmissionList = ({
   return (
     <>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold text-gray-800">제출 내역</h2>
+        <h2 className="text-2xl font-semibold text-gray-800">제출 내역</h2>
         <button
           onClick={fetchSubmissions}
           className="flex items-center gap-1 text-sm text-gray-500 hover:text-teal-600 transition"
