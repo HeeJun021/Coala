@@ -2,7 +2,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   SlidersHorizontal,
-  UserSquare2,
   ChevronDown,
   Crown,
   Users,
@@ -458,7 +457,7 @@ export default function PortfolioFilterPanel({
       {/* ✅ 역할 표시(자동) : 팀장/팀원 배지 + 역할 배지 */}
       <section className="mb-6">
         <div className="flex items-center gap-2 mb-3">
-          <UserSquare2 size={18} />
+          <Users className="w-3.5 h-3.5 text-blue-500" />
           <h3 className="font-semibold">내 역할</h3>
         </div>
 

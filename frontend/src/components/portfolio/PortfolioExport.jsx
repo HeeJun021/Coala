@@ -4,9 +4,58 @@ import NotionConnectPanel from "./NotionConnectPanel";
 import PortfolioFilterPanel from "./PortfolioFilterPanel";
 import { getNotionStatus, disconnectNotion, publishToNotion } from "../../api/notionApi";
 import { getMyProjects } from "../../api/projectApi";
-import { X, Upload, MapPin, Layers, CheckCircle2, Loader2, AlertTriangle, ExternalLink } from "lucide-react";
+import { X, Upload, MapPin, Layers, CheckCircle2, Loader2, AlertTriangle, ExternalLink,LayoutDashboard,Users,FileText} from "lucide-react";
 import NotionTemplateSelectModal from "./NotionTemplateSelectModal";
 import NotionTargetPageSelectModal from "./NotionTargetPageSelectModal";
+
+function SummaryModal({ open, onCancel, onConfirm, data }) {
+  if (!open) return null;
+  const { pageTitle, targetPageTitle, templateTitle, projectName, role } = data || {};
+  return (
+    <div className="fixed inset-0 z-[99] flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true">
+      <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-900">퍼블리시 전 요약</h3>
+        <div className="mt-4 rounded-xl border border-gray-200">
+          <div className="p-4 grid grid-cols-[100px_1fr] gap-y-3 text-[14px]">
+            <div className="text-gray-500 inline-flex items-center gap-2 whitespace-nowrap">
+  <FileText className="w-4 h-4 text-black" />
+  <span>노션 제목</span>
+</div>
+            <div className="font-medium text-gray-900 truncate">{pageTitle?.trim() || "-"}</div>
+
+            <div className="text-gray-500 inline-flex items-center gap-2 whitespace-nowrap">
+  <MapPin className="w-4 h-4 text-yellow-500" />
+  <span>대상 페이지</span>
+</div>
+            <div className="font-medium text-gray-900 truncate">{targetPageTitle || "-"}</div>
+
+            <div className="text-gray-500 inline-flex items-center gap-2 whitespace-nowrap">
+  <Layers className="w-4 h-4 text-emerald-600" />
+  <span>템플릿</span>
+</div>
+            <div className="font-medium text-gray-900 truncate">{templateTitle || "-"}</div>
+
+            <div className="text-gray-500 inline-flex items-center gap-2 whitespace-nowrap">
+  <LayoutDashboard className="w-4 h-4 text-indigo-600" />
+  <span>프로젝트</span>
+</div>
+            <div className="font-medium text-gray-900 truncate">{projectName || "-"}</div>
+
+            <div className="text-gray-500 inline-flex items-center gap-2 whitespace-nowrap">
+  <Users className="w-3.5 h-3.5 text-blue-500" />
+  <span>역할</span>
+</div>
+            <div className="font-medium text-gray-900 truncate">{role || "미지정"}</div>
+          </div>
+        </div>
+        <div className="mt-6 flex items-center justify-end gap-2">
+          <button onClick={onCancel} className="px-3 py-2 rounded-xl border bg-white hover:bg-gray-50 text-gray-700">수정하기</button>
+          <button onClick={onConfirm} className="px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white">퍼블리시 진행</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function PublishProgressModal({
   open,
@@ -131,6 +180,8 @@ export default function PortfolioExport() {
  const [publishModalOpen, setPublishModalOpen] = useState(false);
  const [publishedPageUrl, setPublishedPageUrl] = useState("");
  const [publishedPageId, setPublishedPageId] = useState("");
+
+ const [reviewOpen, setReviewOpen] = useState(false);
 
   // 템플릿 선택 시 상태 반영
 const handleSelectTemplate = useCallback((id, title) => {
@@ -354,14 +405,17 @@ return (
             <div className="p-6 space-y-5">
               {/* 1) 제목 */}
               <div className="flex flex-col gap-2">
-                <span className="text-sm text-gray-600">노션 페이지 제목</span>
-                <input
-                  value={pageTitle}
-                  onChange={(e) => setPageTitle(e.target.value)}
-                  placeholder="예: 엘리베이터형 자판기 시스템 – 포트폴리오"
-                  className="h-10 rounded-xl border border-gray-300 bg-white px-3 text-sm hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                />
-              </div>
+  <span className="text-sm text-gray-600">노션 페이지 제목</span>
+  <div className="h-10 flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-3 hover:border-gray-400 focus-within:ring-2 focus-within:ring-emerald-200">
+    <FileText className="w-4 h-4 text-black" />
+    <input
+      value={pageTitle}
+      onChange={(e) => setPageTitle(e.target.value)}
+      placeholder="예: 엘리베이터형 자판기 시스템 – 포트폴리오"
+      className="flex-1 h-full bg-transparent text-sm focus:outline-none"
+    />
+  </div>
+</div>
 
               {/* 2) 대상 페이지 */}
               <div className="flex flex-col gap-2">
@@ -424,7 +478,7 @@ return (
               <div className="pt-4">
                 <button
                   type="button"
-                  onClick={handlePublish}
+                  onClick={() => setReviewOpen(true)}
                   disabled={publishing || !canPublish}
                   className={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-white font-medium transition ${
                     publishing ? "bg-emerald-400 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-700 shadow-lg"
@@ -503,63 +557,27 @@ return (
               )}
             </div>
           </section>
-
-          {/* 섹션 카드: 요약 (기존 aside 내용) */}
-          <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
-            <h4 className="text-sm font-semibold text-gray-900">요약</h4>
-            <ul className="mt-3 space-y-3 text-sm">
-              <li className="flex gap-3">
-                <span className="w-16 shrink-0 text-gray-500">프로젝트</span>
-                <div className="flex-1 text-gray-900">
-                  {(() => {
-                    const pid = selectedProjectId;
-                    const found = (projects || []).find((p) => (p?.id ?? p?.project_id) === pid);
-                    const name = found?.name ?? found?.project_name ?? "(미선택)";
-                    return name || "(미선택)";
-                  })()}
-                </div>
-              </li>
-              <li className="flex gap-3">
-                <span className="w-16 shrink-0 text-gray-500">역할</span>
-                <div className="flex-1">
-                  {Array.isArray(filters?.my_roles) && filters.my_roles.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {filters.my_roles.map((r) => (
-                        <span
-                          key={r}
-                          className="px-2 py-0.5 rounded-full text-xs border bg-gray-50 text-gray-700"
-                          title={r}
-                        >
-                          {r}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-gray-400">없음</span>
-                  )}
-                </div>
-              </li>
-              <li className="flex gap-3">
-                <span className="w-16 shrink-0 text-gray-500">템플릿</span>
-                <div className="flex-1 text-gray-900">{templateTitle || "(미선택)"}</div>
-              </li>
-              <li className="flex gap-3">
-                <span className="w-16 shrink-0 text-gray-500">대상</span>
-                <div className="flex-1 text-gray-900">{targetPageTitle || "(미선택)"}</div>
-              </li>
-              <li className="flex gap-3">
-                <span className="w-16 shrink-0 text-gray-500">제목</span>
-                <div className="flex-1 text-gray-900">{pageTitle?.trim() || "(미입력)"}</div>
-              </li>
-            </ul>
-
-            <div className="mt-4 text-xs text-gray-500">필수: 프로젝트 1개, 템플릿, 대상 페이지, 제목</div>
-          </section>
         </div>
 
         {/* 모달들 (카드 내부에 위치) */}
         <NotionTemplateSelectModal open={tplOpen} onClose={() => setTplOpen(false)} onSelect={handleSelectTemplate} />
         <NotionTargetPageSelectModal open={pageOpen} onClose={() => setPageOpen(false)} onSelect={handleSelectTarget} />
+          <SummaryModal
+  open={reviewOpen}
+  onCancel={() => setReviewOpen(false)}
+  onConfirm={() => { setReviewOpen(false); handlePublish(); }}
+  data={{
+    pageTitle,
+    targetPageTitle,
+    templateTitle,
+    projectName: (() => {
+      const pid = selectedProjectId;
+      const found = (projects || []).find((p) => (p?.id ?? p?.project_id) === pid);
+      return found?.name ?? found?.project_name ?? "";
+    })(),
+    role: (Array.isArray(filters?.my_roles) && filters.my_roles[0]) || "",
+  }}
+/>
         <PublishProgressModal
           open={publishModalOpen}
           status={publishStatus}
