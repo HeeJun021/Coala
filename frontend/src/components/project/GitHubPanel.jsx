@@ -25,7 +25,7 @@ import {
   commitChanges,
   mergeBranch,
 } from "../../api/project_gitApi";
-import CommitModal from "./projectgit/CommitModal"; // ✅ 추가
+import CommitModal from "./projectgit/CommitModal"; 
 
 /* ---------------------- Sub Components ---------------------- */
 
