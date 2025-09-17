@@ -1,4 +1,3 @@
-# backend/app/services/notion_api_service.py
 import os
 import logging
 import requests
@@ -19,6 +18,17 @@ _ALLOWED_TYPES = {
     "column_list","column","heading_1","heading_2","heading_3","paragraph",
     "bulleted_list_item","numbered_list_item","quote","to_do","toggle","template",
     "callout","synced_block"
+}
+
+# ✅ Notion에서 children을 가질 수 있는(계층화 가능한) 블록들
+# (실제 Notion API 문서 기준으로 children 허용되는 주요 텍스트 계열 포함)
+_BLOCKS_ALLOW_CHILDREN = {
+    "callout",
+    "paragraph",
+    "heading_1","heading_2","heading_3",
+    "bulleted_list_item","numbered_list_item",
+    "to_do","toggle","quote","code",
+    "template","synced_block","column_list","column","table",  # 기존 컨테이너 포함
 }
 
 EMPTY_PAYLOAD_TYPES = {"divider", "table_of_contents", "breadcrumb"}
@@ -92,8 +102,6 @@ def _transform_rich_text(rt_list: Any) -> List[Dict[str, Any]]:
             out.append(rt)
     return out
 
-
-
 def _normalize_external_url(url: Any) -> Optional[str]:
     if isinstance(url, str) and url.startswith(("http://", "https://")):
         return url
@@ -148,15 +156,10 @@ def _debug_first_invalid(blocks: list, label: str = "preflight"):
 # (추가) 페이지 제목 업데이트
 # ──────────────────────────────────────────────────────────────────────────────
 def update_page_title(user: "User", page_id: str, title: str) -> None:
-    """
-    Standalone 페이지(데이터베이스가 아닌 일반 페이지)의 제목을 갱신한다.
-    Notion API: PATCH /v1/pages/{page_id}
-    """
     token = _decrypt(user.notion_token)
     headers = _headers(token)
     url = f"{NOTION_API_BASE}/pages/{page_id}"
 
-    # 대부분의 스탠드얼론 페이지는 'title' 속성을 사용한다.
     payload = {
         "properties": {
             "title": [
@@ -169,15 +172,10 @@ def update_page_title(user: "User", page_id: str, title: str) -> None:
     if r.status_code >= 300:
         raise RuntimeError(f"Failed to update page title: {r.text}")
 
-
 # ──────────────────────────────────────────────────────────────────────────────
-# (추가) 1:1 대치를 위한 텍스트 치환 유틸
-# ──────────────────────────────────────────────────────────────────────────────
-# ──────────────────────────────────────────────────────────────────────────────
-# (치환) 텍스트 대치 유틸
+# 치환 유틸
 # ──────────────────────────────────────────────────────────────────────────────
 def _replace_in_text(text: Any, kv: Dict[str, Any]) -> Any:
-    """문자열의 [키], {{키}} 치환. 문자열이 아니면 그대로 반환."""
     if not isinstance(text, str) or not kv:
         return text
     out = text
@@ -186,12 +184,10 @@ def _replace_in_text(text: Any, kv: Dict[str, Any]) -> Any:
             continue
         val = str(v)
         out = out.replace(f"[{k}]", val)
-        out = out.replace(f"{{{{{k}}}}}", val)  # {{key}}
+        out = out.replace(f"{{{{{k}}}}}", val)
     return out
 
-
 def _replace_in_rich_text_list(rt_list: Any, kv: Dict[str, Any]) -> Any:
-    """rich_text 배열 내부의 text.content 치환."""
     if not isinstance(rt_list, list) or not kv:
         return rt_list
     new_rt = []
@@ -205,15 +201,7 @@ def _replace_in_rich_text_list(rt_list: Any, kv: Dict[str, Any]) -> Any:
         new_rt.append(item)
     return new_rt
 
-
 def replace_placeholders_in_blocks(blocks: List[dict], kv: Dict[str, Any]) -> List[dict]:
-    """
-    Notion 블록 트리 전체를 순회하며 [키], {{키}}를 1:1로 치환한다.
-    - 텍스트 계열: paragraph, headings, list_item, to_do, toggle, quote, callout, code, template.rich_text
-    - media caption: image, video, file, pdf, audio, bookmark, embed
-    - table_row.cells: [[rich_text...], ...]
-    - 컨테이너 children: column_list/column, synced_block, template, table
-    """
     if not isinstance(blocks, list) or not kv:
         return blocks
 
@@ -232,21 +220,20 @@ def replace_placeholders_in_blocks(blocks: List[dict], kv: Dict[str, Any]) -> Li
         t = b.get("type")
         payload = isinstance(t, str) and b.get(t)
         if not isinstance(payload, dict):
-            # column_list/column처럼 payload가 아닌 상위키 children 구조면 아래에서 처리
             pass
         nb = dict(b)
 
-        # 1) 텍스트 계열: payload.rich_text 치환
+        # 텍스트 계열
         if isinstance(payload, dict) and t in TEXT_TYPES_WITH_RICH_TEXT:
             payload = dict(payload)
             if "rich_text" in payload:
                 payload["rich_text"] = _replace_in_rich_text_list(payload.get("rich_text"), kv)
-            # template은 children도 가짐
-            if t == "template" and isinstance(payload.get("children"), list):
+            # ✅ 모든 child-bearing 텍스트 계열에서 children도 재귀 치환
+            if t in _BLOCKS_ALLOW_CHILDREN and isinstance(payload.get("children"), list):
                 payload["children"] = [walk(ch) for ch in payload["children"]]
             nb[t] = payload
 
-        # 2) table_row: cells 치환
+        # table_row
         if t == "table_row" and isinstance(payload, dict):
             payload = dict(payload)
             cells = payload.get("cells")
@@ -261,7 +248,7 @@ def replace_placeholders_in_blocks(blocks: List[dict], kv: Dict[str, Any]) -> Li
                 payload["cells"] = new_cells
             nb[t] = payload
 
-        # 3) MEDIA caption / equation.expression
+        # MEDIA caption / equation
         if isinstance(payload, dict) and t in MEDIA_TYPES_WITH_CAPTION:
             payload = dict(payload)
             if "caption" in payload and isinstance(payload["caption"], list):
@@ -273,49 +260,20 @@ def replace_placeholders_in_blocks(blocks: List[dict], kv: Dict[str, Any]) -> Li
                 payload["expression"] = _replace_in_text(payload["expression"], kv)
             nb[t] = payload
 
-        # 4) 컨테이너 children: column_list, column, synced_block, table
-        if t == "column_list" and isinstance(payload, dict):
+        # 컨테이너 children
+        if t in {"column_list","column","synced_block","table","template"} and isinstance(payload, dict):
             payload = dict(payload)
             if isinstance(payload.get("children"), list):
                 payload["children"] = [walk(ch) for ch in payload["children"]]
             nb[t] = payload
 
-        if t == "column" and isinstance(payload, dict):
-            payload = dict(payload)
-            if isinstance(payload.get("children"), list):
-                payload["children"] = [walk(ch) for ch in payload["children"]]
-            nb[t] = payload
-
-        if t == "synced_block" and isinstance(payload, dict):
-            payload = dict(payload)
-            if isinstance(payload.get("children"), list):
-                payload["children"] = [walk(ch) for ch in payload["children"]]
-            nb[t] = payload
-
-        if t == "table" and isinstance(payload, dict):
-            payload = dict(payload)
-            if isinstance(payload.get("children"), list):
-                payload["children"] = [walk(ch) for ch in payload["children"]]
-            nb[t] = payload
-
-        # 5) 혹시 payload가 없거나 위에서 캐치 못한 텍스트 계열 보정(드문 케이스)
-        if isinstance(payload, dict) and t not in TEXT_TYPES_WITH_RICH_TEXT:
-            # 일부 블록이 특수 필드에 rich_text를 둘 수 있으므로 caption만 한 번 더 방어
-            if "caption" in payload and isinstance(payload["caption"], list):
-                payload = dict(payload)
-                payload["caption"] = _replace_in_rich_text_list(payload["caption"], kv)
-                nb[t] = payload
-                    # ✅ 상위 children도 재귀 치환 (callout 등)
+        # 상위 children
         if isinstance(nb.get("children"), list):
             nb["children"] = [walk(ch) for ch in nb["children"]]
 
         return nb
 
-
     return [walk(b) for b in blocks]
-
-
-
 
 # ──────────────────────────────────────────────────────────────────────────────
 # 블록 변환
@@ -326,6 +284,12 @@ def _transform_block_for_create(block: Dict[str, Any]) -> Union[Dict[str, Any], 
     extracted_children = b.pop("children", None)
     typ = b.get("type")
     container_types = {"column_list","column","template","synced_block","table"}
+
+    def _fix_rich_text_in(payload_key: str):
+        payload = b.get(payload_key, {}) or {}
+        if "rich_text" in payload:
+            payload["rich_text"] = _transform_rich_text(payload["rich_text"])
+        b[payload_key] = payload
 
     # 래퍼/이상치 평탄화
     if (not typ) or (typ not in container_types and not b.get(typ)):
@@ -347,15 +311,26 @@ def _transform_block_for_create(block: Dict[str, Any]) -> Union[Dict[str, Any], 
         b["paragraph"] = {"rich_text":[{"type":"text","text":{"content":""}}]}
         return b
 
-    def _fix_rich_text_in(payload_key: str):
-        payload = b.get(payload_key, {}) or {}
-        if "rich_text" in payload:
-            payload["rich_text"] = _transform_rich_text(payload["rich_text"])
-        b[payload_key] = payload
-
+    # 텍스트 계열 정규화
     if typ in ("paragraph","heading_1","heading_2","heading_3","callout",
                "bulleted_list_item","numbered_list_item","to_do","toggle","quote","code"):
         _fix_rich_text_in(typ)
+
+    # ✅ 텍스트 계열(및 child-bearing 블록)의 children 유지/변환
+    if typ in _BLOCKS_ALLOW_CHILDREN and typ not in {"column_list","column","template","synced_block","table"}:
+        payload = b.get(typ, {}) or {}
+        inner_children = payload.get("children")
+        source_children = inner_children if isinstance(inner_children, list) else extracted_children
+        norm_children: List[Dict[str, Any]] = []
+        if source_children:
+            for ch in source_children:
+                ch_norm = _transform_block_for_create(ch)
+                if isinstance(ch_norm, list): norm_children.extend(ch_norm)
+                else: norm_children.append(ch_norm)
+        if norm_children:
+            payload["children"] = norm_children
+            b[typ] = payload
+        # 텍스트 계열은 여기서 계속 진행(미디어/컨테이너 분기와 충돌 없음)
 
     # 미디어류
     if typ == "image":
@@ -446,7 +421,7 @@ def _transform_block_for_create(block: Dict[str, Any]) -> Union[Dict[str, Any], 
         b["synced_block"] = {"synced_from": None, "children": norm_children}
         return b
 
-    # ✅ 테이블 컨테이너: children 은 table_row
+    # 테이블 컨테이너
     if typ == "table":
         payload = b.get("table", {}) or {}
         table_children = payload.get("children")
@@ -457,7 +432,6 @@ def _transform_block_for_create(block: Dict[str, Any]) -> Union[Dict[str, Any], 
                 ch_norm = _transform_block_for_create(ch)
                 if isinstance(ch_norm, list): norm_children.extend(ch_norm)
                 else: norm_children.append(ch_norm)
-        # table 필수 키들(없으면 기본치)
         tw = payload.get("table_width")
         hch = payload.get("has_column_header")
         hrh = payload.get("has_row_header")
@@ -469,7 +443,7 @@ def _transform_block_for_create(block: Dict[str, Any]) -> Union[Dict[str, Any], 
         }
         return b
 
-    # ✅ 테이블 행: cells 안 rich_text 정규화
+    # 테이블 행
     if typ == "table_row":
         payload = b.get("table_row", {}) or {}
         cells = payload.get("cells")
@@ -478,7 +452,7 @@ def _transform_block_for_create(block: Dict[str, Any]) -> Union[Dict[str, Any], 
             for cell in cells:
                 norm_cells.append(_transform_rich_text(cell))
         b["table_row"] = {"cells": norm_cells}
-        b.pop("children", None)  # table_row 는 children 없음
+        b.pop("children", None)
         return b
 
     # 블릿 리스트 평탄화
@@ -491,9 +465,10 @@ def _transform_block_for_create(block: Dict[str, Any]) -> Union[Dict[str, Any], 
             else: flattened.append(ch_norm)
         return flattened
 
-    # 일반 children 평탄화
+    # 일반 children (텍스트 계열에서 이미 붙였기 때문에 여기선 평탄화하지 않음)
     flat_children: List[Dict[str, Any]] = []
     if extracted_children:
+        # 텍스트 계열 외에 남아있는 특수 케이스를 대비
         for ch in extracted_children:
             ch_norm = _transform_block_for_create(ch)
             if isinstance(ch_norm, list): flat_children.extend(ch_norm)
@@ -506,7 +481,6 @@ def _transform_block_for_create(block: Dict[str, Any]) -> Union[Dict[str, Any], 
         return {"type":"paragraph","paragraph":{"rich_text":[{"type":"text","text":{"content":""}}]}}
 
     return b
-
 
 def _wrap_top_level_columns(blocks: List[dict]) -> List[dict]:
     out: List[dict] = []
@@ -530,7 +504,6 @@ def _wrap_top_level_columns(blocks: List[dict]) -> List[dict]:
 def _chunk(lst: List[Dict[str, Any]], size: int = 90) -> List[List[Dict[str, Any]]]:
     return [lst[i:i+size] for i in range(0, len(lst), size)]
 
-
 # ──────────────────────────────────────────────────────────────────────────────
 # 소독/검증
 # ──────────────────────────────────────────────────────────────────────────────
@@ -543,46 +516,35 @@ def _sanitize_blocks_for_create(blocks: List[dict]) -> List[dict]:
     }
     out = []
     for b in blocks:
-        if not isinstance(b, dict): continue
+        if not isinstance(b, dict): 
+            continue
         b_type = b.get("type")
-        if not b_type: continue
+        if not b_type: 
+            continue
         payload = b.get(b_type)
-        if not isinstance(payload, dict): continue
+        if not isinstance(payload, dict): 
+            continue
 
         nb = {k:v for k,v in b.items() if k not in READONLY_KEYS}
         nb[b_type] = dict(payload)
 
-        # 컨테이너들: children 재귀 소독
-        if b_type == "column_list":
-            cl = nb.get("column_list", {})
-            if isinstance(cl, dict) and isinstance(cl.get("children"), list):
-                cl["children"] = _sanitize_blocks_for_create(cl["children"])
-                nb["column_list"] = cl
-        elif b_type == "column":
-            col = nb.get("column", {})
-            if isinstance(col, dict) and isinstance(col.get("children"), list):
-                col["children"] = _sanitize_blocks_for_create(col["children"])
-                nb["column"] = col
-        elif b_type == "template":
-            tpl = nb.get("template", {})
-            if isinstance(tpl, dict) and isinstance(tpl.get("children"), list):
-                tpl["children"] = _sanitize_blocks_for_create(tpl["children"])
-                nb["template"] = tpl
-        elif b_type == "synced_block":
-            sb = nb.get("synced_block", {})
-            if isinstance(sb, dict) and isinstance(sb.get("children"), list):
-                sb["children"] = _sanitize_blocks_for_create(sb["children"])
-                nb["synced_block"] = sb
-        elif b_type == "table":
+        # ✅ children을 가질 수 있는 모든 타입에 대해 재귀 소독
+        if b_type in _BLOCKS_ALLOW_CHILDREN:
+            pl = nb.get(b_type, {})
+            if isinstance(pl, dict) and isinstance(pl.get("children"), list):
+                pl["children"] = _sanitize_blocks_for_create(pl["children"])
+                nb[b_type] = pl
+
+        # table은 위에서 처리되지만 안전망으로 한 번 더
+        if b_type == "table":
             tb = nb.get("table", {})
             if isinstance(tb, dict) and isinstance(tb.get("children"), list):
                 tb["children"] = _sanitize_blocks_for_create(tb["children"])
                 nb["table"] = tb
-        # table_row 는 children 없음 (cells 는 변환 단계에서 정규화 완료)
+        # table_row는 children 없음
 
         out.append(nb)
     return out
-
 
 # ──────────────────────────────────────────────────────────────────────────────
 # 공개 API
