@@ -1,95 +1,38 @@
 # backend/app/services/notion_api_service.py
 import os
+import logging
 import requests
-from typing import Any, Dict, List, Optional, Union
-from cryptography.fernet import Fernet
-from app.models.user import User
+from typing import Any, Dict, List, Optional, Union, Tuple
 from urllib.parse import urlparse, quote
+from cryptography.fernet import Fernet
+
+from app.models.user import User
 
 NOTION_API_BASE = "https://api.notion.com/v1"
-# 생성/갱신에서 호환 잘 되는 안정 버전 기본값
 NOTION_VERSION = os.getenv("NOTION_API_VERSION", "2022-06-28")
-
 FERNET = Fernet(os.getenv("FERNET_SECRET").encode())
 
-# children 비허용(leaf) 타입들
-LEAF_NO_CHILDREN = {
-    "image",
-    "video",
-    "file",
-    "pdf",
-    "audio",
-    "bookmark",
-    "embed",
-    "divider",
-    "table_of_contents",
-    "breadcrumb",
-    # 필요하면 "equation"도 추가 가능
-}
-
-KNOWN_TYPES = {
-    "paragraph",
-    "heading_1",
-    "heading_2",
-    "heading_3",
-    "callout",
-    "bulleted_list_item",
-    "numbered_list_item",
-    "to_do",
-    "toggle",
-    "quote",
-    "code",
-    "divider",
-    "table_of_contents",
-    "breadcrumb",
-    "image",
-    "video",
-    "file",
-    "pdf",
-    "audio",
-    "bookmark",
-    "embed",
-    "column_list",
-    "column",
-    "template",
-    "synced_block",
-    # 필요시: "equation", "table", "table_row", "link_to_page" 등 추가
+# API 허용 타입 (append/create 기준)
+_ALLOWED_TYPES = {
+    "embed","bookmark","image","video","pdf","file","audio","code","equation","divider",
+    "breadcrumb","table_of_contents","link_to_page","table_row","table",
+    "column_list","column","heading_1","heading_2","heading_3","paragraph",
+    "bulleted_list_item","numbered_list_item","quote","to_do","toggle","template",
+    "callout","synced_block"
 }
 
 EMPTY_PAYLOAD_TYPES = {"divider", "table_of_contents", "breadcrumb"}
 
+LEAF_NO_CHILDREN = {
+    "image","video","file","pdf","audio","bookmark","embed","divider",
+    "table_of_contents","breadcrumb",
+}
 
 # ──────────────────────────────────────────────────────────────────────────────
 # 공통 유틸
 # ──────────────────────────────────────────────────────────────────────────────
-
-def _placeholder_image_url() -> str:
-    # NOTION_PLACEHOLDER_IMAGE 우선, 없으면 PLACEHOLDER_IMAGE_URL, 둘 다 없으면 기본값
-    url = os.getenv("NOTION_PLACEHOLDER_IMAGE") or os.getenv("PLACEHOLDER_IMAGE_URL")
-    if url:
-        return url
-    text = quote("이미지를 넣어주세요")
-    return f"https://placehold.co/1200x800?text={text}"
-
-
-def _is_public_url(u: str) -> bool:
-    try:
-        netloc = urlparse(u).netloc or ""
-    except Exception:
-        return False
-    bad_hosts = (
-        "notion.so",
-        "www.notion.so",
-        "notion.site",
-        "secure.notion-static.com",
-        "prod-files-secure.s3",  # secure 노션 파일 S3
-    )
-    return bool(u.startswith(("http://", "https://"))) and not any(h in netloc for h in bad_hosts)
-
-
 def _decrypt(token_enc: str) -> str:
     return FERNET.decrypt(token_enc.encode()).decode()
-
 
 def _headers(token: str) -> Dict[str, str]:
     return {
@@ -98,33 +41,33 @@ def _headers(token: str) -> Dict[str, str]:
         "Content-Type": "application/json",
     }
 
+def _is_public_url(u: str) -> bool:
+    try:
+        netloc = urlparse(u).netloc or ""
+    except Exception:
+        return False
+    bad_hosts = (
+        "notion.so","www.notion.so","notion.site",
+        "secure.notion-static.com","prod-files-secure.s3",
+    )
+    return bool(u.startswith(("http://", "https://"))) and not any(h in netloc for h in bad_hosts)
+
+def _placeholder_image_url() -> str:
+    url = os.getenv("NOTION_PLACEHOLDER_IMAGE") or os.getenv("PLACEHOLDER_IMAGE_URL")
+    if url:
+        return url
+    text = quote("이미지를 넣어주세요")
+    return f"https://placehold.co/1200x800?text={text}"
 
 def _strip_readonly_keys(d: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Notion 조회 응답에만 있는 읽기전용 키들을 제거 (생성 시 오류 방지)
-    """
     readonly = {
-        "object",
-        "id",
-        "parent",
-        "created_time",
-        "last_edited_time",
-        "created_by",
-        "last_edited_by",
-        "archived",
-        "in_trash",
-        "has_children",
-        "request_id",
-        "url",
+        "object","id","parent","created_time","last_edited_time",
+        "created_by","last_edited_by","archived","in_trash",
+        "has_children","request_id","url",
     }
     return {k: v for k, v in d.items() if k not in readonly}
 
-
 def _transform_rich_text(rt_list: Any) -> List[Dict[str, Any]]:
-    """
-    rich_text 배열을 생성 스키마로 단순 정규화
-    - text / mention / equation 정도만 커버
-    """
     if not isinstance(rt_list, list):
         return []
     out: List[Dict[str, Any]] = []
@@ -142,23 +85,13 @@ def _transform_rich_text(rt_list: Any) -> List[Dict[str, Any]]:
             out.append(rt)
     return out
 
-
 def _normalize_external_url(url: Any) -> Optional[str]:
     if isinstance(url, str) and url.startswith(("http://", "https://")):
         return url
     return None
 
-
 def _normalize_media_payload(typ: str, payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    """
-    Notion media payload 정규화
-    - 내부 notion 파일 URL(만료/권한 필요)은 사용 금지
-    - 외부 공개 URL만 허용
-    - 허용 불가 시 '이미지를 넣어주세요' 플레이스홀더로 치환(이미지인 경우)
-    - 그 외 타입은 None (상위에서 텍스트로 강등)
-    """
     if not payload:
-        # 이미지라면 플레이스홀더 반환
         if typ == "image":
             return {"type": "external", "external": {"url": _placeholder_image_url()}}
         return None
@@ -172,60 +105,65 @@ def _normalize_media_payload(typ: str, payload: Dict[str, Any]) -> Optional[Dict
     if url and _is_public_url(url):
         return {"type": "external", "external": {"url": url}}
 
-    # 공개 URL이 아니면: 이미지만 플레이스홀더, 나머지는 제거
     if typ == "image":
         return {"type": "external", "external": {"url": _placeholder_image_url()}}
-
     return None
 
+def _is_valid_block_shape(b: dict) -> Tuple[bool, str]:
+    if not isinstance(b, dict):
+        return False, "not a dict"
+    t = b.get("type")
+    if not t:
+        return False, "missing type"
+    if t not in _ALLOWED_TYPES:
+        return False, f"unknown type '{t}'"
+    payload = b.get(t)
+    if not isinstance(payload, dict):
+        return False, f"missing payload for type '{t}'"
+    return True, ""
+
+def _debug_first_invalid(blocks: list, label: str = "preflight"):
+    for i, b in enumerate(blocks):
+        ok, why = _is_valid_block_shape(b)
+        if not ok:
+            import json
+            try:
+                snippet = json.dumps(b, ensure_ascii=False)[:800]
+            except Exception:
+                snippet = str(b)[:800]
+            logging.error(f"[Notion] INVALID BLOCK @{label}[{i}]: {why} | keys={list(b.keys())} | block={snippet}")
+            return i, why
+    return None, ""
 
 
 # ──────────────────────────────────────────────────────────────────────────────
 # 블록 변환
 # ──────────────────────────────────────────────────────────────────────────────
-def _transform_block_for_create(
-    block: Dict[str, Any],
-) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
-    """
-    저장된 doc_json(조회 스키마) → Notion '생성 스키마'
-    - 읽기전용 키 제거
-    - column_list/column: payload 내부 children 필수
-    - bulleted_list/numbered_list: 컨테이너 평탄화(자식 list_item만 남김)
-    - 미디어/임베드: external URL 기반 정규화, children 금지
-    - template/synced_block: payload 내부 children 필수
-    - 래퍼(타입/페이로드 없음): children만 평탄화 반환
-    - 마지막 방어막: payload 없으면 빈 paragraph (children 달지 않음)
-    """
+def _transform_block_for_create(block: Dict[str, Any]) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
     b = _strip_readonly_keys(block.copy())
 
-    # 어떤 저장본은 상위 children / 어떤 저장본은 payload 내부 children
     extracted_children = b.pop("children", None)
     typ = b.get("type")
+    container_types = {"column_list","column","template","synced_block"}
 
-    # ── 래퍼 평탄화 가드 ──
-    _CONTAINER_TYPES = {"column_list", "column", "template", "synced_block"}
-
-    if (not typ) or (typ not in _CONTAINER_TYPES and not b.get(typ)):
+    # 래퍼/이상치 평탄화
+    if (not typ) or (typ not in container_types and not b.get(typ)):
         if extracted_children:
             flattened: List[Dict[str, Any]] = []
             for ch in extracted_children:
                 ch_norm = _transform_block_for_create(ch)
-                if isinstance(ch_norm, list):
-                    flattened.extend(ch_norm)
-                else:
-                    flattened.append(ch_norm)
+                if isinstance(ch_norm, list): flattened.extend(ch_norm)
+                else: flattened.append(ch_norm)
             return flattened
         if typ in EMPTY_PAYLOAD_TYPES:
             b[typ] = {}
             for k in list(b.keys()):
-                if k not in ("type", typ):
-                    b.pop(k, None)
+                if k not in ("type", typ): b.pop(k, None)
             return b
         for k in list(b.keys()):
-            if k not in ("type", "paragraph"):
-                b.pop(k, None)
+            if k not in ("type","paragraph"): b.pop(k, None)
         b["type"] = "paragraph"
-        b["paragraph"] = {"rich_text": [{"type": "text", "text": {"content": ""}}]}
+        b["paragraph"] = {"rich_text":[{"type":"text","text":{"content":""}}]}
         return b
 
     def _fix_rich_text_in(payload_key: str):
@@ -234,51 +172,32 @@ def _transform_block_for_create(
             payload["rich_text"] = _transform_rich_text(payload["rich_text"])
         b[payload_key] = payload
 
-    # 텍스트형 (children 허용)
-    if typ in (
-        "paragraph", "heading_1", "heading_2", "heading_3",
-        "callout", "bulleted_list_item", "numbered_list_item",
-        "to_do", "toggle", "quote", "code",
-    ):
+    if typ in ("paragraph","heading_1","heading_2","heading_3","callout",
+               "bulleted_list_item","numbered_list_item","to_do","toggle","quote","code"):
         _fix_rich_text_in(typ)
 
     if typ == "image":
-        payload_in = b.get("image", {}) or {}
-        norm = _normalize_media_payload("image", payload_in)
-
-        # 정상적인 이미지가 없는 경우 → placeholder 강제 삽입
+        norm = _normalize_media_payload("image", b.get("image", {}) or {})
         if norm is None:
-            placeholder_url = os.getenv("NOTION_PLACEHOLDER_IMAGE")
-            if placeholder_url:
+            if os.getenv("NOTION_PLACEHOLDER_IMAGE"):
                 b["type"] = "image"
-                b["image"] = {"type": "external", "external": {"url": placeholder_url}}
-                b.pop("children", None)  # children 금지
+                b["image"] = {"type":"external","external":{"url":os.getenv("NOTION_PLACEHOLDER_IMAGE")}}
+                b.pop("children", None)
                 return b
-            else:
-                # fallback: 빈 문단
-                b["type"] = "paragraph"
-                b.pop("image", None)
-                b["paragraph"] = {
-                    "rich_text": [
-                        {"type": "text", "text": {"content": "[이미지 자리 비워짐]"}}
-                    ]
-                }
+            b["type"] = "paragraph"
+            b.pop("image", None)
+            b["paragraph"] = {"rich_text":[{"type":"text","text":{"content":"[이미지 자리 비워짐]"}}]}
         else:
             b["image"] = norm
-            b.pop("children", None)  # children 금지
+            b.pop("children", None)
             return b
 
-
-
-    elif typ in ("video", "file", "pdf", "audio", "bookmark", "embed"):
-        payload_in = b.get(typ, {}) or {}
-        norm = _normalize_media_payload(typ, payload_in)
+    elif typ in ("video","file","pdf","audio","bookmark","embed"):
+        norm = _normalize_media_payload(typ, b.get(typ, {}) or {})
         if norm is None:
             b["type"] = "paragraph"
             b.pop(typ, None)
-            b["paragraph"] = {
-                "rich_text": [{"type": "text", "text": {"content": f"[{typ} 링크 제거됨]"}}]
-            }
+            b["paragraph"] = {"rich_text":[{"type":"text","text":{"content":f"[{typ} 링크 제거됨]"}}]}
         else:
             b[typ] = norm
             b.pop("children", None)
@@ -288,11 +207,9 @@ def _transform_block_for_create(
         b.pop("children", None)
         b["divider"] = {}
         for k in list(b.keys()):
-            if k not in ("type", "divider"):
-                b.pop(k, None)
+            if k not in ("type","divider"): b.pop(k, None)
         return b
 
-    # column_list/column
     if typ == "column_list":
         payload = b.get("column_list", {}) or {}
         payload_children = payload.get("children")
@@ -301,10 +218,8 @@ def _transform_block_for_create(
         if source_children:
             for ch in source_children:
                 ch_norm = _transform_block_for_create(ch)
-                if isinstance(ch_norm, list):
-                    norm_children.extend(ch_norm)
-                else:
-                    norm_children.append(ch_norm)
+                if isinstance(ch_norm, list): norm_children.extend(ch_norm)
+                else: norm_children.append(ch_norm)
         b["column_list"] = {"children": norm_children}
         return b
 
@@ -316,14 +231,11 @@ def _transform_block_for_create(
         if source_children:
             for ch in source_children:
                 ch_norm = _transform_block_for_create(ch)
-                if isinstance(ch_norm, list):
-                    norm_children.extend(ch_norm)
-                else:
-                    norm_children.append(ch_norm)
+                if isinstance(ch_norm, list): norm_children.extend(ch_norm)
+                else: norm_children.append(ch_norm)
         b["column"] = {"children": norm_children}
         return b
 
-    # template
     if typ == "template":
         payload = b.get("template", {}) or {}
         payload["rich_text"] = _transform_rich_text(payload.get("rich_text", []))
@@ -333,14 +245,11 @@ def _transform_block_for_create(
         if source_children:
             for ch in source_children:
                 ch_norm = _transform_block_for_create(ch)
-                if isinstance(ch_norm, list):
-                    norm_children.extend(ch_norm)
-                else:
-                    norm_children.append(ch_norm)
+                if isinstance(ch_norm, list): norm_children.extend(ch_norm)
+                else: norm_children.append(ch_norm)
         b["template"] = {"rich_text": payload.get("rich_text", []), "children": norm_children}
         return b
 
-    # synced_block
     if typ == "synced_block":
         payload = b.get("synced_block", {}) or {}
         inner_children = payload.get("children")
@@ -349,61 +258,44 @@ def _transform_block_for_create(
         if source_children:
             for ch in source_children:
                 ch_norm = _transform_block_for_create(ch)
-                if isinstance(ch_norm, list):
-                    norm_children.extend(ch_norm)
-                else:
-                    norm_children.append(ch_norm)
+                if isinstance(ch_norm, list): norm_children.extend(ch_norm)
+                else: norm_children.append(ch_norm)
         b["synced_block"] = {"synced_from": None, "children": norm_children}
         return b
 
-    # 리스트 컨테이너 평탄화
-    if typ in ("bulleted_list", "numbered_list"):
+    if typ in ("bulleted_list","numbered_list"):
         source_children = extracted_children or []
         flattened: List[Dict[str, Any]] = []
         for ch in source_children:
             ch_norm = _transform_block_for_create(ch)
-            if isinstance(ch_norm, list):
-                flattened.extend(ch_norm)
-            else:
-                flattened.append(ch_norm)
+            if isinstance(ch_norm, list): flattened.extend(ch_norm)
+            else: flattened.append(ch_norm)
         return flattened
 
-    # 알 수 없는 래퍼 처리
     flat_children: List[Dict[str, Any]] = []
     if extracted_children:
         for ch in extracted_children:
             ch_norm = _transform_block_for_create(ch)
-            if isinstance(ch_norm, list):
-                flat_children.extend(ch_norm)
-            else:
-                flat_children.append(ch_norm)
+            if isinstance(ch_norm, list): flat_children.extend(ch_norm)
+            else: flat_children.append(ch_norm)
 
     typ_now = b.get("type")
     payload_now = b.get(typ_now) if isinstance(typ_now, str) else None
-
     if not isinstance(payload_now, dict):
-        if flat_children:
-            return flat_children
-        return {"type": "paragraph", "paragraph": {"rich_text": [{"type": "text", "text": {"content": ""}}]}}
+        if flat_children: return flat_children
+        return {"type":"paragraph","paragraph":{"rich_text":[{"type":"text","text":{"content":""}}]}}
 
     return b
 
 
 def _wrap_top_level_columns(blocks: List[dict]) -> List[dict]:
-    """
-    탑레벨에 'column'이 있으면 인접한 column들끼리 묶어
-    column_list 한 덩어리로 감싼다.
-    """
     out: List[dict] = []
     pending_cols: List[dict] = []
 
     def flush_cols():
         nonlocal pending_cols, out
         if pending_cols:
-            out.append({
-                "type": "column_list",
-                "column_list": {"children": pending_cols}
-            })
+            out.append({"type":"column_list","column_list":{"children":pending_cols}})
             pending_cols = []
 
     for b in blocks:
@@ -415,74 +307,219 @@ def _wrap_top_level_columns(blocks: List[dict]) -> List[dict]:
     flush_cols()
     return out
 
-
 def _chunk(lst: List[Dict[str, Any]], size: int = 90) -> List[List[Dict[str, Any]]]:
+    return [lst[i:i+size] for i in range(0, len(lst), size)]
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 소독/검증
+# ──────────────────────────────────────────────────────────────────────────────
+def _sanitize_blocks_for_create(blocks: List[dict]) -> List[dict]:
+    if not isinstance(blocks, list):
+        return []
+    READONLY_KEYS = {
+        "id","parent","object","created_time","last_edited_time",
+        "created_by","last_edited_by","archived","in_trash","has_children"
+    }
+    out = []
+    for b in blocks:
+        if not isinstance(b, dict): continue
+        b_type = b.get("type")
+        if not b_type: continue
+        payload = b.get(b_type)
+        if not isinstance(payload, dict): continue
+
+        nb = {k:v for k,v in b.items() if k not in READONLY_KEYS}
+        nb[b_type] = dict(payload)
+
+        if b_type == "column_list":
+            if "children" in nb and isinstance(nb["children"], list):
+                nb["children"] = _sanitize_blocks_for_create(nb["children"])
+        if b_type == "column":
+            col = nb.get("column", {})
+            if isinstance(col, dict) and isinstance(col.get("children"), list):
+                col["children"] = _sanitize_blocks_for_create(col["children"])
+                nb["column"] = col
+        if "children" in nb and isinstance(nb["children"], list):
+            nb["children"] = _sanitize_blocks_for_create(nb["children"])
+        out.append(nb)
+    return out
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# DB 복제 & 치환
+# ──────────────────────────────────────────────────────────────────────────────
+_ALLOWED_PROPERTY_TYPES = {
+    "title","rich_text","number","select","multi_select","date","people",
+    "checkbox","url","email","phone_number","files"
+}
+
+def _safe_clone_properties(props: Dict[str, Any]) -> Dict[str, Any]:
+    out: Dict[str, Any] = {}
+    for name, spec in (props or {}).items():
+        t = spec.get("type")
+        if t in _ALLOWED_PROPERTY_TYPES:
+            if t == "title":
+                out[name] = {"title": {}}
+            else:
+                out[name] = {t: spec.get(t, {})}
+    if not any(v.get("title") is not None for v in out.values()):
+        out = {"Name": {"title": {}}} | out
+    return out
+
+def _default_properties() -> Dict[str, Any]:
+    return {
+        "작업명": {"title": {}},
+        "상태": {"select": {"options": [
+            {"name": "진행중", "color": "yellow"},
+            {"name": "완료", "color": "green"},
+            {"name": "대기", "color": "red"},
+        ]}},
+        "시작일": {"date": {}},
+        "마감일": {"date": {}},
+        "참여자": {"people": {}},
+    }
+
+def create_database(user: User, parent_page_id: str, title: str,
+                    properties: Optional[Dict[str, Any]] = None) -> str:
+    token = _decrypt(user.notion_token)
+    headers = _headers(token)
+    url = f"{NOTION_API_BASE}/databases"
+    body = {
+        "parent": {"type": "page_id", "page_id": parent_page_id},
+        "title": [{"type": "text", "text": {"content": title or "Database"}}],
+        "properties": properties or _default_properties(),
+    }
+    r = requests.post(url, headers=headers, json=body, timeout=30)
+    if r.status_code >= 300:
+        raise RuntimeError(f"Notion database create failed: {r.text}")
+    db_id = (r.json() or {}).get("id")
+    if not db_id:
+        raise RuntimeError("Notion database create failed: no id in response")
+    logging.info(f"[Notion] Database created: {db_id} (title='{title}')")
+    return db_id
+
+def create_database_clone(user: User, parent_page_id: str, title: str,
+                          clone_from_database_id: Optional[str]) -> str:
+    props = None
+    if clone_from_database_id:
+        token = _decrypt(user.notion_token)
+        headers = _headers(token)
+        r = requests.get(f"{NOTION_API_BASE}/databases/{clone_from_database_id}",
+                         headers=headers, timeout=30)
+        if r.status_code < 300:
+            src = r.json() or {}
+            props = _safe_clone_properties(src.get("properties", {}))
+        else:
+            logging.warning("[Notion] Read source DB failed, fallback to default: %s", r.text)
+            props = _default_properties()
+    else:
+        props = _default_properties()
+    return create_database(user, parent_page_id, title, props)
+
+def _replace_child_db_with_new_db_link(blocks: List[dict],
+                                       mapping: Dict[str, dict]) -> List[dict]:
     """
-    Notion children append 제한(100개 근처) 대비 청크 분할
+    child_database(title) → 새 DB 생성 지시 플래그로 마킹 (후처리에서 실제 생성)
+    최종 전송용이 아니라 'staged' 목록을 만든다.
     """
-    return [lst[i : i + size] for i in range(0, len(lst), size)]
+    out: List[dict] = []
+    for b in blocks or []:
+        if not isinstance(b, dict):
+            continue
+        t = b.get("type")
+
+        if t == "child_database":
+            title = (b.get("child_database") or {}).get("title") or "Database"
+            m = mapping.get(title, {})
+            out.append({"__create_new_db__": True, "title": title, "clone_from": m.get("clone_from_database_id")})
+            continue
+
+        nb = dict(b)
+        if t == "column_list" and isinstance(nb.get("children"), list):
+            nb["children"] = _replace_child_db_with_new_db_link(nb["children"], mapping)
+        if t == "column":
+            col = nb.get("column")
+            if isinstance(col, dict) and isinstance(col.get("children"), list):
+                col["children"] = _replace_child_db_with_new_db_link(col["children"], mapping)
+                nb["column"] = col
+        if isinstance(nb.get("children"), list):
+            nb["children"] = _replace_child_db_with_new_db_link(nb["children"], mapping)
+        out.append(nb)
+    return out
 
 
 # ──────────────────────────────────────────────────────────────────────────────
 # 공개 API
 # ──────────────────────────────────────────────────────────────────────────────
-def create_child_page(user: User, parent_page_id: str, title: str) -> str:
-    """
-    대상 페이지(parent_page_id)의 하위에 새 Page를 만들고 그 page_id를 반환
-    """
-    token = _decrypt(user.notion_token)
-    headers = _headers(token)
-
-    url = f"{NOTION_API_BASE}/pages"
-    payload: Dict[str, Any] = {
-        "parent": {"type": "page_id", "page_id": parent_page_id},
-        "properties": {"title": [{"type": "text", "text": {"content": title}}]},
-    }
-
-    r = requests.post(url, headers=headers, json=payload, timeout=30)
-    if r.status_code >= 300:
-        raise RuntimeError(f"Notion create page failed: {r.text}")
-    data = r.json()
-    return data.get("id")
-
-
 def append_blocks_to_page(user: User, page_id: str, blocks: List[dict]) -> str:
-    """
-    target page(block)의 children에 blocks를 append
-    - 저장 스키마 → 생성 스키마 정규화
-    - 리스트 컨테이너 평탄화, leaf 타입 children 제거
-    - 100개 제한 대비 청크 전송
-    """
     token = _decrypt(user.notion_token)
     headers = _headers(token)
     url = f"{NOTION_API_BASE}/blocks/{page_id}/children"
 
-    # 생성 스키마로 정규화 (리스트 평탄화 포함)
+    # 1) 변환
     prepared: List[Dict[str, Any]] = []
     for b in blocks:
         norm = _transform_block_for_create(b)
-        if isinstance(norm, list):
-            prepared.extend(norm)
-        else:
-            prepared.append(norm)
-        prepared = _wrap_top_level_columns(prepared)
+        if isinstance(norm, list): prepared.extend(norm)
+        elif isinstance(norm, dict) and norm: prepared.append(norm)
 
+    # 2) 1차 소독
+    prepared = _sanitize_blocks_for_create(prepared)
+    _debug_first_invalid(prepared, "after_sanitize#1")
+
+    # 3) 래핑
+    prepared = _wrap_top_level_columns(prepared)
+
+    # 4) 2차 소독
+    prepared = _sanitize_blocks_for_create(prepared)
+    bad_idx, why = _debug_first_invalid(prepared, "after_sanitize#2")
+    if bad_idx is not None:
+        raise RuntimeError(f"Notion append blocked: invalid block at index {bad_idx} ({why})")
+
+    if not prepared:
+        raise RuntimeError("Notion append blocked: no valid blocks after transform/wrap/sanitize")
 
     for chunk in _chunk(prepared, 90):
         r = requests.patch(url, headers=headers, json={"children": chunk}, timeout=30)
         if r.status_code >= 300:
-            # 디버깅 편의를 위해 서버 응답 그대로 노출
             raise RuntimeError(f"Notion append failed: {r.text}")
 
     return page_id
 
 
-def create_page_then_append(
-    user: User, parent_page_id: str, title: str, blocks: List[dict]
-) -> str:
+def create_on_target_and_append(user: User,
+                                target_page_id: str,
+                                blocks: List[dict],
+                                db_clone_links_mapping: Dict[str, dict]) -> str:
     """
-    (권장) 하위 페이지를 먼저 생성한 뒤, 그 페이지의 children에 blocks를 append
+    새 페이지를 만들지 않고 target_page_id 에 직접 append.
+    템플릿 내 child_database(title)는 '새 DB 생성 → link_to_page(database_id)'로 치환.
     """
-    new_page_id = create_child_page(user, parent_page_id, title)
-    append_blocks_to_page(user, new_page_id, blocks)
-    return new_page_id
+    # 1) child_database 마킹
+    staged = _replace_child_db_with_new_db_link(blocks, db_clone_links_mapping)
+
+    # 2) 실제 새 DB 생성 + link_to_page 로 교체
+    realized: List[dict] = []
+    for b in staged:
+        if isinstance(b, dict) and b.get("__create_new_db__"):
+            title = b.get("title") or "Database"
+            clone_from = b.get("clone_from")
+            new_db_id = create_database_clone(user, target_page_id, title, clone_from)
+
+            # ✅ 원본 child_database 블록을 새 DB ID로 치환해서 append
+            orig = b.get("original_block")
+            if orig:
+                realized.append({
+                    "type": "child_database",
+                    "child_database": {"title": title},  # 보여지는 이름
+                    "id": new_db_id                      # 새로 생성된 DB를 참조
+                })
+        else:
+            realized.append(b)
+
+
+
+    # 3) append
+    append_blocks_to_page(user, target_page_id, realized)
+    return target_page_id
