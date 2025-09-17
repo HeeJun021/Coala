@@ -17,8 +17,8 @@ from app.models.task_models import Tasks
 from app.models.task_models import TaskCollaborators
 from app.models.user import User
 
-# 퍼블리시: 기존 페이지에 append + (child_database → 새 DB 생성 후 link_to_page)
-from app.services.notion_api_service import create_on_target_and_append
+# ✅ child_database 치환 없이, 블록을 그대로 append
+from app.services.notion_api_service import append_blocks_to_page
 
 router = APIRouter(prefix="/notion", tags=["Notion Publish"])
 
@@ -40,13 +40,6 @@ class PublishRequest(BaseModel):
 
     # (레거시) 프론트가 아직 filters 구조를 쓰면 받아서 project_id/ai_notes 폴백에 활용
     filters: Optional[Dict[str, Any]] = Field(default=None, description="레거시 필터")
-
-    # ✅ 새로 추가: child_database(title) → 새 DB 생성 후 link_to_page 로 치환하기 위한 매핑
-    # 예: [{"placeholder": "작업", "clone_from_database_id": "<원본 DB ID (선택)>"}]
-    db_clone_links: Optional[List[Dict[str, str]]] = Field(
-        default=None,
-        description="child_database 제목별 복제 소스 DB 매핑 목록",
-    )
 
 
 # ========= 프로젝트 데이터 수집 =========
@@ -173,7 +166,7 @@ def publish_to_notion(
     if not isinstance(template_blocks, list) or not template_blocks:
         raise HTTPException(status_code=400, detail="Invalid template doc_json")
 
-    # 프로젝트 치환값 수집
+    # 프로젝트 치환값 수집 (현재는 AI OFF라 KV만 준비)
     project_id: Optional[int] = body.project_id
     if (
         not project_id
@@ -204,7 +197,7 @@ def publish_to_notion(
     if not ai_prompt and body.filters:
         ai_prompt = body.filters.get("ai_notes")
 
-    # AI OFF — 템플릿 그대로
+    # AI OFF — 템플릿 그대로 사용
     processed_blocks = template_blocks
     meta = {
         "ai_used": False,
@@ -214,16 +207,12 @@ def publish_to_notion(
         "ai_model_used": None,
     }
 
-    # ✅ child_database 복제 매핑 준비
-    db_clone_links_mapping = {x["placeholder"]: x for x in (body.db_clone_links or [])}
-
-    # ✅ 기존 페이지에 그대로 append (child_database → 새 DB 생성 + link_to_page)
+    # ✅ child_database 치환 로직 제거 → 그냥 append
     try:
-        created_on_page_id = create_on_target_and_append(
+        created_on_page_id = append_blocks_to_page(
             current_user,
             body.target_page_id,
             processed_blocks,
-            db_clone_links_mapping,
         )
     except Exception as e:
         err_txt = getattr(getattr(e, "response", None), "text", None) or str(e)
@@ -240,13 +229,13 @@ def publish_to_notion(
             user_id=getattr(current_user, "user_id"),
             template_id=tpl.id,
             target_page_id=body.target_page_id,
-            created_page_id=created_on_page_id,  # = target_page_id (기존 페이지에 append)
+            created_page_id=created_on_page_id,  # = target_page_id
             project_id=project_id,
             ai_used=bool(meta.get("ai_used")),
             ai_prompt_len=int(meta.get("ai_prompt_len") or 0),
             missing_keys=meta.get("missing_keys") or [],
             extra_meta={
-                "note": "publish_plain_clone_db_link",
+                "note": "publish_plain_table_blocks",
                 "ai_model_used": meta.get("ai_model_used"),
             },
         )

@@ -144,7 +144,7 @@ def _transform_block_for_create(block: Dict[str, Any]) -> Union[Dict[str, Any], 
 
     extracted_children = b.pop("children", None)
     typ = b.get("type")
-    container_types = {"column_list","column","template","synced_block"}
+    container_types = {"column_list","column","template","synced_block","table"}
 
     # 래퍼/이상치 평탄화
     if (not typ) or (typ not in container_types and not b.get(typ)):
@@ -176,6 +176,7 @@ def _transform_block_for_create(block: Dict[str, Any]) -> Union[Dict[str, Any], 
                "bulleted_list_item","numbered_list_item","to_do","toggle","quote","code"):
         _fix_rich_text_in(typ)
 
+    # 미디어류
     if typ == "image":
         norm = _normalize_media_payload("image", b.get("image", {}) or {})
         if norm is None:
@@ -210,6 +211,7 @@ def _transform_block_for_create(block: Dict[str, Any]) -> Union[Dict[str, Any], 
             if k not in ("type","divider"): b.pop(k, None)
         return b
 
+    # 컬럼/템플릿/싱크 컨테이너
     if typ == "column_list":
         payload = b.get("column_list", {}) or {}
         payload_children = payload.get("children")
@@ -263,6 +265,42 @@ def _transform_block_for_create(block: Dict[str, Any]) -> Union[Dict[str, Any], 
         b["synced_block"] = {"synced_from": None, "children": norm_children}
         return b
 
+    # ✅ 테이블 컨테이너: children 은 table_row
+    if typ == "table":
+        payload = b.get("table", {}) or {}
+        table_children = payload.get("children")
+        source_children = table_children if isinstance(table_children, list) else extracted_children
+        norm_children: List[Dict[str, Any]] = []
+        if source_children:
+            for ch in source_children:
+                ch_norm = _transform_block_for_create(ch)
+                if isinstance(ch_norm, list): norm_children.extend(ch_norm)
+                else: norm_children.append(ch_norm)
+        # table 필수 키들(없으면 기본치)
+        tw = payload.get("table_width")
+        hch = payload.get("has_column_header")
+        hrh = payload.get("has_row_header")
+        b["table"] = {
+            "table_width": int(tw) if isinstance(tw, int) else max(1, int(payload.get("table_width", 1))),
+            "has_column_header": bool(hch) if isinstance(hch, bool) else bool(payload.get("has_column_header", False)),
+            "has_row_header": bool(hrh) if isinstance(hrh, bool) else bool(payload.get("has_row_header", False)),
+            "children": norm_children,
+        }
+        return b
+
+    # ✅ 테이블 행: cells 안 rich_text 정규화
+    if typ == "table_row":
+        payload = b.get("table_row", {}) or {}
+        cells = payload.get("cells")
+        norm_cells: List[List[Dict[str, Any]]] = []
+        if isinstance(cells, list):
+            for cell in cells:
+                norm_cells.append(_transform_rich_text(cell))
+        b["table_row"] = {"cells": norm_cells}
+        b.pop("children", None)  # table_row 는 children 없음
+        return b
+
+    # 블릿 리스트 평탄화
     if typ in ("bulleted_list","numbered_list"):
         source_children = extracted_children or []
         flattened: List[Dict[str, Any]] = []
@@ -272,6 +310,7 @@ def _transform_block_for_create(block: Dict[str, Any]) -> Union[Dict[str, Any], 
             else: flattened.append(ch_norm)
         return flattened
 
+    # 일반 children 평탄화
     flat_children: List[Dict[str, Any]] = []
     if extracted_children:
         for ch in extracted_children:
@@ -332,119 +371,32 @@ def _sanitize_blocks_for_create(blocks: List[dict]) -> List[dict]:
         nb = {k:v for k,v in b.items() if k not in READONLY_KEYS}
         nb[b_type] = dict(payload)
 
+        # 컨테이너들: children 재귀 소독
         if b_type == "column_list":
             if "children" in nb and isinstance(nb["children"], list):
                 nb["children"] = _sanitize_blocks_for_create(nb["children"])
-        if b_type == "column":
+        elif b_type == "column":
             col = nb.get("column", {})
             if isinstance(col, dict) and isinstance(col.get("children"), list):
                 col["children"] = _sanitize_blocks_for_create(col["children"])
                 nb["column"] = col
-        if "children" in nb and isinstance(nb["children"], list):
-            nb["children"] = _sanitize_blocks_for_create(nb["children"])
-        out.append(nb)
-    return out
+        elif b_type == "template":
+            tpl = nb.get("template", {})
+            if isinstance(tpl, dict) and isinstance(tpl.get("children"), list):
+                tpl["children"] = _sanitize_blocks_for_create(tpl["children"])
+                nb["template"] = tpl
+        elif b_type == "synced_block":
+            sb = nb.get("synced_block", {})
+            if isinstance(sb, dict) and isinstance(sb.get("children"), list):
+                sb["children"] = _sanitize_blocks_for_create(sb["children"])
+                nb["synced_block"] = sb
+        elif b_type == "table":
+            tb = nb.get("table", {})
+            if isinstance(tb, dict) and isinstance(tb.get("children"), list):
+                tb["children"] = _sanitize_blocks_for_create(tb["children"])
+                nb["table"] = tb
+        # table_row 는 children 없음 (cells 는 변환 단계에서 정규화 완료)
 
-
-# ──────────────────────────────────────────────────────────────────────────────
-# DB 복제 & 치환
-# ──────────────────────────────────────────────────────────────────────────────
-_ALLOWED_PROPERTY_TYPES = {
-    "title","rich_text","number","select","multi_select","date","people",
-    "checkbox","url","email","phone_number","files"
-}
-
-def _safe_clone_properties(props: Dict[str, Any]) -> Dict[str, Any]:
-    out: Dict[str, Any] = {}
-    for name, spec in (props or {}).items():
-        t = spec.get("type")
-        if t in _ALLOWED_PROPERTY_TYPES:
-            if t == "title":
-                out[name] = {"title": {}}
-            else:
-                out[name] = {t: spec.get(t, {})}
-    if not any(v.get("title") is not None for v in out.values()):
-        out = {"Name": {"title": {}}} | out
-    return out
-
-def _default_properties() -> Dict[str, Any]:
-    return {
-        "작업명": {"title": {}},
-        "상태": {"select": {"options": [
-            {"name": "진행중", "color": "yellow"},
-            {"name": "완료", "color": "green"},
-            {"name": "대기", "color": "red"},
-        ]}},
-        "시작일": {"date": {}},
-        "마감일": {"date": {}},
-        "참여자": {"people": {}},
-    }
-
-def create_database(user: User, parent_page_id: str, title: str,
-                    properties: Optional[Dict[str, Any]] = None) -> str:
-    token = _decrypt(user.notion_token)
-    headers = _headers(token)
-    url = f"{NOTION_API_BASE}/databases"
-    body = {
-        "parent": {"type": "page_id", "page_id": parent_page_id},
-        "title": [{"type": "text", "text": {"content": title or "Database"}}],
-        "properties": properties or _default_properties(),
-    }
-    r = requests.post(url, headers=headers, json=body, timeout=30)
-    if r.status_code >= 300:
-        raise RuntimeError(f"Notion database create failed: {r.text}")
-    db_id = (r.json() or {}).get("id")
-    if not db_id:
-        raise RuntimeError("Notion database create failed: no id in response")
-    logging.info(f"[Notion] Database created: {db_id} (title='{title}')")
-    return db_id
-
-def create_database_clone(user: User, parent_page_id: str, title: str,
-                          clone_from_database_id: Optional[str]) -> str:
-    props = None
-    if clone_from_database_id:
-        token = _decrypt(user.notion_token)
-        headers = _headers(token)
-        r = requests.get(f"{NOTION_API_BASE}/databases/{clone_from_database_id}",
-                         headers=headers, timeout=30)
-        if r.status_code < 300:
-            src = r.json() or {}
-            props = _safe_clone_properties(src.get("properties", {}))
-        else:
-            logging.warning("[Notion] Read source DB failed, fallback to default: %s", r.text)
-            props = _default_properties()
-    else:
-        props = _default_properties()
-    return create_database(user, parent_page_id, title, props)
-
-def _replace_child_db_with_new_db_link(blocks: List[dict],
-                                       mapping: Dict[str, dict]) -> List[dict]:
-    """
-    child_database(title) → 새 DB 생성 지시 플래그로 마킹 (후처리에서 실제 생성)
-    최종 전송용이 아니라 'staged' 목록을 만든다.
-    """
-    out: List[dict] = []
-    for b in blocks or []:
-        if not isinstance(b, dict):
-            continue
-        t = b.get("type")
-
-        if t == "child_database":
-            title = (b.get("child_database") or {}).get("title") or "Database"
-            m = mapping.get(title, {})
-            out.append({"__create_new_db__": True, "title": title, "clone_from": m.get("clone_from_database_id")})
-            continue
-
-        nb = dict(b)
-        if t == "column_list" and isinstance(nb.get("children"), list):
-            nb["children"] = _replace_child_db_with_new_db_link(nb["children"], mapping)
-        if t == "column":
-            col = nb.get("column")
-            if isinstance(col, dict) and isinstance(col.get("children"), list):
-                col["children"] = _replace_child_db_with_new_db_link(col["children"], mapping)
-                nb["column"] = col
-        if isinstance(nb.get("children"), list):
-            nb["children"] = _replace_child_db_with_new_db_link(nb["children"], mapping)
         out.append(nb)
     return out
 
@@ -471,7 +423,7 @@ def append_blocks_to_page(user: User, page_id: str, blocks: List[dict]) -> str:
     # 3) 래핑
     prepared = _wrap_top_level_columns(prepared)
 
-    # 4) 2차 소독
+    # 4) 2차 소독 + 검증
     prepared = _sanitize_blocks_for_create(prepared)
     bad_idx, why = _debug_first_invalid(prepared, "after_sanitize#2")
     if bad_idx is not None:
@@ -486,40 +438,3 @@ def append_blocks_to_page(user: User, page_id: str, blocks: List[dict]) -> str:
             raise RuntimeError(f"Notion append failed: {r.text}")
 
     return page_id
-
-
-def create_on_target_and_append(user: User,
-                                target_page_id: str,
-                                blocks: List[dict],
-                                db_clone_links_mapping: Dict[str, dict]) -> str:
-    """
-    새 페이지를 만들지 않고 target_page_id 에 직접 append.
-    템플릿 내 child_database(title)는 '새 DB 생성 → link_to_page(database_id)'로 치환.
-    """
-    # 1) child_database 마킹
-    staged = _replace_child_db_with_new_db_link(blocks, db_clone_links_mapping)
-
-    # 2) 실제 새 DB 생성 + link_to_page 로 교체
-    realized: List[dict] = []
-    for b in staged:
-        if isinstance(b, dict) and b.get("__create_new_db__"):
-            title = b.get("title") or "Database"
-            clone_from = b.get("clone_from")
-            new_db_id = create_database_clone(user, target_page_id, title, clone_from)
-
-            # ✅ 원본 child_database 블록을 새 DB ID로 치환해서 append
-            orig = b.get("original_block")
-            if orig:
-                realized.append({
-                    "type": "child_database",
-                    "child_database": {"title": title},  # 보여지는 이름
-                    "id": new_db_id                      # 새로 생성된 DB를 참조
-                })
-        else:
-            realized.append(b)
-
-
-
-    # 3) append
-    append_blocks_to_page(user, target_page_id, realized)
-    return target_page_id
