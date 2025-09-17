@@ -322,8 +322,16 @@ def update_member_roles(
     current_user: User = Depends(get_current_user),
 ):
     ensure_project_open(db, project_id)
-    if current_user.user_id != user_id:
-        raise HTTPException(status_code=403, detail="You can only update your own roles")
+
+    # ✅ 리더이거나, 본인이면 수정 허용
+    is_leader = db.query(ProjectMembers).filter(
+        ProjectMembers.project_id == project_id,
+        ProjectMembers.user_id == current_user.user_id,
+        ProjectMembers.is_leader == True
+    ).first() is not None
+
+    if not is_leader and current_user.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Only leader or the member themself can update roles")
 
     member = db.query(ProjectMembers).filter(
         ProjectMembers.project_id == project_id,
