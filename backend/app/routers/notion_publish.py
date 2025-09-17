@@ -11,14 +11,21 @@ from app.dependencies.auth import get_current_user
 from app.models.user import User
 from app.models.template import NotionTemplate, NotionExportHistory
 
-from app.models.project_models import Project
-from app.models.project_models import ProjectMembers
-from app.models.task_models import Tasks
-from app.models.task_models import TaskCollaborators
-from app.models.user import User
+from app.models.project_models import Project, ProjectMembers
+from app.models.task_models import Tasks, TaskCollaborators
 
-# ✅ child_database 치환 없이, 블록을 그대로 append
-from app.services.notion_api_service import append_blocks_to_page
+import json
+
+# ✅ 서비스 유틸: 테이블 퍼블리시 + 치환 + 제목 업데이트
+from app.services.notion_api_service import (
+    append_blocks_to_page,
+    replace_placeholders_in_blocks,  # 1:1 본문 치환(이미 구현돼 있다면 그대로 사용)
+    _replace_in_text,                # 제목/단일 문자열 치환
+    update_page_title,               # 노션 페이지 제목 PATCH
+)
+
+# ✅ 포트폴리오 프로필 모델 (full_name, birth_date, phone, email, education, career 등)
+from app.models.portfolio_profile_models import UserPortfolioProfile
 
 router = APIRouter(prefix="/notion", tags=["Notion Publish"])
 
@@ -27,15 +34,15 @@ router = APIRouter(prefix="/notion", tags=["Notion Publish"])
 class PublishRequest(BaseModel):
     template_id: int = Field(..., description="사용할 템플릿 ID")
     target_page_id: str = Field(..., description="붙여넣을 상위 Notion 페이지 ID")
-    title: str = Field(..., description="(옵션) 페이지 제목 — 현재 흐름에선 미사용")
+    title: str = Field(..., description="노션 페이지 제목(치환 대상)")
 
     # 단일 프로젝트 선택(요구사항)
     project_id: Optional[int] = Field(None, description="선택한 단일 프로젝트 ID")
 
-    # 사용자가 작성한 AI 메모(지시사항). 프론트에서 ai_notes로 보낼 때가 있어 폴백 처리함.
+    # 사용자가 작성한 AI 메모(지시사항). (지금은 AI OFF지만 필드만 유지)
     ai_prompt: Optional[str] = Field(None, description="AI 지시사항 메모")
 
-    # 자유 키-값 치환/보조 입력(선택). ex) {"지원자 이름": "홍길동", "ai_notes": "..."}
+    # 자유 키-값 치환/보조 입력(선택). ex) {"자기소개": "...", "학적 사항": "..."}
     extra_kv: Optional[Dict[str, Any]] = Field(default=None, description="추가 치환/보조 입력 값")
 
     # (레거시) 프론트가 아직 filters 구조를 쓰면 받아서 project_id/ai_notes 폴백에 활용
@@ -46,7 +53,6 @@ class PublishRequest(BaseModel):
 def _load_project_kv(db: Session, project_id: Optional[int]) -> Dict[str, Any]:
     if not project_id:
         return {}
-
     proj = db.query(Project).filter(Project.project_id == project_id).first()
     if not proj:
         return {}
@@ -58,92 +64,67 @@ def _load_project_kv(db: Session, project_id: Optional[int]) -> Dict[str, Any]:
     else:
         tech_stack = str(tech_stack_val) if tech_stack_val is not None else None
 
-    status = "종료" if bool(getattr(proj, "is_closed", False)) else "진행중"
-
-    pm_q = (
-        db.query(ProjectMembers, User)
-        .join(User, User.user_id == ProjectMembers.user_id)
-        .filter(ProjectMembers.project_id == project_id)
-        .all()
-    )
-    members: list[str] = []
-    leaders: list[str] = []
-    for pm, u in pm_q:
-        name = (
-            getattr(u, "nickname", None)
-            or getattr(u, "email", None)
-            or f"User#{u.user_id}"
-        )
-        members.append(name)
-        if getattr(pm, "is_leader", False):
-            leaders.append(name)
-
-    tasks = (
-        db.query(Tasks)
-        .filter(Tasks.project_id == project_id)
-        .order_by(Tasks.start_date.asc().nullsfirst())
-        .all()
-    )
-
-    task_ids = [getattr(t, "task_id") for t in tasks if getattr(t, "task_id", None)]
-    collab_map: dict[int, list[str]] = {}
-    if task_ids:
-        tc_rows = (
-            db.query(TaskCollaborators, User)
-            .join(User, User.user_id == TaskCollaborators.user_id)
-            .filter(TaskCollaborators.task_id.in_(task_ids))
-            .all()
-        )
-        for tc, u in tc_rows:
-            nm = (
-                getattr(u, "nickname", None)
-                or getattr(u, "email", None)
-                or f"User#{u.user_id}"
-            )
-            collab_map.setdefault(getattr(tc, "task_id"), []).append(nm)
-
-    lines: list[str] = []
-    for t in tasks:
-        title = (
-            getattr(t, "title", "")
-            or getattr(t, "name", "")
-            or f"Task#{getattr(t, 'task_id', '')}"
-        )
-        start = getattr(t, "start_date", None)
-        due = getattr(t, "due_date", None)
-        cbs = collab_map.get(getattr(t, "task_id"), [])
-        cb_txt = f" / 협업자: {', '.join(cbs)}" if cbs else ""
-        date_txt = ""
-        if start and due:
-            date_txt = f" ({start} ~ {due})"
-        elif start:
-            date_txt = f" (시작: {start})"
-        elif due:
-            date_txt = f" (마감: {due})"
-        lines.append(f"- {title}{date_txt}{cb_txt}")
-    tasks_summary = "\n".join(lines) if lines else None
-
-    return {
+    base = {
+        # 영문 키(기존)
         "project_name": getattr(proj, "name", None),
         "project_description": getattr(proj, "description", None),
         "topic": topic,
         "tech_stack": tech_stack,
-        "status": status,
-        "is_closed": bool(getattr(proj, "is_closed", False)),
-        "start_date": (
-            getattr(proj, "start_date", None).isoformat()
-            if getattr(proj, "start_date", None)
-            else None
-        ),
-        "end_date": (
-            getattr(proj, "end_date", None).isoformat()
-            if getattr(proj, "end_date", None)
-            else None
-        ),
-        "tasks_summary": tasks_summary,
-        "members": members,
-        "leaders": leaders,
     }
+
+    # ✅ 한글 토큰 별칭(템플릿의 대괄호 키와 1:1 매칭)
+    base["프로젝트명"] = base["project_name"]
+    base["프로젝트설명"] = base["project_description"]
+    base["프로젝트 주제"] = base["topic"]
+    base["기술 스택"] = base["tech_stack"]
+
+    return base
+
+
+def _load_portfolio_profile_kv(db: Session, user_id: int) -> Dict[str, Any]:
+    prof = db.query(UserPortfolioProfile).filter(
+        UserPortfolioProfile.user_id == user_id
+    ).first()
+    if not prof:
+        return {}
+
+    full_name = getattr(prof, "full_name", "") or ""
+    birth_date = getattr(prof, "birth_date", None)
+    birth_str = str(birth_date) if birth_date else ""
+    phone = getattr(prof, "phone", "") or ""
+    email = getattr(prof, "email", "") or ""
+
+    def _lines(arr, keys):
+        out = []
+        if isinstance(arr, list):
+            for row in arr:
+                if isinstance(row, dict):
+                    parts = [str(row.get(k)) for k in keys if row.get(k)]
+                    if parts:
+                        out.append("- " + " / ".join(parts))
+        return "\n".join(out)
+
+    education_lines = _lines(getattr(prof, "education", []), ["school","major","period","desc"])
+    career_lines    = _lines(getattr(prof, "career", []),    ["company","role","period","desc"])
+
+    return {
+        # ✅ 템플릿 토큰과 1:1
+        "이름": full_name,
+        "생년월일": birth_str,
+        "전화번호": phone,
+        "이메일": email,
+        "학적 사항": education_lines or "",   # 리스트 3칸 자리에 들어가도 OK(줄바꿈으로 표현)
+        "자기소개": "",                      # extra_kv로 덮어쓰기 권장
+        "경력 사항": career_lines or "",
+        # 테이블 토큰은 기본 빈 값 (필요시 extra_kv로 제공)
+        "작업명": "",
+        "시작일": "",
+        "마감일": "",
+        "참여자": "",
+        # 경험 섹션(아래에서 별칭으로 채움)
+        "경험": "",
+    }
+
 
 
 # ========= 퍼블리시 엔드포인트 =========
@@ -166,7 +147,7 @@ def publish_to_notion(
     if not isinstance(template_blocks, list) or not template_blocks:
         raise HTTPException(status_code=400, detail="Invalid template doc_json")
 
-    # 프로젝트 치환값 수집 (현재는 AI OFF라 KV만 준비)
+    # 1) 치환용 KV 구성 (프로필 + 프로젝트 + 추가 입력)
     project_id: Optional[int] = body.project_id
     if (
         not project_id
@@ -176,38 +157,41 @@ def publish_to_notion(
         project_ids = body.filters.get("project_ids") or []
         project_id = project_ids[0] if project_ids else None
 
-    base_kv: Dict[str, Any] = _load_project_kv(db, project_id) or {}
-    user_name = (
-        getattr(current_user, "nickname", None)
-        or getattr(current_user, "email", None)
-        or ""
-    )
-    user_email = getattr(current_user, "email", None) or ""
-    base_kv.setdefault("user_name", user_name)
-    base_kv.setdefault("user_email", user_email)
+    kv: Dict[str, Any] = {}
+    kv.update(_load_portfolio_profile_kv(db, getattr(current_user, "user_id")))  # 이름/생년월일/전화번호/이메일/학적/경력
+    kv.update(_load_project_kv(db, project_id))                                  # project_name/topic/tech_stack 등
 
+    # 사용자 자유입력(overrides)
     if body.extra_kv:
         for k, v in body.extra_kv.items():
             if v is not None:
-                base_kv[k] = v
+                kv[k] = v
 
-    ai_prompt: Optional[str] = body.ai_prompt
-    if not ai_prompt and body.extra_kv:
-        ai_prompt = body.extra_kv.get("ai_notes")
-    if not ai_prompt and body.filters:
-        ai_prompt = body.filters.get("ai_notes")
+    # 2) 제목 치환 + 업데이트
+    page_title_processed = ""
+    try:
+        page_title_processed = _replace_in_text(body.title or "", kv)
+        if page_title_processed:
+            update_page_title(current_user, body.target_page_id, page_title_processed)
+    except Exception as e:
+        logging.exception("Failed to update title: %s", e)
+        # 제목 실패해도 본문 append는 계속 진행
 
-    # AI OFF — 템플릿 그대로 사용
-    processed_blocks = template_blocks
-    meta = {
-        "ai_used": False,
-        "ai_prompt_len": 0,
-        "missing_keys": [],
-        "ai_error": None,
-        "ai_model_used": None,
-    }
+    # 3) 본문 블록 치환 (1:1 대치 완료되어 있다면 그대로 유지 가능)
+    try:
+        processed_blocks = replace_placeholders_in_blocks(template_blocks, kv)
+    except Exception as e:
+        logging.exception("Placeholder replace failed: %s", e)
+        processed_blocks = template_blocks  # 방어: 실패 시 원본 그대로
 
-    # ✅ child_database 치환 로직 제거 → 그냥 append
+    # 치환 결과 미리보기 로그
+    import json
+    logging.info(
+        "[Notion Publish] processed_blocks_preview=%s",
+        json.dumps(processed_blocks[:3], ensure_ascii=False)[:1500],
+    )
+
+    # 4) Append
     try:
         created_on_page_id = append_blocks_to_page(
             current_user,
@@ -223,7 +207,7 @@ def publish_to_notion(
             detail=f"Notion publish failed (status={err_status}): {err_txt}",
         )
 
-    # ExportHistory 저장(선택)
+    # 5) 히스토리 저장(선택)
     try:
         hist = NotionExportHistory(
             user_id=getattr(current_user, "user_id"),
@@ -231,12 +215,12 @@ def publish_to_notion(
             target_page_id=body.target_page_id,
             created_page_id=created_on_page_id,  # = target_page_id
             project_id=project_id,
-            ai_used=bool(meta.get("ai_used")),
-            ai_prompt_len=int(meta.get("ai_prompt_len") or 0),
-            missing_keys=meta.get("missing_keys") or [],
+            ai_used=False,
+            ai_prompt_len=0,
+            missing_keys=[],
             extra_meta={
-                "note": "publish_plain_table_blocks",
-                "ai_model_used": meta.get("ai_model_used"),
+                "note": "publish_with_title_and_1to1_replacement",
+                "title_after": page_title_processed,
             },
         )
         db.add(hist)
@@ -247,10 +231,7 @@ def publish_to_notion(
     return {
         "ok": True,
         "created_page_id": created_on_page_id,
-        "history": {
-            "ai_used": meta.get("ai_used"),
-            "ai_prompt_len": meta.get("ai_prompt_len"),
-            "missing_keys": meta.get("missing_keys"),
-            "ai_error": meta.get("ai_error"),
-        },
+        "title": page_title_processed,
+        "replaced_keys": sorted(list(kv.keys())),
     }
+

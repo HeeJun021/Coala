@@ -135,6 +135,174 @@ def _debug_first_invalid(blocks: list, label: str = "preflight"):
             return i, why
     return None, ""
 
+# ──────────────────────────────────────────────────────────────────────────────
+# (추가) 페이지 제목 업데이트
+# ──────────────────────────────────────────────────────────────────────────────
+def update_page_title(user: "User", page_id: str, title: str) -> None:
+    """
+    Standalone 페이지(데이터베이스가 아닌 일반 페이지)의 제목을 갱신한다.
+    Notion API: PATCH /v1/pages/{page_id}
+    """
+    token = _decrypt(user.notion_token)
+    headers = _headers(token)
+    url = f"{NOTION_API_BASE}/pages/{page_id}"
+
+    # 대부분의 스탠드얼론 페이지는 'title' 속성을 사용한다.
+    payload = {
+        "properties": {
+            "title": [
+                {"type": "text", "text": {"content": title or ""}}
+            ]
+        }
+    }
+
+    r = requests.patch(url, headers=headers, json=payload, timeout=30)
+    if r.status_code >= 300:
+        raise RuntimeError(f"Failed to update page title: {r.text}")
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# (추가) 1:1 대치를 위한 텍스트 치환 유틸
+# ──────────────────────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────
+# (치환) 텍스트 대치 유틸
+# ──────────────────────────────────────────────────────────────────────────────
+def _replace_in_text(text: Any, kv: Dict[str, Any]) -> Any:
+    """문자열의 [키], {{키}} 치환. 문자열이 아니면 그대로 반환."""
+    if not isinstance(text, str) or not kv:
+        return text
+    out = text
+    for k, v in kv.items():
+        if v is None:
+            continue
+        val = str(v)
+        out = out.replace(f"[{k}]", val)
+        out = out.replace(f"{{{{{k}}}}}", val)  # {{key}}
+    return out
+
+
+def _replace_in_rich_text_list(rt_list: Any, kv: Dict[str, Any]) -> Any:
+    """rich_text 배열 내부의 text.content 치환."""
+    if not isinstance(rt_list, list) or not kv:
+        return rt_list
+    new_rt = []
+    for item in rt_list:
+        if isinstance(item, dict) and item.get("type") == "text":
+            txt = item.get("text", {})
+            if isinstance(txt, dict):
+                txt["content"] = _replace_in_text(txt.get("content", ""), kv)
+                item = dict(item)
+                item["text"] = txt
+        new_rt.append(item)
+    return new_rt
+
+
+def replace_placeholders_in_blocks(blocks: List[dict], kv: Dict[str, Any]) -> List[dict]:
+    """
+    Notion 블록 트리 전체를 순회하며 [키], {{키}}를 1:1로 치환한다.
+    - 텍스트 계열: paragraph, headings, list_item, to_do, toggle, quote, callout, code, template.rich_text
+    - media caption: image, video, file, pdf, audio, bookmark, embed
+    - table_row.cells: [[rich_text...], ...]
+    - 컨테이너 children: column_list/column, synced_block, template, table
+    """
+    if not isinstance(blocks, list) or not kv:
+        return blocks
+
+    TEXT_TYPES_WITH_RICH_TEXT = {
+        "paragraph", "heading_1", "heading_2", "heading_3",
+        "bulleted_list_item", "numbered_list_item",
+        "to_do", "toggle", "quote", "callout", "code", "template"
+    }
+    MEDIA_TYPES_WITH_CAPTION = {
+        "image", "video", "file", "pdf", "audio", "bookmark", "embed"
+    }
+
+    def walk(b: Any) -> Any:
+        if not isinstance(b, dict):
+            return b
+        t = b.get("type")
+        payload = isinstance(t, str) and b.get(t)
+        if not isinstance(payload, dict):
+            # column_list/column처럼 payload가 아닌 상위키 children 구조면 아래에서 처리
+            pass
+        nb = dict(b)
+
+        # 1) 텍스트 계열: payload.rich_text 치환
+        if isinstance(payload, dict) and t in TEXT_TYPES_WITH_RICH_TEXT:
+            payload = dict(payload)
+            if "rich_text" in payload:
+                payload["rich_text"] = _replace_in_rich_text_list(payload.get("rich_text"), kv)
+            # template은 children도 가짐
+            if t == "template" and isinstance(payload.get("children"), list):
+                payload["children"] = [walk(ch) for ch in payload["children"]]
+            nb[t] = payload
+
+        # 2) table_row: cells 치환
+        if t == "table_row" and isinstance(payload, dict):
+            payload = dict(payload)
+            cells = payload.get("cells")
+            if isinstance(cells, list):
+                new_cells = []
+                for cell in cells:
+                    if isinstance(cell, list):
+                        new_cell = _replace_in_rich_text_list(cell, kv)
+                        new_cells.append(new_cell)
+                    else:
+                        new_cells.append(cell)
+                payload["cells"] = new_cells
+            nb[t] = payload
+
+        # 3) MEDIA caption / equation.expression
+        if isinstance(payload, dict) and t in MEDIA_TYPES_WITH_CAPTION:
+            payload = dict(payload)
+            if "caption" in payload and isinstance(payload["caption"], list):
+                payload["caption"] = _replace_in_rich_text_list(payload["caption"], kv)
+            nb[t] = payload
+        if t == "equation" and isinstance(payload, dict):
+            payload = dict(payload)
+            if "expression" in payload:
+                payload["expression"] = _replace_in_text(payload["expression"], kv)
+            nb[t] = payload
+
+        # 4) 컨테이너 children: column_list, column, synced_block, table
+        if t == "column_list" and isinstance(payload, dict):
+            payload = dict(payload)
+            if isinstance(payload.get("children"), list):
+                payload["children"] = [walk(ch) for ch in payload["children"]]
+            nb[t] = payload
+
+        if t == "column" and isinstance(payload, dict):
+            payload = dict(payload)
+            if isinstance(payload.get("children"), list):
+                payload["children"] = [walk(ch) for ch in payload["children"]]
+            nb[t] = payload
+
+        if t == "synced_block" and isinstance(payload, dict):
+            payload = dict(payload)
+            if isinstance(payload.get("children"), list):
+                payload["children"] = [walk(ch) for ch in payload["children"]]
+            nb[t] = payload
+
+        if t == "table" and isinstance(payload, dict):
+            payload = dict(payload)
+            if isinstance(payload.get("children"), list):
+                payload["children"] = [walk(ch) for ch in payload["children"]]
+            nb[t] = payload
+
+        # 5) 혹시 payload가 없거나 위에서 캐치 못한 텍스트 계열 보정(드문 케이스)
+        if isinstance(payload, dict) and t not in TEXT_TYPES_WITH_RICH_TEXT:
+            # 일부 블록이 특수 필드에 rich_text를 둘 수 있으므로 caption만 한 번 더 방어
+            if "caption" in payload and isinstance(payload["caption"], list):
+                payload = dict(payload)
+                payload["caption"] = _replace_in_rich_text_list(payload["caption"], kv)
+                nb[t] = payload
+
+        return nb
+
+    return [walk(b) for b in blocks]
+
+
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # 블록 변환
