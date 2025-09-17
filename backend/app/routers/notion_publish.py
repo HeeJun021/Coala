@@ -19,7 +19,7 @@ from app.models.task_models import TaskCollaborators
 from app.models.user import User
 
 # ✅ 퍼블리시는 오직 이 모듈만 사용 (AI 치환/재작성 + 스타일 보존 + gpt-5 대응)
-from app.services.ai_doc_rewriter import rewrite_doc_with_ai
+# from app.services.ai_doc_rewriter import rewrite_doc_with_ai
 
 # ✅ Notion 페이지 생성 + children append (chunk 처리 포함)
 from app.services.notion_api_service import create_page_then_append
@@ -56,14 +56,9 @@ def _load_project_kv(db: Session, project_id: Optional[int]) -> Dict[str, Any]:
         return {}
 
     # --- 모델 임포트(당신의 실제 경로/이름에 맞게 조정) ---
-    
 
     # 1) 프로젝트 개요
-    proj = (
-        db.query(Project)
-        .filter(Project.project_id == project_id)
-        .first()
-    )
+    proj = db.query(Project).filter(Project.project_id == project_id).first()
     if not proj:
         return {}
 
@@ -88,7 +83,11 @@ def _load_project_kv(db: Session, project_id: Optional[int]) -> Dict[str, Any]:
     members: list[str] = []
     leaders: list[str] = []
     for pm, u in pm_q:
-        name = getattr(u, "nickname", None) or getattr(u, "email", None) or f"User#{u.user_id}"
+        name = (
+            getattr(u, "nickname", None)
+            or getattr(u, "email", None)
+            or f"User#{u.user_id}"
+        )
         members.append(name)
         if getattr(pm, "is_leader", False):
             leaders.append(name)
@@ -113,12 +112,20 @@ def _load_project_kv(db: Session, project_id: Optional[int]) -> Dict[str, Any]:
             .all()
         )
         for tc, u in tc_rows:
-            nm = getattr(u, "nickname", None) or getattr(u, "email", None) or f"User#{u.user_id}"
+            nm = (
+                getattr(u, "nickname", None)
+                or getattr(u, "email", None)
+                or f"User#{u.user_id}"
+            )
             collab_map.setdefault(getattr(tc, "task_id"), []).append(nm)
 
     lines: list[str] = []
     for t in tasks:
-        title = getattr(t, "title", "") or getattr(t, "name", "") or f"Task#{getattr(t, 'task_id', '')}"
+        title = (
+            getattr(t, "title", "")
+            or getattr(t, "name", "")
+            or f"Task#{getattr(t, 'task_id', '')}"
+        )
         start = getattr(t, "start_date", None)
         due = getattr(t, "due_date", None)
         cbs = collab_map.get(getattr(t, "task_id"), [])
@@ -141,13 +148,20 @@ def _load_project_kv(db: Session, project_id: Optional[int]) -> Dict[str, Any]:
         "tech_stack": tech_stack,
         "status": status,
         "is_closed": bool(getattr(proj, "is_closed", False)),
-        "start_date": getattr(proj, "start_date", None).isoformat() if getattr(proj, "start_date", None) else None,
-        "end_date": getattr(proj, "end_date", None).isoformat() if getattr(proj, "end_date", None) else None,
+        "start_date": (
+            getattr(proj, "start_date", None).isoformat()
+            if getattr(proj, "start_date", None)
+            else None
+        ),
+        "end_date": (
+            getattr(proj, "end_date", None).isoformat()
+            if getattr(proj, "end_date", None)
+            else None
+        ),
         "tasks_summary": tasks_summary,
         "members": members,
         "leaders": leaders,
     }
-
 
 
 # ========= 퍼블리시 엔드포인트 =========
@@ -210,20 +224,30 @@ def publish_to_notion(
     if not ai_prompt and body.filters:
         ai_prompt = body.filters.get("ai_notes")
 
-    # 3) AI 섹션 재작성 + 대괄호 마커 치환 (스타일 보존)
-    try:
-        processed_blocks, meta = rewrite_doc_with_ai(
-            template_blocks=template_blocks,
-            base_kv=base_kv,
-            ai_prompt=ai_prompt,
-        )
-        ai_model_used = meta.get("ai_model_used")
-        logging.info(f"[Notion Publish] AI model used: {ai_model_used}")
+    # >>> AI OFF 모드: 템플릿 블록 그대로 사용 <<<
+    processed_blocks = template_blocks
+    meta = {
+        "ai_used": False,
+        "ai_prompt_len": 0,
+        "missing_keys": [],
+        "ai_error": None,
+        "ai_model_used": None,
+    }
 
-    except Exception as e:
-        # AI 실패 시에도 퍼블리시 자체는 진행할 수 있도록 옵션을 두고 싶다면,
-        # 여기서 template_blocks로 폴백하여 진행하도록 바꿀 수 있습니다.
-        raise HTTPException(status_code=500, detail=f"AI rendering failed: {e}")
+    # 3) AI 섹션 재작성 + 대괄호 마커 치환 (스타일 보존)
+    # try:
+    #     processed_blocks, meta = rewrite_doc_with_ai(
+    #         template_blocks=template_blocks,
+    #         base_kv=base_kv,
+    #         ai_prompt=ai_prompt,
+    #     )
+    #     ai_model_used = meta.get("ai_model_used")
+    #     logging.info(f"[Notion Publish] AI model used: {ai_model_used}")
+
+    # except Exception as e:
+    #     # AI 실패 시에도 퍼블리시 자체는 진행할 수 있도록 옵션을 두고 싶다면,
+    #     # 여기서 template_blocks로 폴백하여 진행하도록 바꿀 수 있습니다.
+    #     raise HTTPException(status_code=500, detail=f"AI rendering failed: {e}")
 
     # 4) Notion에 페이지 생성 + children append
     try:
@@ -251,9 +275,10 @@ def publish_to_notion(
                 "note": "publish_with_ai",
                 "marker_values": meta.get("marker_values") or {},
                 "ai_error": meta.get("ai_error"),
-                "ai_model_used": ai_model_used,  # 👈 추가
+                "ai_model_used": meta.get("ai_model_used"),  # ✅ 여기서 meta 참조
             },
         )
+
         db.add(hist)
         db.commit()
     except Exception:
