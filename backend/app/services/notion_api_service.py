@@ -74,8 +74,15 @@ def _transform_rich_text(rt_list: Any) -> List[Dict[str, Any]]:
     for rt in rt_list:
         if not isinstance(rt, dict):
             continue
-        if "text" in rt:
+        if "text" in rt and isinstance(rt["text"], dict):
             item: Dict[str, Any] = {"type": "text", "text": rt["text"]}
+            if "annotations" in rt:
+                item["annotations"] = rt["annotations"]
+            if "href" in rt:
+                item["href"] = rt["href"]
+            out.append(item)
+        elif isinstance(rt.get("plain_text"), str):
+            item = {"type": "text", "text": {"content": rt["plain_text"]}}
             if "annotations" in rt:
                 item["annotations"] = rt["annotations"]
             if "href" in rt:
@@ -84,6 +91,8 @@ def _transform_rich_text(rt_list: Any) -> List[Dict[str, Any]]:
         elif "mention" in rt or "equation" in rt:
             out.append(rt)
     return out
+
+
 
 def _normalize_external_url(url: Any) -> Optional[str]:
     if isinstance(url, str) and url.startswith(("http://", "https://")):
@@ -296,8 +305,12 @@ def replace_placeholders_in_blocks(blocks: List[dict], kv: Dict[str, Any]) -> Li
                 payload = dict(payload)
                 payload["caption"] = _replace_in_rich_text_list(payload["caption"], kv)
                 nb[t] = payload
+                    # ✅ 상위 children도 재귀 치환 (callout 등)
+        if isinstance(nb.get("children"), list):
+            nb["children"] = [walk(ch) for ch in nb["children"]]
 
         return nb
+
 
     return [walk(b) for b in blocks]
 
@@ -541,8 +554,10 @@ def _sanitize_blocks_for_create(blocks: List[dict]) -> List[dict]:
 
         # 컨테이너들: children 재귀 소독
         if b_type == "column_list":
-            if "children" in nb and isinstance(nb["children"], list):
-                nb["children"] = _sanitize_blocks_for_create(nb["children"])
+            cl = nb.get("column_list", {})
+            if isinstance(cl, dict) and isinstance(cl.get("children"), list):
+                cl["children"] = _sanitize_blocks_for_create(cl["children"])
+                nb["column_list"] = cl
         elif b_type == "column":
             col = nb.get("column", {})
             if isinstance(col, dict) and isinstance(col.get("children"), list):
