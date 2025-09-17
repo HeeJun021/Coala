@@ -7,6 +7,7 @@ import { getMyProjects } from "../../api/projectApi";
 import { X, Upload, MapPin, Layers, CheckCircle2, Loader2, AlertTriangle, ExternalLink,LayoutDashboard,Users,FileText} from "lucide-react";
 import NotionTemplateSelectModal from "./NotionTemplateSelectModal";
 import NotionTargetPageSelectModal from "./NotionTargetPageSelectModal";
+import { getMyPortfolioProfile, upsertMyPortfolioProfile as upsertPortfolioProfile } from "../../api/portfolioApi";
 
 function SummaryModal({ open, onCancel, onConfirm, data }) {
   if (!open) return null;
@@ -172,7 +173,26 @@ export default function PortfolioExport() {
   const [result, setResult] = useState(null);
 
   // AI 설명
-  const [aiNotes, setAiNotes] = useState("");
+  const [aiNotes, setAiNotes] = useState("");      // 기존 변수 재사용: 경험 입력
+  const [introText, setIntroText] = useState("");  // 새로 추가: 자기소개 입력
+
+  const [profile, setProfile] = useState({
+    full_name: "",
+    birth_date: "", // YYYY-MM-DD string
+    phone: "",
+    email: "",
+  });
+  const [eduList, setEduList] = useState([]);     // [{school,major,period,desc}]
+   const [careerList, setCareerList] = useState([]); // [{company,role,period,desc}]
+
+  const parsePeriod = (period) => {
+    const m = /^(\d{4})\.(\d{2})~(\d{4})\.(\d{2})$/.exec(period || "");
+    if (!m) return { start: "", end: "" };
+    return { start: `${m[1]}-${m[2]}`, end: `${m[3]}-${m[4]}` };
+  };
+  const fmtMonth = (ym) => (ym ? ym.replace("-", ".") : "");
+  const [saving, setSaving] = useState(false);
+  const [dirty, setDirty] = useState(false);
 
   // 단일 프로젝트 선택값(필터에서 첫 번째만 사용)
   const selectedProjectId = useMemo(() => filters?.project_ids?.[0] ?? null, [filters]);
@@ -226,6 +246,73 @@ const handleSelectTemplate = useCallback((id, title) => {
     })();
   }, [connected]);
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const me = await getMyPortfolioProfile();
+        setProfile({
+          full_name: me?.full_name || "",
+          birth_date: me?.birth_date || "",
+          phone: me?.phone || "",
+          email: me?.email || "",
+        });
+        setEduList(
+          Array.isArray(me?.education)
+            ? me.education.map((x) => {
+                const { start, end } = parsePeriod(x.period);
+                return { school: x.school || "", major: x.major || "", period: x.period || "", start_month: start, end_month: end };
+              })
+            : []
+        );
+        setCareerList(
+          Array.isArray(me?.career)
+            ? me.career.map((x) => {
+                const { start, end } = parsePeriod(x.period);
+                return { company: x.company || "", role: x.role || "", period: x.period || "", start_month: start, end_month: end };
+              })
+            : []
+        );
+        setDirty(false);
+      } catch (e) {
+        // 최초 사용자: 빈칸
+        setProfile({ full_name: "", birth_date: "", phone: "", email: "" });
+        setEduList([]);
+        setCareerList([]);
+        setDirty(false);
+      }
+    })();
+  }, []);
+
+  const saveProfile = async () => {
+    try {
+      setSaving(true);
+      const payload = {
+        ...profile,
+        birth_date: profile.birth_date || null,
+        education: eduList.map((x) => {
+          const period =
+            x.start_month && x.end_month
+              ? `${fmtMonth(x.start_month)}~${fmtMonth(x.end_month)}`
+              : x.period || "";
+          return { school: x.school || "", major: x.major || "", period, desc: "" }; // desc는 빈값으로
+        }),
+        career: careerList.map((x) => {
+          const period =
+            x.start_month && x.end_month
+              ? `${fmtMonth(x.start_month)}~${fmtMonth(x.end_month)}`
+              : x.period || "";
+          return { company: x.company || "", role: x.role || "", period, desc: "" };
+        }),
+      };
+      await upsertPortfolioProfile(payload);
+      setDirty(false);
+    } catch (e) {
+      alert("추가 사용자 정보를 저장하지 못했습니다.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleDisconnect = useCallback(async () => {
     if (!connected || disconnecting) return;
     try {
@@ -262,13 +349,29 @@ const handleSelectTemplate = useCallback((id, title) => {
       setPublishStatus("loading");
       setPublishedPageUrl("");
       setPublishedPageId("");
+      if (dirty) {
+        await saveProfile();
+      }
       const res = await publishToNotion({
         template_id: templateId,
         target_page_id: targetPageId,
         title: pageTitle.trim(),
         project_id: selectedProjectId,   // ✅ 단일 프로젝트
-        ai_prompt: aiNotes || null,      // ✅ AI 설명
-        extra_kv: null,
+        // 하위호환: 기존 ai_prompt에는 '경험 입력'을 그대로 전달
+        ai_prompt: aiNotes || null,
+        // 신규 키: 백엔드에서 각각 가공/치환에 활용
+        ai_prompt_experience: aiNotes || null,
+        ai_prompt_intro: introText || null,
+        extra_kv: {
+          full_name: profile.full_name || "",
+          birth_date: profile.birth_date || "",
+          phone: profile.phone || "",
+          email: profile.email || "",
+          education: eduList,
+          career: careerList,
+          experience_text: aiNotes || "",
+          intro_text: introText || "",
+        },
       });
       setResult(res);
       if (res?.ok) {
@@ -287,7 +390,7 @@ const handleSelectTemplate = useCallback((id, title) => {
     } finally {
       setPublishing(false);
     }
-  }, [canPublish, templateId, targetPageId, pageTitle, selectedProjectId, aiNotes]);
+  }, [canPublish, templateId, targetPageId, pageTitle, selectedProjectId, aiNotes, introText]);
 
   if (loading) {
   return (
@@ -414,9 +517,7 @@ return (
       placeholder="예: 엘리베이터형 자판기 시스템 – 포트폴리오"
       className="flex-1 h-full bg-transparent text-sm focus:outline-none"
     />
-  </div>
 </div>
-
               {/* 2) 대상 페이지 */}
               <div className="flex flex-col gap-2">
                 <span className="text-sm text-gray-600">대상 페이지</span>
@@ -449,20 +550,236 @@ return (
                 </button>
               </div>
 
-              {/* 4) AI 설명 입력 */}
-              <div className="flex flex-col gap-2">
-                <span className="text-sm text-gray-600">AI 설명 입력</span>
-                <textarea
-                  value={aiNotes}
-                  onChange={(e) => setAiNotes(e.target.value)}
-                  rows={4}
-                  placeholder={
-                    "예:\n- 프론트엔드 중심으로 내 역할을 강조해줘.\n- 맡은 기능을 간단히 정리해줘.\n- 협업 과정과 사용 기술을 자연스럽게 언급해줘."
-                  }
-                  className="w-full border rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200 resize-y"
-                />
-                <div className="mt-1 text-xs text-gray-400">{aiNotes.length}자 입력됨</div>
-              </div>
+              {/* 4) 경험 입력 (포트폴리오의 '경험' 섹션으로 가공되어 들어감) */}
+              <div className="flex flex-col gap-2 mt-5">
+   <span className="text-sm text-gray-900 font-medium">경험</span>
+   <span className="text-[12px] text-gray-500">
+     입력하신 내용을 AI가 정리해 <span className="font-medium">포트폴리오 ‘경험’</span> 섹션에 자연스럽게 반영해요.
+   </span>
+   <textarea
+     value={aiNotes}
+     onChange={(e) => setAiNotes(e.target.value)}
+     rows={5}
+     placeholder="예) 로그인/회원가입 개발, 성능 개선, 협업에서 배운 점"
+     className="w-full border rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200 resize-y"
+   />
+   <div className="mt-2 text-xs text-gray-400">{aiNotes.length}자 입력됨</div>
+ </div>
+              <div className="flex flex-col gap-5 mt-5">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-gray-900">추가 사용자 정보(포트폴리오용)</span>
+                  <button
+                    type="button"
+                    onClick={saveProfile}
+                    disabled={saving || !dirty}
+                    className={`px-3 py-1.5 rounded-lg text-sm border ${saving || !dirty ? "bg-gray-100 text-gray-400" : "bg-green-600 text-white hover:bg-green-700"}`}
+                  >
+                    {saving ? "저장 중…" : "저장"}
+                  </button>
+                </div>
+
+                {/* 기본정보 */}
+                <div className="grid sm:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-2">이름</label>
+                    <input
+                      className="w-full h-11 rounded-xl border border-gray-300 px-3 text-sm"
+                      value={profile.full_name}
+                      onChange={(e)=>{ setProfile(p=>({...p, full_name:e.target.value})); setDirty(true); }}
+                      placeholder="예: 홍길동"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-2">생년월일</label>
+                    <input
+                      type="date"
+                      className="w-full h-11 rounded-xl border border-gray-300 px-3 text-sm"
+                      value={profile.birth_date || ""}
+                     onChange={(e)=>{ setProfile(p=>({...p, birth_date:e.target.value})); setDirty(true); }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-2">전화번호</label>                    <input
+                      className="w-full h-11 rounded-xl border border-gray-300 px-3 text-sm"
+                      value={profile.phone}
+                      onChange={(e)=>{ setProfile(p=>({...p, phone:e.target.value})); setDirty(true); }}
+                      placeholder="010-1234-5678"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-2">이메일</label>
+                    <input
+                      className="w-full h-11 rounded-xl border border-gray-300 px-3 text-sm"
+                      value={profile.email}
+                      onChange={(e)=>{ setProfile(p=>({...p, email:e.target.value})); setDirty(true); }}
+                      placeholder="me@example.com"
+                    />
+                  </div>
+                </div>
+
+                {/* 학적사항 */}
+                <div>
+                 <div className="flex items-center justify-between mb-2 mt-4">
+                    <span className="text-sm text-gray-700">학적사항 (원하는 만큼 추가)</span>
+                    <button
+                      type="button"
+                      className="px-3 py-1.5 rounded-md border text-xs hover:bg-gray-50"
+                      onClick={() => { setEduList((list) => [...list, { school: "", major: "", period: "", start_month: "", end_month: "" }]); setDirty(true); }}
+                    >
+                      + 추가
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {eduList.length===0 && <div className="text-xs text-gray-400">항목이 없습니다.</div>}
+                    {eduList.map((it, idx)=>(
+                      <div key={idx} className="grid md:grid-cols-[1.1fr_1fr_0.9fr_0.9fr_60px] gap-2 items-center">
+                        <input className="border rounded-lg px-2 h-10 text-sm" placeholder="학교" value={it.school}
+                          onChange={(e)=>{ const v=e.target.value; setEduList(arr=>arr.map((x,i)=>i===idx?{...x,school:v}:x)); setDirty(true); }}/>
+                        <input className="border rounded-lg px-2 h-10 text-sm" placeholder="전공" value={it.major}
+                          onChange={(e)=>{ const v=e.target.value; setEduList(arr=>arr.map((x,i)=>i===idx?{...x,major:v}:x)); setDirty(true); }}/>
+                        <input
+                          type="month"
+                          className="border rounded-lg px-2 h-10 text-sm"
+                          value={it.start_month || ""}
+                          max={it.end_month || undefined}
+                          onChange={(e)=>{ const v=e.target.value; setEduList(arr=>arr.map((x,i)=>i===idx?{...x,start_month:v}:x)); setDirty(true); }}
+                          aria-label="시작월"
+                        />
+                        <input
+                          type="month"
+                          className="border rounded-lg px-2 h-10 text-sm"
+                          value={it.end_month || ""}
+                          min={it.start_month || undefined}
+                          onChange={(e)=>{ const v=e.target.value; setEduList(arr=>arr.map((x,i)=>i===idx?{...x,end_month:v}:x)); setDirty(true); }}
+                          aria-label="종료월"
+                        />
+                        <div className="flex justify-end">
+                          <button
+                            className="px-2 py-1 rounded-md border text-xs text-rose-600 hover:bg-rose-50"
+                            onClick={()=>{ setEduList(arr=>arr.filter((_,i)=>i!==idx)); setDirty(true); }}
+                          >
+                            삭제
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 경력 사항 */}
+<div>
+  <div className="flex items-center justify-between mb-2 mt-2">
+    <span className="text-sm text-gray-700">경력 사항 (원하는 만큼 추가)</span>
+    <button
+      type="button"
+      className="px-3 py-1.5 rounded-md border text-xs hover:bg-gray-50"
+      onClick={() => {
+        setCareerList((list) => [
+          ...list,
+          { company: "", role: "", period: "", start_month: "", end_month: "" },
+        ]);
+        setDirty(true);
+      }}
+    >
+      + 추가
+    </button>
+  </div>
+
+  <div className="space-y-2">
+    {careerList.length === 0 && (
+      <div className="text-xs text-gray-400">항목이 없습니다.</div>
+    )}
+
+    {careerList.map((it, idx) => (
+      <div
+        key={idx}
+        className="grid md:grid-cols-[1.1fr_1fr_0.9fr_0.9fr_60px] gap-2 items-center"
+      >
+        <input
+          className="border rounded-lg px-2 h-10 text-sm"
+          placeholder="회사/기관"
+          value={it.company}
+          onChange={(e) => {
+            const v = e.target.value;
+            setCareerList((arr) =>
+              arr.map((x, i) => (i === idx ? { ...x, company: v } : x))
+            );
+            setDirty(true);
+          }}
+        />
+        <input
+          className="border rounded-lg px-2 h-10 text-sm"
+          placeholder="직책/역할"
+          value={it.role}
+          onChange={(e) => {
+            const v = e.target.value;
+            setCareerList((arr) =>
+              arr.map((x, i) => (i === idx ? { ...x, role: v } : x))
+            );
+            setDirty(true);
+          }}
+        />
+        <input
+          type="month"
+          className="border rounded-lg px-2 h-10 text-sm"
+          value={it.start_month || ""}
+          max={it.end_month || undefined}         
+          onChange={(e) => {
+            const v = e.target.value;
+            setCareerList((arr) =>
+              arr.map((x, i) => (i === idx ? { ...x, start_month: v } : x))
+            );
+            setDirty(true);
+          }}
+          aria-label="시작월"
+        />
+        <input
+          type="month"
+          className="border rounded-lg px-2 h-10 text-sm"
+          value={it.end_month || ""}
+          min={it.start_month || undefined}       
+          onChange={(e) => {
+            const v = e.target.value;
+            setCareerList((arr) =>
+              arr.map((x, i) => (i === idx ? { ...x, end_month: v } : x))
+            );
+            setDirty(true);
+          }}
+          aria-label="종료월"
+        />
+        <div className="flex justify-end">
+          <button
+            className="px-2 py-1 rounded-md border text-xs text-rose-600 hover:bg-rose-50"
+            onClick={() => {
+              setCareerList((arr) => arr.filter((_, i) => i !== idx));
+              setDirty(true);
+            }}
+          >
+            삭제
+          </button>
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
+
+{/* 자기소개 (경력 사항 '바로 아래') */}
+<div className="flex flex-col gap-2 mt-6">
+  <span className="text-sm text-gray-900 font-medium">자기소개</span>
+  <span className="text-[12px] text-gray-500">
+    입력 내용을 AI가 정리해 <span className="font-medium">포트폴리오 ‘자기소개’</span> 섹션에 자연스럽게 반영해요.
+  </span>
+  <textarea
+    value={introText}
+    onChange={(e) => setIntroText(e.target.value)}
+    rows={4}
+    placeholder="예) 사용자 경험을 좋아하는 프론트엔드 개발자입니다."
+    className="w-full border rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200 resize-y"
+  />
+  <div className="mt-2 text-xs text-gray-400">{introText.length}자 입력됨</div>
+</div>        
+            </div>
+            </div>
             </div>
           </section>
 
