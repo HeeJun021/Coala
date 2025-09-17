@@ -143,7 +143,7 @@ return (
     ref={sidebarRef}
     onMouseEnter={handleMouseEnter}
     onMouseLeave={handleMouseLeave}
-    className="fixed left-[70px] top-[150px] w-[260px] bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden z-40"
+    className="fixed left-[70px] top-[120px] w-[260px] bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden z-40"
   >
     <div className="h-[56px] flex items-center px-6 bg-[#88C078] rounded-t-2xl shadow-sm">
       <h1 className="text-[18px] font-semibold text-black tracking-wide">학습자료</h1>
