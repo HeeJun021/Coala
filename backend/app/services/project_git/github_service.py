@@ -130,7 +130,7 @@ def _get_repo_owner_token(db: Session, project_id: int, actor_user_id: int | Non
     # 1) owner 로그인과 일치하는 SocialLogin 찾기
     owner_sl = (
         db.query(SocialLogin)
-        .filter(SocialLogin.provider == "github", SocialLogin.login == repo.owner)  # login 컬럼을 사용한다고 가정
+        .filter(SocialLogin.provider == "github", SocialLogin.username == repo.owner)
         .first()
     )
     if owner_sl and owner_sl.access_token:

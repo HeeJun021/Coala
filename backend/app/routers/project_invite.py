@@ -41,7 +41,7 @@ def accept_project_invitation(
     # 2) GitHub collaborator 초대 (권한은 push 기본)
     #    actor_user_id로 현재 사용자 전달(소유자 토큰 없을 때 fallback 용)
     invite_collaborator(db=db, project_id=project_id, invitee_user_id=current_user.user_id, permission="push", actor_user_id=current_user.user_id)
-
+    
     return {"message": "프로젝트에 참여하고 레포 Collaborator 초대가 전송되었습니다."}
 
 

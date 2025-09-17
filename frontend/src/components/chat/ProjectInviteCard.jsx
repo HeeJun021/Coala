@@ -12,15 +12,20 @@ const ProjectInviteCard = ({ invite, isMine }) => {
   const inviteStatus = invite.invite_status; 
 
   const handleAcceptInvite = async () => {
-    try {
-      await acceptProjectInvite(projectId);
-      console.log("📦 invite 전달값", invite);
-      setAccepted(true);
-      setResponded(true);
-    } catch (err) {
-      console.error("초대 수락 실패:", err);
-    }
-  };
+    // invite 객체에서 projectId와 messageId를 모두 사용
+    const projectId = invite.message_metadata.project_id;
+    const messageId = invite.message_id; // message_id 필드명은 실제 데이터에 맞게 조정해야 할 수도 있어
+
+    try {
+      await acceptProjectInvite(projectId, { message_id: messageId }); 
+      
+      setAccepted(true);
+      setResponded(true);
+    } catch (err) {
+      console.error("초대 수락 실패:", err);
+      alert("초대 수락 중 오류가 발생했습니다."); // 사용자에게 에러 피드백
+    }
+  };
 
   const handleDeclineInvite = async () => {
     try {
