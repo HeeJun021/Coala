@@ -1,33 +1,18 @@
 // frontend/src/components/project/projectgit/ProjectGitExplorerPanel.jsx
 import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
-import {
-  FaChevronRight,
-  FaChevronDown,
-  FaSyncAlt,
-} from "react-icons/fa";
-import { Folder as FolderIcon, FileText } from "lucide-react"; // ✅ lucide-react 아이콘
+import { FaChevronRight, FaChevronDown, FaSyncAlt } from "react-icons/fa";
+import { Folder as FolderIcon, FileText } from "lucide-react";
 import { getRepoTree, getFile, createFile, deleteFile } from "../../../api/project_gitApi";
 
-// 헬퍼 컴포넌트: 새 파일/폴더 이름 입력을 위한 별도 컴포넌트
+// 새 파일/폴더 이름 입력
 const CreateInput = ({ initialName, type, onConfirm, onCancel }) => {
   const [name, setName] = useState(initialName);
   const inputRef = useRef(null);
-
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
-    }
-  }, []);
-
+  useEffect(() => { inputRef.current?.focus(); inputRef.current?.select(); }, []);
   const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      onConfirm(name);
-    } else if (e.key === "Escape") {
-      onCancel();
-    }
+    if (e.key === "Enter") onConfirm(name);
+    else if (e.key === "Escape") onCancel();
   };
-
   return (
     <div className="flex items-center mt-1 pl-6">
       <input
@@ -49,6 +34,8 @@ export default function ProjectGitExplorerPanel({
   onOpenFile,
   rootLabel = "root",
   className = "",
+  /** ⬇ 상위(CodeEditorPanel)에서 404시 안내 패널 전환용 */
+  onGitMissing,
 }) {
   const [treeItems, setTreeItems] = useState([]);
   const [expanded, setExpanded] = useState({ "": true });
@@ -63,26 +50,38 @@ export default function ProjectGitExplorerPanel({
     return () => window.removeEventListener("click", close);
   }, []);
 
+  /** 공통: Git 미연결/빈 레포 시그널 처리 */
+  const handleGit404 = useCallback((e, fallbackMsg) => {
+    const st = e?.response?.status;
+    if (st === 404 || st === 409 || st === 400) {
+      setTreeItems([]); // 비우기
+      onGitMissing?.(e?.response?.data?.detail || fallbackMsg || "저장소 트리를 불러올 수 없습니다.");
+      return true;
+    }
+    return false;
+  }, [onGitMissing]);
+
   const refreshTree = useCallback(async () => {
     if (!projectId) return;
     setLoading(true);
     try {
       const res = await getRepoTree(projectId, { branch, basePath: "", recursive: true });
       setTreeItems(res?.tree || res?.items || []);
+    } catch (e) {
+      if (handleGit404(e, "브랜치/트리를 찾을 수 없습니다. Git 패널에서 초기 커밋을 생성하세요.")) return;
+      console.error("[Explorer] tree 로드 실패:", e);
     } finally {
       setLoading(false);
     }
-  }, [projectId, branch]);
+  }, [projectId, branch, handleGit404]);
 
-  useEffect(() => {
-    refreshTree();
-  }, [refreshTree]);
+  useEffect(() => { refreshTree(); }, [refreshTree]);
 
   const builtTree = useMemo(() => {
     const root = { name: "", path: "", type: "tree", children: {}, files: [] };
     for (const it of treeItems) {
       const isDir = it.type !== "blob";
-      const parts = it.path.split("/").filter(Boolean);
+      const parts = (it.path || "").split("/").filter(Boolean);
       let cur = root;
       for (let i = 0; i < parts.length; i++) {
         const part = parts[i];
@@ -104,25 +103,13 @@ export default function ProjectGitExplorerPanel({
   }, [treeItems]);
 
   const toggle = (path) => setExpanded((p) => ({ ...p, [path]: !p[path] }));
-
-  const openMenu = (e, path) => {
-    e.preventDefault();
-    setMenu({ visible: true, x: e.pageX, y: e.pageY, targetPath: path ?? "" });
-  };
-
-  const startCreate = (path, type) => {
-    setMenu((m) => ({ ...m, visible: false }));
-    setCreatingAt(path ?? "");
-    setCreateType(type);
-  };
+  const openMenu = (e, path) => { e.preventDefault(); setMenu({ visible: true, x: e.pageX, y: e.pageY, targetPath: path ?? "" }); };
+  const startCreate = (path, type) => { setMenu((m) => ({ ...m, visible: false })); setCreatingAt(path ?? ""); setCreateType(type); };
 
   const confirmCreate = async (name) => {
     const parentPath = creatingAt ?? "";
     const trimmedName = (name || "").trim();
-
-    setCreatingAt(null);
-    setCreateType(null);
-
+    setCreatingAt(null); setCreateType(null);
     if (!trimmedName) return;
     if (trimmedName.includes("/")) return alert("이름에 '/'는 사용할 수 없어요.");
 
@@ -138,29 +125,25 @@ export default function ProjectGitExplorerPanel({
         setExpanded((p) => ({ ...p, [folderFull]: true, [parentPath]: true }));
       }
     } catch (e) {
+      if (handleGit404(e, "저장소가 준비되지 않아 항목을 생성할 수 없습니다.")) return;
       alert(e?.response?.data?.detail || "생성 실패");
     }
   };
 
-  const cancelCreate = () => {
-    setCreatingAt(null);
-    setCreateType(null);
-  };
+  const cancelCreate = () => { setCreatingAt(null); setCreateType(null); };
 
   const handleDelete = async (path, isDir) => {
     setMenu((m) => ({ ...m, visible: false }));
-
     const message = isDir
-      ? `폴더 '${path}'와 내부의 모든 파일/폴더가 영구적으로 삭제됩니다. 정말 삭제할까요?`
+      ? `폴더 '${path}'와 내부의 모든 파일/폴더가 삭제됩니다. 삭제할까요?`
       : `파일 '${path}'를 삭제할까요?`;
-
-    const ok = window.confirm(message);
-    if (!ok) return;
+    if (!window.confirm(message)) return;
 
     try {
       await deleteFile(projectId, { branch, path });
       await refreshTree();
     } catch (e) {
+      if (handleGit404(e, "저장소가 준비되지 않아 삭제할 수 없습니다.")) return;
       alert(e?.response?.data?.detail || "삭제 실패");
     }
   };
@@ -170,6 +153,7 @@ export default function ProjectGitExplorerPanel({
       const file = await getFile(projectId, { branch, path });
       onOpenFile?.(path, file);
     } catch (e) {
+      if (handleGit404(e, "파일을 불러올 수 없습니다. 저장소를 먼저 준비하세요.")) return;
       alert(e?.response?.data?.detail || "파일을 불러올 수 없습니다.");
     }
   };
@@ -185,36 +169,28 @@ export default function ProjectGitExplorerPanel({
         <div
           className={`flex items-center rounded px-1 ${isRoot ? "cursor-default" : "cursor-pointer hover:underline"} ${isRoot ? "hover:bg-gray-50" : ""}`}
           onClick={() => !isRoot && toggle(node.path)}
-          onContextMenu={(e) => {
-            e.stopPropagation();
-            openMenu(e, node.path);
-          }}
+          onContextMenu={(e) => { e.stopPropagation(); openMenu(e, node.path); }}
         >
           {!isRoot && (isExpanded ? <FaChevronDown className="mr-1" /> : <FaChevronRight className="mr-1" />)}
-          <FolderIcon className="text-yellow-600 mr-1" size={18} /> {/* ✅ lucide-react 폴더 */}
+          <FolderIcon className="text-yellow-600 mr-1" size={18} />
           <span className="text-sm">{isRoot ? rootLabel : node.name}</span>
         </div>
 
         {(isExpanded || isRoot) && (
           <div className="ml-2">
             {children.map((c) => <Node key={c.path} node={c} depth={depth + 1} />)}
-
             {files.map((f) => (
               <div
                 key={f.path}
                 className="flex items-center cursor-pointer hover:underline pl-4 py-0.5"
-                onContextMenu={(e) => {
-                  e.stopPropagation();
-                  openMenu(e, f.path);
-                }}
+                onContextMenu={(e) => { e.stopPropagation(); openMenu(e, f.path); }}
               >
-                <FileText className="mr-1 text-gray-500" size={18} /> {/* ✅ lucide-react 파일 */}
+                <FileText className="mr-1 text-gray-500" size={18} />
                 <span className="text-sm flex-1" onClick={() => openFile(f.path)}>
                   {f.name}
                 </span>
               </div>
             ))}
-
             {creatingAt === node.path && (
               <CreateInput
                 initialName={createType === "folder" ? "new-folder" : "new-file.txt"}
@@ -231,7 +207,9 @@ export default function ProjectGitExplorerPanel({
 
   const ContextMenu = () => {
     if (!menu.visible) return null;
-    const isTargetDir = menu.targetPath === "" || treeItems.some(item => item.path === menu.targetPath && item.type === "tree");
+    const isTargetDir =
+      menu.targetPath === "" ||
+      treeItems.some((item) => item.path === menu.targetPath && item.type === "tree");
 
     return (
       <ul
@@ -249,7 +227,6 @@ export default function ProjectGitExplorerPanel({
             </li>
           </>
         )}
-
         {menu.targetPath !== "" && (
           <>
             {isTargetDir && <hr className="my-1 border-gray-200" />}
