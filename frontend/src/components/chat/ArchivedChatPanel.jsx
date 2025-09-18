@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import {
   getArchivedChatRooms,
+  acceptChatRequest,
   rejectChatRequest,
 } from "../../api/chatApi";
-import { acceptProjectInvite } from "../../api/projectApi";
 import { ChevronLeft } from "lucide-react";
 
 const ArchivedChatPanel = ({ onBack, onSelectRoom }) => {
@@ -21,24 +21,10 @@ const ArchivedChatPanel = ({ onBack, onSelectRoom }) => {
     fetchArchived();
   }, []);
 
-  const handleAccept = async (room) => {
-    const projectId = room.message_metadata?.project_id;
-    const messageId = room.last_message_id;
-
-    if (!projectId || !messageId) {
-      alert("초대 정보를 처리할 수 없습니다. (projectId 또는 messageId 없음)");
-      return;
-    }
-
-    try {
-      await acceptProjectInvite(projectId, { message_id: messageId });
-      setRooms((prev) => prev.filter((r) => r.room_id !== room.room_id));
-      onBack(true); // 성공 시 자동으로 뒤로 가면서 목록 새로고침
-    } catch (error) {
-      console.error("요청 수락 실패:", error);
-      alert("요청 수락에 실패했습니다.");
-    }
-  };
+  const handleAccept = async (roomId) => {
+    await acceptChatRequest(roomId);
+    setRooms((prev) => prev.filter((r) => r.room_id !== roomId));
+  };
 
   const handleReject = async (roomId) => {
     await rejectChatRequest(roomId);
@@ -94,7 +80,7 @@ const ArchivedChatPanel = ({ onBack, onSelectRoom }) => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleAccept(room);
+                      handleAccept(room.room_id);
                     }}
                     className="px-3 py-1 text-sm rounded border border-green-500 text-green-600 hover:bg-green-50 transition"
                   >

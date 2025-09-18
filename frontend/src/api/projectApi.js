@@ -1,5 +1,7 @@
 import apiClient from "./apiClient";
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 // 로그인된 사용자의 프로젝트 목록 가져오기
 export const getMyProjects = async () => {
   const response = await apiClient.get("/projects/my");
@@ -67,11 +69,54 @@ export const sendProjectInvite = (projectId, receiverId) =>
     receiver_id: receiverId,
   });
 
+export const acceptProjectInvite = async (projectId, body = {}) => {
+  const url = `/projects/${projectId}/accept`;
 
+  let lastErr = null;
+  for (let i = 0; i < 3; i++) {
+    try {
+      const { data } = await apiClient.post(url, body);
+      return data;
+    } catch (e) {
+      lastErr = e;
+      const status = e?.response?.status;
+      const detail = e?.response?.data?.detail;
 
-// 2. 프로젝트 초대 수락
-export const acceptProjectInvite = (projectId) =>
-  apiClient.post(`/projects/${projectId}/accept`);
+      // FastAPI 기본 404 ("Not Found")일 때만 짧게 재시도
+      if (status === 404 && (detail === "Not Found" || detail == null)) {
+        await sleep(220);
+        continue;
+      }
+      throw e; // 다른 에러는 즉시 중단
+    }
+  }
+  throw lastErr;
+};
+
+export const inviteProjectCollaborator = async (projectId) => {
+  const url = `/projects/${projectId}/invite-collaborator`;
+  let lastErr = null;
+  for (let i = 0; i < 3; i++) {
+    try {
+      const { data } = await apiClient.post(url);
+      return data;
+    } catch (e) {
+      lastErr = e;
+      const st = e?.response?.status;
+      const detail = e?.response?.data?.detail;
+      if (st === 404 && (detail === "Not Found" || detail == null)) {
+        await new Promise(r => setTimeout(r, 220));
+        continue;
+      }
+      if (st === 409) {
+        // 이미 초대/이미 콜라보 → 성공 간주
+        return { ok: true, alreadyDone: true, detail: e?.response?.data };
+      }
+      throw e;
+    }
+  }
+  throw lastErr;
+};
 
 // 3. 프로젝트 초대 거절
 export const rejectProjectInvite = (projectId) =>

@@ -14,7 +14,13 @@ class ProjectRepo(Base):
     default_branch: Mapped[str] = mapped_column(String(100), nullable=False, default="main")
     installation_id: Mapped[int | None] = mapped_column(BigInteger)
     last_synced_at: Mapped[str] = mapped_column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
-
+    owner_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.user_id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    owner_user = relationship("User", lazy="joined", foreign_keys=[owner_user_id])
+    
     __table_args__ = (
         UniqueConstraint("project_id", "provider", "owner", "repo_name"),
     )
