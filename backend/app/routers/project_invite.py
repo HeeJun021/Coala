@@ -3,8 +3,9 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.dependencies.auth import get_current_user
 from app.services.invite_service import send_project_invite, accept_project_invite
-from app.services.project_git.github_service import invite_collaborator
+from app.services.project_git.github_service import invite_collaborator, get_project_owner_user_id
 from app.models.user import User
+from sqlalchemy.exc import IntegrityError
 
 router = APIRouter(prefix="/projects", tags=["ProjectInvites"])
 
@@ -27,23 +28,33 @@ def invite_user_to_project(
 
     return {"message": "초대 요청이 전송되었습니다."}
 
-
-# 2. 프로젝트 초대 수락
 @router.post("/{project_id}/accept")
 def accept_project_invitation(
     project_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    # 1) 내부 프로젝트 멤버십 수락 처리
     accept_project_invite(db=db, user=current_user, project_id=project_id)
+    db.commit()
+    return {"message": "프로젝트 참여 완료."}
 
-    # 2) GitHub collaborator 초대 (권한은 push 기본)
-    #    actor_user_id로 현재 사용자 전달(소유자 토큰 없을 때 fallback 용)
-    invite_collaborator(db=db, project_id=project_id, invitee_user_id=current_user.user_id, permission="push", actor_user_id=current_user.user_id)
+@router.post("/{project_id}/invite-collaborator")
+def invite_project_collaborator(
+    project_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    owner_user_id = get_project_owner_user_id(db, project_id)
     
-    return {"message": "프로젝트에 참여하고 레포 Collaborator 초대가 전송되었습니다."}
-
+    result = invite_collaborator(
+        db=db,
+        project_id=project_id,
+        invitee_user_id=current_user.user_id,
+        permission="push",
+        actor_user_id=owner_user_id,
+    )
+    db.commit()
+    return {"message": "GitHub 초대 처리됨.", "github_invite": result}
 
 # 3. 프로젝트 초대 거절
 @router.post("/{project_id}/reject")

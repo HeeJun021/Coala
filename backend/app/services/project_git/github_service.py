@@ -1,12 +1,14 @@
 from __future__ import annotations
 import requests
-from typing import Optional
+from typing import Tuple, Optional
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from app.models.project_models import Project
 from app.models.project_git.project_repo import ProjectRepo
 from app.models.project_git.project_branch import ProjectBranch
 from app.models.social_login import SocialLogin
+from app.models.user import User
 from app.schemas.github import RepoCreateRequest, RepoInfo 
 
 GITHUB_API = "https://api.github.com"
@@ -74,6 +76,7 @@ def create_repo_service(db: Session, user_id: int, body: RepoCreateRequest) -> R
         owner=owner,
         repo_name=repo_name,
         default_branch=default_branch,
+        owner_user_id=user_id,
     )
     db.add(repo)
     db.flush()  # project_repo_id 확보
@@ -112,62 +115,191 @@ def _get_login_by_token(token: str) -> str:
         raise HTTPException(status_code=401, detail="GitHub 토큰으로 사용자 정보를 조회할 수 없습니다.")
     return r.json().get("login")
 
-def _get_repo_owner_token(db: Session, project_id: int, actor_user_id: int | None = None) -> Tuple[str, str, str]:
+def get_project_owner_user_id(db: Session, project_id: int) -> int:
     """
-    프로젝트에 연결된 레포(owner/repo_name)의 소유자 토큰을 찾는다.
-    1) ProjectRepo.owner 와 같은 login을 가진 사용자의 SocialLogin 토큰
-    2) 없으면 actor(요청자)의 GitHub 토큰을 fallback
-    반환: (owner_login, repo_name, owner_token)
+    1순위: ProjectRepo.owner_user_id (레포 소유자로 저장된 사용자)
+    2순위: Project.creator_user_id (프로젝트 생성자)
+    3순위: ProjectMembers 중 leader(또는 owner) 역할 사용자
     """
+    # 1) 레포 소유자
     repo = (
         db.query(ProjectRepo)
         .filter(ProjectRepo.project_id == project_id, ProjectRepo.provider == "github")
         .first()
     )
-    if not repo:
-        raise HTTPException(status_code=404, detail="GitHub 레포지토리 매핑이 없습니다.")
+    if repo and getattr(repo, "owner_user_id", None):
+        return repo.owner_user_id
 
-    # 1) owner 로그인과 일치하는 SocialLogin 찾기
-    owner_sl = (
-        db.query(SocialLogin)
-        .filter(SocialLogin.provider == "github", SocialLogin.username == repo.owner)
+    # 2) 프로젝트 생성자
+    project = db.query(Project).filter(Project.project_id == project_id).first()
+    if project and getattr(project, "creator_user_id", None):
+        return project.creator_user_id
+
+    # 3) 프로젝트 리더(역할 이름은 실제 스키마에 맞게 조정)
+    # 예: ProjectMembers(role = 'leader') 또는 roles JSON에 leader 플래그
+    from app.models.project_models import ProjectMembers  # 순환참조 방지용 내부 import
+
+    leader = (
+        db.query(ProjectMembers)
+        .filter(
+            ProjectMembers.project_id == project_id,
+            # 아래 조건은 실제 컬럼에 맞게 수정: 예) ProjectMembers.role == "leader"
+            # 또는 ProjectMembers.is_leader == True 등
+            ProjectMembers.role == "leader"
+        )
         .first()
     )
-    if owner_sl and owner_sl.access_token:
-        return (repo.owner, repo.repo_name, owner_sl.access_token)
+    if leader:
+        return leader.user_id
 
-    # 2) fallback: actor의 토큰 사용
-    if actor_user_id is not None:
-        token = _get_github_token(db, actor_user_id)
-        return (repo.owner, repo.repo_name, token)
+    raise HTTPException(status_code=500, detail="프로젝트 소유자를 결정할 수 없습니다.")
 
-    raise HTTPException(status_code=403, detail="레포 소유자 또는 요청자의 GitHub 토큰을 찾을 수 없습니다.")
 
-def invite_collaborator(db: Session, project_id: int, invitee_user_id: int, permission: str = "push", actor_user_id: int | None = None) -> None:
+def _resolve_invitee_login(db: Session, invitee_user_id: int) -> str:
     """
-    프로젝트에 연결된 GitHub 레포에 초대 대상(invitee_user_id)을 collaborator로 초대한다.
-    permission: pull / triage / push / maintain / admin
+    초대받는 사용자의 GitHub login을 사용자 정보로부터 안전하게 해석한다.
+    우선순위: User.github_username -> User.github_access_token -> SocialLogin(access_token)
+    마지막으로도 없으면 400 에러.
     """
+    # 1) 유저 로드
+    user: Optional[User] = db.query(User).filter(User.user_id == invitee_user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Invitee user not found")
+
+    # 2) DB에 저장된 github_username이 있으면 그대로 사용
+    if getattr(user, "github_username", None):
+        return user.github_username
+
+    # 3) 토큰으로 /user 조회해서 login 획득 시도
+    token = getattr(user, "github_access_token", None)
+    if not token:
+        # 기존 유틸이 있다면 재사용
+        try:
+            token = _get_github_token(db, invitee_user_id)  # 기존 함수
+        except Exception:
+            token = None
+
+    if token:
+        login = _get_login_by_token(token)  # 기존 함수: /user 호출해서 login 반환
+        if login:
+            return login
+
+    # 4) 여기까지 못 구하면 초대 불가
+    raise HTTPException(status_code=400, detail="Invitee has no connected GitHub account (login not resolvable)")
+
+def _get_repo_owner_token(
+    db: Session,
+    project_id: int,
+    actor_user_id: Optional[int] = None,  # 로깅용, fallback로 쓰지 않음
+) -> Tuple[str, str, str]:
+    repo = (
+        db.query(ProjectRepo)
+        .filter(ProjectRepo.project_id == project_id)
+        .first()
+    )
+    if not repo:
+        raise HTTPException(status_code=404, detail="Repository mapping not found for this project")
+
+    owner_login = repo.owner
+    repo_name   = repo.repo_name
+    if not owner_login or not repo_name:
+        raise HTTPException(status_code=500, detail="Repository owner/repo_name not stored")
+
+    owner_user_id = repo.owner_user_id
+    if not owner_user_id:
+        # (임시) 백필이 안 된 과거 데이터면 프로젝트 생성자를 사용
+        project = db.query(Project).filter(Project.project_id == project_id).first()
+        if project and getattr(project, "creator_user_id", None):
+            owner_user_id = project.creator_user_id
+        else:
+            raise HTTPException(status_code=500, detail="owner_user_id is not set for this repository")
+
+    user = db.query(User).filter(User.user_id == owner_user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Owner user not found")
+
+    owner_token = getattr(user, "github_access_token", None)
+    if not owner_token:
+        sl = (
+            db.query(SocialLogin)
+            .filter(SocialLogin.user_id == owner_user_id, SocialLogin.provider == "github")
+            .order_by(SocialLogin.id.desc())
+            .first()
+        )
+        owner_token = getattr(sl, "access_token", None) if sl else None
+
+    if not owner_token:
+        raise HTTPException(status_code=403, detail="Owner has no GitHub token connected")
+
+    return owner_login, repo_name, owner_token
+
+def invite_collaborator(
+    db: Session,
+    project_id: int,
+    invitee_user_id: int,
+    permission: str = "push",
+    actor_user_id: Optional[int] = None,
+) -> dict:
+    """
+    GitHub 레포의 collaborator 초대.
+    - 201 Created: 초대 성공
+    - 202 Accepted: 초대 보류 (organization repo 등)
+    - 204 No Content: 이미 collaborator
+    - 409/422: 초대 이미 보류 중이거나 잘못된 요청
+    """
+    # 0) 레포 소유자 토큰/로그인/레포명 확보
     owner_login, repo_name, owner_token = _get_repo_owner_token(db, project_id, actor_user_id)
 
-    # 초대 대상자의 GitHub 로그인명
-    invitee_token = _get_github_token(db, invitee_user_id)
-    invitee_login = _get_login_by_token(invitee_token)
+    # 1) 초대 대상자 GitHub 로그인명 확인
+    invitee_login = _resolve_invitee_login(db, invitee_user_id)
 
+    # 2) API 요청 URL/페이로드 준비
     url = f"{GITHUB_API}/repos/{owner_login}/{repo_name}/collaborators/{invitee_login}"
     payload = {"permission": permission}
+
+    # 3) GitHub API 호출
     resp = requests.put(url, headers=_gh_headers(owner_token), json=payload)
 
-    # 201 Created, 204 No Content, 202 Accepted 다 정상 케이스
-    if resp.status_code in (201, 204, 202):
-        return
+    # 4) 정상 응답 처리
+    if resp.status_code in (201, 202, 204):
+        status_msg = (
+            "invited" if resp.status_code == 201
+            else "invitation_pending" if resp.status_code == 202
+            else "already_collaborator"
+        )
+        return {
+            "status": resp.status_code,
+            "message": status_msg,
+            "invitee_login": invitee_login,
+            "owner_login": owner_login,
+            "repo_name": repo_name,
+        }
 
+    # 5) 에러 응답 처리
     try:
-        j = resp.json()
+        data = resp.json()
     except Exception:
-        j = {}
-    msg = j.get("message") or resp.text
-    raise HTTPException(status_code=resp.status_code, detail=f"GitHub collaborator 초대 실패: {msg}")
+        data = {}
+    gh_msg = data.get("message") or resp.text
+
+    # 초대 중복 / 잘못된 요청
+    if resp.status_code in (409, 422):
+        return {
+            "status": resp.status_code,
+            "message": "invitation_already_pending_or_invalid",
+            "detail": gh_msg,
+            "invitee_login": invitee_login,
+            "owner_login": owner_login,
+            "repo_name": repo_name,
+        }
+
+    # 나머지는 FastAPI HTTPException으로 위임
+    raise HTTPException(
+        status_code=resp.status_code,
+        detail=f"GitHub collaborator 초대 실패: {gh_msg}",
+    )
+
+
 
 def remove_collaborator(db: Session, project_id: int, target_user_id: int, actor_user_id: int | None = None) -> None:
     """
