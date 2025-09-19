@@ -63,6 +63,8 @@ const ProjectWidgetTabs = ({ project, onNameChange, currentUser, defaultTab = "o
     setEnabledTabs(orderedTabs);
     setCurrentProject(project);
     
+    
+
     // ▼▼▼ [추가] 프로젝트가 바뀔 때마다 기본 브랜치를 가져와서 상태 초기화 ▼▼▼
     const fetchInitialBranch = async () => {
       if (project?.project_id) {
