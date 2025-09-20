@@ -236,14 +236,17 @@ const ProjectWidgetTabs = ({ project, onNameChange, currentUser, defaultTab = "o
           />
         );
       case "calendar":
-        return (
-          <TaskCalendarView
-            tasks={tasks}
-            projects={[currentProject]}
-            onTaskClick={() => {}}
-            title={`${currentProject.name} 캘린더`}
-          />
-        );
+  return (
+    <div className="max-w-[1400px] mx-auto px-6 py-8">
+      <TaskCalendarView
+        tasks={tasks}
+        projects={[currentProject]}
+        onTaskClick={() => {}}
+        title={`${currentProject.name} 캘린더`}
+      />
+    </div>
+  );
+
       case "tasks":
         return <ProjectTasksTab project={currentProject} />;
       case "git":
@@ -282,8 +285,8 @@ const ProjectWidgetTabs = ({ project, onNameChange, currentUser, defaultTab = "o
   };
 
   return (
-    <div>
-      <div className="sticky z-10 bg-white border-b">
+    <div className="w-full h-full flex flex-col overflow-hidden">
+      <div className="sticky top-0 z-10 bg-white border-b">
         <div className="flex items-center h-12 px-6">
           {enabledTabs.map((tab) => {
             const label = WIDGET_TABS.find((t) => t.key === tab)?.label || tab;
@@ -351,7 +354,10 @@ const ProjectWidgetTabs = ({ project, onNameChange, currentUser, defaultTab = "o
         </div>
       </div>
 
-      <div className="flex-1 min-w-0 overflow-hidden">{renderTabContent()}</div>
+      <div className="flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden">
+  {renderTabContent()}
+</div>
+
     </div>
   );
 };
