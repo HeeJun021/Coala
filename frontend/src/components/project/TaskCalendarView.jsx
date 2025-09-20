@@ -179,7 +179,7 @@ const calendarRef = useRef(null);
   }, [selectedTask]);
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full h-full">
       {tasks.length === 0 && (
         <p className="text-gray-500">작업 데이터를 로드 중입니다...</p>
       )}
