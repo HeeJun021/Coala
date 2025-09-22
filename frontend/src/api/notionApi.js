@@ -25,14 +25,16 @@ export async function listSharedPages(params = {}) {
 
 /** ---------- 템플릿 목록/상세 (코알라 DB에 저장된 템플릿) ---------- */
 export async function listTemplates() {
-  const { data } = await apiClient.get("/templates");
-  return data; // [{ id, key, title, version, description }, ...]
+  const { data } = await apiClient.get("/templates/");
+  return data; // [{ id, key, title, version, description, preview_url }]
 }
+
 
 export async function getTemplate(templateId) {
   const { data } = await apiClient.get(`/templates/${templateId}`);
-  return data; // { id, key, title, version, doc_json }
+  return data; // { id, key, title, version, description, doc_json, preview_url }
 }
+
 
 // Notion 퍼블리시
 export async function publishToNotion({

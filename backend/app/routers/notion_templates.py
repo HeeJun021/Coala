@@ -11,12 +11,9 @@ from app.models.template import NotionTemplate
 from app.models.user import User
 from app.dependencies.auth import get_current_user
 
-# 🔗 내부용 Notion 클라이언트 팩토리 (네가 올린 그대로 사용)
-from app.services.notion_client import NotionClient  # 타입 힌트용 (선택)
-from app.services.notion_internal import get_internal_notion  # <- 네가 가진 헬퍼 경로/이름에 맞춰주세요
-
-# 📥 인제스트 유틸(재귀 children 수집 + 원본 제목 조회)
-from app.services.notion_ingest import fetch_all_children, get_page_title
+# 🔗 내부용 Notion 클라이언트 팩토리
+from app.services.notion_internal import get_internal_notion
+from app.services.notion_ingest import fetch_all_children, get_page_title, build_preview_url
 
 router = APIRouter(prefix="/templates", tags=["Templates"])
 
@@ -41,41 +38,42 @@ def ingest_template(
     - blocks.children.list(재귀) 로 전체 블록 트리를 수집하여 doc_json 에 저장
     - 동일 key 가 존재하면 version++ 하여 갱신, 없으면 신규 생성
     """
-    # (선택) 토큰/권한 체크는 프로젝트 정책에 맞춰 추가
-    # if not current_user or not hasattr(current_user, "notion_token"):
-    #     raise HTTPException(status_code=401, detail="Notion not connected")
+    notion = get_internal_notion()
 
-    # 1) 내부 Notion 클라이언트 준비
-    notion = get_internal_notion()  # NOTION_INTERNAL_TOKEN 기반
-
-    # 2) 원본 페이지 제목 조회
+    # 1) 원본 페이지 제목 조회
     original_title = get_page_title(notion, body.page_id) or ""
 
-    # 3) 블록 트리 스냅샷 수집
+    # 2) 블록 트리 스냅샷 수집
     doc_json: List[Dict[str, Any]] = fetch_all_children(notion, body.page_id)
 
-    # 4) 키 중복 검사 (있으면 version++, 없으면 신규)
+    # 3) 키 중복 검사
     tpl: NotionTemplate | None = (
         db.query(NotionTemplate).filter(NotionTemplate.key == body.key).first()
     )
+
     if tpl is None:
+        # 신규 생성
         tpl = NotionTemplate(
             key=body.key,
             version=1,
-            # ✅ 원본 제목을 우선 저장(요청 title 은 폴백)
             title=original_title or (body.title or ""),
             description=body.description or "",
             doc_json=doc_json,
+            page_id=body.page_id,   # ✅ page_id 저장
+            preview_url=build_preview_url(body.page_id),
         )
         db.add(tpl)
         db.commit()
         db.refresh(tpl)
     else:
+        # 기존 템플릿 갱신
         tpl.version = (tpl.version or 0) + 1
         tpl.title = original_title or (body.title or "")
         if body.description is not None:
             tpl.description = body.description
         tpl.doc_json = doc_json
+        tpl.page_id = body.page_id
+        tpl.preview_url = build_preview_url(body.page_id)
         db.commit()
 
     return {
@@ -88,7 +86,7 @@ def ingest_template(
     }
 
 
-# ====== 헬퍼: 블록 개수 카운트(트리 평탄 순회) ======
+# ====== 헬퍼: 블록 개수 카운트 ======
 def _count_blocks_flat(blocks: List[Dict[str, Any]]) -> int:
     count = 0
     stack: List[Dict[str, Any]] = list(blocks)
@@ -100,15 +98,10 @@ def _count_blocks_flat(blocks: List[Dict[str, Any]]) -> int:
             stack.extend(ch)
     return count
 
+
 # ====== 전체 템플릿 조회 ======
 @router.get("/", response_model=List[Dict[str, Any]])
-def list_templates(
-    db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_user),  # 필요 시 권한 체크
-):
-    """
-    저장된 모든 템플릿 목록 조회
-    """
+def list_templates(db: Session = Depends(get_db)):
     templates = db.query(NotionTemplate).order_by(NotionTemplate.id.desc()).all()
     return [
         {
@@ -117,6 +110,24 @@ def list_templates(
             "title": t.title,
             "version": t.version,
             "description": t.description,
+            "preview_url": t.preview_url or "",  # ✅ DB에 저장된 값 사용
         }
         for t in templates
     ]
+
+
+# ====== 단일 템플릿 조회 ======
+@router.get("/{template_id}", response_model=Dict[str, Any])
+def get_template(template_id: int, db: Session = Depends(get_db)):
+    tpl = db.query(NotionTemplate).filter(NotionTemplate.id == template_id).first()
+    if not tpl:
+        raise HTTPException(status_code=404, detail="Template not found")
+    return {
+        "id": tpl.id,
+        "key": tpl.key,
+        "title": tpl.title,
+        "version": tpl.version,
+        "description": tpl.description,
+        "doc_json": tpl.doc_json,
+        "preview_url": tpl.preview_url or "",
+    }
