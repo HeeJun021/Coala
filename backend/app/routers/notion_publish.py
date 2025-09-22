@@ -13,6 +13,7 @@ from app.models.template import NotionTemplate, NotionExportHistory
 
 from app.models.project_models import Project, ProjectMembers
 from app.models.task_models import Tasks, TaskCollaborators
+from app.services.notion_ai_service import polish_with_ai
 
 import json
 
@@ -157,15 +158,30 @@ def publish_to_notion(
         project_ids = body.filters.get("project_ids") or []
         project_id = project_ids[0] if project_ids else None
 
+    # ⬇️ kv는 무조건 여기서 초기화해야 함
     kv: Dict[str, Any] = {}
-    kv.update(_load_portfolio_profile_kv(db, getattr(current_user, "user_id")))  # 이름/생년월일/전화번호/이메일/학적/경력
-    kv.update(_load_project_kv(db, project_id))                                  # project_name/topic/tech_stack 등
+    kv.update(_load_portfolio_profile_kv(db, getattr(current_user, "user_id")))
+    kv.update(_load_project_kv(db, project_id))
 
-    # 사용자 자유입력(overrides)
+    # ✅ 사용자 입력 → AI 다듬기 후 치환
     if body.extra_kv:
+        intro_val = body.extra_kv.get("intro_text") or body.extra_kv.get("ai_prompt_intro")
+        exp_val   = body.extra_kv.get("experience_text") or body.extra_kv.get("ai_prompt_experience")
+
+        if intro_val:
+            kv["자기소개"] = polish_with_ai(intro_val, purpose="자기소개")
+        if exp_val:
+            polished_exp = polish_with_ai(exp_val, purpose="경험/느낀점")
+            kv["ai 메모에 넣은 내용 토대로 느낀점 작성"] = polished_exp
+            kv["경험"] = polished_exp
+
+        # 나머지 값도 그대로 병합
         for k, v in body.extra_kv.items():
             if v is not None:
                 kv[k] = v
+
+
+
 
     # 2) 제목 치환 + 업데이트
     page_title_processed = ""
