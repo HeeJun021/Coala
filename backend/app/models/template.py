@@ -11,8 +11,13 @@ class NotionTemplate(Base):
     description = Column(Text)
     version = Column(Integer, nullable=False, default=1)
     doc_json = Column(JSON, nullable=False)                  # children 배열 스냅샷
+    # ✅ 새로 추가된 컬럼 (노션 읽기 전용 링크)
+    page_id = Column(String(64), nullable=True)
+    preview_url = Column(String(500), nullable=True)
+
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
 
 class NotionExportHistory(Base):
     __tablename__ = "notion_export_history"

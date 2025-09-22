@@ -1,6 +1,6 @@
 // src/components/portfolio/NotionTemplateSelectModal.jsx
 import React, { useCallback, useEffect, useState } from "react";
-import { Layers, Eye, ExternalLink, RefreshCw, X, Image as ImageIcon } from "lucide-react";
+import { Layers, Eye, ExternalLink, RefreshCw, X } from "lucide-react";
 import { listTemplates, getTemplate } from "../../api/notionApi";
 
 export default function NotionTemplateSelectModal({ open, onClose, onSelect }) {
@@ -27,19 +27,17 @@ export default function NotionTemplateSelectModal({ open, onClose, onSelect }) {
     if (open) load();
   }, [open, load]);
 
-  const handlePreview = async (e, t) => {
-    e.stopPropagation();
-    try {
-      const full = await getTemplate(t.id); // { doc_json, ... }
-      // 간단 미리보기: 새 탭에 JSON 출력
-      const blob = new Blob([JSON.stringify(full, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      window.open(url, "_blank", "noopener,noreferrer");
-    } catch (err) {
-      console.error(err);
-      alert("미리보기를 열 수 없습니다.");
-    }
-  };
+const handlePreview = (e, t) => {
+  e.stopPropagation();
+  if (t.preview_url) {
+    // ✅ 노션 읽기 전용 템플릿 페이지 열기
+    window.open(t.preview_url, "_blank", "noopener,noreferrer");
+    return;
+  }
+
+  // ✅ fallback 제거 → 단순 경고만
+  alert("이 템플릿은 미리보기 URL이 설정되지 않았습니다.");
+};
 
   if (!open) return null;
 
@@ -66,9 +64,6 @@ export default function NotionTemplateSelectModal({ open, onClose, onSelect }) {
               {tplList.map((t) => (
                 <li key={t.id}>
                   <div className="w-full flex items-center gap-3 p-3 hover:bg-gray-50">
-                    <div className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-md border">
-                      <ImageIcon className="w-5 h-5 text-gray-400" />
-                    </div>
 
                     <button
                       className="flex-1 text-left"
@@ -83,22 +78,14 @@ export default function NotionTemplateSelectModal({ open, onClose, onSelect }) {
 
                     <div className="flex items-center gap-2">
                       <button
-                        className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md border bg-white hover:bg-gray-50 text-gray-700 border-gray-300"
-                        onClick={(e) => handlePreview(e, t)}
-                        title="템플릿 JSON 미리보기"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        미리보기
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </button>
-
-                      <button
-                        className="text-xs text-green-700 border border-green-200 bg-green-50 rounded-full px-2 py-0.5 hover:bg-green-100"
-                        onClick={() => onSelect(t.id, t.title)}
-                        title="이 템플릿 선택"
-                      >
-                        선택
-                      </button>
+  className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md border bg-white hover:bg-gray-50 text-gray-700 border-gray-300"
+  onClick={(e) => handlePreview(e, t)}
+  title="템플릿 미리보기"   // ✅ 수정됨
+>
+  <Eye className="w-3.5 h-3.5" />
+  미리보기
+  <ExternalLink className="w-3.5 h-3.5" />
+</button>
                     </div>
                   </div>
                 </li>

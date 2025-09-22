@@ -1,6 +1,7 @@
 # backend/app/services/notion_ingest.py
 from __future__ import annotations
 from typing import List, Dict, Any, Optional
+from app.models.template import NotionTemplate
 
 # ⚠️ 실제 프로젝트의 Notion SDK 접근 헬퍼를 import 하세요.
 # 예: from app.services.notion_client import get_internal_notion
@@ -65,3 +66,11 @@ def get_page_title(notion, page_id: str) -> str:
 
     # 2) fallback: 빈 문자열
     return ""
+
+def build_preview_url(page_id: str) -> str:
+    """
+    Notion 공개 페이지 기본 URL 생성
+    - Notion에서 '웹에 공유' 옵션을 켜야 외부 접근 가능
+    """
+    clean_id = page_id.replace("-", "")
+    return f"https://www.notion.so/{clean_id}"
