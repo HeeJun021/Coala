@@ -8,6 +8,19 @@ export default function NotionTargetPageSelectModal({ open, onClose, onSelect })
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState([]);
 
+  const fetchPages = async () => {
+  try {
+    setLoading(true);
+    const res = await listSharedPages(q ? { q } : undefined);
+    setItems(Array.isArray(res?.items) ? res.items : []);
+  } catch (e) {
+    console.error(e);
+    setItems([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
   useEffect(() => {
     if (!open) return;
     (async () => {
@@ -56,13 +69,6 @@ export default function NotionTargetPageSelectModal({ open, onClose, onSelect })
               className="flex-1 outline-none text-sm"
             />
           </div>
-          <button
-            onClick={() => setQ((s) => s)}
-            title="새로고침"
-            className="p-2 rounded-full bg-white border shadow hover:bg-gray-50 text-gray-600"
-          >
-            <RefreshCw className="w-5 h-5" />
-          </button>
         </div>
 
         <div className="border rounded-lg max-h-[420px] overflow-auto">
@@ -77,9 +83,6 @@ export default function NotionTargetPageSelectModal({ open, onClose, onSelect })
               {items.map((p) => (
                 <li key={p.id} className="p-3 hover:bg-gray-50">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 flex items-center justify-center bg-gray-100 rounded-md border">
-                      {p.emoji ? <span className="text-xl">{p.emoji}</span> : <span className="text-gray-400">📄</span>}
-                    </div>
 
                     <button
                       className="flex-1 text-left"
@@ -102,11 +105,22 @@ export default function NotionTargetPageSelectModal({ open, onClose, onSelect })
                       </a>
                     )}
                   </div>
+
                 </li>
               ))}
             </ul>
           )}
         </div>
+                          <div className="mt-3 pt-2 flex items-center justify-end">
+  <button
+    className="p-2 rounded-full bg-white border shadow hover:bg-gray-50 text-gray-600"
+    onClick={fetchPages}
+    aria-label="새로고침"
+    title="새로고침"
+  >
+    <RefreshCw className="w-5 h-5 text-emerald-600" />
+  </button>
+</div>
       </div>
     </div>
   );
