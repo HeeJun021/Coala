@@ -244,9 +244,13 @@ def publish_to_notion(
     except Exception:
         db.rollback()
 
+    compact_id = str(created_on_page_id).replace("-", "")
+    page_url = f"https://www.notion.so/{compact_id}"
+
     return {
         "ok": True,
         "created_page_id": created_on_page_id,
+        "page_url": page_url,  # 🔹 추가
         "title": page_title_processed,
         "replaced_keys": sorted(list(kv.keys())),
     }
