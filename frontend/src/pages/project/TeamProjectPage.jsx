@@ -57,10 +57,12 @@ const TeamProjectPage = () => {
     const tab = location.state?.tab || "dashboard";
     const sub = location.state?.subTab || null;
     const pid = location.state?.projectId || paramProjectId;
+    const openCreate = location.state?.openCreateModal || false;
 
     setActiveTab(tab);
     setSubTab(sub);
     setSelectedProjectId(pid);
+  if (openCreate) setIsModalOpen(true); // ✅ Navbar에서 넘어온 경우 모달 오픈
   }, [location.state, paramProjectId]);
 
   // 프로젝트 카드/사이드바에서 선택 시 라우팅
