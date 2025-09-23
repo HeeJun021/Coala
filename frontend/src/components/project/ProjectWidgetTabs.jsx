@@ -298,7 +298,7 @@ const ProjectWidgetTabs = ({ project, onNameChange, currentUser, defaultTab = "o
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => handleDrop(e, tab)}
                 onClick={() => setActiveTab(tab)}
-                className={`mr-4 text-sm font-medium border-b-2 min-w-[50px] px-2 py-1
+                className={`mr-4 text-[15px] font-medium border-b-2 min-w-[50px] px-2 py-1
                   ${activeTab === tab
                     ? "border-blue-600 text-blue-600"
                     : "border-transparent text-gray-500 hover:text-blue-600"
