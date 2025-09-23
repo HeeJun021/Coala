@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
+from datetime import date, datetime
 from app.dependencies.auth import get_current_user
 from app.schemas.project_schemas import ProjectCreateRequest, ProjectUpdateRequest
 from app.models.project_models import Project, ProjectMembers, ProjectWidgets, ProjectActivityLog
@@ -21,47 +22,56 @@ def ensure_project_open(db: Session, project_id: int) -> Project:
     return proj
 
 
-# 1. 내 프로젝트 목록 조회
+# 1. 내 프로젝트 목록 조회 (확장: 내 역할 + 시작/종료일 포함)
 @router.get("/my")
-def get_my_projects(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    projects = (
-        db.query(Project)
+def get_my_projects(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    rows = (
+        db.query(Project, ProjectMembers.is_leader)
         .join(ProjectMembers, Project.project_id == ProjectMembers.project_id)
         .filter(
             ProjectMembers.user_id == current_user.user_id,
             ProjectMembers.status == "accepted",
-            # ❌ Project.is_closed == False  제거
         )
-        .order_by(Project.is_closed.asc(), Project.created_at.desc())  # ✅ 선택
+        .order_by(Project.is_closed.asc(), Project.created_at.desc())
         .all()
     )
-    return [
-        {
+
+    def get_leader_id(project_id: int):
+        leader = (
+            db.query(ProjectMembers.user_id)
+            .filter(
+                ProjectMembers.project_id == project_id,
+                ProjectMembers.is_leader == True,
+            )
+            .first()
+        )
+        return leader.user_id if leader else None
+
+    result = []
+    for p, my_is_leader in rows:
+        result.append({
             "project_id": p.project_id,
             "name": p.name,
             "description": p.description,
             "progress": p.progress,
             "topic": p.topic,
             "tech_stack": p.tech_stack,
-            "is_closed": p.is_closed,  # ✅ 추가
-            "leader_id": (
-                db.query(ProjectMembers)
-                .filter(ProjectMembers.project_id == p.project_id, ProjectMembers.is_leader == True)
-                .first()
-                .user_id
-                if db.query(ProjectMembers)
-                .filter(ProjectMembers.project_id == p.project_id, ProjectMembers.is_leader == True)
-                .first()
-                else None
-            ),
+            "start_date": p.start_date,          
+            "end_date": p.end_date,              
+            "is_closed": p.is_closed,
+            "leader_id": get_leader_id(p.project_id),
+            "my_role": "leader" if my_is_leader else "member",  
             "widgets": {
-                widget.widget_type: True
-                for widget in db.query(ProjectWidgets).filter(ProjectWidgets.project_id == p.project_id).all()
+                w.widget_type: True
+                for w in db.query(ProjectWidgets).filter(ProjectWidgets.project_id == p.project_id).all()
             },
             "widget_order": p.widget_order or ["overview"],
-        }
-        for p in projects
-    ]
+        })
+    return result
+
 
 # 2. 프로젝트 팀원 목록 조회 (roles 추가)
 @router.get("/{project_id}/members")
@@ -85,53 +95,71 @@ def get_project_members(project_id: int, db: Session = Depends(get_db)):
     ]
 
 # 3. 프로젝트 생성
-@router.post("")
+# 3. 프로젝트 생성
+@router.post("")  # (선택) response_model=ProjectCreateResponse 를 지정해도 좋음
 def create_project(
     project_data: ProjectCreateRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
+    # Pydantic v1/v2 호환: widgets 필드 추출
+    try:
+        widgets_dict = project_data.widgets.model_dump()
+    except AttributeError:
+        widgets_dict = project_data.widgets.dict()
+
     project = Project(
         name=project_data.name,
         description=project_data.description,
+        topic=project_data.topic,               
+        tech_stack=project_data.tech_stack,      
+        start_date=project_data.start_date or date.today(),       
+        end_date=project_data.end_date,         
         created_at=datetime.now(),
         updated_at=datetime.now(),
-        widget_order=project_data.widget_order,
+        widget_order=project_data.widget_order or ["overview"],
     )
     db.add(project)
     db.commit()
     db.refresh(project)
 
     # 위젯 추가
-    for widget_type, enabled in project_data.widgets.dict().items():
+    for widget_type, enabled in widgets_dict.items():
         if enabled:
             db.add(ProjectWidgets(project_id=project.project_id, widget_type=widget_type))
-    
+
     # 생성자를 팀장으로 추가
     db.add(ProjectMembers(
         project_id=project.project_id,
         user_id=current_user.user_id,
         is_leader=True,
-        status="accepted"
+        status="accepted",
     ))
-    
-    # 활동 로그 추가
+
+    # 활동 로그
     db.add(ProjectActivityLog(
         project_id=project.project_id,
         actor_id=current_user.user_id,
         action=f"{current_user.nickname}이(가) 프로젝트를 생성함",
-        created_at=datetime.now()
+        created_at=datetime.now(),
     ))
-    
+
     db.commit()
+
+    # 응답 (스키마에 맞춰 날짜/주제/스택 포함)
     return {
         "project_id": project.project_id,
         "name": project.name,
         "description": project.description,
+        "topic": project.topic,                  
+        "tech_stack": project.tech_stack,        
+        "start_date": project.start_date,            
+        "end_date": project.end_date,               
         "widgets": project_data.widgets,
         "widget_order": project.widget_order,
-        "created_at": project.created_at
+        "created_at": project.created_at,
     }
+
 
 # 4. 프로젝트 수정
 @router.patch("/{project_id}")
@@ -388,6 +416,11 @@ def close_project(project_id: int, db: Session = Depends(get_db), current_user: 
         return {"message": "Already closed"}
 
     project.is_closed = True
+
+    # 종료일 자동 세팅 (이미 있으면 유지하고, 없으면 오늘)
+    if not project.end_date:
+        project.end_date = date.today()
+
     db.add(ProjectActivityLog(
         project_id=project_id,
         actor_id=current_user.user_id,
@@ -395,4 +428,4 @@ def close_project(project_id: int, db: Session = Depends(get_db), current_user: 
         created_at=datetime.now()
     ))
     db.commit()
-    return {"message": "Project closed"}
+    return {"message": "Project closed", "end_date": project.end_date, "duration": project.duration}

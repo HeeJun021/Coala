@@ -30,6 +30,7 @@ const MyPageSidebar = () => {
           { label: "퀴즈 이력", to: "/mypage/quiz-history" },
           { label: "사용자 퀴즈 이력", to: "/mypage/userquiz-history" },
           { label: "코딩 테스트 이력", to: "/mypage/codingtest" },
+          { label: "프로젝트 이력", to: "/mypage/project" },
           { label: "커뮤니티 활동 내역", to: "/mypage/community" },
         ],
       },

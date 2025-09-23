@@ -61,6 +61,7 @@ import MyPageUserQuizHistory from "./pages/mypage/MyPageUserQuizHistory";
 import MyPageCTHistory from "./pages/mypage/MyPageCTHistory";
 import MyPageCommunity from "./pages/mypage/MyPageCommunity";
 import MyPageAttendance from "./pages/mypage/MyPageAttendance";
+import MyPageProject from "./pages/mypage/MyPageProject";
 
 // 포트폴리오
 import PortfolioExport from "./components/portfolio/PortfolioExport";
@@ -275,6 +276,7 @@ const App = () => {
                         <Route path="quiz-history" element={<MyPageQuizHistory />} />
                         <Route path="userquiz-history" element={<MyPageUserQuizHistory />} />
                         <Route path="codingtest" element={<MyPageCTHistory />} />
+                        <Route path="project" element={<MyPageProject />} />
                         <Route path="community" element={<MyPageCommunity />} />
                         <Route path="attendance" element={<MyPageAttendance />} />
                         <Route path="portfolio" element={<PortfolioExport />} />
