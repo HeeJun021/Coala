@@ -92,7 +92,7 @@ const ProjectSidebar = ({
     <aside className="w-64 bg-white text-gray-800 flex flex-col px-4 py-6 border-r border-gray-200 shadow-sm">
       {/* 섹션: 작업 메뉴 */}
       <div className="space-y-3 mb-5">
-   <div className="text-gray-700 uppercase tracking-wide text-[16px] font-semibold mb-2">작업</div>
+   <div className="text-gray-700 uppercase tracking-wide text-[16px] font-semibold mb-2">내 활동</div>
 
         {/* 대시보드 */}
         <div
