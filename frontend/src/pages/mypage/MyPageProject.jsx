@@ -77,9 +77,13 @@ const MyPageProject = () => {
   };
 
   const goProject = (projectId) => {
-    // 필요시 쿼리파라미터로 진입 경로를 표시해 상위 레이아웃에서 대시보드 표시를 막을 수 있음
-    navigate(`/team-project/${projectId}`);
-  };
+  navigate(`/team-project/${projectId}`, {
+    state: {
+      tab: "overview",   // 🔹 대시보드 대신 개요(디테일) 탭이 기본
+      projectId: projectId
+    }
+  });
+};
 
   return (
     <div className="flex min-h-screen">
