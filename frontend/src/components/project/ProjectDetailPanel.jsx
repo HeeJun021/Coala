@@ -446,6 +446,18 @@ const handleCloseProject = async () => {
                         meId === leaderId &&
                         meId !== m.user_id && (
                           <>
+                          <button
+        onClick={
+          isClosed
+            ? guardClosed
+            : () => handleOpenRoleModal(m.user_id, m.roles)
+        }
+        className={`block w-full px-4 py-2 text-sm text-left ${
+          isClosed ? "text-gray-400 cursor-not-allowed" : "hover:bg-gray-100"
+        }`}
+      >
+        역할 수정
+      </button>
                             <button
                               onClick={
                                 isClosed

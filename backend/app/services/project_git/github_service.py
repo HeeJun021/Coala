@@ -145,7 +145,7 @@ def get_project_owner_user_id(db: Session, project_id: int) -> int:
             ProjectMembers.project_id == project_id,
             # 아래 조건은 실제 컬럼에 맞게 수정: 예) ProjectMembers.role == "leader"
             # 또는 ProjectMembers.is_leader == True 등
-            ProjectMembers.role == "leader"
+            ProjectMembers.roles == "leader"
         )
         .first()
     )

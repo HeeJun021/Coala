@@ -238,14 +238,17 @@ const ProjectWidgetTabs = ({ project, onNameChange, currentUser, defaultTab = "o
           />
         );
       case "calendar":
-        return (
-          <TaskCalendarView
-            tasks={tasks}
-            projects={[currentProject]}
-            onTaskClick={() => {}}
-            title={`${currentProject.name} 캘린더`}
-          />
-        );
+  return (
+    <div className="max-w-[1400px] mx-auto px-6 py-8">
+      <TaskCalendarView
+        tasks={tasks}
+        projects={[currentProject]}
+        onTaskClick={() => {}}
+        title={`${currentProject.name} 캘린더`}
+      />
+    </div>
+  );
+
       case "tasks":
         return <ProjectTasksTab project={currentProject} />;
       case "git":
@@ -284,8 +287,8 @@ const ProjectWidgetTabs = ({ project, onNameChange, currentUser, defaultTab = "o
   };
 
   return (
-    <div>
-      <div className="sticky z-10 bg-white border-b">
+    <div className="w-full h-full flex flex-col overflow-hidden">
+      <div className="sticky top-0 z-10 bg-white border-b">
         <div className="flex items-center h-12 px-6">
           {enabledTabs.map((tab) => {
             const label = WIDGET_TABS.find((t) => t.key === tab)?.label || tab;
@@ -297,7 +300,7 @@ const ProjectWidgetTabs = ({ project, onNameChange, currentUser, defaultTab = "o
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => handleDrop(e, tab)}
                 onClick={() => setActiveTab(tab)}
-                className={`mr-4 text-sm font-medium border-b-2 min-w-[50px] px-2 py-1
+                className={`mr-4 text-[15px] font-medium border-b-2 min-w-[50px] px-2 py-1
                   ${activeTab === tab
                     ? "border-blue-600 text-blue-600"
                     : "border-transparent text-gray-500 hover:text-blue-600"
@@ -353,7 +356,10 @@ const ProjectWidgetTabs = ({ project, onNameChange, currentUser, defaultTab = "o
         </div>
       </div>
 
-      <div className="flex-1 min-w-0 overflow-hidden">{renderTabContent()}</div>
+      <div className="flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden">
+  {renderTabContent()}
+</div>
+
     </div>
   );
 };
