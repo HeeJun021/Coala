@@ -32,13 +32,6 @@ const MyPageSidebar = () => {
           { label: "코딩 테스트 이력", to: "/mypage/codingtest" },
           { label: "프로젝트 이력", to: "/mypage/project" },
           { label: "커뮤니티 활동 내역", to: "/mypage/community" },
-        ],
-      },
-      {
-        key: "portfolio",
-        title: "포트폴리오",
-        items: [
-          { label: "포트폴리오 추출", to: "/mypage/portfolio", exact: true },
           { label: "포트폴리오 추출 내역", to: "/mypage/portfolio/history", exact: true },
         ],
       },
