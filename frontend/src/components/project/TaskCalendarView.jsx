@@ -178,8 +178,18 @@ const calendarRef = useRef(null);
     }
   }, [selectedTask]);
 
-  return (
-    <div className="relative w-full h-full">
+ return (
+  <div className="w-full">
+    {/* 풀폭 헤더 */}
+    <h2 className="text-xl font-bold mt-4 mb-4 flex items-center gap-2 pl-8">
+      <CalendarDays size={20} className="text-gray-700" />
+      {title || "내 작업 캘린더"}
+    </h2>
+
+    {/* 풀폭 hr + 본문 래퍼 시작 */}
+    <div className="border-t pt-4 mt-4">
+      <div className="max-w-[1400px] mx-auto px-6 pb-8">
+
       {tasks.length === 0 && (
         <p className="text-gray-500">작업 데이터를 로드 중입니다...</p>
       )}
@@ -188,11 +198,6 @@ const calendarRef = useRef(null);
           프로젝트 데이터를 로드하지 못했습니다. 부모 컴포넌트를 확인하세요.
         </p>
       )}
-
-      <h2 className="text-2xl font-bold mb-4 text-gray-800 px-6 flex items-center gap-2">
-  <CalendarDays size={20} className="text-blue-500" />
-  {title || "내 작업 캘린더"}
-  </h2>
 
       <FullCalendar
         ref={calendarRef}
@@ -449,7 +454,8 @@ const calendarRef = useRef(null);
     </div>
   </div>
 )}
-
+    </div>
+    </div>
     </div>
   );
 };

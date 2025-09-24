@@ -261,29 +261,28 @@ const ProjectTasksTab = ({ project }) => {
   };
 
   return (
-    <div className="flex max-w-[1400px] mx-auto px-6 py-8">
-      <div className="flex-1">
-        <div className="mb-6">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <ClipboardList className="w-6 h-6 text-gray-500" />
-            {project?.name} 작업
-          </h2>
-          <div className="flex gap-4 mt-4 border-b pb-2"></div>
-          <button
-            onClick={() => {
-              // 모달 열 때도 혹시 모를 값 보정
-              setNewTask((prev) => ({
-                ...prev,
-                project_id: project?.project_id || prev.project_id || "",
-              }));
-              setIsAddingTask(true);
-            }}
-            className="mt-2 text-sm bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition"
-          >
-            작업 추가
-          </button>
-        </div>
+    <div className="w-full">
+  <h2 className="text-xl font-bold mt-4 mb-4 flex items-center gap-2 pl-8">
+    <ClipboardList size={20} className="text-gray-700" />
+    {project?.name} 작업
+  </h2>
 
+  <div className="border-t pt-4 mt-4">
+  <div className="max-w-[1400px] mx-auto px-6 pb-8">
+    <div className="mb-4">
+      <button
+        onClick={() => {
+          setNewTask((prev) => ({
+            ...prev,
+            project_id: project?.project_id || prev.project_id || "",
+          }));
+          setIsAddingTask(true);
+        }}
+        className="text-sm bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition"
+      >
+        작업 추가
+      </button>
+    </div>
         {viewMode === "list" && (
           <div className="space-y-10">
             {tasks.length === 0 && (
@@ -726,6 +725,7 @@ const ProjectTasksTab = ({ project }) => {
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 };

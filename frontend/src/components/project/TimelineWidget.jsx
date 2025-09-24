@@ -579,14 +579,15 @@ const TimelineWidget = ({ project }) => {
   const { start: startDate, end: endDate, left: hoverTooltipLeft, width: hoverTooltipWidth } = getHoverOrDragDates();
 
   return (
-    <div className="flex w-full justify-center px-6 py-8">
+  <div className="w-full">
+    <h2 className="text-xl font-bold mt-4 mb-4 flex items-center gap-2 pl-8">
+      <CalendarRange size={20} className="text-gray-700" />
+      타임라인
+    </h2>
+    <div className="border-t pt-4 mt-4">
+      <div className="flex w-full justify-center px-6 pb-8">
 
       <div className="w-full max-w-[1400px] min-h-0 h-full bg-white rounded-lg overflow-hidden relative shadow-sm">
-
-<div className="px-6 py-4 border-b flex items-center gap-2">
-    <CalendarRange size={20} className="text-gray-700" />
-    <h2 className="text-[20px] font-semibold text-gray-900">타임라인</h2>
-  </div>
         <div className="flex flex-col h-full">
           <div className="overflow-x-auto" style={{ width: '100%' }}>
             <div className="min-w-max relative">
@@ -1053,7 +1054,8 @@ const TimelineWidget = ({ project }) => {
     </div>
   </div>
 )}
-
+  </div>
+    </div>
     </div>
   );
 };

@@ -237,16 +237,14 @@ const ProjectWidgetTabs = ({ project, onNameChange, currentUser, defaultTab = "o
             onSelect={() => {}}
           />
         );
-      case "calendar":
+case "calendar":
   return (
-    <div className="max-w-[1400px] mx-auto px-6 py-8">
-      <TaskCalendarView
-        tasks={tasks}
-        projects={[currentProject]}
-        onTaskClick={() => {}}
-        title={`${currentProject.name} 캘린더`}
-      />
-    </div>
+    <TaskCalendarView
+      tasks={tasks}
+      projects={[currentProject]}
+      onTaskClick={() => {}}
+      title={`${currentProject.name} 캘린더`}
+    />
   );
 
       case "tasks":
