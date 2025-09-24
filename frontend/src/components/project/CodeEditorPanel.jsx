@@ -11,7 +11,7 @@ import { runProjectJs, runProjectPython } from "../../api/projectPreviewApi";
 import ProjectGitExplorerPanel from "./projectgit/ProjectGitExploerPanel";
 import ProjectGitPreviewPanel from "./projectgit/ProjectGitPreviewPanel";
 import CommitModal from "./projectgit/CommitModal";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 // CodeMirror v6
 import CodeMirror from "@uiw/react-codemirror";
@@ -25,6 +25,8 @@ import { keymap } from "@codemirror/view";
 export default function CodeEditorPanel({ project, branch, onBranchChange }) {
   const projectId = project?.project_id;
   const navigate = useNavigate();
+  const { id: routeId, projectId: routeProjectId } = useParams();
+  const pid = project?.project_id ?? routeProjectId ?? routeId;
 
   // UI/State
   const [showExplorer, setShowExplorer] = useState(true);
@@ -292,7 +294,20 @@ export default function CodeEditorPanel({ project, branch, onBranchChange }) {
         </div>
         <div className="flex gap-3">
           <button
-            onClick={() => navigate(`/team-project/${projectId}?tab=git`)}
+            onClick={() =>
+              navigate(
+                `/team-project/${pid}`,
+                {
+                  state: {
+                    tab: "overview",     // 바깥 TeamProjectPage에: 상세뷰로 전환
+                    subTab: "git",       // 안쪽 ProjectWidgetTabs에: git 탭으로
+                    projectId: pid,      // 선택 프로젝트 지정 (라우트 파라미터 이름과 무관)
+                    ts: Date.now(),      // 같은 경로 재이동 시에도 state 변경 감지
+                  },
+                }
+              )
+            }
+
             className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
           >
             GitPanel로 이동

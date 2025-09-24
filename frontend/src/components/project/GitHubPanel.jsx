@@ -689,11 +689,13 @@ export default function GitHubPanel({ project, currentUser, onBranchChange }) {
   };
 
   return (
-    <div className="p-6 bg-white rounded-lg">
-      <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-        <GitBranch size={20} className="text-gray-700" /> GitHub 관리
-      </h2>
-      <div className="border-t pt-4 mt-4">{renderContent()}</div>
-    </div>
+    <div className="w-full">
+    <h2 className="text-xl font-bold mt-4 mb-4 flex items-center gap-2 pl-8">
+  <GitBranch size={20} className="text-gray-700" /> GitHub 관리
+</h2>
+
+
+    <div className="border-t pt-4 mt-4">{renderContent()}</div>
+  </div>
   );
 }

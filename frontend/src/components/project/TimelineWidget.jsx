@@ -10,6 +10,7 @@ import {
   Palette,
   Users,
   FileText,
+  CalendarRange 
 } from "lucide-react";
 
 
@@ -578,17 +579,24 @@ const TimelineWidget = ({ project }) => {
   const { start: startDate, end: endDate, left: hoverTooltipLeft, width: hoverTooltipWidth } = getHoverOrDragDates();
 
   return (
-    <div className="flex w-full px-0 py-6 bg-gray-50">
-      <div className="flex-1 min-h-screen bg-white rounded-lg overflow-hidden relative">
+    <div className="flex w-full justify-center px-6 py-8">
+
+      <div className="w-full max-w-[1400px] min-h-0 h-full bg-white rounded-lg overflow-hidden relative shadow-sm">
+
+<div className="px-6 py-4 border-b flex items-center gap-2">
+    <CalendarRange size={20} className="text-gray-700" />
+    <h2 className="text-[20px] font-semibold text-gray-900">타임라인</h2>
+  </div>
         <div className="flex flex-col h-full">
           <div className="overflow-x-auto" style={{ width: '100%' }}>
             <div className="min-w-max relative">
               {/* 날짜 헤더 */}
               <div
-                ref={timelineRef}
-                className="flex flex-col sticky top-0 bg-white z-0 border-b border-gray-300"
-                style={{ height: '80px' }}
-              >
+  className="flex flex-col sticky top-0 bg-white z-0 border-b border-gray-200"
+  style={{ height: '80px' }}
+>
+
+
                 <div
                   className="absolute z-40"
                   style={{

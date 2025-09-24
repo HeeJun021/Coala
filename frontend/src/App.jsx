@@ -61,10 +61,12 @@ import MyPageUserQuizHistory from "./pages/mypage/MyPageUserQuizHistory";
 import MyPageCTHistory from "./pages/mypage/MyPageCTHistory";
 import MyPageCommunity from "./pages/mypage/MyPageCommunity";
 import MyPageAttendance from "./pages/mypage/MyPageAttendance";
+import MyPageProject from "./pages/mypage/MyPageProject";
 
 // 포트폴리오
 import PortfolioExport from "./components/portfolio/PortfolioExport";
 import PortfolioHistory from "./components/portfolio/PortfolioHistory";
+import PortfolioPage from "./pages/portfolio/PortfolioPage";
 
 // 인증
 import Signup from "./pages/loginSignup/Signup";
@@ -275,6 +277,7 @@ const App = () => {
                         <Route path="quiz-history" element={<MyPageQuizHistory />} />
                         <Route path="userquiz-history" element={<MyPageUserQuizHistory />} />
                         <Route path="codingtest" element={<MyPageCTHistory />} />
+                        <Route path="project" element={<MyPageProject />} />
                         <Route path="community" element={<MyPageCommunity />} />
                         <Route path="attendance" element={<MyPageAttendance />} />
                         <Route path="portfolio" element={<PortfolioExport />} />
@@ -302,6 +305,8 @@ const App = () => {
 
                       {/* 유저 뷰어 */}
                       <Route path="/user/:userId" element={<UserProfileViewerPage />} />
+                      {/* 포트폴리오 */}
+                      <Route path="/portfolio/*" element={<PortfolioPage />} />
                     </Routes>
                   </MainLayout>
                 }

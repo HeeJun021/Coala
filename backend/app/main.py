@@ -79,7 +79,8 @@ from app.routers import (
     notion_shared,
     notion_publish,
     code_templates,
-    portfolio_profile
+    portfolio_profile,
+    notion_portfolio
 )
 
 from app.schemas.user import UserUpdateSchema
@@ -187,6 +188,7 @@ app.include_router(notion_export.router)          # 내보내기
 app.include_router(notion_shared.router)          # 공유
 app.include_router(notion_publish.router)
 app.include_router(portfolio_profile.router)      # 포트폴리오 기본 정보
+app.include_router(notion_portfolio.router)       # 포트폴리오 히스토리
 
 # 기본 라우트
 @app.get("/", tags=["Root"])

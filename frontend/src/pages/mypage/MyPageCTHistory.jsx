@@ -54,15 +54,16 @@ const MyPageCTHistory = () => {
   if (error) return <p className="text-sm text-red-500 text-center mt-10">{error}</p>;
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen">
       <div className="w-[250px]" />
       <div className="flex-1 p-6 max-w-6xl mx-auto">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-4">코딩 테스트 제출 내역</h2>
-
-        <div className="bg-white shadow-md rounded-lg p-6">
-          <table className="w-full border-collapse border text-sm">
+        <h2 className="text-2xl font-semibold mt-4 flex items-center gap-2">
+          코딩 테스트 제출 내역
+        </h2>
+        <div className="bg-white shadow-md rounded-lg p-6 mt-4">
+          <table className="w-full border-collapse border text-base">
             <thead>
-              <tr className="bg-gray-100">
+              <tr className="bg-gray-100 text-sm">
                 <th className="border px-4 py-2 text-center">문제 ID</th>
                 <th className="border px-4 py-2 text-center">제출 제목</th>
                 <th className="border px-4 py-2 text-center">언어</th>

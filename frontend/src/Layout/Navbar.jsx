@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { initRootCodeFolder } from "../api/codeApi";
 import { getLanguages } from "../api/languageApi";
@@ -9,8 +9,23 @@ import { Leaf } from "lucide-react";
 const Navbar = () => {
   const { user, handleLogout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [hoverIndex, setHoverIndex] = useState(null);
   const [languages, setLanguages] = useState([]);
+
+  // 코딩테스트 강조 조건
+const isCodingTestActive =
+  location.pathname.startsWith("/problem-explore") ||
+  location.pathname.startsWith("/codingtest") ||
+  location.pathname.startsWith("/my-submissions") ||
+  location.pathname.startsWith("/my-stats");
+
+// 개념퀴즈 강조 조건
+const isQuizActive =
+  location.pathname.startsWith("/quizpage") ||
+  location.pathname.startsWith("/quiz-history") ||
+  location.pathname.startsWith("/quiz-stats") ||
+  location.pathname.startsWith("/quiz-review");
 
   useEffect(() => {
     const fetchLanguages = async () => {
@@ -129,7 +144,7 @@ const Navbar = () => {
     {
       label: "프로젝트",
       path: "/team-project",
-      children: ["대시보드", "내 작업"],
+      children: ["대시보드", "내 작업","프로젝트 생성"],
     },
     {
       label: "게시판",
@@ -137,10 +152,12 @@ const Navbar = () => {
       children: ["자유 게시판", "프로젝트 모집", "코드 공유 게시판"],
     },
     {
-      label: "마이페이지",
-      path: user ? "/mypage/modify" : "/login",
-      children: ["로그인 정보", "활동 내역", "포트폴리오"],
-    },
+  label: "포트폴리오",
+  path: user ? "/portfolio" : "/login",
+  children: user
+    ? ["포트폴리오 추출", "포트폴리오 추출 내역"]
+    : [],
+}
   ];
 
   return (
@@ -164,29 +181,40 @@ const Navbar = () => {
               onMouseEnter={() => setHoverIndex(idx)}
             >
               {item.label === "학습자료" ? (
-              <span
-                onClick={() => {
-                  // 파라미터 없이 진입 → Sidebar는 처음에 접힘 상태
-                  navigate("/StudyMaterialsPage");
-                }}
-                className="cursor-pointer text-[17px] font-semibold text-gray-900 transition duration-200 hover:text-green-500 hover:scale-110 hover:font-bold"
-              >
-                {item.label}
-              </span>
-            ) : item.label === "자율코딩" ? (
-              <span
-                onClick={() => goSelfCoding()} // 최초면 /self-coding/templates, 아니면 /self-coding
-                className="cursor-pointer text-[17px] font-semibold text-gray-900 transition duration-200 hover:text-green-500 hover:scale-110 hover:font-bold"
-              >
-                {item.label}
-              </span>
-            ) : (
+  <span
+    onClick={() => navigate("/StudyMaterialsPage")}
+    className={`cursor-pointer text-[17px] font-semibold transition duration-200 hover:text-green-500 hover:scale-110 hover:font-bold ${
+      location.pathname.startsWith("/StudyMaterialsPage")
+        ? "text-green-600 font-bold"
+        : "text-gray-900"
+    }`}
+  >
+    {item.label}
+  </span>
+) : item.label === "자율코딩" ? (
+  <span
+    onClick={() => goSelfCoding()}
+    className={`cursor-pointer text-[17px] font-semibold transition duration-200 hover:text-green-500 hover:scale-110 hover:font-bold ${
+      location.pathname.startsWith("/self-coding")
+        ? "text-green-600 font-bold"
+        : "text-gray-900"
+    }`}
+  >
+    {item.label}
+  </span>
+) : (
               <Link
-                to={item.path}
-                className="text-[17px] font-semibold text-gray-900 transition duration-200 hover:text-green-500 hover:scale-110 hover:font-bold"
-              >
-                {item.label}
-              </Link>
+  to={item.path}
+  className={`text-[17px] font-semibold transition duration-200 hover:text-green-500 hover:scale-110 hover:font-bold ${
+    (item.label === "코딩테스트" && isCodingTestActive) ||
+    (item.label === "개념퀴즈" && isQuizActive) ||
+    location.pathname.startsWith(item.path)
+      ? "text-green-600 font-bold"
+      : "text-gray-900"
+  }`}
+>
+  {item.label}
+</Link>
             )}
             </div>
           ))}
@@ -319,10 +347,10 @@ const Navbar = () => {
                   // ⬇️ 아래 두 블록(문제 목록 / 통계 및 제출 내역) 지우고 이 블록 하나로 교체하세요.
                   if (item.label === "코딩테스트") {
                     let link = "";
-                    if (child === "문제탐색") link = "/problem-explore";
-                    if (child === "모든 문제") link = "/codingtest";
+                    if (child === "문제 탐색") link = "/problem-explore";
+                     if (child === "문제 목록") link = "/codingtest";
                     if (child === "제출 내역") link = "/my-submissions";
-                    if (child === "코딩테스트 통계") link = "/my-stats";
+                      if (child === "코딩테스트 통계") link = "/my-stats";
 
                     return (
                       <Link
@@ -342,6 +370,19 @@ const Navbar = () => {
                     let tab = "";
                     if (child === "대시보드") tab = "dashboard";
                     if (child === "내 작업") tab = "my-tasks";
+                    if (child === "프로젝트 생성") {
+    return (
+      <span
+        key={i}
+        onClick={() => navigate(link, { state: { openCreateModal: true } })}
+        className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
+          hoverIndex === idx ? "" : "opacity-50"
+        }`}
+      >
+        {child}
+      </span>
+    );
+  }
                     return (
                       <span
                         key={i}
@@ -374,6 +415,27 @@ const Navbar = () => {
                       );
                     }
                   }
+
+                  if (item.label === "포트폴리오") {
+  let link = "";
+  if (child === "포트폴리오 추출") link = "/portfolio";
+  if (child === "포트폴리오 추출 내역") link = "/portfolio/history";
+
+
+  if (link) {
+    return (
+      <Link
+        key={i}
+        to={link}
+        className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
+          hoverIndex === idx ? "" : "opacity-50"
+        }`}
+      >
+        {child}
+      </Link>
+    );
+  }
+}
 
                   if (item.label === "마이페이지") {
                     let link = "";
