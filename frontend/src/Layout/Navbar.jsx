@@ -153,11 +153,11 @@ const isQuizActive =
     },
     {
   label: "포트폴리오",
-  path: user ? "/mypage/portfolio" : "/login",
+  path: user ? "/portfolio" : "/login",
   children: user
     ? ["포트폴리오 추출", "포트폴리오 추출 내역"]
-    : [], 
-},
+    : [],
+}
   ];
 
   return (
@@ -418,8 +418,9 @@ const isQuizActive =
 
                   if (item.label === "포트폴리오") {
   let link = "";
-  if (child === "포트폴리오 추출") link = "/mypage/portfolio";
-  if (child === "포트폴리오 추출 내역") link = "/mypage/portfolio/history";
+  if (child === "포트폴리오 추출") link = "/portfolio";
+  if (child === "포트폴리오 추출 내역") link = "/portfolio/history";
+
 
   if (link) {
     return (
