@@ -78,7 +78,8 @@ export default function PortfolioHistory() {
       {/* 사이드바 영역 확보 */}
       <div className="w-full min-h-screen pt-4 pl-[164px]">
         {/* 메인 카드 컨테이너 */}
-        <div className="max-w-6xl mx-auto mt-3 bg-white shadow-xl rounded-2xl border border-gray-300 p-7">
+        <div className="w-full mt-3 bg-white shadow-xl rounded-2xl border border-gray-300 p-7">
+
           {/* 타이틀 */}
           <header className="mb-6">
             <h1 className="text-2xl font-bold text-gray-800">

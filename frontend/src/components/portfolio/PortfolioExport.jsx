@@ -396,7 +396,7 @@ const handleSelectTemplate = useCallback((id, title) => {
   return (
     <div className="relative min-h-screen">
       <div className="w-full min-h-screen pt-4 pl-[164px]">
-        <div className="max-w-5xl mx-auto mt-3 bg-white shadow-xl rounded-2xl border border-gray-300 p-7">
+        <div className="w-full mt-3 bg-white shadow-xl rounded-2xl border border-gray-300 p-7">
           <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
             <div className="animate-pulse text-gray-500">상태 확인 중...</div>
           </section>
@@ -434,7 +434,7 @@ return (
     {/* 사이드바 영역 확보 */}
     <div className="w-full min-h-screen pt-4 pl-[164px]">
       {/* 메인 카드 컨테이너 (MyPageModify와 동일 규격) */}
-      <div className="max-w-5xl mx-auto mt-3 bg-white shadow-xl rounded-2xl border border-gray-300 p-7">
+      <div className="w-full mt-3 bg-white shadow-xl rounded-2xl border border-gray-300 p-7">
 
         {/* 상단 헤더 + 스텝퍼 */}
         <header className="mb-6">

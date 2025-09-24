@@ -8,13 +8,14 @@ export default function PortfolioPage() {
   return (
     <div className="relative flex">
       <PortfolioSidebar />
-      <div className="flex-1 pl-[164px]">
-          <Routes>
-            <Route path="/" element={<PortfolioExport />} />
-            <Route path="/history" element={<PortfolioHistory />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </div>
+      <div className="w-full max-w-7xl mx-auto pt-8 mt-8 p-7">
+  <Routes>
+    <Route path="/" element={<PortfolioExport />} />
+    <Route path="/history" element={<PortfolioHistory />} />
+    <Route path="*" element={<Navigate to="/" replace />} />
+  </Routes>
+</div>
+
       </div>
   );
 }
