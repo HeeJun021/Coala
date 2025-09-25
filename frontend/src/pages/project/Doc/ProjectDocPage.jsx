@@ -47,11 +47,11 @@ const ProjectDocPage = () => {
     }
   };
 
+  // ✅ 수정된 부분: docs 탭으로 이동
   const handleGoBack = () => {
     navigate(`/team-project/${projectId}`, {
       state: {
-        tab: "overview",
-        subTab: "document",
+        tab: "docs",
         projectId,
       },
     });
