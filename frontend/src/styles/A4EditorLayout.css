@@ -8,8 +8,8 @@
 
 .editor-page {
   background-color: white;
-  width: 794px;
-  min-height: 1122px;
+  width: 794px; /* A4 width */
+  min-height: 1122px; /* A4 height */
   padding: 40px;
   box-sizing: border-box;
   margin-bottom: 2rem;
@@ -29,4 +29,11 @@
   font-size: 0.875rem;
   color: #9ca3af;
   pointer-events: none;
+}
+
+.ribbon-btn {
+  @apply inline-flex items-center justify-center rounded border px-2 py-1 text-sm bg-white hover:bg-gray-100 text-gray-700;
+}
+.ribbon-btn.is-active {
+  @apply bg-green-50 border-green-300 text-green-700;
 }
