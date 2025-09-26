@@ -1,4 +1,5 @@
 import os
+import json
 import logging
 import requests
 from typing import Any, Dict, List, Optional, Union, Tuple
@@ -202,6 +203,14 @@ def _replace_in_rich_text_list(rt_list: Any, kv: Dict[str, Any]) -> Any:
     return new_rt
 
 def replace_placeholders_in_blocks(blocks: List[dict], kv: Dict[str, Any]) -> List[dict]:
+    """
+    - [키] 형태의 placeholder를 kv로 치환
+      * kv[key]가 list면 → bulleted_list_item 여러 블록으로 치환
+      * kv[key]가 str이면 → 해당 블록의 rich_text를 문자열로 대체
+      * kv[key]가 빈 문자열이면 → 해당 블록 제거
+    - walk()는 항상 dict만 반환 (여러 블록 치환은 {"__replace_with_list__": [...]}로 표시)
+    - flatten()에서만 리스트를 실제 블록 배열로 전개
+    """
     if not isinstance(blocks, list) or not kv:
         return blocks
 
@@ -210,30 +219,76 @@ def replace_placeholders_in_blocks(blocks: List[dict], kv: Dict[str, Any]) -> Li
         "bulleted_list_item", "numbered_list_item",
         "to_do", "toggle", "quote", "callout", "code", "template"
     }
-    MEDIA_TYPES_WITH_CAPTION = {
-        "image", "video", "file", "pdf", "audio", "bookmark", "embed"
-    }
+    MEDIA_TYPES_WITH_CAPTION = {"image", "video", "file", "pdf", "audio", "bookmark", "embed"}
 
     def walk(b: Any) -> Any:
         if not isinstance(b, dict):
             return b
+
         t = b.get("type")
         payload = isinstance(t, str) and b.get(t)
-        if not isinstance(payload, dict):
-            pass
         nb = dict(b)
 
         # 텍스트 계열
         if isinstance(payload, dict) and t in TEXT_TYPES_WITH_RICH_TEXT:
             payload = dict(payload)
             if "rich_text" in payload:
-                payload["rich_text"] = _replace_in_rich_text_list(payload.get("rich_text"), kv)
-            # ✅ 모든 child-bearing 텍스트 계열에서 children도 재귀 치환
+                # 현재 블록의 전체 텍스트 추출
+                rich_list = payload.get("rich_text", [])
+                text_str = "".join([frag.get("plain_text", "") for frag in rich_list]).strip()
+
+                # 디버그(원한다면 유지)
+                # import logging
+                # logging.info("[DEBUG] Block type=%s, text_str=%s", t, text_str)
+
+                # [키] 형태만 치환
+                if text_str.startswith("[") and text_str.endswith("]"):
+                    key = text_str.strip("[]")
+                    value = kv.get(key)
+
+                    # 리스트 → bullet N개로 치환 (표시용 dict로 감싸서 반환)
+                    if isinstance(value, list):
+                        new_blocks = []
+                        for item in value:
+                            block = {
+                                "object": "block",
+                                "type": "bulleted_list_item",
+                                "bulleted_list_item": {
+                                    "rich_text": [
+                                        {
+                                            "type": "text",
+                                            "text": {"content": str(item)},
+                                        }
+                                    ],
+                                    "color": "orange",   # 🔹 color 기본값 추가
+                                },
+                            }
+                            new_blocks.append(block)
+                        # ✅ 특수 키로 감싸서 flatten 단계에서 풀리도록
+                        return {"__replace_with_list__": new_blocks}
+
+
+                    # 문자열 → 값이 비면 제거, 아니면 해당 텍스트로 교체
+                    elif isinstance(value, str):
+                        if not value.strip():
+                            return {"__replace_with_list__": []}  # 블록 제거
+                        payload["rich_text"] = [{
+                            "type": "text",
+                            "text": {"content": value}
+                        }]
+                        nb[t] = payload
+                        return nb
+
+                    # None 등 → 치환하지 않음(원본 유지)
+                # 일반 1:1 치환
+                payload["rich_text"] = _replace_in_rich_text_list(rich_list, kv)
+
+            # children 재귀 처리 (자식 허용 블록만)
             if t in _BLOCKS_ALLOW_CHILDREN and isinstance(payload.get("children"), list):
                 payload["children"] = [walk(ch) for ch in payload["children"]]
             nb[t] = payload
 
-        # table_row
+        # table_row 셀 내부 텍스트 치환(리스트 확장은 여기선 수행하지 않음)
         if t == "table_row" and isinstance(payload, dict):
             payload = dict(payload)
             cells = payload.get("cells")
@@ -254,6 +309,7 @@ def replace_placeholders_in_blocks(blocks: List[dict], kv: Dict[str, Any]) -> Li
             if "caption" in payload and isinstance(payload["caption"], list):
                 payload["caption"] = _replace_in_rich_text_list(payload["caption"], kv)
             nb[t] = payload
+
         if t == "equation" and isinstance(payload, dict):
             payload = dict(payload)
             if "expression" in payload:
@@ -261,7 +317,7 @@ def replace_placeholders_in_blocks(blocks: List[dict], kv: Dict[str, Any]) -> Li
             nb[t] = payload
 
         # 컨테이너 children
-        if t in {"column_list","column","synced_block","table","template"} and isinstance(payload, dict):
+        if t in {"column_list", "column", "synced_block", "table", "template"} and isinstance(payload, dict):
             payload = dict(payload)
             if isinstance(payload.get("children"), list):
                 payload["children"] = [walk(ch) for ch in payload["children"]]
@@ -273,7 +329,47 @@ def replace_placeholders_in_blocks(blocks: List[dict], kv: Dict[str, Any]) -> Li
 
         return nb
 
-    return [walk(b) for b in blocks]
+    # 리스트/특수키 풀기
+    def _flatten(blocks):
+        out = []
+        for b in blocks:
+            if isinstance(b, list):
+                out.extend(_flatten(b))
+            elif isinstance(b, dict) and "__replace_with_list__" in b:
+                out.extend(_flatten(b["__replace_with_list__"]))
+            else:
+                out.append(b)
+        return out
+
+    walked = [walk(b) for b in blocks]
+    flattened = _flatten(walked)
+
+    import logging, json
+    logging.info("[DEBUG] After flatten: %s", json.dumps(flattened[:5], ensure_ascii=False))
+
+    return flattened
+
+
+def _flatten_blocks(blocks):
+    """중첩 list 또는 __replace_with_list__를 전부 재귀적으로 flatten"""
+    out = []
+    for b in blocks:
+        if isinstance(b, list):
+            out.extend(_flatten_blocks(b))
+        elif isinstance(b, dict) and "__replace_with_list__" in b:
+            out.extend(_flatten_blocks(b["__replace_with_list__"]))
+        elif isinstance(b, dict):
+            # children까지 재귀 flatten
+            nb = dict(b)
+            if isinstance(nb.get("children"), list):
+                nb["children"] = _flatten_blocks(nb["children"])
+            out.append(nb)
+        else:
+            out.append(b)
+    return out
+
+
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # 블록 변환
