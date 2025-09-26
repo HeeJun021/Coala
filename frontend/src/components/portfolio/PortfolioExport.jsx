@@ -617,56 +617,123 @@ return (
                   </div>
                 </div>
 
-                {/* 학적사항 */}
-                <div>
-                 <div className="flex items-center justify-between mb-2 mt-4">
-                    <span className="text-sm text-gray-700">학적사항 (원하는 만큼 추가)</span>
-                    <button
-                      type="button"
-                      className="px-3 py-1.5 rounded-md border text-xs hover:bg-gray-50"
-                      onClick={() => { setEduList((list) => [...list, { school: "", major: "", period: "", start_month: "", end_month: "" }]); setDirty(true); }}
-                    >
-                      + 추가
-                    </button>
-                  </div>
-                  <div className="space-y-2">
-                    {eduList.length===0 && <div className="text-xs text-gray-400">항목이 없습니다.</div>}
-                    {eduList.map((it, idx)=>(
-                      <div key={idx} className="grid md:grid-cols-[1.1fr_1fr_0.9fr_0.9fr_60px] gap-2 items-center">
-                        <input className="border rounded-lg px-2 h-10 text-sm" placeholder="학교" value={it.school}
-                          onChange={(e)=>{ const v=e.target.value; setEduList(arr=>arr.map((x,i)=>i===idx?{...x,school:v}:x)); setDirty(true); }}/>
-                        <input className="border rounded-lg px-2 h-10 text-sm" placeholder="전공" value={it.major}
-                          onChange={(e)=>{ const v=e.target.value; setEduList(arr=>arr.map((x,i)=>i===idx?{...x,major:v}:x)); setDirty(true); }}/>
-                        <input
-                          type="month"
-                          className="border rounded-lg px-2 h-10 text-sm"
-                          value={it.start_month || ""}
-                          max={it.end_month || undefined}
-                          onChange={(e)=>{ const v=e.target.value; setEduList(arr=>arr.map((x,i)=>i===idx?{...x,start_month:v}:x)); setDirty(true); }}
-                          aria-label="시작월"
-                        />
-                        <input
-                          type="month"
-                          className="border rounded-lg px-2 h-10 text-sm"
-                          value={it.end_month || ""}
-                          min={it.start_month || undefined}
-                          onChange={(e)=>{ const v=e.target.value; setEduList(arr=>arr.map((x,i)=>i===idx?{...x,end_month:v}:x)); setDirty(true); }}
-                          aria-label="종료월"
-                        />
-                        <div className="flex justify-end">
-                          <button
-                            className="px-2 py-1 rounded-md border text-xs text-rose-600 hover:bg-rose-50"
-                            onClick={()=>{ setEduList(arr=>arr.filter((_,i)=>i!==idx)); setDirty(true); }}
-                          >
-                            삭제
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+{/* 학적사항 */}
+<div>
+  <div className="flex items-center justify-between mb-2 mt-4">
+    <span className="text-sm text-gray-700">학적사항 (원하는 만큼 추가)</span>
+    <button
+      type="button"
+      className="px-3 py-1.5 rounded-md border text-xs hover:bg-gray-50"
+      onClick={() => {
+        setEduList((list) => [
+          ...list,
+          { school: "", major: "", period: "", start_month: "", end_month: "" },
+        ]);
+        setDirty(true);
+      }}
+    >
+      + 추가
+    </button>
+  </div>
+  <div className="space-y-2">
+    {eduList.length === 0 && (
+      <div className="text-xs text-gray-400">항목이 없습니다.</div>
+    )}
+    {eduList.map((it, idx) => (
+      <div
+        key={idx}
+        className="grid md:grid-cols-[1.1fr_1fr_0.9fr_0.9fr_60px] gap-2 items-center"
+      >
+        <input
+          className="border rounded-lg px-2 h-10 text-sm"
+          placeholder="학교"
+          value={it.school}
+          onChange={(e) => {
+            const v = e.target.value;
+            setEduList((arr) =>
+              arr.map((x, i) => (i === idx ? { ...x, school: v } : x))
+            );
+            setDirty(true);
+          }}
+        />
+        <input
+          className="border rounded-lg px-2 h-10 text-sm"
+          placeholder="전공"
+          value={it.major}
+          onChange={(e) => {
+            const v = e.target.value;
+            setEduList((arr) =>
+              arr.map((x, i) => (i === idx ? { ...x, major: v } : x))
+            );
+            setDirty(true);
+          }}
+        />
 
-                {/* 경력 사항 */}
+        {/* 시작월 (입학일) */}
+        <div className="relative">
+          <input
+            type="month"
+            className={`border rounded-lg px-2 h-10 text-sm w-full ${
+              it.start_month ? "text-gray-900" : "text-transparent"
+            }`}
+            value={it.start_month || ""}
+            max={it.end_month || undefined}
+            onChange={(e) => {
+              const v = e.target.value;
+              setEduList((arr) =>
+                arr.map((x, i) => (i === idx ? { ...x, start_month: v } : x))
+              );
+              setDirty(true);
+            }}
+          />
+          {!it.start_month && (
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">
+              입학일
+            </span>
+          )}
+        </div>
+
+        {/* 종료월 (졸업일) */}
+        <div className="relative">
+          <input
+            type="month"
+            className={`border rounded-lg px-2 h-10 text-sm w-full ${
+              it.end_month ? "text-gray-900" : "text-transparent"
+            }`}
+            value={it.end_month || ""}
+            min={it.start_month || undefined}
+            onChange={(e) => {
+              const v = e.target.value;
+              setEduList((arr) =>
+                arr.map((x, i) => (i === idx ? { ...x, end_month: v } : x))
+              );
+              setDirty(true);
+            }}
+          />
+          {!it.end_month && (
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">
+              졸업일
+            </span>
+          )}
+        </div>
+
+        <div className="flex justify-end">
+          <button
+            className="px-2 py-1 rounded-md border text-xs text-rose-600 hover:bg-rose-50"
+            onClick={() => {
+              setEduList((arr) => arr.filter((_, i) => i !== idx));
+              setDirty(true);
+            }}
+          >
+            삭제
+          </button>
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
+
+{/* 경력 사항 */}
 <div>
   <div className="flex items-center justify-between mb-2 mt-2">
     <span className="text-sm text-gray-700">경력 사항 (원하는 만큼 추가)</span>
@@ -719,34 +786,55 @@ return (
             setDirty(true);
           }}
         />
-        <input
-          type="month"
-          className="border rounded-lg px-2 h-10 text-sm"
-          value={it.start_month || ""}
-          max={it.end_month || undefined}         
-          onChange={(e) => {
-            const v = e.target.value;
-            setCareerList((arr) =>
-              arr.map((x, i) => (i === idx ? { ...x, start_month: v } : x))
-            );
-            setDirty(true);
-          }}
-          aria-label="시작월"
-        />
-        <input
-          type="month"
-          className="border rounded-lg px-2 h-10 text-sm"
-          value={it.end_month || ""}
-          min={it.start_month || undefined}       
-          onChange={(e) => {
-            const v = e.target.value;
-            setCareerList((arr) =>
-              arr.map((x, i) => (i === idx ? { ...x, end_month: v } : x))
-            );
-            setDirty(true);
-          }}
-          aria-label="종료월"
-        />
+
+        {/* 시작월 (입사일) */}
+        <div className="relative">
+          <input
+            type="month"
+            className={`border rounded-lg px-2 h-10 text-sm w-full ${
+              it.start_month ? "text-gray-900" : "text-transparent"
+            }`}
+            value={it.start_month || ""}
+            max={it.end_month || undefined}
+            onChange={(e) => {
+              const v = e.target.value;
+              setCareerList((arr) =>
+                arr.map((x, i) => (i === idx ? { ...x, start_month: v } : x))
+              );
+              setDirty(true);
+            }}
+          />
+          {!it.start_month && (
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">
+              입사일
+            </span>
+          )}
+        </div>
+
+        {/* 종료월 (퇴사일) */}
+        <div className="relative">
+          <input
+            type="month"
+            className={`border rounded-lg px-2 h-10 text-sm w-full ${
+              it.end_month ? "text-gray-900" : "text-transparent"
+            }`}
+            value={it.end_month || ""}
+            min={it.start_month || undefined}
+            onChange={(e) => {
+              const v = e.target.value;
+              setCareerList((arr) =>
+                arr.map((x, i) => (i === idx ? { ...x, end_month: v } : x))
+              );
+              setDirty(true);
+            }}
+          />
+          {!it.end_month && (
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">
+              퇴사일
+            </span>
+          )}
+        </div>
+
         <div className="flex justify-end">
           <button
             className="px-2 py-1 rounded-md border text-xs text-rose-600 hover:bg-rose-50"
@@ -896,29 +984,29 @@ return (
   }}
 />
         <PublishProgressModal
-          open={publishModalOpen}
-          status={publishStatus}
-          title="노션에 퍼블리시 중…"
-          subtitle={[
-            pageTitle && `제목: ${pageTitle}`,
-            templateTitle && `템플릿: ${templateTitle}`,
-            targetPageTitle && `대상: ${targetPageTitle}`,
-          ]
-            .filter(Boolean)
-            .join(" · ")}
-          onClose={() => {
-            setPublishModalOpen(false);
-            setPublishStatus("idle");
-          }}
-          onOpenNotion={() => {
-            if (publishedPageUrl) {
-              window.open(publishedPageUrl, "_blank", "noopener,noreferrer");
-            } else if (publishedPageId) {
-              const compact = String(publishedPageId).replace(/-/g, "");
-              window.open(`https://www.notion.so/${compact}`, "_blank", "noopener,noreferrer");
-            }
-          }}
-        />
+  open={publishModalOpen}
+  status={publishStatus}
+  title="노션에 퍼블리시 중…"
+  subtitle={
+    <div className="space-y-1">
+      {pageTitle && <p>제목: {pageTitle}</p>}
+      {templateTitle && <p>템플릿: {templateTitle}</p>}
+      {targetPageTitle && <p>대상: {targetPageTitle}</p>}
+    </div>
+  }
+  onClose={() => {
+    setPublishModalOpen(false);
+    setPublishStatus("idle");
+  }}
+  onOpenNotion={() => {
+    if (publishedPageUrl) {
+      window.open(publishedPageUrl, "_blank", "noopener,noreferrer");
+    } else if (publishedPageId) {
+      const compact = String(publishedPageId).replace(/-/g, "");
+      window.open(`https://www.notion.so/${compact}`, "_blank", "noopener,noreferrer");
+    }
+  }}
+/>
       </div>
     </div>
   </div>
