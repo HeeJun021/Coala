@@ -394,9 +394,9 @@ const handleSelectTemplate = useCallback((id, title) => {
 
   if (loading) {
   return (
-    <div className="relative min-h-screen">
-      <div className="w-full min-h-screen pt-4 pl-[164px]">
-        <div className="w-full mt-3 bg-white shadow-xl rounded-2xl border border-gray-300 p-7">
+    <div className="w-full min-h-screen pl-[144px]" data-scroll-root>
+      <div className="bg-[#F9FAFB] min-h-screen">
+        <div className="max-w-5xl mx-auto pt-0 mt-0 bg-white shadow-xl rounded-2xl border border-gray-300 p-7 relative">
           <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
             <div className="animate-pulse text-gray-500">상태 확인 중...</div>
           </section>
@@ -408,20 +408,15 @@ const handleSelectTemplate = useCallback((id, title) => {
 
   if (!connected) {
   return (
-    <div className="relative min-h-screen">
-      <div className="w-full min-h-screen pt-4 pl-[164px]">
-        <div className="max-w-5xl mx-auto mt-3">
-          
-            {/* ❗ NotionConnectPanel은 '카드 없는 내용만' 렌더하도록(이전에 준 수정본) */}
-            <NotionConnectPanel
-              connected={false}
-              onConnectedChange={(v) => {
-                if (v) {
-                  setConnected(true);
-                  refreshStatus();
-                }
-              }}
-            />
+    <div className="w-full min-h-screen pl-[144px]" data-scroll-root>
+      <div className="bg-[#F9FAFB] min-h-screen">
+        <div className="max-w-5xl mx-auto pt-0 mt-0 bg-white shadow-xl rounded-2xl border border-gray-300 p-7 relative">
+          <NotionConnectPanel
+            connected={false}
+            onConnectedChange={(v) => {
+              if (v) { setConnected(true); refreshStatus(); }
+            }}
+          />
         </div>
       </div>
     </div>
@@ -430,26 +425,24 @@ const handleSelectTemplate = useCallback((id, title) => {
 
 
 return (
-  <div className="relative min-h-screen">
-    {/* 사이드바 영역 확보 */}
-    <div className="w-full min-h-screen pt-4 pl-[164px]">
-      {/* 메인 카드 컨테이너 (MyPageModify와 동일 규격) */}
-      <div className="w-full mt-3 bg-white shadow-xl rounded-2xl border border-gray-300 p-7">
+  <div className="w-full min-h-screen pl-[144px]" data-scroll-root>
+    <div className="bg-[#F9FAFB] min-h-screen">
+      <div className="max-w-5xl mx-auto -mt-2.5 bg-white shadow-xl rounded-2xl border border-gray-300 p-7 relative">
 
         {/* 상단 헤더 + 스텝퍼 */}
-        <header className="mb-6">
-          <div className="flex items-center justify-between">
+        <header className="mb-8">
+          <div className="flex items-start justify-between">
             {/* 좌: 타이틀 */}
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">포트폴리오 추출</h1>
-              <p className="text-sm text-gray-500 mt-1">
+              <h1 className="text-3xl font-extrabold text-gray-800 mb-4 tracking-wide">포트폴리오 추출</h1>
+              <p className="text-sm text-gray-500">
                 프로젝트를 선택하고 템플릿과 대상 페이지를 정한 뒤 노션으로 퍼블리시하세요.
               </p>
             </div>
 
             {/* 우: 노션 연결 상태 + 해제 */}
             {connected && (
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 mt-1">
                 <div className="inline-flex items-center gap-2 text-sm text-emerald-700" title="노션 연결 상태">
                   <CheckCircle2 className="w-4 h-4" />
                   <span>노션 연결됨{workspaceName ? ` · ${workspaceName}` : ""}</span>
@@ -468,7 +461,7 @@ return (
           </div>
 
           {/* 스텝퍼 */}
-          <ol className="mt-4 flex flex-wrap items-center gap-2 text-[13px]">
+          <ol className="mt-2 flex flex-wrap items-center gap-2 text-[13px]">
             {["제목", "대상 페이지", "템플릿", "필터", "퍼블리시"].map((label, i) => {
               const step = i + 1;
               const done =
