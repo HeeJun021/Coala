@@ -266,13 +266,13 @@ def publish_to_notion(
         intro_val = body.extra_kv.get("intro_text") or body.extra_kv.get("ai_prompt_intro")
         exp_val   = body.extra_kv.get("experience_text") or body.extra_kv.get("ai_prompt_experience")
 
-        # AI 다듬기 OFF 상태
-        # if intro_val:
-        #     kv["자기소개"] = polish_with_ai(intro_val, purpose="자기소개")
-        # if exp_val:
-        #     polished_exp = polish_with_ai(exp_val, purpose="경험/느낀점")
-        #     kv["ai 메모에 넣은 내용 토대로 느낀점 작성"] = polished_exp
-        #     kv["경험"] = polished_exp
+        # AI 다듬기 상태
+        if intro_val:
+            kv["자기소개"] = polish_with_ai(intro_val, purpose="자기소개")
+        if exp_val:
+            polished_exp = polish_with_ai(exp_val, purpose="경험/느낀점")
+            kv["ai 메모에 넣은 내용 토대로 느낀점 작성"] = polished_exp
+            kv["경험"] = polished_exp
 
         SAFE_LIST_KEYS = {"학적 사항", "경력 사항", "프로젝트 역할"}
 
