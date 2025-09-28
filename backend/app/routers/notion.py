@@ -159,7 +159,7 @@ def notion_callback(
     db.commit()
 
     # 4) 프론트로 이동 + state 쿠키 제거
-    resp = RedirectResponse(url=f"{FRONTEND_ORIGIN}/mypage/portfolio")
+    resp = RedirectResponse(url=f"{FRONTEND_ORIGIN}/portfolio")
     resp.delete_cookie(STATE_COOKIE_KEY, path="/")
     return resp
 
