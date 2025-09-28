@@ -2,6 +2,7 @@ import os
 import json
 import logging
 import requests
+from copy import deepcopy as _dc
 from typing import Any, Dict, List, Optional, Union, Tuple
 from urllib.parse import urlparse, quote
 from cryptography.fernet import Fernet
@@ -178,63 +179,135 @@ def update_page_title(user: "User", page_id: str, title: str) -> None:
 # ──────────────────────────────────────────────────────────────────────────────
 def inject_task_rows_into_tables(blocks: List[dict], context: Dict[str, Any]) -> List[dict]:
     """
-    템플릿 블록들 중 table 블록을 찾아서 task_rows 데이터를 행으로 삽입한다.
-    - 헤더 행은 유지
-    - rows_data 만큼 table_row 추가
+    규칙:
+    - 1행(헤더)은 그대로 보존.
+    - 2행(템플릿)이 [키] / {{키}} 플레이스홀더를 포함하면 대상 표로 간주.
+    - 템플릿 행은 삭제하고, task_rows 만큼 복제/치환하여 2행부터 삽입.
+    - 스타일/링크 등은 모두 제거하고 순수 텍스트만 유지.
+    - task_rows 비어있으면 헤더만 남김(멱등).
+    - 테이블 행 위치는 table.payload.children 과 최상위 children 양쪽 모두 지원.
     """
     rows_data = (context or {}).get("task_rows") or []
-    if not rows_data:
-        return blocks
+    COL_KEYS = ("작업명", "시작일", "마감일", "참여자", "완료여부")
 
-    def walk(block: dict) -> dict:
-        if not isinstance(block, dict):
-            return block
-        t = block.get("type")
+    import re, json, logging
+    PH = re.compile(r"\[[^\]]+\]|\{\{[^}]+\}\}")
+
+    def _dc(o):  # fast deepcopy
+        return json.loads(json.dumps(o, ensure_ascii=False))
+
+    def _row_has_ph(row: dict) -> bool:
+        cells = (row.get("table_row") or {}).get("cells") or []
+        for cell in cells:
+            if not isinstance(cell, list):
+                continue
+            for rt in cell:
+                if not isinstance(rt, dict):
+                    continue
+                txt = ""
+                if isinstance(rt.get("text"), dict):
+                    txt = rt["text"].get("content", "") or ""
+                elif isinstance(rt.get("plain_text"), str):
+                    txt = rt["plain_text"]
+                if PH.search(txt or ""):
+                    return True
+        return False
+
+    def _cleanup_leftover(s: str) -> str:
+        s = re.sub(r"\[[^\]]+\]", "", s)
+        s = re.sub(r"\{\{[^}]+\}\}", "", s)
+        return s
+
+    def _kv_for_row(r: Dict[str, Any]) -> Dict[str, str]:
+        return {k: str(r.get(k, "") or "") for k in COL_KEYS}
+
+    def _clone_row(template_row: dict, kv_row: Dict[str, str]) -> dict:
+        """템플릿 행을 복제하여 kv_row로 치환 (스타일 제거)"""
+        new_row = {"object": "block", "type": "table_row", "table_row": {"cells": []}}
+        tmpl_cells = (template_row.get("table_row") or {}).get("cells") or []
+        for cell in tmpl_cells:
+            new_cell = []
+            for rt in cell:
+                if not isinstance(rt, dict):
+                    new_cell.append(rt)
+                    continue
+                # 순수 텍스트만 남기기
+                content = ""
+                if rt.get("type") == "text" and isinstance(rt.get("text"), dict):
+                    c0 = rt["text"].get("content", "") or ""
+                    c1 = _replace_in_text(c0, kv_row)
+                    content = _cleanup_leftover(c1)
+
+                new_cell.append({
+                    "type": "text",
+                    "text": {"content": content},
+                    "plain_text": content,
+                })
+            new_row["table_row"]["cells"].append(new_cell)
+        return new_row
+
+    def _handle_table(b: dict) -> Tuple[dict, bool]:
+        """테이블 블록 하나를 처리. (changed=True면 주입 완료)"""
+        tbl = b.get("table") or {}
+
+        # children 소스 결정
+        payload_children = tbl.get("children") if isinstance(tbl.get("children"), list) else None
+        top_children = b.get("children") if isinstance(b.get("children"), list) else None
+        children_src = "payload" if payload_children is not None else "top"
+        children = payload_children if payload_children is not None else (top_children or [])
+
+        # 테이블 행만 필터
+        rows = [ch for ch in children if isinstance(ch, dict) and ch.get("type") == "table_row"]
+
+        if len(rows) >= 2 and _row_has_ph(rows[1]):
+            header, template = rows[0], rows[1]
+            new_children = [header]
+            if rows_data:
+                for r in rows_data:
+                    new_children.append(_clone_row(template, _kv_for_row(r)))
+
+            nb = dict(b)
+            if children_src == "payload":
+                ntbl = dict(tbl)
+                ntbl["children"] = new_children
+                nb["table"] = ntbl
+            else:
+                nb["children"] = new_children
+
+            logging.info("[TABLE] template row detected → injected %d row(s)", len(new_children) - 1)
+            return nb, True
+
+        return b, False
+
+    def _walk(x: Any) -> Any:
+        if not isinstance(x, dict):
+            return x
+        t = x.get("type")
         if t == "table":
-            tbl = block.get("table") or {}
-            children = tbl.get("children") or []
+            nb, changed = _handle_table(x)
+            if changed:
+                return nb
+            # 내부만 재귀
+            tbl = nb.get("table") or {}
+            if isinstance(tbl.get("children"), list):
+                ntbl = dict(tbl)
+                ntbl["children"] = [_walk(ch) for ch in ntbl["children"]]
+                nb = dict(nb)
+                nb["table"] = ntbl
+            elif isinstance(nb.get("children"), list):
+                nb = dict(nb)
+                nb["children"] = [_walk(ch) for ch in nb["children"]]
+            return nb
 
-            # 헤더만 유지
-            header = children[0] if children else None
-            new_children = []
-            if header:
-                new_children.append(header)
+        # 일반 컨테이너 재귀
+        if isinstance(x.get("children"), list):
+            nx = dict(x)
+            nx["children"] = [_walk(ch) for ch in x["children"]]
+            return nx
+        return x
 
-            # 행 삽입
-            for r in rows_data:
-                row_cells = [
-                    str(r.get("작업명", "")),
-                    str(r.get("시작일", "")),
-                    str(r.get("마감일", "")),
-                    str(r.get("참여자", "")),
-                    str(r.get("완료여부", "")),
-                ]
-                new_row = {
-                    "object": "block",
-                    "type": "table_row",
-                    "table_row": {
-                        "cells": [[{"type": "text", "text": {"content": c}}] for c in row_cells]
-                    },
-                }
-                new_children.append(new_row)
+    return [_walk(b) for b in blocks]
 
-            block = dict(block)
-            block["table"] = dict(tbl)
-            block["table"]["children"] = new_children
-
-            logging.info(
-                "[Notion Publish] injected %d task_rows into table",
-                len(rows_data),
-            )
-            return block
-
-        # children 재귀 순회
-        for k in ("children",):
-            if isinstance(block.get(k), list):
-                block[k] = [walk(ch) for ch in block[k]]
-        return block
-
-    return [walk(b) for b in blocks]
 
 def _replace_in_text(text: Any, kv: Dict[str, Any]) -> Any:
     if not isinstance(text, str) or not kv:
@@ -458,14 +531,10 @@ def replace_placeholders_in_blocks(blocks: List[dict], kv: Dict[str, Any]) -> Li
             nb[t] = payload
 
         # table_row
+                # table_row
         if t == "table_row" and isinstance(payload, dict):
-            payload = dict(payload)
-            if isinstance(payload.get("cells"), list):
-                payload["cells"] = [
-                    _replace_in_rich_text_list(cell, kv) if isinstance(cell, list) else cell
-                    for cell in payload["cells"]
-                ]
-            nb[t] = payload
+            return nb
+
 
         # caption / equation
         if isinstance(payload, dict) and t in MEDIA_TYPES_WITH_CAPTION:
