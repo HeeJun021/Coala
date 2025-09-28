@@ -1,6 +1,8 @@
 import os
+import json
 import logging
 import requests
+from copy import deepcopy as _dc
 from typing import Any, Dict, List, Optional, Union, Tuple
 from urllib.parse import urlparse, quote
 from cryptography.fernet import Fernet
@@ -175,6 +177,138 @@ def update_page_title(user: "User", page_id: str, title: str) -> None:
 # ──────────────────────────────────────────────────────────────────────────────
 # 치환 유틸
 # ──────────────────────────────────────────────────────────────────────────────
+def inject_task_rows_into_tables(blocks: List[dict], context: Dict[str, Any]) -> List[dict]:
+    """
+    규칙:
+    - 1행(헤더)은 그대로 보존.
+    - 2행(템플릿)이 [키] / {{키}} 플레이스홀더를 포함하면 대상 표로 간주.
+    - 템플릿 행은 삭제하고, task_rows 만큼 복제/치환하여 2행부터 삽입.
+    - 스타일/링크 등은 모두 제거하고 순수 텍스트만 유지.
+    - task_rows 비어있으면 헤더만 남김(멱등).
+    - 테이블 행 위치는 table.payload.children 과 최상위 children 양쪽 모두 지원.
+    """
+    rows_data = (context or {}).get("task_rows") or []
+    COL_KEYS = ("작업명", "시작일", "마감일", "참여자", "완료여부")
+
+    import re, json, logging
+    PH = re.compile(r"\[[^\]]+\]|\{\{[^}]+\}\}")
+
+    def _dc(o):  # fast deepcopy
+        return json.loads(json.dumps(o, ensure_ascii=False))
+
+    def _row_has_ph(row: dict) -> bool:
+        cells = (row.get("table_row") or {}).get("cells") or []
+        for cell in cells:
+            if not isinstance(cell, list):
+                continue
+            for rt in cell:
+                if not isinstance(rt, dict):
+                    continue
+                txt = ""
+                if isinstance(rt.get("text"), dict):
+                    txt = rt["text"].get("content", "") or ""
+                elif isinstance(rt.get("plain_text"), str):
+                    txt = rt["plain_text"]
+                if PH.search(txt or ""):
+                    return True
+        return False
+
+    def _cleanup_leftover(s: str) -> str:
+        s = re.sub(r"\[[^\]]+\]", "", s)
+        s = re.sub(r"\{\{[^}]+\}\}", "", s)
+        return s
+
+    def _kv_for_row(r: Dict[str, Any]) -> Dict[str, str]:
+        return {k: str(r.get(k, "") or "") for k in COL_KEYS}
+
+    def _clone_row(template_row: dict, kv_row: Dict[str, str]) -> dict:
+        """템플릿 행을 복제하여 kv_row로 치환 (스타일 제거)"""
+        new_row = {"object": "block", "type": "table_row", "table_row": {"cells": []}}
+        tmpl_cells = (template_row.get("table_row") or {}).get("cells") or []
+        for cell in tmpl_cells:
+            new_cell = []
+            for rt in cell:
+                if not isinstance(rt, dict):
+                    new_cell.append(rt)
+                    continue
+                # 순수 텍스트만 남기기
+                content = ""
+                if rt.get("type") == "text" and isinstance(rt.get("text"), dict):
+                    c0 = rt["text"].get("content", "") or ""
+                    c1 = _replace_in_text(c0, kv_row)
+                    content = _cleanup_leftover(c1)
+
+                new_cell.append({
+                    "type": "text",
+                    "text": {"content": content},
+                    "plain_text": content,
+                })
+            new_row["table_row"]["cells"].append(new_cell)
+        return new_row
+
+    def _handle_table(b: dict) -> Tuple[dict, bool]:
+        """테이블 블록 하나를 처리. (changed=True면 주입 완료)"""
+        tbl = b.get("table") or {}
+
+        # children 소스 결정
+        payload_children = tbl.get("children") if isinstance(tbl.get("children"), list) else None
+        top_children = b.get("children") if isinstance(b.get("children"), list) else None
+        children_src = "payload" if payload_children is not None else "top"
+        children = payload_children if payload_children is not None else (top_children or [])
+
+        # 테이블 행만 필터
+        rows = [ch for ch in children if isinstance(ch, dict) and ch.get("type") == "table_row"]
+
+        if len(rows) >= 2 and _row_has_ph(rows[1]):
+            header, template = rows[0], rows[1]
+            new_children = [header]
+            if rows_data:
+                for r in rows_data:
+                    new_children.append(_clone_row(template, _kv_for_row(r)))
+
+            nb = dict(b)
+            if children_src == "payload":
+                ntbl = dict(tbl)
+                ntbl["children"] = new_children
+                nb["table"] = ntbl
+            else:
+                nb["children"] = new_children
+
+            logging.info("[TABLE] template row detected → injected %d row(s)", len(new_children) - 1)
+            return nb, True
+
+        return b, False
+
+    def _walk(x: Any) -> Any:
+        if not isinstance(x, dict):
+            return x
+        t = x.get("type")
+        if t == "table":
+            nb, changed = _handle_table(x)
+            if changed:
+                return nb
+            # 내부만 재귀
+            tbl = nb.get("table") or {}
+            if isinstance(tbl.get("children"), list):
+                ntbl = dict(tbl)
+                ntbl["children"] = [_walk(ch) for ch in ntbl["children"]]
+                nb = dict(nb)
+                nb["table"] = ntbl
+            elif isinstance(nb.get("children"), list):
+                nb = dict(nb)
+                nb["children"] = [_walk(ch) for ch in nb["children"]]
+            return nb
+
+        # 일반 컨테이너 재귀
+        if isinstance(x.get("children"), list):
+            nx = dict(x)
+            nx["children"] = [_walk(ch) for ch in x["children"]]
+            return nx
+        return x
+
+    return [_walk(b) for b in blocks]
+
+
 def _replace_in_text(text: Any, kv: Dict[str, Any]) -> Any:
     if not isinstance(text, str) or not kv:
         return text
@@ -202,6 +336,15 @@ def _replace_in_rich_text_list(rt_list: Any, kv: Dict[str, Any]) -> Any:
     return new_rt
 
 def replace_placeholders_in_blocks(blocks: List[dict], kv: Dict[str, Any]) -> List[dict]:
+    """
+    - [키] 형태의 placeholder를 kv로 치환
+      * kv[key]가 list면 → bulleted_list_item 여러 블록으로 치환
+      * kv[key]가 str이면 → 해당 블록의 rich_text를 문자열로 대체
+      * kv[key]가 빈 문자열이면 → 해당 블록 제거
+      * [닉네임] [역할] → kv["프로젝트역할"] 리스트를 불릿 리스트로 치환
+    - walk()는 항상 dict만 반환 (여러 블록 치환은 {"__replace_with_list__": [...]}로 표시)
+    - flatten()에서만 리스트를 실제 블록 배열로 전개
+    """
     if not isinstance(blocks, list) or not kv:
         return blocks
 
@@ -210,70 +353,254 @@ def replace_placeholders_in_blocks(blocks: List[dict], kv: Dict[str, Any]) -> Li
         "bulleted_list_item", "numbered_list_item",
         "to_do", "toggle", "quote", "callout", "code", "template"
     }
-    MEDIA_TYPES_WITH_CAPTION = {
-        "image", "video", "file", "pdf", "audio", "bookmark", "embed"
-    }
+    MEDIA_TYPES_WITH_CAPTION = {"image", "video", "file", "pdf", "audio", "bookmark", "embed"}
+
+    def make_bullet(content: str, color: str = "default") -> dict:
+        return {
+            "object": "block",
+            "type": "bulleted_list_item",
+            "bulleted_list_item": {
+                "rich_text": [
+                    {
+                        "type": "text",
+                        "text": {"content": content},
+                        "annotations": {
+                            "bold": False,
+                            "italic": False,
+                            "strikethrough": False,
+                            "underline": False,
+                            "code": False,
+                            "color": color,
+                        },
+                    }
+                ],
+                "color": "default",
+            },
+        }
 
     def walk(b: Any) -> Any:
         if not isinstance(b, dict):
             return b
+
         t = b.get("type")
         payload = isinstance(t, str) and b.get(t)
-        if not isinstance(payload, dict):
-            pass
         nb = dict(b)
 
-        # 텍스트 계열
         if isinstance(payload, dict) and t in TEXT_TYPES_WITH_RICH_TEXT:
             payload = dict(payload)
             if "rich_text" in payload:
-                payload["rich_text"] = _replace_in_rich_text_list(payload.get("rich_text"), kv)
-            # ✅ 모든 child-bearing 텍스트 계열에서 children도 재귀 치환
+                rich_list = payload.get("rich_text", [])
+                text_str = "".join([frag.get("plain_text", "") for frag in rich_list]).strip()
+
+                # --- 프로젝트 역할: Callout 안의 [닉네임]을 전체 Callout 리스트로 치환 ---
+                if t == "callout" and text_str == "[닉네임]":
+                    import logging, json, re, ast
+
+                    def _parse_member(m):
+                        """
+                        m 이 dict면 {닉네임, 역할} 처리
+                        m 이 str면 '닉네임 ([...])' 형태 파싱해 (nickname, roles_list) 반환
+                        """
+                        if isinstance(m, dict):
+                            nickname = str(
+                                m.get("닉네임") or m.get("nickname") or m.get("name") or ""
+                            ).strip()
+                            role_val = m.get("역할") or m.get("role") or ""
+                            # 역할이 리스트/문자열 모두 허용
+                            if isinstance(role_val, list):
+                                roles = [str(r).strip() for r in role_val if str(r).strip()]
+                            elif isinstance(role_val, str):
+                                roles = [r.strip() for r in role_val.split(",") if r.strip()]
+                            else:
+                                roles = []
+                            return nickname, roles
+
+                        if isinstance(m, str):
+                            s = m.strip()
+                            # 형태: 닉네임 ([...])
+                            # 괄호 안은 파이썬 리스트 문자열이라 ast.literal_eval로 안전 파싱
+                            mobj = re.match(r"^(?P<nick>.+?)\s*\((?P<roles>\[.*\])\)\s*$", s)
+                            if mobj:
+                                nick = mobj.group("nick").strip()
+                                roles_raw = mobj.group("roles")
+                                roles = []
+                                try:
+                                    parsed = ast.literal_eval(roles_raw)
+                                    if isinstance(parsed, list):
+                                        roles = [str(r).strip() for r in parsed if str(r).strip()]
+                                    else:
+                                        roles = [str(parsed).strip()]
+                                except Exception:
+                                    # 파싱 실패 시 괄호 내용 제거하고 원문 보존
+                                    roles = [roles_raw]
+                                return nick, roles
+                            else:
+                                # 괄호가 없으면 전부 닉네임으로 취급
+                                return s, []
+                        # 알 수 없는 타입
+                        return "", []
+
+                    members = kv.get("프로젝트역할") or kv.get("프로젝트 역할")
+                    logging.info("[ROLE] nickname placeholder detected in callout. members=%s",
+                                json.dumps(members, ensure_ascii=False) if isinstance(members, list) else str(type(members)))
+
+                    if isinstance(members, list) and members:
+                        new_blocks = []
+                        for m in members:
+                            nickname, roles = _parse_member(m)
+
+                            if not (nickname or roles):
+                                continue
+
+                            callout_block = {
+                                "object": "block",
+                                "type": "callout",
+                                "callout": {
+                                    "rich_text": [
+                                        {
+                                            "type": "text",
+                                            "text": {"content": nickname or "(이름 미상)"},
+                                            "annotations": {
+                                                "bold": True,
+                                                "italic": False,
+                                                "strikethrough": False,
+                                                "underline": False,
+                                                "code": False,
+                                                "color": "default",
+                                            },
+                                        }
+                                    ],
+                                    "icon": {"type": "external", "external": {"url": "https://www.notion.so/icons/user_green.svg"}},
+                                    "color": payload.get("color", "gray_background"),
+                                },
+                                "children": []
+                            }
+
+                            role_text = "역할 : " + (", ".join(roles) if roles else "-")
+                            callout_block["children"].append({
+                                "object": "block",
+                                "type": "paragraph",
+                                "paragraph": {
+                                    "rich_text": [
+                                        {
+                                            "type": "text",
+                                            "text": {"content": role_text},
+                                            "annotations": {
+                                                "bold": False,
+                                                "italic": False,
+                                                "strikethrough": False,
+                                                "underline": False,
+                                                "code": False,
+                                                "color": "default",  # 요청: 주황색 텍스트
+                                            },
+                                        }
+                                    ],
+                                    "color": "default",
+                                },
+                            })
+
+                            new_blocks.append(callout_block)
+
+                        logging.info("[ROLE] replacing callout with %d member callouts", len(new_blocks))
+                        return {"__replace_with_list__": new_blocks}
+                    else:
+                        logging.warning("[ROLE] members missing or not a list. kv keys=%s",
+                                        list(kv.keys()) if isinstance(kv, dict) else type(kv))
+
+
+                # ✅ 일반 [키]
+                if text_str.startswith("[") and text_str.endswith("]"):
+                    key = text_str.strip("[]")
+                    value = kv.get(key)
+
+                    if isinstance(value, list):
+                        return {"__replace_with_list__": [make_bullet(str(v), "orange") for v in value]}
+
+                    elif isinstance(value, str):
+                        if not value.strip():
+                            return {"__replace_with_list__": []}
+                        payload["rich_text"] = [{"type": "text", "text": {"content": value}}]
+                        nb[t] = payload
+                        return nb
+
+                # ✅ rich_text 내부 치환
+                payload["rich_text"] = _replace_in_rich_text_list(rich_list, kv)
+
             if t in _BLOCKS_ALLOW_CHILDREN and isinstance(payload.get("children"), list):
                 payload["children"] = [walk(ch) for ch in payload["children"]]
             nb[t] = payload
 
         # table_row
+                # table_row
         if t == "table_row" and isinstance(payload, dict):
-            payload = dict(payload)
-            cells = payload.get("cells")
-            if isinstance(cells, list):
-                new_cells = []
-                for cell in cells:
-                    if isinstance(cell, list):
-                        new_cell = _replace_in_rich_text_list(cell, kv)
-                        new_cells.append(new_cell)
-                    else:
-                        new_cells.append(cell)
-                payload["cells"] = new_cells
-            nb[t] = payload
+            return nb
 
-        # MEDIA caption / equation
+
+        # caption / equation
         if isinstance(payload, dict) and t in MEDIA_TYPES_WITH_CAPTION:
             payload = dict(payload)
-            if "caption" in payload and isinstance(payload["caption"], list):
+            if isinstance(payload.get("caption"), list):
                 payload["caption"] = _replace_in_rich_text_list(payload["caption"], kv)
             nb[t] = payload
+
         if t == "equation" and isinstance(payload, dict):
             payload = dict(payload)
             if "expression" in payload:
                 payload["expression"] = _replace_in_text(payload["expression"], kv)
             nb[t] = payload
 
-        # 컨테이너 children
-        if t in {"column_list","column","synced_block","table","template"} and isinstance(payload, dict):
+        # 컨테이너
+        if t in {"column_list", "column", "synced_block", "table", "template"} and isinstance(payload, dict):
             payload = dict(payload)
             if isinstance(payload.get("children"), list):
                 payload["children"] = [walk(ch) for ch in payload["children"]]
             nb[t] = payload
 
-        # 상위 children
         if isinstance(nb.get("children"), list):
             nb["children"] = [walk(ch) for ch in nb["children"]]
 
         return nb
 
-    return [walk(b) for b in blocks]
+    def _flatten(blocks):
+        out = []
+        for b in blocks:
+            if isinstance(b, list):
+                out.extend(_flatten(b))
+            elif isinstance(b, dict) and "__replace_with_list__" in b:
+                out.extend(_flatten(b["__replace_with_list__"]))
+            else:
+                out.append(b)
+        return out
+
+    walked = [walk(b) for b in blocks]
+    flattened = _flatten(walked)
+
+    import logging, json
+    logging.info("[DEBUG] After flatten: %s", json.dumps(flattened[:5], ensure_ascii=False))
+
+    return flattened
+
+
+def _flatten_blocks(blocks):
+    """중첩 list 또는 __replace_with_list__를 전부 재귀적으로 flatten"""
+    out = []
+    for b in blocks:
+        if isinstance(b, list):
+            out.extend(_flatten_blocks(b))
+        elif isinstance(b, dict) and "__replace_with_list__" in b:
+            out.extend(_flatten_blocks(b["__replace_with_list__"]))
+        elif isinstance(b, dict):
+            # children까지 재귀 flatten
+            nb = dict(b)
+            if isinstance(nb.get("children"), list):
+                nb["children"] = _flatten_blocks(nb["children"])
+            out.append(nb)
+        else:
+            out.append(b)
+    return out
+
+
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # 블록 변환

@@ -82,6 +82,30 @@ def _load_project_kv(db: Session, project_id: Optional[int]) -> Dict[str, Any]:
     return base
 
 
+
+def _ensure_list(obj):
+    """DB JSON 컬럼이 문자열로 반환될 수도 있으므로 항상 list로 보정"""
+    if not obj:
+        return []
+    if isinstance(obj, str):
+        try:
+            return json.loads(obj)
+        except Exception:
+            return []
+    if isinstance(obj, list):
+        return obj
+    return []
+
+def _listify(arr, keys):
+    """dict list에서 필요한 키만 뽑아 ' / ' 로 합친 문자열 리스트 반환"""
+    out = []
+    for row in arr:
+        if isinstance(row, dict):
+            parts = [str(row.get(k)) for k in keys if row.get(k)]
+            if parts:
+                out.append(" / ".join(parts))
+    return out
+
 def _load_portfolio_profile_kv(db: Session, user_id: int) -> Dict[str, Any]:
     prof = db.query(UserPortfolioProfile).filter(
         UserPortfolioProfile.user_id == user_id
@@ -89,43 +113,113 @@ def _load_portfolio_profile_kv(db: Session, user_id: int) -> Dict[str, Any]:
     if not prof:
         return {}
 
+    # JSON 컬럼 보정
+    education_raw = _ensure_list(getattr(prof, "education", None))
+    career_raw    = _ensure_list(getattr(prof, "career", None))
+
+    education_list = _listify(education_raw, ["school", "major", "period", "desc"])
+    career_list    = _listify(career_raw, ["company", "role", "period", "desc"])
+
     full_name = getattr(prof, "full_name", "") or ""
     birth_date = getattr(prof, "birth_date", None)
     birth_str = str(birth_date) if birth_date else ""
     phone = getattr(prof, "phone", "") or ""
     email = getattr(prof, "email", "") or ""
 
-    def _lines(arr, keys):
-        out = []
-        if isinstance(arr, list):
-            for row in arr:
-                if isinstance(row, dict):
-                    parts = [str(row.get(k)) for k in keys if row.get(k)]
-                    if parts:
-                        out.append("- " + " / ".join(parts))
-        return "\n".join(out)
-
-    education_lines = _lines(getattr(prof, "education", []), ["school","major","period","desc"])
-    career_lines    = _lines(getattr(prof, "career", []),    ["company","role","period","desc"])
-
     return {
-        # ✅ 템플릿 토큰과 1:1
         "이름": full_name,
         "생년월일": birth_str,
         "전화번호": phone,
         "이메일": email,
-        "학적 사항": education_lines or "",   # 리스트 3칸 자리에 들어가도 OK(줄바꿈으로 표현)
-        "자기소개": "",                      # extra_kv로 덮어쓰기 권장
-        "경력 사항": career_lines or "",
-        # 테이블 토큰은 기본 빈 값 (필요시 extra_kv로 제공)
-        "작업명": "",
-        "시작일": "",
-        "마감일": "",
-        "참여자": "",
-        # 경험 섹션(아래에서 별칭으로 채움)
+        "학적 사항": education_list,
+        "경력 사항": career_list,
+        "자기소개": "",
         "경험": "",
     }
 
+
+def _load_project_kv(db: Session, project_id: Optional[int]) -> Dict[str, Any]:
+    if not project_id:
+        return {}
+    proj = db.query(Project).filter(Project.project_id == project_id).first()
+    if not proj:
+        return {}
+
+    topic = getattr(proj, "topic", None)
+    tech_stack_val = getattr(proj, "tech_stack", None)
+    if isinstance(tech_stack_val, (list, tuple)):
+        tech_stack = ", ".join(map(str, tech_stack_val))
+    else:
+        tech_stack = str(tech_stack_val) if tech_stack_val is not None else None
+
+    base = {
+        "프로젝트명": getattr(proj, "name", None),
+        "프로젝트설명": getattr(proj, "description", None),
+        "프로젝트 주제": topic,
+        "기술 스택": tech_stack,
+    }
+
+    # 🔹 프로젝트 역할 (닉네임 + 역할)
+    members = (
+        db.query(ProjectMembers)
+        .filter(ProjectMembers.project_id == project_id, ProjectMembers.status == "accepted")
+        .all()
+    )
+    role_list = []
+    for m in members:
+        nick = getattr(m.user, "nickname", None) if hasattr(m, "user") else None
+        roles = getattr(m, "roles", None)
+        role_str = f"{nick} ({roles})" if roles else nick
+        if role_str:
+            role_list.append(role_str)
+
+    base["프로젝트 역할"] = role_list
+
+    return base
+
+def _display_name(u: User) -> str:
+    return (getattr(u, "nickname", None) or
+            getattr(u, "name", None) or
+            getattr(u, "email", "") or "").strip()
+
+def _load_task_rows(db, project_id: Optional[int]) -> List[Dict[str, Any]]:
+    if not project_id:
+        return []
+
+    # ✅ 마감일 기준 정렬 (null 은 맨 뒤로 감)
+    tasks = (
+        db.query(Tasks)
+        .filter(Tasks.project_id == project_id)
+        .order_by(Tasks.due_date.asc().nulls_last())
+        .all()
+    )
+    if not tasks:
+        return []
+
+    rows: List[Dict[str, Any]] = []
+    for t in tasks:
+        names: List[str] = []
+        seen_ids = set()
+        for u in getattr(t, "collaborators", []) or []:
+            uid = getattr(u, "user_id", None)
+            if uid in seen_ids:
+                continue
+            seen_ids.add(uid)
+            dn = _display_name(u)
+            if dn:
+                names.append(dn)
+
+        done = "완료" if getattr(t, "status", None) == "완료됨" else "미완료"
+
+        rows.append({
+            "작업명": t.title or "",
+            "시작일": str(t.start_date or ""),
+            "마감일": str(t.due_date or ""),
+            "참여자": ", ".join(names),
+            "완료여부": done,
+        })
+
+    return rows
 
 
 # ========= 퍼블리시 엔드포인트 =========
@@ -162,12 +256,17 @@ def publish_to_notion(
     kv: Dict[str, Any] = {}
     kv.update(_load_portfolio_profile_kv(db, getattr(current_user, "user_id")))
     kv.update(_load_project_kv(db, project_id))
+    
+    # ✅ Task rows 삽입
+    if project_id:
+        kv["task_rows"] = _load_task_rows(db, project_id)
 
     # ✅ 사용자 입력 → AI 다듬기 후 치환
     if body.extra_kv:
         intro_val = body.extra_kv.get("intro_text") or body.extra_kv.get("ai_prompt_intro")
         exp_val   = body.extra_kv.get("experience_text") or body.extra_kv.get("ai_prompt_experience")
 
+        # AI 다듬기 상태
         if intro_val:
             kv["자기소개"] = polish_with_ai(intro_val, purpose="자기소개")
         if exp_val:
@@ -175,10 +274,42 @@ def publish_to_notion(
             kv["ai 메모에 넣은 내용 토대로 느낀점 작성"] = polished_exp
             kv["경험"] = polished_exp
 
-        # 나머지 값도 그대로 병합
+        SAFE_LIST_KEYS = {"학적 사항", "경력 사항", "프로젝트 역할"}
+
+        def _maybe_parse_list(val):
+            if isinstance(val, str):
+                s = val.strip()
+                if not s:
+                    return None
+                try:
+                    parsed = json.loads(s)
+                    if isinstance(parsed, list):
+                        return parsed
+                except Exception:
+                    return None
+            return val if isinstance(val, list) else None
+
+        # 나머지 값도 안전하게 병합
         for k, v in body.extra_kv.items():
-            if v is not None:
+            if v is None:
+                continue
+
+            # 공백 문자열 무시
+            if isinstance(v, str) and not v.strip():
+                continue
+
+            # 리스트 키거나 기존 kv가 리스트라면 보호
+            if k in SAFE_LIST_KEYS or isinstance(kv.get(k), list):
+                parsed = _maybe_parse_list(v)
+                if parsed is None:
+                    continue
+                if isinstance(parsed, list):
+                    kv[k] = parsed
+                else:
+                    continue
+            else:
                 kv[k] = v
+
 
 
 
@@ -196,8 +327,15 @@ def publish_to_notion(
     # 3) 본문 블록 치환 (1:1 대치 완료되어 있다면 그대로 유지 가능)
     try:
         processed_blocks = replace_placeholders_in_blocks(template_blocks, kv)
+
+        # ✅ 작업 테이블에 task_rows 삽입
+        from app.services.notion_api_service import inject_task_rows_into_tables, _flatten_blocks
+        processed_blocks = inject_task_rows_into_tables(processed_blocks, kv)
+
+        # flatten 처리
+        processed_blocks = _flatten_blocks(processed_blocks)
     except Exception as e:
-        logging.exception("Placeholder replace failed: %s", e)
+        logging.exception("Placeholder/Task table inject failed: %s", e)
         processed_blocks = template_blocks  # 방어: 실패 시 원본 그대로
 
     # 치환 결과 미리보기 로그
