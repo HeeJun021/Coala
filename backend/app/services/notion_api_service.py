@@ -176,6 +176,66 @@ def update_page_title(user: "User", page_id: str, title: str) -> None:
 # ──────────────────────────────────────────────────────────────────────────────
 # 치환 유틸
 # ──────────────────────────────────────────────────────────────────────────────
+def inject_task_rows_into_tables(blocks: List[dict], context: Dict[str, Any]) -> List[dict]:
+    """
+    템플릿 블록들 중 table 블록을 찾아서 task_rows 데이터를 행으로 삽입한다.
+    - 헤더 행은 유지
+    - rows_data 만큼 table_row 추가
+    """
+    rows_data = (context or {}).get("task_rows") or []
+    if not rows_data:
+        return blocks
+
+    def walk(block: dict) -> dict:
+        if not isinstance(block, dict):
+            return block
+        t = block.get("type")
+        if t == "table":
+            tbl = block.get("table") or {}
+            children = tbl.get("children") or []
+
+            # 헤더만 유지
+            header = children[0] if children else None
+            new_children = []
+            if header:
+                new_children.append(header)
+
+            # 행 삽입
+            for r in rows_data:
+                row_cells = [
+                    str(r.get("작업명", "")),
+                    str(r.get("시작일", "")),
+                    str(r.get("마감일", "")),
+                    str(r.get("참여자", "")),
+                    str(r.get("완료여부", "")),
+                ]
+                new_row = {
+                    "object": "block",
+                    "type": "table_row",
+                    "table_row": {
+                        "cells": [[{"type": "text", "text": {"content": c}}] for c in row_cells]
+                    },
+                }
+                new_children.append(new_row)
+
+            block = dict(block)
+            block["table"] = dict(tbl)
+            block["table"]["children"] = new_children
+
+            logging.info(
+                "[Notion Publish] injected %d task_rows into table",
+                len(rows_data),
+            )
+            return block
+
+        # children 재귀 순회
+        for k in ("children",):
+            if isinstance(block.get(k), list):
+                block[k] = [walk(ch) for ch in block[k]]
+        return block
+
+    return [walk(b) for b in blocks]
+
 def _replace_in_text(text: Any, kv: Dict[str, Any]) -> Any:
     if not isinstance(text, str) or not kv:
         return text

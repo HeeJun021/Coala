@@ -177,6 +177,49 @@ def _load_project_kv(db: Session, project_id: Optional[int]) -> Dict[str, Any]:
 
     return base
 
+def _display_name(u: User) -> str:
+    return (getattr(u, "nickname", None) or
+            getattr(u, "name", None) or
+            getattr(u, "email", "") or "").strip()
+
+def _load_task_rows(db, project_id: Optional[int]) -> List[Dict[str, Any]]:
+    if not project_id:
+        return []
+
+    # ✅ 마감일 기준 정렬 (null 은 맨 뒤로 감)
+    tasks = (
+        db.query(Tasks)
+        .filter(Tasks.project_id == project_id)
+        .order_by(Tasks.due_date.asc().nulls_last())
+        .all()
+    )
+    if not tasks:
+        return []
+
+    rows: List[Dict[str, Any]] = []
+    for t in tasks:
+        names: List[str] = []
+        seen_ids = set()
+        for u in getattr(t, "collaborators", []) or []:
+            uid = getattr(u, "user_id", None)
+            if uid in seen_ids:
+                continue
+            seen_ids.add(uid)
+            dn = _display_name(u)
+            if dn:
+                names.append(dn)
+
+        done = "완료" if getattr(t, "status", None) == "완료됨" else "미완료"
+
+        rows.append({
+            "작업명": t.title or "",
+            "시작일": str(t.start_date or ""),
+            "마감일": str(t.due_date or ""),
+            "참여자": ", ".join(names),
+            "완료여부": done,
+        })
+
+    return rows
 
 
 # ========= 퍼블리시 엔드포인트 =========
@@ -213,8 +256,12 @@ def publish_to_notion(
     kv: Dict[str, Any] = {}
     kv.update(_load_portfolio_profile_kv(db, getattr(current_user, "user_id")))
     kv.update(_load_project_kv(db, project_id))
+    
+    # ✅ Task rows 삽입
+    if project_id:
+        kv["task_rows"] = _load_task_rows(db, project_id)
 
-        # ✅ 사용자 입력 → AI 다듬기 후 치환
+    # ✅ 사용자 입력 → AI 다듬기 후 치환
     if body.extra_kv:
         intro_val = body.extra_kv.get("intro_text") or body.extra_kv.get("ai_prompt_intro")
         exp_val   = body.extra_kv.get("experience_text") or body.extra_kv.get("ai_prompt_experience")
@@ -280,10 +327,15 @@ def publish_to_notion(
     # 3) 본문 블록 치환 (1:1 대치 완료되어 있다면 그대로 유지 가능)
     try:
         processed_blocks = replace_placeholders_in_blocks(template_blocks, kv)
-        from app.services.notion_api_service import _flatten_blocks
+
+        # ✅ 작업 테이블에 task_rows 삽입
+        from app.services.notion_api_service import inject_task_rows_into_tables, _flatten_blocks
+        processed_blocks = inject_task_rows_into_tables(processed_blocks, kv)
+
+        # flatten 처리
         processed_blocks = _flatten_blocks(processed_blocks)
     except Exception as e:
-        logging.exception("Placeholder replace failed: %s", e)
+        logging.exception("Placeholder/Task table inject failed: %s", e)
         processed_blocks = template_blocks  # 방어: 실패 시 원본 그대로
 
     # 치환 결과 미리보기 로그
