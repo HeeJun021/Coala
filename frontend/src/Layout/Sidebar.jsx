@@ -1,7 +1,7 @@
 // Sidebar.jsx
 import React, { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { BookOpenText, Code2, FileCheck, ChevronRight, ChevronDown } from "lucide-react";
+import { BookOpenText, Code2, ChevronRight, FileCheck, ChevronDown } from "lucide-react";
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -26,6 +26,8 @@ const Sidebar = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+const [tooltip, setTooltip] = useState(null);
+  
   // ✅ 호버 기반 펼침 제거, 명시적으로 여닫기 위해 openLanguage 추가
   //    null 이면 전부 접힘, 특정 언어 문자열이면 그 언어 섹션만 펼침
   const [openLanguage, setOpenLanguage] = useState(
@@ -139,12 +141,15 @@ const Sidebar = () => {
   };
 
 return (
+  <>
   <aside
-    ref={sidebarRef}
-    onMouseEnter={handleMouseEnter}
-    onMouseLeave={handleMouseLeave}
-    className="fixed left-[70px] top-[120px] w-[260px] bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden z-40"
-  >
+      ref={sidebarRef}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      className="fixed left-[70px] top-[120px] w-[260px] max-h-[calc(100vh-120px)] 
+                 bg-white rounded-2xl shadow-lg border border-gray-200 
+                 overflow-y-auto scrollbar-hide z-40"
+    >
     <div className="h-[56px] flex items-center px-6 bg-[#88C078] rounded-t-2xl shadow-sm">
       <h1 className="text-[18px] font-semibold text-black tracking-wide">학습자료</h1>
     </div>
@@ -183,8 +188,21 @@ return (
                             {selectedMaterialId ? selectedMaterial?.title : selectedExample?.title}
                           </span>
                           {(selectedMaterial?.is_completed || selectedExample?.is_completed) && (
-                            <FileCheck className="w-4 h-4 text-green-500" />
-                          )}
+  <div
+    className="ml-2"
+    onMouseEnter={(e) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      setTooltip({
+        x: rect.left + rect.width / 2,
+        y: rect.bottom + 6, // 아이콘 아래 6px
+      });
+    }}
+    onMouseLeave={() => setTooltip(null)}
+  >
+    <FileCheck className="w-5 h-5 text-green-500" />
+  </div>
+)}
+
                         </div>
                       )}
                   </div>
@@ -221,7 +239,22 @@ return (
                     onClick={() => handleMaterialClick(material.material_id, lang.language)}
                   >
                     <span className="break-words">{material.title}</span>
-                    {material.is_completed && <FileCheck className="w-4 h-4 text-green-500 ml-2" />}
+                    {material.is_completed && (
+  <div
+    className="ml-2"
+    onMouseEnter={(e) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      setTooltip({
+        x: rect.left + rect.width / 2,
+        y: rect.bottom + 6, // 아이콘 아래 6px
+      });
+    }}
+    onMouseLeave={() => setTooltip(null)}
+  >
+    <FileCheck className="w-5 h-5 text-green-500" />
+  </div>
+)}
+
                   </div>
                 ))}
 
@@ -242,7 +275,23 @@ return (
                       onClick={() => handleExampleClick(example.example_id, lang.language)}
                     >
                       <span className="break-words">{example.title}</span>
-                      {example.is_completed && <FileCheck className="w-4 h-4 text-green-500 ml-2" />}
+                      {example.is_completed && (
+  <div
+    className="ml-2"
+    onMouseEnter={(e) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      setTooltip({
+        x: rect.left + rect.width / 2,
+        y: rect.bottom + 6, // 아이콘 아래 6px
+      });
+    }}
+    onMouseLeave={() => setTooltip(null)}
+  >
+    <FileCheck className="w-5 h-5 text-green-500" />
+  </div>
+)}
+
+
                     </div>
                   ))
                 ) : (
@@ -255,6 +304,21 @@ return (
       </div>
     )}
   </aside>
+
+    {/* ✅ 사이드바 바깥, return 맨 아래 */}
+    {tooltip && (
+      <span
+        className="fixed px-2 py-1 text-xs text-white bg-gray-800 rounded z-50 whitespace-nowrap"
+        style={{
+          top: tooltip.y,
+          left: tooltip.x,
+          transform: "translateX(-50%)",
+        }}
+      >
+        학습이 완료되었습니다.
+      </span>
+    )}
+  </>
 );
 };
 
