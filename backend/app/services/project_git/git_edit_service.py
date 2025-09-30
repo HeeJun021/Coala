@@ -3,6 +3,7 @@ from typing import List, Optional, Tuple, Dict
 import requests
 import base64
 import binascii
+import os
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
@@ -14,6 +15,52 @@ from app.models.project_git.project_code_buffer import ProjectCodeBuffer
 from app.services.project_git.github_service import _get_github_token, _gh_headers, GITHUB_API
 
 MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024  # 5MB
+
+STARTER_CODES = {
+    ".html": """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>New Document</title>
+</head>
+<body>
+  <h1>Hello, World!</h1>
+</body>
+</html>
+""",
+    ".css": """/* Starter CSS */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+h1 {
+  color: #333;
+}
+""",
+    ".js": """// Starter JavaScript
+console.log("Hello, World!");
+""",
+    ".jsx": """import React from "react";
+
+export default function App() {
+  return (
+    <div>
+      <h1>Hello, World!</h1>
+    </div>
+  );
+}
+""",
+    ".py": """# Starter Python script
+
+def main():
+    print("Hello, World!")
+
+if __name__ == "__main__":
+    main()
+""",
+}
 
 # --- 컨텍스트/캐시 헬퍼 -------------------------------------------------
 
@@ -306,6 +353,7 @@ def create_new_file_service(
     """
     새 파일을 '버퍼'에 생성(change_type='A').
     실제 GitHub 생성은 stage+commit 때 일어남.
+    content가 비어 있으면 확장자별 스타터코드를 자동 삽입.
     """
     if not path or path.endswith("/"):
         raise HTTPException(status_code=400, detail="올바른 파일 경로를 입력하세요.")
@@ -332,8 +380,13 @@ def create_new_file_service(
     if existing and existing.change_type != "D":
         raise HTTPException(status_code=409, detail="이미 버퍼에 동일 경로가 존재합니다.")
 
-    # content 디코딩 + 사이즈 제한 (라우터에서 encoding을 안 받으므로 우선 utf-8 전제)
-    decoded = _decode_content_for_storage(content or "", "utf-8")
+    # content가 비어 있으면 확장자 기반 스타터코드 삽입
+    ext = os.path.splitext(path)[1].lower()
+    starter = STARTER_CODES.get(ext, "")
+    final_content = content or starter
+
+    # content 디코딩 + 사이즈 제한
+    decoded = _decode_content_for_storage(final_content, "utf-8")
 
     buf = existing or ProjectCodeBuffer(
         project_repo_id=project_repo_id,
