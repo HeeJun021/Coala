@@ -19,7 +19,6 @@ const MyPageSidebar = () => {
         title: "로그인 정보",
         items: [
           { label: "계정 정보 및 관리", to: "/mypage/modify" },
-          { label: "개인정보 보호 설정", to: "/mypage/setting" },
           { label: "출석체크", to: "/mypage/attendance" },
         ],
       },

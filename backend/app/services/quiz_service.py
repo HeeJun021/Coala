@@ -374,7 +374,8 @@ def get_user_incorrect_questions_service(user_id: int, db: Session, language_id:
     query = (
         db.query(
             Question,
-            func.count(Question.question_id).label("incorrect_attempts")
+            func.count(Question.question_id).label("incorrect_attempts"),
+            func.max(QuizSubmissions.submitted_at).label("last_incorrect_at")
         )
         .join(QuizSubmissionDetails, Question.question_id == QuizSubmissionDetails.question_id)
         .join(QuizSubmissions, QuizSubmissionDetails.submission_id == QuizSubmissions.submission_id)
@@ -399,7 +400,7 @@ def get_user_incorrect_questions_service(user_id: int, db: Session, language_id:
         return []
 
     results = []
-    for question, attempts in incorrect_questions_with_count:
+    for question, attempts, last_incorrect_at in incorrect_questions_with_count:
         results.append({
             "question_id": question.question_id,
             "question_text": question.question_text,
@@ -409,6 +410,7 @@ def get_user_incorrect_questions_service(user_id: int, db: Session, language_id:
             "explanation": question.explanation,
             "choices": question.choices,
             "language_id": question.language_id,
+            "last_incorrect_at": last_incorrect_at, 
             "incorrect_attempts": attempts,
             "created_at": question.created_at,
             "updated_at": question.updated_at
