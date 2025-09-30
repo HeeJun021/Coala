@@ -34,10 +34,13 @@ const TimelineWidget = ({ project }) => {
   const slideRef = useRef(null);
   const collaboratorRef = useRef(null);
 
-  const parsedCreatedAt = project?.created_at ? parseISO(project.created_at) : parseISO('2025-06-07T19:47:00Z');
-  const [timelineStartDate, setTimelineStartDate] = useState(
-    isValid(parsedCreatedAt) ? startOfMonth(parsedCreatedAt) : startOfMonth(new Date("2025-06-07T19:47:00+09:00"))
-  );
+const baseDate = project?.start_date || project?.created_at;  
+const parsedStart = baseDate ? parseISO(baseDate) : new Date();
+
+const [timelineStartDate, setTimelineStartDate] = useState(
+  isValid(parsedStart) ? startOfMonth(parsedStart) : startOfMonth(new Date())
+);
+
   const [timelineEndDate, setTimelineEndDate] = useState(lastDayOfMonth(addYears(timelineStartDate, 1)));
   const totalDays = differenceInDays(timelineEndDate, timelineStartDate) + 1;
 

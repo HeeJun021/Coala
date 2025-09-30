@@ -298,13 +298,14 @@ const handleCloseProject = async () => {
     await closeProject(project.project_id);
     alert("프로젝트가 종료되었습니다.");
 
-    // ✅ 사이드바 즉시 새로고침 트리거
+    // 사이드바 새로고침 이벤트
     window.dispatchEvent(new CustomEvent("projects:refresh", {
       detail: { projectId: project.project_id, action: "close" }
     }));
 
-    onUpdate?.();
-    navigate("/team-project", { replace: true });
+    // ✅ 전체 페이지 새로고침
+    window.location.reload();
+
   } catch (e) {
     alert(e?.response?.data?.detail || "종료에 실패했습니다.");
   }

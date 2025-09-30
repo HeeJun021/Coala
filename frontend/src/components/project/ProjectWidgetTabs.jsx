@@ -223,10 +223,16 @@ const ProjectWidgetTabs = ({ project, onNameChange, currentUser, defaultTab = "o
       case "overview":
         return (
           <ProjectDetailPanel
-            project={currentProject}
-            onUpdate={loadTasks}
-            onNameChange={onNameChange}
-          />
+  project={currentProject}
+  onUpdate={(updated) => {
+    if (updated) {
+      setCurrentProject(updated);  // ✅ 종료 직후 상태 반영
+    }
+    loadTasks();
+  }}
+  onNameChange={onNameChange}
+/>
+
         );
       case "erd":
         return (

@@ -10,7 +10,6 @@ import {
   FlaskConical,
   Code2,
   Layers,
-  Filter,
   ArrowRight,
   Folder as FolderIcon,
   FileText as FileIcon,
@@ -256,10 +255,7 @@ const SelfCodingTemplatePage = () => {
 
         {/* 카테고리 */}
         <div className="h-[48px] flex items-center gap-2 mb-6">
-          <span className="text-[13px] text-gray-500 flex items-center gap-1">
-            <Filter size={13} /> 카테고리
-          </span>
-          <div className="flex gap-2">
+
             {categories.map((cat) => (
               <button
                 key={cat.key}
@@ -274,7 +270,6 @@ const SelfCodingTemplatePage = () => {
                 {cat.label}
               </button>
             ))}
-          </div>
         </div>
 
         {/* 카드 그리드: 큰 카드 3열, 넘침 허용 */}
