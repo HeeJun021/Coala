@@ -14,6 +14,7 @@ from app.models.template import NotionTemplate, NotionExportHistory
 from app.models.project_models import Project, ProjectMembers
 from app.models.task_models import Tasks, TaskCollaborators
 from app.services.notion_ai_service import polish_with_ai
+from app.services.eucalyptus_service import assert_can_publish, deduct_for_publish
 
 import json
 
@@ -241,6 +242,9 @@ def publish_to_notion(
     template_blocks: List[dict] = tpl.doc_json if hasattr(tpl, "doc_json") else []
     if not isinstance(template_blocks, list) or not template_blocks:
         raise HTTPException(status_code=400, detail="Invalid template doc_json")
+    
+    # ✅ 퍼블리시 가능 여부 확인
+    assert_can_publish(db, current_user.user_id)
 
     # 1) 치환용 KV 구성 (프로필 + 프로젝트 + 추가 입력)
     project_id: Optional[int] = body.project_id
@@ -360,6 +364,8 @@ def publish_to_notion(
             status_code=500,
             detail=f"Notion publish failed (status={err_status}): {err_txt}",
         )
+        
+    deduct_for_publish(db, current_user.user_id)
 
     # 5) 히스토리 저장(선택)
     try:

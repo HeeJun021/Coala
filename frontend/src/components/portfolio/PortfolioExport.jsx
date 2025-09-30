@@ -1,22 +1,40 @@
 // frontend/src/components/portfolio/PortfolioExport.jsx
 import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { getMyLeaves } from "../../api/eucalyptusApi"; // ✅ 새 API 함수
 import NotionConnectPanel from "./NotionConnectPanel";
 import PortfolioFilterPanel from "./PortfolioFilterPanel";
 import { getNotionStatus, disconnectNotion, publishToNotion } from "../../api/notionApi";
 import { getMyProjects } from "../../api/projectApi";
-import { X, Upload, MapPin, Layers, CheckCircle2, Loader2, AlertTriangle, ExternalLink,LayoutDashboard,Users,FileText} from "lucide-react";
+import { X, Upload, MapPin, Layers, CheckCircle2, Loader2, AlertTriangle, ExternalLink,LayoutDashboard,Users,FileText, Leaf} from "lucide-react";
 import NotionTemplateSelectModal from "./NotionTemplateSelectModal";
 import NotionTargetPageSelectModal from "./NotionTargetPageSelectModal";
 import { getMyPortfolioProfile, upsertMyPortfolioProfile as upsertPortfolioProfile } from "../../api/portfolioApi";
 
-function SummaryModal({ open, onCancel, onConfirm, data }) {
+function SummaryModal({ open, onCancel, onConfirm, data, canPublish, myLeaves }) {
   if (!open) return null;
   const { pageTitle, targetPageTitle, templateTitle, projectName, role } = data || {};
   const allValid = !!(pageTitle?.trim() && targetPageTitle && templateTitle && projectName);
+
   return (
-    <div className="fixed inset-0 z-[99] flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true">
-      <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900">퍼블리시 전 요약</h3>
+    <div
+      className="fixed inset-0 z-[99] flex items-center justify-center bg-black/40 p-4"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl border border-gray-200 p-6">
+
+        {/* 헤더: 좌측 제목 / 우측 잔액 */}
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-gray-900">퍼블리시 전 요약</h3>
+          <div className="flex items-center gap-1 text-sm">
+            <span className="text-gray-600">내 잔액:</span>
+            <span className="flex items-center font-semibold text-emerald-600 gap-1">
+              {myLeaves}
+              <Leaf className="w-4 h-4" />
+            </span>
+          </div>
+        </div>
+
         <div className="mt-4 rounded-xl border border-gray-200">
           <div className="p-4 grid grid-cols-[100px_1fr] gap-y-3 text-[14px]">
             <div className="text-gray-500 inline-flex items-center gap-2 whitespace-nowrap">
@@ -66,20 +84,48 @@ function SummaryModal({ open, onCancel, onConfirm, data }) {
             <div className="font-medium text-gray-900 truncate">{role || "미지정"}</div>
           </div>
         </div>
-        <div className="mt-6 flex items-center justify-end gap-2">
-          <button onClick={onCancel} className="px-3 py-2 rounded-xl border bg-white hover:bg-gray-50 text-gray-700">
-            수정하기
-          </button>
-          {allValid && (
-            <button onClick={onConfirm} className="px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white">
-              퍼블리시 진행
+
+        {/* 하단 안내 + 버튼 영역 */}
+        <div className="mt-6">
+          <div className="mb-3 text-sm text-gray-800 flex items-center gap-1.5 whitespace-nowrap">
+            <span>※ 퍼블리시 시</span>
+            <span className="inline-flex items-center font-semibold text-emerald-600 gap-1">
+              유칼립투스 <Leaf className="w-4 h-4" /> 100
+            </span>
+            <span>개가 사용됩니다.</span>
+          </div>
+
+          <div className="flex items-center justify-end gap-2">
+            <button
+              onClick={onCancel}
+              className="px-3 py-2 rounded-xl border bg-white hover:bg-gray-50 text-gray-700"
+            >
+              수정하기
             </button>
-          )}
+            {allValid && (
+              <button
+                onClick={onConfirm}
+                disabled={!canPublish}
+                title={!canPublish ? "유칼립투스 잎이 부족합니다 (100개 필요)" : undefined}
+                className={`px-4 py-2 rounded-xl text-white ${
+                  canPublish
+                    ? "bg-green-600 hover:bg-green-700"
+                    : "bg-gray-300 cursor-not-allowed"
+                }`}
+              >
+                퍼블리시 진행
+              </button>
+            )}
+          </div>
         </div>
+
       </div>
     </div>
   );
 }
+
+
+
 
 
 function PublishProgressModal({
@@ -97,75 +143,86 @@ function PublishProgressModal({
   const isError = status === "error";
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true">
-      <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-gray-200 p-6">
-        {/* 헤더 */}
-        <div className="flex items-center gap-3">
-          <div className={`w-12 h-12 rounded-full border flex items-center justify-center
-              ${isLoading ? "bg-emerald-50 border-emerald-200" : ""}
-              ${isSuccess ? "bg-emerald-50 border-emerald-200" : ""}
-              ${isError ? "bg-rose-50 border-rose-200" : ""}`}>
-            {isLoading && <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />}
-            {isSuccess && <CheckCircle2 className="w-7 h-7 text-emerald-600" />}
-            {isError && <AlertTriangle className="w-7 h-7 text-rose-600" />}
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">
-              {isLoading ? (title || "노션에 퍼블리시 중…")
-               : isSuccess ? "노션에 성공적으로 퍼블리시되었습니다."
-               : "퍼블리시에 실패했습니다."}
-            </h3>
-            <p className="text-sm text-gray-500 mt-0.5">
-              {isLoading ? (subtitle || "잠시만 기다려 주세요. 완료되면 자동으로 상태가 바뀝니다.")
-               : isSuccess ? "아래 버튼으로 노션에서 결과를 확인할 수 있어요."
-               : "권한/공유 설정 또는 네트워크 상태를 확인한 뒤 다시 시도해 주세요."}
-            </p>
-          </div>
-        </div>
-
-        {/* 진행 안내 (로딩시에만) */}
-        {isLoading && (
-          <div className="mt-5">
-            <ul className="mt-4 text-xs text-gray-500 space-y-1 list-disc list-inside">
-              <li>템플릿 로딩</li>
-              <li>데이터 바인딩 및 AI 설명 적용</li>
-              <li>노션 페이지에 블록 삽입</li>
-            </ul>
-          </div>
-        )}
-
-        {/* 액션 */}
-        <div className="mt-6 flex items-center justify-end gap-2">
-          {isSuccess && (
-            <>
-              {onOpenNotion && (
-                <button
-                  onClick={onOpenNotion}
-                  className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white"
-                >
-                  노션에서 열기 <ExternalLink className="w-4 h-4" />
-                </button>
-              )}
-              <button
-                onClick={onClose}
-                className="px-3 py-2 rounded-xl border bg-white hover:bg-gray-50 text-gray-700"
-              >
-                닫기
-              </button>
-            </>
-          )}
-
-          {isError && (
-            <button
-              onClick={onClose}
-              className="px-3 py-2 rounded-xl border bg-white hover:bg-gray-50 text-gray-700"
-            >
-              닫기
-            </button>
-          )}
-        </div>
+    <div
+  className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4"
+  role="dialog"
+  aria-modal="true"
+>
+  <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl border border-gray-200 p-6">
+    {/* 헤더 */}
+    <div className="flex items-center gap-3">
+      <div
+        className={`w-12 h-12 rounded-full border flex items-center justify-center
+          ${isLoading ? "bg-emerald-50 border-emerald-200" : ""}
+          ${isSuccess ? "bg-emerald-50 border-emerald-200" : ""}
+          ${isError ? "bg-rose-50 border-rose-200" : ""}`}
+      >
+        {isLoading && <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />}
+        {isSuccess && <CheckCircle2 className="w-7 h-7 text-emerald-600" />}
+        {isError && <AlertTriangle className="w-7 h-7 text-rose-600" />}
+      </div>
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900">
+          {isLoading
+            ? title || "노션에 퍼블리시 중…"
+            : isSuccess
+            ? "노션에 성공적으로 퍼블리시되었습니다."
+            : "퍼블리시에 실패했습니다."}
+        </h3>
+        <p className="text-sm text-gray-500 mt-0.5">
+          {isLoading
+            ? subtitle || "잠시만 기다려 주세요. 완료되면 자동으로 상태가 바뀝니다."
+            : isSuccess
+            ? "아래 버튼으로 노션에서 결과를 확인할 수 있어요."
+            : "권한/공유 설정 또는 네트워크 상태를 확인한 뒤 다시 시도해 주세요."}
+        </p>
       </div>
     </div>
+
+    {/* 진행 안내 (로딩시에만) */}
+    {isLoading && (
+      <div className="mt-5">
+        <ul className="mt-4 text-xs text-gray-500 space-y-1 list-disc list-inside">
+          <li>템플릿 로딩</li>
+          <li>데이터 바인딩 및 AI 설명 적용</li>
+          <li>노션 페이지에 블록 삽입</li>
+        </ul>
+      </div>
+    )}
+
+    {/* 액션 */}
+    <div className="mt-6 flex items-center justify-end gap-2">
+      {isSuccess && (
+        <>
+          {onOpenNotion && (
+            <button
+              onClick={onOpenNotion}
+              className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white"
+            >
+              노션에서 열기 <ExternalLink className="w-4 h-4" />
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            className="px-3 py-2 rounded-xl border bg-white hover:bg-gray-50 text-gray-700"
+          >
+            닫기
+          </button>
+        </>
+      )}
+
+      {isError && (
+        <button
+          onClick={onClose}
+          className="px-3 py-2 rounded-xl border bg-white hover:bg-gray-50 text-gray-700"
+        >
+          닫기
+        </button>
+      )}
+    </div>
+  </div>
+</div>
+
   );
 }
 
@@ -176,6 +233,9 @@ export default function PortfolioExport() {
   const [connected, setConnected] = useState(false);
   const [workspaceName, setWorkspaceName] = useState("");
   const [disconnecting, setDisconnecting] = useState(false);
+
+  // 잎 상태
+  const [myLeaves, setMyLeaves] = useState(0);
 
   // 프로젝트/필터
   const [projects, setProjects] = useState([]);
@@ -259,6 +319,20 @@ const handleSelectTemplate = useCallback((id, title) => {
   }, []);
 
   useEffect(() => { refreshStatus(); }, [refreshStatus]);
+
+  // PortfolioExport.jsx
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await getMyLeaves();
+        setMyLeaves(res?.current_balance ?? 0);
+      } catch (e) {
+        console.error("유칼립투스 잎 불러오기 실패:", e);
+        setMyLeaves(0);
+      }
+    })();
+  }, []);
+
 
   useEffect(() => {
     if (!connected) return;
@@ -362,8 +436,10 @@ const handleSelectTemplate = useCallback((id, title) => {
   }, [connected, disconnecting, refreshStatus]);
 
   const canPublish = useMemo(() => {
-    return !!(templateId && targetPageId && selectedProjectId && pageTitle.trim());
-  }, [templateId, targetPageId, selectedProjectId, pageTitle]);
+  return !!(templateId && targetPageId && selectedProjectId && pageTitle.trim()) 
+    && myLeaves >= 100;   // ✅ 최소 100개 필요
+}, [templateId, targetPageId, selectedProjectId, pageTitle, myLeaves]);
+
 
   const handlePublish = useCallback(async () => {
   const missing = [];
@@ -1037,6 +1113,8 @@ return (
     })(),
     role: (Array.isArray(filters?.my_roles) && filters.my_roles[0]) || "",
   }}
+  canPublish={canPublish}
+  myLeaves={myLeaves}   // ✅ 여기 추가
 />
         <PublishProgressModal
   open={publishModalOpen}

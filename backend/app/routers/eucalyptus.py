@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User
+from sqlalchemy import func
 from app.models.eucalyptus_transaction_models import EucalyptusTransaction
 from app.utils.auth import get_current_user_object
 from app.schemas.eucalyptus_schema import (
@@ -46,4 +47,18 @@ def use_user_balance(
     return EucalyptusResponse(
         current_balance=current_user.eucalyptus_balance,
         changed_amount=cost,
+    )
+
+# 현재 유칼립투스 잎 잔액 조회
+@router.get("/me", response_model=EucalyptusResponse)
+def get_my_balance(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_object),
+):
+    # User 모델에 balance 캐싱되어 있다면 그대로 사용
+    balance = current_user.eucalyptus_balance
+
+    return EucalyptusResponse(
+        current_balance=balance,
+        changed_amount=0
     )

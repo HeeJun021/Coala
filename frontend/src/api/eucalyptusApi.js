@@ -12,3 +12,9 @@ export const payEucalyptus = async (action) => {
   const response = await apiClient.post("/eucalyptus/use", { action });
   return response.data; // { current_balance, changed_amount }
 };
+
+// 유칼립투스 조회(밸런스)
+export async function getMyLeaves() {
+  const res = await apiClient.get("/eucalyptus/me");
+  return res.data; // { current_balance, changed_amount }
+}
