@@ -87,7 +87,7 @@ const QuizResultPage = ({ userData }) => {
               <div className="pl-4">
                 {/* 섹션 제목 규격: text-base font-semibold */}
                 <p className="text-base font-semibold text-gray-900 mb-2">
-                  문제 {index + 1} ({q.question_type?.toUpperCase()})
+                  문제 {index + 1}
                 </p>
 
                 {/* 본문: text-sm leading-relaxed */}

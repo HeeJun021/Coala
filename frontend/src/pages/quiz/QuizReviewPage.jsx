@@ -1,6 +1,6 @@
 // src/pages/QuizReviewPage.jsx
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { getIncorrectQuestions, createRetakeQuiz } from "../../api/quizApi";
 
@@ -8,15 +8,16 @@ import QuizSideBar from "../../Layout/QuizSideBar";
 import LanguageFilter from "../../components/quiz/LanguageFilter";
 import RetakeQuizForm from "../../components/quiz/RetakeQuizForm";
 import IncorrectQuestionList from "../../components/quiz/IncorrectQuestionList";
+import { Filter } from "lucide-react";
 
 export default function QuizReviewPage() {
   const [allQuestions, setAllQuestions] = useState([]);
   const [filteredQuestions, setFilteredQuestions] = useState([]);
   const [selectedLanguage, setSelectedLanguage] = useState(null);
+  const [sortOption, setSortOption] = useState("recent"); // ✅ 정렬 상태
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // 🔎 가이드 버튼 (Practice/Test와 동일 동작)
   const navigate = useNavigate();
 
   // 1) 전체 오답 목록 불러오기
@@ -25,7 +26,6 @@ export default function QuizReviewPage() {
       try {
         const data = await getIncorrectQuestions();
         setAllQuestions(data || []);
-        setFilteredQuestions(data || []);
       } catch (e) {
         console.error(e);
         setError("오답 목록을 불러오는 데 실패했습니다.");
@@ -36,16 +36,23 @@ export default function QuizReviewPage() {
     fetchQuestions();
   }, []);
 
-  // 2) 언어별 필터링
+  // 2) 언어별 + 정렬 적용
   useEffect(() => {
-    if (selectedLanguage === null) {
-      setFilteredQuestions(allQuestions);
-    } else {
-      setFilteredQuestions(
-        allQuestions.filter((q) => q.language_id === selectedLanguage)
-      );
-    }
-  }, [selectedLanguage, allQuestions]);
+    let list =
+      selectedLanguage === null
+        ? allQuestions
+        : allQuestions.filter((q) => q.language_id === selectedLanguage);
+
+  if (sortOption === "recent") {
+    list = [...list].sort(
+      (a, b) => new Date(b.last_incorrect_at) - new Date(a.last_incorrect_at)
+    );
+  } else if (sortOption === "incorrect") {
+    list = [...list].sort((a, b) => b.incorrect_attempts - a.incorrect_attempts);
+  }
+
+    setFilteredQuestions(list);
+  }, [selectedLanguage, allQuestions, sortOption]);
 
   // 3) 복습 퀴즈 생성 후 Solve 페이지로 이동
   const handleStartQuiz = async (count, languageId) => {
@@ -71,9 +78,8 @@ export default function QuizReviewPage() {
       {/* 좌측 사이드바 */}
       <QuizSideBar />
 
-      {/* 본문 카드 (Practice/Test 규격 동일) */}
+      {/* 본문 카드 */}
       <div className="max-w-6xl mx-auto pt-8 mt-8 bg-white shadow-xl rounded-2xl border border-gray-300 p-7 relative">
-
         {/* 타이틀 */}
         <div className="mb-8">
           <h1 className="text-3xl font-extrabold text-gray-800 mb-4 tracking-wide">
@@ -85,8 +91,34 @@ export default function QuizReviewPage() {
           </p>
         </div>
 
-        {/* 언어 선택 */}
-        <LanguageFilter onSelectLanguage={setSelectedLanguage} />
+{/* 언어 선택 + 정렬 옵션 한 줄 배치 */}
+<div className="flex justify-between items-center">
+  <LanguageFilter onSelectLanguage={setSelectedLanguage} />
+
+  <div className="flex gap-2 mb-4">
+    <button
+      onClick={() => setSortOption("recent")}
+      className={`px-3 py-1.5 rounded-full text-[13px] font-medium border transition ${
+        sortOption === "recent"
+          ? "bg-green-600 text-white border-green-600"
+          : "text-green-700 border-green-400 hover:bg-green-50"
+      }`}
+    >
+      최근 푼 문제
+    </button>
+    <button
+      onClick={() => setSortOption("incorrect")}
+      className={`px-3 py-1.5 rounded-full text-[13px] font-medium border transition ${
+        sortOption === "incorrect"
+          ? "bg-green-600 text-white border-green-600"
+          : "text-green-700 border-green-400 hover:bg-green-50"
+      }`}
+    >
+      많이 틀린 문제
+    </button>
+  </div>
+</div>
+
 
         {/* 복습 퀴즈 시작 폼 */}
         <RetakeQuizForm

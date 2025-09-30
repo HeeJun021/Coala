@@ -61,9 +61,10 @@ class QuizResultResponse(BaseModel):
     
 class IncorrectQuestionResponse(QuestionResponse):
     incorrect_attempts: int
+    last_incorrect_at: Optional[datetime]
 
     class Config:
-        from_attributes = True  # ✅ v2에서는 이걸 사용
+        from_attributes = True
         
 class CreateQuizFromQuestionsRequest(BaseModel):
     title: str
@@ -75,3 +76,4 @@ class RetakeQuizRequest(BaseModel):
     title: str = "My Retake Quiz"
     count: int = Field(..., gt=0, description="다시 풀어볼 문제의 개수 (0보다 커야 함)")
     language_id: int
+    

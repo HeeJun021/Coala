@@ -146,18 +146,19 @@ const isQuizActive =
       path: "/team-project",
       children: ["대시보드", "내 작업","프로젝트 생성"],
     },
-    {
-      label: "게시판",
-      path: "/board",
-      children: ["자유 게시판", "프로젝트 모집", "코드 공유 게시판"],
-    },
+ 
     {
   label: "포트폴리오",
   path: user ? "/portfolio" : "/login",
   children: user
     ? ["포트폴리오 추출", "포트폴리오 추출 내역"]
     : [],
-}
+},
+   {
+      label: "게시판",
+      path: "/board",
+      children: ["자유 게시판", "프로젝트 모집", "코드 공유 게시판"],
+    },
   ];
 
   return (
@@ -299,9 +300,9 @@ const isQuizActive =
                     if (child === "실전 문제") link = "/quizpage?category=test";
                     if (child === "문제 만들기")
                       link = "/quizpage?category=user";
-                    if (child === "제출 내역") link = "/quiz-history";
-                    if (child === "퀴즈 통계") link = "/quiz-stats";
-                    if (child === "오답 노트") link = "/quiz-review";
+                    if (child === "제출 내역") link = "/quizpage?category=history";
+                    if (child === "퀴즈 통계") link = "/quizpage?category=stats";
+                    if (child === "오답 노트") link = "/quizpage?category=review";
                     return (
                       <Link
                         key={i}
