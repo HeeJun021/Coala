@@ -12,6 +12,7 @@ import { getMyPortfolioProfile, upsertMyPortfolioProfile as upsertPortfolioProfi
 function SummaryModal({ open, onCancel, onConfirm, data }) {
   if (!open) return null;
   const { pageTitle, targetPageTitle, templateTitle, projectName, role } = data || {};
+  const allValid = !!(pageTitle?.trim() && targetPageTitle && templateTitle && projectName);
   return (
     <div className="fixed inset-0 z-[99] flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true">
       <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-gray-200 p-6">
@@ -19,44 +20,67 @@ function SummaryModal({ open, onCancel, onConfirm, data }) {
         <div className="mt-4 rounded-xl border border-gray-200">
           <div className="p-4 grid grid-cols-[100px_1fr] gap-y-3 text-[14px]">
             <div className="text-gray-500 inline-flex items-center gap-2 whitespace-nowrap">
-  <FileText className="w-4 h-4 text-black" />
-  <span>노션 제목</span>
-</div>
-            <div className="font-medium text-gray-900 truncate">{pageTitle?.trim() || "-"}</div>
+              <FileText className="w-4 h-4 text-black" />
+              <span>노션 제목</span>
+            </div>
+            <div className="font-medium truncate">
+              {pageTitle?.trim()
+                ? <span className="text-gray-900">{pageTitle}</span>
+                : <span className="text-red-600">노션 페이지 제목을 입력하세요</span>}
+            </div>
 
             <div className="text-gray-500 inline-flex items-center gap-2 whitespace-nowrap">
-  <MapPin className="w-4 h-4 text-yellow-500" />
-  <span>대상 페이지</span>
-</div>
-            <div className="font-medium text-gray-900 truncate">{targetPageTitle || "-"}</div>
+              <MapPin className="w-4 h-4 text-yellow-500" />
+              <span>대상 페이지</span>
+            </div>
+            <div className="font-medium truncate">
+              {targetPageTitle
+                ? <span className="text-gray-900">{targetPageTitle}</span>
+                : <span className="text-red-600">대상 페이지를 선택하세요</span>}
+            </div>
 
             <div className="text-gray-500 inline-flex items-center gap-2 whitespace-nowrap">
-  <Layers className="w-4 h-4 text-emerald-600" />
-  <span>템플릿</span>
-</div>
-            <div className="font-medium text-gray-900 truncate">{templateTitle || "-"}</div>
+              <Layers className="w-4 h-4 text-emerald-600" />
+              <span>템플릿</span>
+            </div>
+            <div className="font-medium truncate">
+              {templateTitle
+                ? <span className="text-gray-900">{templateTitle}</span>
+                : <span className="text-red-600">템플릿을 선택하세요</span>}
+            </div>
 
             <div className="text-gray-500 inline-flex items-center gap-2 whitespace-nowrap">
-  <LayoutDashboard className="w-4 h-4 text-indigo-600" />
-  <span>프로젝트</span>
-</div>
-            <div className="font-medium text-gray-900 truncate">{projectName || "-"}</div>
+              <LayoutDashboard className="w-4 h-4 text-indigo-600" />
+              <span>프로젝트</span>
+            </div>
+            <div className="font-medium truncate">
+              {projectName
+                ? <span className="text-gray-900">{projectName}</span>
+                : <span className="text-red-600">프로젝트를 선택하세요</span>}
+            </div>
 
             <div className="text-gray-500 inline-flex items-center gap-2 whitespace-nowrap">
-  <Users className="w-3.5 h-3.5 text-blue-500" />
-  <span>역할</span>
-</div>
+              <Users className="w-3.5 h-3.5 text-blue-500" />
+              <span>역할</span>
+            </div>
             <div className="font-medium text-gray-900 truncate">{role || "미지정"}</div>
           </div>
         </div>
         <div className="mt-6 flex items-center justify-end gap-2">
-          <button onClick={onCancel} className="px-3 py-2 rounded-xl border bg-white hover:bg-gray-50 text-gray-700">수정하기</button>
-          <button onClick={onConfirm} className="px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white">퍼블리시 진행</button>
+          <button onClick={onCancel} className="px-3 py-2 rounded-xl border bg-white hover:bg-gray-50 text-gray-700">
+            수정하기
+          </button>
+          {allValid && (
+            <button onClick={onConfirm} className="px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white">
+              퍼블리시 진행
+            </button>
+          )}
         </div>
       </div>
     </div>
   );
 }
+
 
 function PublishProgressModal({
   open,
@@ -175,6 +199,9 @@ export default function PortfolioExport() {
   // AI 설명
   const [aiNotes, setAiNotes] = useState("");      // 기존 변수 재사용: 경험 입력
   const [introText, setIntroText] = useState("");  // 새로 추가: 자기소개 입력
+
+  const [emailError, setEmailError] = useState("");
+const [phoneError, setPhoneError] = useState("");
 
   const [profile, setProfile] = useState({
     full_name: "",
@@ -339,40 +366,46 @@ const handleSelectTemplate = useCallback((id, title) => {
   }, [templateId, targetPageId, selectedProjectId, pageTitle]);
 
   const handlePublish = useCallback(async () => {
-    if (!canPublish) {
-      return alert("프로젝트 1개, 템플릿, 대상 페이지, 제목을 모두 설정하세요.");
-    }
-    try {
-      setPublishing(true);
-      setResult(null);
-      setPublishModalOpen(true);
-      setPublishStatus("loading");
-      setPublishedPageUrl("");
-      setPublishedPageId("");
-      if (dirty) {
-        await saveProfile();
-      }
-      const res = await publishToNotion({
-        template_id: templateId,
-        target_page_id: targetPageId,
-        title: pageTitle.trim(),
-        project_id: selectedProjectId,   // ✅ 단일 프로젝트
-        // 하위호환: 기존 ai_prompt에는 '경험 입력'을 그대로 전달
-        ai_prompt: aiNotes || null,
-        // 신규 키: 백엔드에서 각각 가공/치환에 활용
-        ai_prompt_experience: aiNotes || null,
-        ai_prompt_intro: introText || null,
-        extra_kv: {
-          full_name: profile.full_name || "",
-          birth_date: profile.birth_date || "",
-          phone: profile.phone || "",
-          email: profile.email || "",
-          education: eduList,
-          career: careerList,
-          experience_text: aiNotes || "",
-          intro_text: introText || "",
-        },
-      });
+  const missing = [];
+  if (!pageTitle.trim()) missing.push("노션 페이지 제목");
+  if (!targetPageId) missing.push("대상 페이지");
+  if (!templateId) missing.push("템플릿");
+  if (!selectedProjectId) missing.push("프로젝트");
+
+  if (missing.length > 0) {
+    alert(`${missing.join(", ")} ${missing.length > 1 ? "을" : "을"} 입력/선택하세요.`);
+    return;
+  }
+
+  try {
+    setPublishing(true);
+    setResult(null);
+    setPublishModalOpen(true);
+    setPublishStatus("loading");
+    setPublishedPageUrl("");
+    setPublishedPageId("");
+
+    if (dirty) await saveProfile();
+
+    const res = await publishToNotion({
+      template_id: templateId,
+      target_page_id: targetPageId,
+      title: pageTitle.trim(),
+      project_id: selectedProjectId,
+      ai_prompt: aiNotes || null,
+      ai_prompt_experience: aiNotes || null,
+      ai_prompt_intro: introText || null,
+      extra_kv: {
+        full_name: profile.full_name || "",
+        birth_date: profile.birth_date || "",
+        phone: profile.phone || "",
+        email: profile.email || "",
+        education: eduList,
+        career: careerList,
+        experience_text: aiNotes || "",
+        intro_text: introText || "",
+      },
+    });
       setResult(res);
       if (res?.ok) {
         // 백엔드 응답 형식에 맞게 page_url / page_id 추출
@@ -562,13 +595,17 @@ return (
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold text-gray-900">추가 사용자 정보(포트폴리오용)</span>
                   <button
-                    type="button"
-                    onClick={saveProfile}
-                    disabled={saving || !dirty}
-                    className={`px-3 py-1.5 rounded-lg text-sm border ${saving || !dirty ? "bg-gray-100 text-gray-400" : "bg-green-600 text-white hover:bg-green-700"}`}
-                  >
-                    {saving ? "저장 중…" : "저장"}
-                  </button>
+  type="button"
+  onClick={saveProfile}
+  disabled={saving || !dirty || emailError || phoneError}
+  className={`px-3 py-1.5 rounded-lg text-sm border ${
+    saving || !dirty || emailError || phoneError
+      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+      : "bg-green-600 text-white hover:bg-green-700"
+  }`}
+>
+  {saving ? "저장 중…" : "저장"}
+</button>
                 </div>
 
                 {/* 기본정보 */}
@@ -592,22 +629,47 @@ return (
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-500 mb-2">전화번호</label>                    <input
-                      className="w-full h-11 rounded-xl border border-gray-300 px-3 text-sm"
-                      value={profile.phone}
-                      onChange={(e)=>{ setProfile(p=>({...p, phone:e.target.value})); setDirty(true); }}
-                      placeholder="010-1234-5678"
-                    />
-                  </div>
+  <label className="block text-xs text-gray-500 mb-2">전화번호</label>
+  <input
+    className="w-full h-11 rounded-xl border border-gray-300 px-3 text-sm"
+    value={profile.phone}
+    onChange={(e) => {
+      const val = e.target.value;
+      setProfile(p => ({ ...p, phone: val }));
+      setDirty(true);
+
+      if (val && !/^010-\d{4}-\d{4}$/.test(val)) {
+        setPhoneError("전화번호 형식에 맞게 입력하세요 (예: 010-1234-5678)");
+      } else {
+        setPhoneError("");
+      }
+    }}
+    placeholder="010-1234-5678"
+  />
+  {phoneError && <p className="text-red-600 text-xs mt-1">{phoneError}</p>}
+</div>
+
                   <div>
-                    <label className="block text-xs text-gray-500 mb-2">이메일</label>
-                    <input
-                      className="w-full h-11 rounded-xl border border-gray-300 px-3 text-sm"
-                      value={profile.email}
-                      onChange={(e)=>{ setProfile(p=>({...p, email:e.target.value})); setDirty(true); }}
-                      placeholder="me@example.com"
-                    />
-                  </div>
+  <label className="block text-xs text-gray-500 mb-2">이메일</label>
+  <input
+    className="w-full h-11 rounded-xl border border-gray-300 px-3 text-sm"
+    value={profile.email}
+    onChange={(e) => {
+      const val = e.target.value;
+      setProfile(p => ({ ...p, email: val }));
+      setDirty(true);
+
+      if (val && !/.+@.+\..+/.test(val)) {
+        setEmailError("이메일 형식에 맞게 입력하세요 (예: user@example.com)");
+      } else {
+        setEmailError("");
+      }
+    }}
+    placeholder="me@example.com"
+  />
+  {emailError && <p className="text-red-600 text-xs mt-1">{emailError}</p>}
+</div>
+
                 </div>
 
 {/* 학적사항 */}
@@ -875,24 +937,24 @@ return (
               {/* 퍼블리시 버튼 */}
               <div className="pt-4">
                 <button
-                  type="button"
-                  onClick={() => setReviewOpen(true)}
-                  disabled={publishing || !canPublish}
-                  className={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-white font-medium transition ${
-                    publishing ? "bg-emerald-400 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-700 shadow-lg"
-                  }`}
-                >
-                  {publishing ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      퍼블리시 중…
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-4 h-4" /> 노션에 퍼블리시
-                    </>
-                  )}
-                </button>
+  type="button"
+  onClick={() => setReviewOpen(true)}
+  disabled={publishing}   // ✅ canPublish 조건 제거
+  className={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-white font-medium transition ${
+    publishing ? "bg-emerald-400 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-700 shadow-lg"
+  }`}
+>
+  {publishing ? (
+    <>
+      <Loader2 className="w-4 h-4 animate-spin" />
+      퍼블리시 중…
+    </>
+  ) : (
+    <>
+      <Upload className="w-4 h-4" /> 노션에 퍼블리시
+    </>
+  )}
+</button>
               </div>
 
               {/* (선택) 결과 박스 */}
