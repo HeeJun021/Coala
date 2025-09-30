@@ -6,9 +6,11 @@ import {
   getMyDailyFlags,
   checkAttendance,
 } from "../api/attendanceApi";
+import { useAuth } from "../context/AuthContext";
 
 export default function AttendancePopup({ tz = "Asia/Seoul", userId }) {
   const dialogRef = useRef(null);
+  const { refreshUser } = useAuth();
 
   const [open, setOpen] = useState(false);
   const [attDate, setAttDate] = useState("");         // "YYYY-MM-DD"
@@ -117,6 +119,7 @@ export default function AttendancePopup({ tz = "Asia/Seoul", userId }) {
           const c = await getTodayCount(tz);
           setTodayCount(c?.count ?? todayCount);
         } catch {}
+        await refreshUser();
       }
     } catch (err) {
       const msg =

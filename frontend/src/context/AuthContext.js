@@ -41,8 +41,18 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const refreshUser = async () => {
+    try {
+      const currentUser = await getCurrentUser();
+      setUser(currentUser);
+    } catch (error) {
+      console.error("🚨 사용자 갱신 실패:", error);
+      setUser(null);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, handleLogin, handleLogout, loading }}>
+    <AuthContext.Provider value={{ user, handleLogin, handleLogout, refreshUser, loading }}>
       {children}
     </AuthContext.Provider>
   );
