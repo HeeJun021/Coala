@@ -316,8 +316,8 @@ const ErdCanvas = ({
     if (!isPlacing) return;
 
     const rect = canvasRef.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / zoomLevel;
-    const y = (e.clientY - rect.top) / zoomLevel;
+    const x = (e.clientX - rect.left - panOffset.x) / zoomLevel;
+    const y = (e.clientY - rect.top  - panOffset.y) / zoomLevel;
 
     try {
       const newTable = await createTable(erdId, {

@@ -195,9 +195,10 @@ const ErdTableBox = ({
 
     draggingRef.current = true;
     const rect = tableRef.current.getBoundingClientRect();
+    // 화면 픽셀 오프셋을 zoom으로 나눠서 "캔버스 좌표계" 기준으로 보정
     offsetRef.current = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
+      x: (e.clientX - rect.left) / zoom,
+      y: (e.clientY - rect.top) / zoom,
     };
 
     e.stopPropagation();
