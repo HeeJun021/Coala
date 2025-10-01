@@ -98,12 +98,25 @@ const ErdCanvas = ({
   const dragOriginRef = useRef(null);
   const tablePositionsRef = useRef({});
 
-  // 모든 테이블/컬럼 DOM을 스캔해서 관계 앵커 좌표를 즉시 세팅
+  // 모든 관계가 그려질 준비가 되었는지 여부
+  const [relationsReady, setRelationsReady] = useState(false);
+
+  // 모든 관계의 from/to 앵커가 존재하는지 확인
+  const computeRelationsReady = useCallback((positions) => {
+    if (!relations || relations.length === 0) return false;
+    for (const r of relations) {
+      if (!positions[r.fromColumnId] || !positions[r.toColumnId]) return false;
+    }
+    return true;
+  }, [relations]);
+
+  // DOM을 스캔해 모든 컬럼 앵커 좌표를 한 번에 계산
 const recomputeAllAnchors = useCallback(() => {
   const canvasRect = canvasRef.current?.getBoundingClientRect();
   if (!canvasRect) return;
 
   const next = {};
+
   tables.forEach((table) => {
     const tableBox = document.querySelector(`.erd-table-box[data-id='${table.id}']`);
     if (!tableBox) return;
@@ -124,18 +137,22 @@ const recomputeAllAnchors = useCallback(() => {
     });
   });
 
-  // 한 번에 덮어써서 관계선이 바로 그려지도록
-  setColumnPositions((prev) => ({ ...prev, ...next }));
-}, [tables, panOffset.x, panOffset.y, zoomLevel]);
+  // 한 번에 머지하고, 그 결과로 ready 여부 판정
+  setColumnPositions((prev) => {
+    const merged = { ...prev, ...next };
+    if (computeRelationsReady(merged)) setRelationsReady(true);
+    return merged;
+  });
+}, [tables, panOffset.x, panOffset.y, zoomLevel, computeRelationsReady]);
 
-// 초기 레이아웃 커밋 직후에 앵커 좌표를 즉시 한 번 측정 (깜빡임 방지)
+// 초기 레이아웃 커밋 직후, DOM이 그려진 프레임에서 한 번 측정
 useLayoutEffect(() => {
-  // DOM이 그려진 프레임에서 측정
   let raf = requestAnimationFrame(() => {
     recomputeAllAnchors();
   });
   return () => cancelAnimationFrame(raf);
 }, [recomputeAllAnchors, tables.length, relations.length]);
+
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -636,11 +653,14 @@ useLayoutEffect(() => {
     [setTables]
   );
   const handleColumnPositionUpdate = (tableId, colPosMap) => {
-    setColumnPositions((prev) => ({
-      ...prev,
-      ...colPosMap,
-    }));
-  };
+  setColumnPositions((prev) => {
+    const merged = { ...prev, ...colPosMap };
+    if (!relationsReady && computeRelationsReady(merged)) {
+      setRelationsReady(true);        // 모두 준비되면 그때 딱 켠다
+    }
+    return merged;
+  });
+};
 
   const handleSnapshotSaveWithColumns = useCallback(
     async (newTables, newRelations) => {
@@ -870,8 +890,8 @@ useLayoutEffect(() => {
           transformOrigin: "0 0",
         }}
       >
-        {/* 관계선 */}
-        {relations.map((rel) => {
+        {/* 관계선: 준비되기 전까지 숨김 → 한 번에 표시 */}
+ {relationsReady && relations.map((rel) => {
           const from = columnPositions[rel.fromColumnId];
           const to = columnPositions[rel.toColumnId];
 
