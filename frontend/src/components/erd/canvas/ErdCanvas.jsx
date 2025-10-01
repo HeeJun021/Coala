@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, useState, useEffect } from "react";
+import React, { useRef, useCallback, useState, useEffect, useLayoutEffect } from "react";
 import ErdTableBox from "./ErdTableBox";
 import FloatingToolButton from "./FloatingToolButton";
 import ErdRelationLine from "./ErdRelationLine";
@@ -97,6 +97,45 @@ const ErdCanvas = ({
   const dragStartRef = useRef(null);
   const dragOriginRef = useRef(null);
   const tablePositionsRef = useRef({});
+
+  // 모든 테이블/컬럼 DOM을 스캔해서 관계 앵커 좌표를 즉시 세팅
+const recomputeAllAnchors = useCallback(() => {
+  const canvasRect = canvasRef.current?.getBoundingClientRect();
+  if (!canvasRect) return;
+
+  const next = {};
+  tables.forEach((table) => {
+    const tableBox = document.querySelector(`.erd-table-box[data-id='${table.id}']`);
+    if (!tableBox) return;
+
+    const tableRect = tableBox.getBoundingClientRect();
+    const columnEls = tableBox.querySelectorAll("[data-column-id]");
+
+    columnEls.forEach((el) => {
+      const colId = el.getAttribute("data-column-id");
+      const colRect = el.getBoundingClientRect();
+
+      // 캔버스 좌표계로 변환 (현재 수식과 동일한 보정)
+      const left  = (tableRect.left  - canvasRect.left - panOffset.x) / zoomLevel;
+      const right = (tableRect.right - canvasRect.left - panOffset.x) / zoomLevel;
+      const y     = (colRect.top - canvasRect.top - panOffset.y + colRect.height / 2) / zoomLevel;
+
+      next[colId] = { left, right, y };
+    });
+  });
+
+  // 한 번에 덮어써서 관계선이 바로 그려지도록
+  setColumnPositions((prev) => ({ ...prev, ...next }));
+}, [tables, panOffset.x, panOffset.y, zoomLevel]);
+
+// 초기 레이아웃 커밋 직후에 앵커 좌표를 즉시 한 번 측정 (깜빡임 방지)
+useLayoutEffect(() => {
+  // DOM이 그려진 프레임에서 측정
+  let raf = requestAnimationFrame(() => {
+    recomputeAllAnchors();
+  });
+  return () => cancelAnimationFrame(raf);
+}, [recomputeAllAnchors, tables.length, relations.length]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
