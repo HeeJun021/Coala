@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, useState, useEffect } from "react";
+import React, { useRef, useCallback, useState, useEffect, useLayoutEffect } from "react";
 import ErdTableBox from "./ErdTableBox";
 import FloatingToolButton from "./FloatingToolButton";
 import ErdRelationLine from "./ErdRelationLine";
@@ -97,6 +97,61 @@ const ErdCanvas = ({
   const dragStartRef = useRef(null);
   const dragOriginRef = useRef(null);
   const tablePositionsRef = useRef({});
+
+  // 모든 관계가 그려질 준비가 되었는지 여부
+  const [relationsReady, setRelationsReady] = useState(false);
+
+  // 모든 관계의 from/to 앵커가 존재하는지 확인
+  const computeRelationsReady = useCallback((positions) => {
+    if (!relations || relations.length === 0) return false;
+    for (const r of relations) {
+      if (!positions[r.fromColumnId] || !positions[r.toColumnId]) return false;
+    }
+    return true;
+  }, [relations]);
+
+  // DOM을 스캔해 모든 컬럼 앵커 좌표를 한 번에 계산
+const recomputeAllAnchors = useCallback(() => {
+  const canvasRect = canvasRef.current?.getBoundingClientRect();
+  if (!canvasRect) return;
+
+  const next = {};
+
+  tables.forEach((table) => {
+    const tableBox = document.querySelector(`.erd-table-box[data-id='${table.id}']`);
+    if (!tableBox) return;
+
+    const tableRect = tableBox.getBoundingClientRect();
+    const columnEls = tableBox.querySelectorAll("[data-column-id]");
+
+    columnEls.forEach((el) => {
+      const colId = el.getAttribute("data-column-id");
+      const colRect = el.getBoundingClientRect();
+
+      const left  = (tableRect.left  - canvasRect.left - panOffset.x) / zoomLevel;
+      const right = (tableRect.right - canvasRect.left - panOffset.x) / zoomLevel;
+      const y     = (colRect.top    - canvasRect.top  - panOffset.y + colRect.height / 2) / zoomLevel;
+
+      next[colId] = { left, right, y };
+    });
+  });
+
+  // 한 번에 머지하고, 그 결과로 ready 여부 판정
+  setColumnPositions((prev) => {
+    const merged = { ...prev, ...next };
+    if (computeRelationsReady(merged)) setRelationsReady(true);
+    return merged;
+  });
+}, [tables, panOffset.x, panOffset.y, zoomLevel, computeRelationsReady]);
+
+// 초기 레이아웃 커밋 직후, DOM이 그려진 프레임에서 한 번 측정
+useLayoutEffect(() => {
+  let raf = requestAnimationFrame(() => {
+    recomputeAllAnchors();
+  });
+  return () => cancelAnimationFrame(raf);
+}, [recomputeAllAnchors, tables.length, relations.length]);
+
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -597,11 +652,14 @@ const ErdCanvas = ({
     [setTables]
   );
   const handleColumnPositionUpdate = (tableId, colPosMap) => {
-    setColumnPositions((prev) => ({
-      ...prev,
-      ...colPosMap,
-    }));
-  };
+  setColumnPositions((prev) => {
+    const merged = { ...prev, ...colPosMap };
+    if (!relationsReady && computeRelationsReady(merged)) {
+      setRelationsReady(true);        // 모두 준비되면 그때 딱 켠다
+    }
+    return merged;
+  });
+};
 
   const handleSnapshotSaveWithColumns = useCallback(
     async (newTables, newRelations) => {
@@ -831,8 +889,8 @@ const ErdCanvas = ({
           transformOrigin: "0 0",
         }}
       >
-        {/* 관계선 */}
-        {relations.map((rel) => {
+        {/* 관계선: 준비되기 전까지 숨김 → 한 번에 표시 */}
+ {relationsReady && relations.map((rel) => {
           const from = columnPositions[rel.fromColumnId];
           const to = columnPositions[rel.toColumnId];
 
