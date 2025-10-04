@@ -45,9 +45,20 @@ def _messages_for_chat(prompt: str) -> List[Dict[str, str]]:
 
 def _input_for_responses(prompt: str):
     return [
-        {"role": "system", "content": [{"type": "text", "text": "너는 전문 이력서/자기소개서 편집 어시스턴트야."}]},
-        {"role": "user",   "content": [{"type": "text", "text": prompt}]},
+        {
+            "role": "system",
+            "content": [
+                {"type": "input_text", "text": "너는 전문 이력서/자기소개서 편집 어시스턴트야."}
+            ],
+        },
+        {
+            "role": "user",
+            "content": [
+                {"type": "input_text", "text": prompt}
+            ],
+        },
     ]
+
 
 def _extract_from_responses(resp) -> Optional[str]:
     try:
