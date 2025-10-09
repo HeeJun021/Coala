@@ -137,7 +137,7 @@ const DocsListPanel = ({ project }) => {
         {filteredDocs.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-[300px] text-center text-gray-600">
             <p className="text-xl font-medium mb-4">
-              검색 결과가 없거나 아직 생성된 문서가 없습니다.
+              아직 생성된 ERD가 없습니다.
               <br />
               새로운 문서를 추가해보세요!
             </p>
