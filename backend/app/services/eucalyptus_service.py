@@ -1,35 +1,21 @@
 # backend/app/services/eucalyptus_service.py
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import func
-from app.models.eucalyptus_transaction_models import EucalyptusTransaction
+from app.models.user import User  
 
 REQUIRED_LEAVES_PUBLISH = 100
 
-def get_balance(db: Session, user_id: int) -> int:
-    """유저의 현재 잎 잔액(트랜잭션 합계)"""
-    bal = db.query(
-        func.coalesce(func.sum(EucalyptusTransaction.amount), 0)
-    ).filter(
-        EucalyptusTransaction.user_id == user_id
-    ).scalar()
-    return int(bal or 0)
-
-def assert_can_publish(db: Session, user_id: int) -> None:
+def assert_can_publish(user: User) -> None:
     """퍼블리시 전 잔액 검사 (부족 시 403)"""
-    bal = get_balance(db, user_id)
-    if bal < REQUIRED_LEAVES_PUBLISH:
+    # 🔹 user.eucalyptus_leaves -> user.eucalyptus_balance 로 수정
+    if user.eucalyptus_balance < REQUIRED_LEAVES_PUBLISH:
         raise HTTPException(
             status_code=403,
-            detail=f"유칼립투스 잎이 부족합니다. (필요: {REQUIRED_LEAVES_PUBLISH}, 보유: {bal})"
+            # 🔹 여기도 함께 수정하면 에러 메시지가 더 정확해집니다.
+            detail=f"유칼립투스 잎이 부족합니다. (필요: {REQUIRED_LEAVES_PUBLISH}, 보유: {user.eucalyptus_balance})"
         )
 
-def deduct_for_publish(db: Session, user_id: int) -> None:
-    """퍼블리시 성공 후 100 잎 차감 트랜잭션 기록 (commit은 호출자에서)"""
-    tx = EucalyptusTransaction(
-        user_id=user_id,
-        amount=-REQUIRED_LEAVES_PUBLISH,
-        action="publish",
-    )
-    db.add(tx)
-    # db.flush()  # 필요시 활성화 (PK 미리 확보)
+def deduct_for_publish(user: User) -> None:
+    """퍼블리시 성공 후 100 잎 차감 (commit은 호출자에서)"""
+    # 🔹 user.eucalyptus_leaves -> user.eucalyptus_balance 로 수정
+    user.eucalyptus_balance -= REQUIRED_LEAVES_PUBLISH
