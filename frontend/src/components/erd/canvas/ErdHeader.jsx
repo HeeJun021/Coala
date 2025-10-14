@@ -86,102 +86,126 @@ const ErdHeader = ({
   };
 
   const handleImageDownload = async () => {
-  const canvasElement = document.getElementById("erd-canvas");
-  if (!canvasElement) {
-    alert("❌ 캔버스를 찾을 수 없습니다.");
-    return;
-  }
-
-  const transformedRoot = canvasElement.querySelector(".origin-top-left");
-  if (!transformedRoot) {
-    alert("❌ 캡처 대상이 없습니다.");
-    return;
-  }
-
-  const tableEls = transformedRoot.querySelectorAll(".erd-table-box");
-  if (!tableEls.length) {
-    alert("📭 테이블이 없습니다.");
-    return;
-  }
-
-  // 1) 캡처 범위 계산
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-
-  tableEls.forEach((el) => {
-    const x = el.offsetLeft;
-    const y = el.offsetTop;
-    const w = el.offsetWidth;
-    const h = el.offsetHeight;
-    minX = Math.min(minX, x);
-    minY = Math.min(minY, y);
-    maxX = Math.max(maxX, x + w);
-    maxY = Math.max(maxY, y + h);
-  });
-
-  // ✅ 패딩 추가 (상하좌우에 40px)
-  const padding = 40;
-  minX -= padding;
-  minY -= padding;
-  maxX += padding;
-  maxY += padding;
-
-  const width = Math.ceil(maxX - minX);
-  const height = Math.ceil(maxY - minY);
-
-  // 2) 오프스크린 컨테이너 생성
-  const offscreen = document.createElement("div");
-  offscreen.style.position = "fixed";
-  offscreen.style.left = "-100000px";
-  offscreen.style.top = "0";
-  offscreen.style.width = width + "px";
-  offscreen.style.height = height + "px";
-  offscreen.style.background = "#ffffff";
-  offscreen.style.overflow = "visible";
-  offscreen.style.pointerEvents = "none";
-
-  // 테이블 복제해서 배치
-  tableEls.forEach((el) => {
-    const clone = el.cloneNode(true);
-    clone.style.position = "absolute";
-    clone.style.left = (el.offsetLeft - minX) + "px";
-    clone.style.top = (el.offsetTop - minY) + "px";
-    clone.style.transform = "none";
-    offscreen.appendChild(clone);
-  });
-
-  document.body.appendChild(offscreen);
-
-  try {
-    if (document.fonts && document.fonts.ready) {
-      await document.fonts.ready;
+    const canvasElement = document.getElementById("erd-canvas");
+    if (!canvasElement) {
+      alert("❌ 캔버스를 찾을 수 없습니다.");
+      return;
     }
 
-    const canvas = await html2canvas(offscreen, {
-      backgroundColor: "#ffffff",
-      useCORS: true,
-      letterRendering: true,
-      scale: Math.max(1.5, Math.min(3, window.devicePixelRatio || 2)),
-      x: 0,
-      y: 0,
-      width,
-      height,
-      scrollX: 0,
-      scrollY: 0,
-      windowWidth: width,
-      windowHeight: height,
+    const transformedRoot = canvasElement.querySelector(".origin-top-left");
+    if (!transformedRoot) {
+      alert("❌ 캡처 대상이 없습니다.");
+      return;
+    }
+
+    const tableEls = transformedRoot.querySelectorAll(".erd-table-box");
+    if (!tableEls.length) {
+      alert("📓 테이블이 없습니다.");
+      return;
+    }
+    
+    const relationLineSvgs = Array.from(transformedRoot.children).filter(
+      (child) => child.tagName.toLowerCase() === "svg"
+    );
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+    tableEls.forEach((el) => {
+      const x = el.offsetLeft;
+      const y = el.offsetTop;
+      const w = el.offsetWidth;
+      const h = el.offsetHeight;
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x + w);
+      maxY = Math.max(maxY, y + h);
     });
 
-    const link = document.createElement("a");
-    link.href = canvas.toDataURL("image/png");
-    link.download = "erd_capture.png";
-    link.click();
-  } catch (err) {
-    console.error("❌ 이미지 저장 오류:", err);
-    alert("이미지 저장 중 오류가 발생했습니다.");
-  } finally {
-    offscreen.remove();
-  }
-};
+    const padding = 40;
+    minX -= padding;
+    minY -= padding;
+    maxX += padding;
+    maxY += padding;
+
+    const width = Math.ceil(maxX - minX);
+    const height = Math.ceil(maxY - minY);
+
+    const offscreen = document.createElement("div");
+    offscreen.style.position = "fixed";
+    offscreen.style.left = "-100000px";
+    offscreen.style.top = "0";
+    offscreen.style.width = width + "px";
+    offscreen.style.height = height + "px";
+    offscreen.style.background = "#ffffff";
+    offscreen.style.overflow = "hidden"; // ✅ overflow: hidden 으로 변경
+    offscreen.style.pointerEvents = "none";
+
+    relationLineSvgs.forEach((svgEl) => {
+      const clone = svgEl.cloneNode(true);
+      clone.style.position = "absolute";
+      clone.style.left = `0px`; // ✅ 컨테이너 자체는 0,0 에 위치
+      clone.style.top = `0px`;  // ✅ 컨테이너 자체는 0,0 에 위치
+      clone.style.transform = "none"; 
+
+      // ✅ SVG 내부 모든 요소를 감싸는 <g> 태그 생성
+      const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      
+      // ✅ 계산된 오프셋만큼 그래픽 그룹 전체를 이동시킴
+      group.setAttribute("transform", `translate(${-minX}, ${-minY})`);
+
+      // ✅ 기존 자식들을 모두 새로운 <g> 태그로 이동
+      while (clone.firstChild) {
+        group.appendChild(clone.firstChild);
+      }
+      
+      // ✅ 변환이 적용된 그룹을 SVG에 다시 추가
+      clone.appendChild(group);
+      
+      offscreen.appendChild(clone);
+    });
+
+    tableEls.forEach((el) => {
+      const clone = el.cloneNode(true);
+      clone.style.position = "absolute";
+      clone.style.left = (el.offsetLeft - minX) + "px";
+      clone.style.top = (el.offsetTop - minY) + "px";
+      clone.style.transform = "none";
+      offscreen.appendChild(clone);
+    });
+
+    document.body.appendChild(offscreen);
+
+    try {
+      if (document.fonts && document.fonts.ready) {
+        await document.fonts.ready;
+      }
+
+      const canvas = await html2canvas(offscreen, {
+        backgroundColor: "#ffffff",
+        useCORS: true,
+        letterRendering: true,
+        scale: Math.max(1.5, Math.min(3, window.devicePixelRatio || 2)),
+        x: 0,
+        y: 0,
+        width,
+        height,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: width,
+        windowHeight: height,
+      });
+
+      const link = document.createElement("a");
+      link.href = canvas.toDataURL("image/png");
+      link.download = "erd_capture.png";
+      link.click();
+    } catch (err) {
+      console.error("❌ 이미지 저장 오류:", err);
+      alert("이미지 저장 중 오류가 발생했습니다.");
+    } finally {
+      offscreen.remove();
+    }
+  };
 
 
   return (
