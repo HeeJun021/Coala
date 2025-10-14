@@ -244,7 +244,7 @@ def publish_to_notion(
         raise HTTPException(status_code=400, detail="Invalid template doc_json")
     
     # ✅ 퍼블리시 가능 여부 확인
-    assert_can_publish(db, current_user.user_id)
+    assert_can_publish(current_user)
 
     # 1) 치환용 KV 구성 (프로필 + 프로젝트 + 추가 입력)
     project_id: Optional[int] = body.project_id
@@ -365,7 +365,7 @@ def publish_to_notion(
             detail=f"Notion publish failed (status={err_status}): {err_txt}",
         )
         
-    deduct_for_publish(db, current_user.user_id)
+    deduct_for_publish(current_user)
 
     # 5) 히스토리 저장(선택)
     try:

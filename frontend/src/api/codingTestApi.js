@@ -42,9 +42,16 @@ export const setPreferredCodingLang = async (language) => {
 
 
 
-// 코드 제출
-export const submitCodingTest = async (data) => {
-  const res = await apiClient.post("/codingtest/submit", data);
+// ✅ 코드 제출 (공유 여부 'share' 파라미터 추가)
+// 중복되던 함수를 하나로 통합하고, 우리가 만든 공유 기능을 추가했습니다.
+export const submitCodingTest = async ({ user_id, test_id, code, language, share }) => {
+  const res = await apiClient.post("/codingtest/submit", {
+    user_id,
+    test_id,
+    code,
+    language,
+    share, // ✅ 프론트엔드 모달에서 선택한 '공유 여부' 값을 전달
+  });
   return res.data;
 };
 
@@ -65,16 +72,6 @@ export const runCodeWithTestcases = async (testId, code, language) => {
   return res.data;
 };
 
-// 코드 제출 API
-export const submitCode = async ({ user_id, test_id, code, language }) => {
-  const res = await apiClient.post("/codingtest/submit", {
-    user_id,
-    test_id,
-    code,
-    language,
-  });
-  return res.data;
-};
 
 export const getCorrectSolutions = async (testId) => {
   const res = await apiClient.get(`/codingtest/solutions/${testId}`);
