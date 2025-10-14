@@ -36,6 +36,7 @@ const ErdListPanel = ({ erds, onSelect, onRefresh, project }) => {
     return list;
   }, [erds, searchTerm, sortOption]);
 
+  // ✅ ERD 생성 후 바로 상세 페이지로 이동
   const handleCreate = async (data) => {
     if (!projectId) {
       alert("project_id를 찾을 수 없습니다.");
@@ -43,12 +44,21 @@ const ErdListPanel = ({ erds, onSelect, onRefresh, project }) => {
     }
 
     try {
-      await createErd(projectId, data);
-      setShowCreateModal(false);
-      onRefresh?.();
+      const res = await createErd(projectId, data);
+
+      if (res?.erd_id) {
+        setShowCreateModal(false);
+
+        // ✅ 생성된 ERD 상세 페이지로 바로 이동 (경로 수정)
+        navigate(`/team-project/${projectId}/erd/${res.erd_id}`);
+      } else {
+        alert("ERD 생성에 실패했습니다.");
+      }
     } catch (error) {
-      alert("ERD 생성 실패");
+      alert("ERD 생성 중 오류가 발생했습니다.");
       console.error(error);
+    } finally {
+      onRefresh?.();
     }
   };
 
@@ -95,14 +105,35 @@ const ErdListPanel = ({ erds, onSelect, onRefresh, project }) => {
       </div>
 
       {/* 🔹 ERD 카드 리스트 */}
-    
-        {filteredErds.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-[300px] text-center text-gray-600">
-            <p className="text-xl font-medium mb-4">
-              아직 생성된 ERD가 없습니다.
-              <br />
-              새로운 ERD를 추가해보세요!
-            </p>
+      {filteredErds.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-[300px] text-center text-gray-600">
+          <p className="text-xl font-medium mb-4">
+            아직 생성된 ERD가 없습니다.
+            <br />
+            새로운 ERD를 추가해보세요!
+          </p>
+          <div
+            onClick={() => setShowCreateModal(true)}
+            className="w-[340px] h-[200px] border border-dashed border-gray-400 rounded-2xl flex flex-col justify-center items-center text-blue-500 hover:border-blue-500 hover:bg-blue-50 cursor-pointer transition"
+          >
+            <FolderPlus className="w-8 h-8 mb-2" />
+            <span className="text-sm font-medium">새 ERD 만들기</span>
+          </div>
+        </div>
+      ) : (
+        <div className="p-6 flex justify-center">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {filteredErds.map((erd) => (
+              <ErdCard
+                key={erd.erd_id}
+                erd={erd}
+                onSelect={() => navigate(`/erd/${erd.erd_id}/${projectId}`)}
+                onDelete={onRefresh}
+                project={project}
+              />
+            ))}
+
+            {/* 새 ERD 만들기 카드 */}
             <div
               onClick={() => setShowCreateModal(true)}
               className="w-[340px] h-[200px] border border-dashed border-gray-400 rounded-2xl flex flex-col justify-center items-center text-blue-500 hover:border-blue-500 hover:bg-blue-50 cursor-pointer transition"
@@ -111,31 +142,8 @@ const ErdListPanel = ({ erds, onSelect, onRefresh, project }) => {
               <span className="text-sm font-medium">새 ERD 만들기</span>
             </div>
           </div>
-        ) : (
-          <div className="p-6 flex justify-center">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {filteredErds.map((erd) => (
-                <ErdCard
-                  key={erd.erd_id}
-                  erd={erd}
-                  onSelect={() => navigate(`/erd/${erd.erd_id}/${projectId}`)}
-                  onDelete={onRefresh}
-                  project={project}
-                />
-              ))}
-
-              {/* 새 ERD 만들기 카드 */}
-              <div
-                onClick={() => setShowCreateModal(true)}
-                className="w-[340px] h-[200px] border border-dashed border-gray-400 rounded-2xl flex flex-col justify-center items-center text-blue-500 hover:border-blue-500 hover:bg-blue-50 cursor-pointer transition"
-              >
-                <FolderPlus className="w-8 h-8 mb-2" />
-                <span className="text-sm font-medium">새 ERD 만들기</span>
-              </div>
-            </div>
-          </div>
-        )}
-    
+        </div>
+      )}
 
       {/* 🔹 ERD 생성 모달 */}
       {showCreateModal && (
