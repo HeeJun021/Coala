@@ -77,6 +77,8 @@ class CodingTestSubmissions(Base):
     
     execution_time = Column(Integer, nullable=True)  # 단위: ms
     memory_used = Column(Integer, nullable=True)     # 단위: byte
+    
+    is_shared = Column(Boolean, default=True) 
 
 
 class CorrectSubmissionStats(Base):

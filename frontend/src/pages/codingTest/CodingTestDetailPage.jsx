@@ -16,7 +16,7 @@ import {
   getStarterCode,
   getSubmissionList,
   runCodeWithTestcases,
-  submitCode,
+  submitCodingTest,
   checkHasSolved,
   getStarterCodeByPref,
 } from "../../api/codingTestApi";
@@ -186,14 +186,13 @@ const CodingTestDetailPage = () => {
   };
 
   const handleSubmitCode = () => {
-    // "다시 보지 않기"를 선택했는지 확인
     const hideConfirm = localStorage.getItem("hideSubmissionConfirm");
 
     if (hideConfirm === "true") {
-      // 모달을 건너뛰고 바로 제출 (공유는 기본값인 true로 설정)
-      handleConfirmAndSubmit(true, false);
+      // ✅ 저장된 유저의 선택을 불러옴 (없으면 기본값 true)
+      const savedSharePreference = localStorage.getItem("userSharePreference") === "true";
+      handleConfirmAndSubmit(savedSharePreference, false);
     } else {
-      // 모달을 띄움
       setShowConfirmModal(true);
     }
   };
@@ -202,6 +201,8 @@ const CodingTestDetailPage = () => {
   const handleConfirmAndSubmit = async (shareSolution, dontShowAgain) => {
     // "다시 보지 않기"를 체크했다면 localStorage에 저장
     if (dontShowAgain) {
+  // ✅ 어떤 공유 옵션을 선택했는지 저장하는 코드 추가
+      localStorage.setItem("userSharePreference", shareSolution); 
       localStorage.setItem("hideSubmissionConfirm", "true");
     }
 
@@ -216,12 +217,12 @@ const CodingTestDetailPage = () => {
       setIsSubmitting(true); // isSubmitting은 여기서 true로 설정
       setIsRunning(true);
 
-      const res = await submitCode({
+      const res = await submitCodingTest({ // 함수 이름 변경
         user_id: user.user_id,
         test_id: problem.id,
         code,
         language,
-        share: shareSolution, // API에 공유 여부 전달
+        share: shareSolution,
       });
 
       if (res.all_cases) {
@@ -449,7 +450,7 @@ const CodingTestDetailPage = () => {
           hasSolvedBefore={hasSolvedBefore}
         />
       </div>
-      
+
       {/* ✅ 아래 새 모달 렌더링 코드 추가 */}
       {showConfirmModal && (
         <ConfirmSubmissionModal

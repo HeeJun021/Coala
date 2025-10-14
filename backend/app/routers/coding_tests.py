@@ -257,6 +257,7 @@ async def submit_coding_test(
         execution_result=results,
         execution_time=max_execution_time,
         memory_used=memory_used,
+        is_shared=submission.share,
     )
     db.add(new_submission)
     db.commit()
@@ -373,6 +374,7 @@ def get_solved_submissions_for_test(
         .filter(
             CodingTestSubmissions.test_id == test_id,
             CodingTestSubmissions.is_correct == True,
+            CodingTestSubmissions.is_shared == True,
         )
         .order_by(CodingTestSubmissions.submitted_at.desc())
         .all()
