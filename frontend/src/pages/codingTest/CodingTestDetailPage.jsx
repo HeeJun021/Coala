@@ -22,6 +22,7 @@ import {
 } from "../../api/codingTestApi";
 
 // 컴포넌트
+import ConfirmSubmissionModal from "../../components/CodingTest/modal/ConfirmSubmissionModal";
 import ResultModal from "../../components/CodingTest/modal/ResultModal";
 import WrongNoteEditor from "../../components/WrongNoteEditor";
 
@@ -56,6 +57,7 @@ const CodingTestDetailPage = () => {
   const [isSubmitResult, setIsSubmitResult] = useState(false);
   const [showCopyMessage, setShowCopyMessage] = useState(false);
   const [hasSolvedBefore, setHasSolvedBefore] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   // 문제 + 스타터 코드 불러오기
   useEffect(() => {
@@ -183,11 +185,35 @@ const CodingTestDetailPage = () => {
     }
   };
 
-  // 제출
-  const handleSubmitCode = async () => {
+  const handleSubmitCode = () => {
+    // "다시 보지 않기"를 선택했는지 확인
+    const hideConfirm = localStorage.getItem("hideSubmissionConfirm");
+
+    if (hideConfirm === "true") {
+      // 모달을 건너뛰고 바로 제출 (공유는 기본값인 true로 설정)
+      handleConfirmAndSubmit(true, false);
+    } else {
+      // 모달을 띄움
+      setShowConfirmModal(true);
+    }
+  };
+
+  // handleSubmitCode 함수 아래에 새 함수를 추가하세요.
+  const handleConfirmAndSubmit = async (shareSolution, dontShowAgain) => {
+    // "다시 보지 않기"를 체크했다면 localStorage에 저장
+    if (dontShowAgain) {
+      localStorage.setItem("hideSubmissionConfirm", "true");
+    }
+
+    // 모달이 열려있었다면 닫아줌
+    if (showConfirmModal) {
+      setShowConfirmModal(false);
+    }
+
+    // (기존 handleSubmitCode에 있던 로직)
     try {
       setIsSubmitResult(true);
-      setIsSubmitting(true);
+      setIsSubmitting(true); // isSubmitting은 여기서 true로 설정
       setIsRunning(true);
 
       const res = await submitCode({
@@ -195,12 +221,14 @@ const CodingTestDetailPage = () => {
         test_id: problem.id,
         code,
         language,
+        share: shareSolution, // API에 공유 여부 전달
       });
 
       if (res.all_cases) {
         setExecutionResults(res.all_cases);
       }
 
+      // 이 부분은 기존과 동일하게 ResultModal을 띄우는 로직입니다.
       setTimeout(() => {
         setResultData({
           isCorrect: res.is_correct,
@@ -220,7 +248,6 @@ const CodingTestDetailPage = () => {
       }, 1000);
     } catch (err) {
       console.error("제출 중 오류:", err);
-      setShowRefreshMessage(true); // 필요하면 별도 에러 메시지 상태 만들어도 OK
       setIsRunning(false);
     } finally {
       setIsSubmitting(false);
@@ -422,6 +449,16 @@ const CodingTestDetailPage = () => {
           hasSolvedBefore={hasSolvedBefore}
         />
       </div>
+      
+      {/* ✅ 아래 새 모달 렌더링 코드 추가 */}
+      {showConfirmModal && (
+        <ConfirmSubmissionModal
+          isSubmitting={isSubmitting}
+          onCancel={() => setShowConfirmModal(false)}
+          onConfirm={handleConfirmAndSubmit}
+        />
+      )}
+
       {showResultModal && resultData && (
         <ResultModal
           isCorrect={resultData.isCorrect}
