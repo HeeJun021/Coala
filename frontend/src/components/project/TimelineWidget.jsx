@@ -255,76 +255,68 @@ const [timelineStartDate, setTimelineStartDate] = useState(
     return tasks.filter((task) => task.status === status);
   };
 
-  const handleDragStart = (e, task) => {
-    setDraggedTask(task);
-    e.dataTransfer.setData("text/plain", task.task_id);
-    const originalStart = task.start_date && isValid(parseISO(task.start_date)) ? parseISO(task.start_date) : timelineStartDate;
-    const originalEnd = task.due_date && isValid(parseISO(task.due_date)) ? parseISO(task.due_date) : addDays(originalStart, 1);
-    setDraggedDates({ start: originalStart, end: originalEnd });
-    if (timelineRef.current) {
-      const rect = timelineRef.current.getBoundingClientRect();
-      const sidebarWidth = document.querySelector('.flex-shrink-0.w-40')?.getBoundingClientRect().width || 160;
-      const offsetX = e.clientX - rect.left - sidebarWidth;
-      const taskStartDays = Math.max(differenceInDays(originalStart, timelineStartDate), 0);
-      const taskStartPixels = taskStartDays * pixelPerDay;
-      setDragStartOffset(offsetX - taskStartPixels);
-    }
-  };
+const handleDragStart = (e, task) => {
+  setDraggedTask(task);
+  e.dataTransfer.setData("text/plain", task.task_id);
+
+  const originalStart = task.start_date && isValid(parseISO(task.start_date)) ? parseISO(task.start_date) : timelineStartDate;
+  const originalEnd = task.due_date && isValid(parseISO(task.due_date)) ? parseISO(task.due_date) : addDays(originalStart, 1);
+  setDraggedDates({ start: originalStart, end: originalEnd });
+
+  // → content 기준 rect 사용 (months container)
+  const contentWrapper = timelineRef.current?.querySelector('.min-w-max');
+  const contentRect = contentWrapper ? contentWrapper.getBoundingClientRect() : timelineRef.current.getBoundingClientRect();
+
+  // clientX 기준을 content의 left로 맞추고, scrollLeft 보정
+  const offsetX = e.clientX - contentRect.left + (timelineRef.current ? timelineRef.current.scrollLeft : 0);
+
+  const taskStartDays = Math.max(differenceInDays(originalStart, timelineStartDate), 0);
+  const taskStartPixels = taskStartDays * pixelPerDay;
+  setDragStartOffset(offsetX - taskStartPixels);
+};
+
 
   const handleDragOver = (e) => {
-    e.preventDefault();
-    if (draggedTask && timelineRef.current && !isResizing) {
-      const rect = timelineRef.current.getBoundingClientRect();
-      const sidebarWidth = document.querySelector('.flex-shrink-0.w-40')?.getBoundingClientRect().width || 160;
-      const offsetX = e.clientX - rect.left - sidebarWidth + timelineRef.current.scrollLeft;
-      const adjustedOffsetX = offsetX - dragStartOffset;
+  e.preventDefault();
+  if (draggedTask && timelineRef.current && !isResizing) {
+    // content 기준 rect
+    const contentWrapper = timelineRef.current?.querySelector('.min-w-max');
+    const contentRect = contentWrapper ? contentWrapper.getBoundingClientRect() : timelineRef.current.getBoundingClientRect();
 
-      const timelineWidth = timelineRef.current.clientWidth;
-      const edgeThreshold = timelineWidth * 0.2;
-      const maxScrollSpeed = 50;
-      let scrollSpeed = 0;
+    // offsetX: clientX 를 content의 좌표로 변환 + scrollLeft 보정
+    const offsetX = e.clientX - contentRect.left + timelineRef.current.scrollLeft;
+    const adjustedOffsetX = offsetX - dragStartOffset;
 
-      if (offsetX < edgeThreshold) {
-        scrollSpeed = -maxScrollSpeed * (1 - Math.min(offsetX / edgeThreshold, 1));
-      } else if (offsetX > timelineWidth - edgeThreshold) {
-        scrollSpeed = maxScrollSpeed * (1 - Math.min((timelineWidth - offsetX) / edgeThreshold, 1));
-      }
+    // (이후 기존 로직 동일)
+    const originalStart = draggedTask.start_date && isValid(parseISO(draggedTask.start_date)) ? parseISO(draggedTask.start_date) : timelineStartDate;
+    const originalEnd = draggedTask.due_date && isValid(parseISO(draggedTask.due_date)) ? parseISO(draggedTask.due_date) : addDays(originalStart, 1);
+    const originalDuration = Math.max(differenceInDays(originalEnd, originalStart) + 1, 1);
 
-      if (scrollSpeed !== 0) {
-        const newScrollLeft = Math.max(
-          0,
-          Math.min(timelineRef.current.scrollLeft + scrollSpeed, totalDays * pixelPerDay - timelineWidth)
-        );
-        timelineRef.current.scrollLeft = newScrollLeft;
-      }
+    const daysOffset = Math.round(adjustedOffsetX / pixelPerDay);
+    const maxOffsetDays = totalDays - originalDuration;
+    const clampedOffsetDays = Math.max(0, Math.min(daysOffset, maxOffsetDays));
 
-      const originalStart = draggedTask.start_date && isValid(parseISO(draggedTask.start_date)) ? parseISO(draggedTask.start_date) : timelineStartDate;
-      const originalEnd = draggedTask.due_date && isValid(parseISO(draggedTask.due_date)) ? parseISO(draggedTask.due_date) : addDays(originalStart, 1);
-      const originalDuration = Math.max(differenceInDays(originalEnd, originalStart) + 1, 1);
+    const newStart = addDays(timelineStartDate, clampedOffsetDays);
+    const newEnd = addDays(newStart, originalDuration - 1);
 
-      const daysOffset = Math.round(adjustedOffsetX / pixelPerDay);
-      const maxOffsetDays = totalDays - originalDuration;
-      const clampedOffsetDays = Math.max(0, Math.min(daysOffset, maxOffsetDays));
-
-      const newStart = addDays(timelineStartDate, clampedOffsetDays);
-      const newEnd = addDays(newStart, originalDuration - 1);
-
-      if (isValid(newStart) && isValid(newEnd)) {
-        setDraggedDates({ start: newStart, end: newEnd });
-        const tooltipLeft = Math.max(0, clampedOffsetDays * pixelPerDay);
-        const tooltipWidth = originalDuration * pixelPerDay;
-        setTooltipPosition({ left: tooltipLeft, width: tooltipWidth });
-      }
+    if (isValid(newStart) && isValid(newEnd)) {
+      setDraggedDates({ start: newStart, end: newEnd });
+      // tooltipPosition.left 은 content(=months) 컨테이너의 좌표계 기준값이어야 함
+      const tooltipLeft = Math.max(0, clampedOffsetDays * pixelPerDay);
+      const tooltipWidth = originalDuration * pixelPerDay;
+      setTooltipPosition({ left: tooltipLeft, width: tooltipWidth });
     }
-  };
+  }
+};
+
 
   const handleDrop = async (e, newStatus) => {
-    e.preventDefault();
-    if (draggedTask && timelineRef.current && !isResizing) {
-      const rect = timelineRef.current.getBoundingClientRect();
-      const sidebarWidth = document.querySelector('.flex-shrink-0.w-40')?.getBoundingClientRect().width || 160;
-      const offsetX = e.clientX - rect.left - sidebarWidth + timelineRef.current.scrollLeft;
-      const adjustedOffsetX = offsetX - dragStartOffset;
+  e.preventDefault();
+  if (draggedTask && timelineRef.current && !isResizing) {
+    const contentWrapper = timelineRef.current?.querySelector('.min-w-max');
+    const contentRect = contentWrapper ? contentWrapper.getBoundingClientRect() : timelineRef.current.getBoundingClientRect();
+    const offsetX = e.clientX - contentRect.left + timelineRef.current.scrollLeft;
+    const adjustedOffsetX = offsetX - dragStartOffset;
 
       const originalStart = draggedTask.start_date && isValid(parseISO(draggedTask.start_date)) ? parseISO(draggedTask.start_date) : timelineStartDate;
       const originalEnd = draggedTask.due_date && isValid(parseISO(draggedTask.due_date)) ? parseISO(draggedTask.due_date) : addDays(originalStart, 1);
@@ -592,7 +584,7 @@ const [timelineStartDate, setTimelineStartDate] = useState(
 
       <div className="w-full max-w-[1400px] min-h-0 h-full bg-white rounded-lg overflow-hidden relative shadow-sm">
         <div className="flex flex-col h-full">
-          <div className="overflow-x-auto" style={{ width: '100%' }}>
+          <div ref={timelineRef} className="overflow-x-auto" style={{ width: '100%' }}>
             <div className="min-w-max relative">
               {/* 날짜 헤더 */}
               <div

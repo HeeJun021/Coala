@@ -254,7 +254,18 @@ case "calendar":
   );
 
       case "tasks":
-        return <ProjectTasksTab project={currentProject} />;
+        return <ProjectTasksTab
+  project={currentProject}
+  onTaskAdded={(newTask) => setTasks((prev) => [...prev, newTask])}  // ✅ 추가
+  onTaskUpdated={(updatedTask) =>
+    setTasks((prev) =>
+      prev.map((t) => (t.task_id === updatedTask.task_id ? updatedTask : t))
+    )
+  }
+  onTaskDeleted={(taskId) =>
+    setTasks((prev) => prev.filter((t) => t.task_id !== taskId))
+  }
+/>;
       case "git":
         // ▼▼▼ [수정] GitHubPanel에 currentUser와 onBranchChange props 전달 ▼▼▼
         return (
