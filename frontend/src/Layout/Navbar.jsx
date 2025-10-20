@@ -14,18 +14,18 @@ const Navbar = () => {
   const [languages, setLanguages] = useState([]);
 
   // 코딩테스트 강조 조건
-const isCodingTestActive =
-  location.pathname.startsWith("/problem-explore") ||
-  location.pathname.startsWith("/codingtest") ||
-  location.pathname.startsWith("/my-submissions") ||
-  location.pathname.startsWith("/my-stats");
+  const isCodingTestActive =
+    location.pathname.startsWith("/problem-explore") ||
+    location.pathname.startsWith("/codingtest") ||
+    location.pathname.startsWith("/my-submissions") ||
+    location.pathname.startsWith("/my-stats");
 
-// 개념퀴즈 강조 조건
-const isQuizActive =
-  location.pathname.startsWith("/quizpage") ||
-  location.pathname.startsWith("/quiz-history") ||
-  location.pathname.startsWith("/quiz-stats") ||
-  location.pathname.startsWith("/quiz-review");
+  // 개념퀴즈 강조 조건
+  const isQuizActive =
+    location.pathname.startsWith("/quizpage") ||
+    location.pathname.startsWith("/quiz-history") ||
+    location.pathname.startsWith("/quiz-stats") ||
+    location.pathname.startsWith("/quiz-review");
 
   useEffect(() => {
     const fetchLanguages = async () => {
@@ -144,17 +144,15 @@ const isQuizActive =
     {
       label: "프로젝트",
       path: "/team-project",
-      children: ["대시보드", "내 작업","프로젝트 생성"],
+      children: ["대시보드", "내 작업", "프로젝트 생성"],
     },
- 
+
     {
-  label: "포트폴리오",
-  path: user ? "/portfolio" : "/login",
-  children: user
-    ? ["포트폴리오 추출", "포트폴리오 추출 내역"]
-    : [],
-},
-   {
+      label: "포트폴리오",
+      path: user ? "/portfolio" : "/login",
+      children: user ? ["포트폴리오 추출", "포트폴리오 추출 내역"] : [],
+    },
+    {
       label: "게시판",
       path: "/board",
       children: ["자유 게시판", "프로젝트 모집", "코드 공유 게시판"],
@@ -166,14 +164,12 @@ const isQuizActive =
       {/* 상단 네비게이션 바 */}
       <nav className="fixed top-0 left-0 w-full bg-white border-b shadow-sm h-[70px] flex items-center justify-between px-12 z-50">
         <Link to="/" className="flex items-center">
-          <img
-            src="/coala.jpg"
-            alt="Coala Logo"
-            className="w-10 h-10 mr-2 rounded-full border"
-          />
-          <span className="text-2xl font-semibold text-green-700">Coala</span>
+          <span className="relative text-3xl font-bold text-green-700 ml-8 after:content-[''] after:absolute after:left-0 after:bottom-[-2px] after:w-0 after:h-[3px] after:bg-green-600 after:transition-all after:duration-300 hover:after:w-full">
+            {" "}
+            {/* 👈 ml-8로 밀기 */}
+            Coala
+          </span>
         </Link>
-
         <div className="grid grid-cols-7 w-[1050px] pr-2 ml-16 text-center">
           {menuItems.map((item, idx) => (
             <div
@@ -182,41 +178,41 @@ const isQuizActive =
               onMouseEnter={() => setHoverIndex(idx)}
             >
               {item.label === "학습자료" ? (
-  <span
-    onClick={() => navigate("/StudyMaterialsPage")}
-    className={`cursor-pointer text-[17px] font-semibold transition duration-200 hover:text-green-500 hover:scale-110 hover:font-bold ${
-      location.pathname.startsWith("/StudyMaterialsPage")
-        ? "text-green-600 font-bold"
-        : "text-gray-900"
-    }`}
-  >
-    {item.label}
-  </span>
-) : item.label === "자율코딩" ? (
-  <span
-    onClick={() => goSelfCoding()}
-    className={`cursor-pointer text-[17px] font-semibold transition duration-200 hover:text-green-500 hover:scale-110 hover:font-bold ${
-      location.pathname.startsWith("/self-coding")
-        ? "text-green-600 font-bold"
-        : "text-gray-900"
-    }`}
-  >
-    {item.label}
-  </span>
-) : (
-              <Link
-  to={item.path}
-  className={`text-[17px] font-semibold transition duration-200 hover:text-green-500 hover:scale-110 hover:font-bold ${
-    (item.label === "코딩테스트" && isCodingTestActive) ||
-    (item.label === "개념퀴즈" && isQuizActive) ||
-    location.pathname.startsWith(item.path)
-      ? "text-green-600 font-bold"
-      : "text-gray-900"
-  }`}
->
-  {item.label}
-</Link>
-            )}
+                <span
+                  onClick={() => navigate("/StudyMaterialsPage")}
+                  className={`cursor-pointer text-[17px] font-semibold transition duration-200 hover:text-green-500 hover:scale-110 hover:font-bold ${
+                    location.pathname.startsWith("/StudyMaterialsPage")
+                      ? "text-green-600 font-bold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {item.label}
+                </span>
+              ) : item.label === "자율코딩" ? (
+                <span
+                  onClick={() => goSelfCoding()}
+                  className={`cursor-pointer text-[17px] font-semibold transition duration-200 hover:text-green-500 hover:scale-110 hover:font-bold ${
+                    location.pathname.startsWith("/self-coding")
+                      ? "text-green-600 font-bold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {item.label}
+                </span>
+              ) : (
+                <Link
+                  to={item.path}
+                  className={`text-[17px] font-semibold transition duration-200 hover:text-green-500 hover:scale-110 hover:font-bold ${
+                    (item.label === "코딩테스트" && isCodingTestActive) ||
+                    (item.label === "개념퀴즈" && isQuizActive) ||
+                    location.pathname.startsWith(item.path)
+                      ? "text-green-600 font-bold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              )}
             </div>
           ))}
         </div>
@@ -300,9 +296,12 @@ const isQuizActive =
                     if (child === "실전 문제") link = "/quizpage?category=test";
                     if (child === "문제 만들기")
                       link = "/quizpage?category=user";
-                    if (child === "제출 내역") link = "/quizpage?category=history";
-                    if (child === "퀴즈 통계") link = "/quizpage?category=stats";
-                    if (child === "오답 노트") link = "/quizpage?category=review";
+                    if (child === "제출 내역")
+                      link = "/quizpage?category=history";
+                    if (child === "퀴즈 통계")
+                      link = "/quizpage?category=stats";
+                    if (child === "오답 노트")
+                      link = "/quizpage?category=review";
                     return (
                       <Link
                         key={i}
@@ -349,9 +348,9 @@ const isQuizActive =
                   if (item.label === "코딩테스트") {
                     let link = "";
                     if (child === "문제 탐색") link = "/problem-explore";
-                     if (child === "문제 목록") link = "/codingtest";
+                    if (child === "문제 목록") link = "/codingtest";
                     if (child === "제출 내역") link = "/my-submissions";
-                      if (child === "코딩테스트 통계") link = "/my-stats";
+                    if (child === "코딩테스트 통계") link = "/my-stats";
 
                     return (
                       <Link
@@ -372,18 +371,20 @@ const isQuizActive =
                     if (child === "대시보드") tab = "dashboard";
                     if (child === "내 작업") tab = "my-tasks";
                     if (child === "프로젝트 생성") {
-    return (
-      <span
-        key={i}
-        onClick={() => navigate(link, { state: { openCreateModal: true } })}
-        className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
-          hoverIndex === idx ? "" : "opacity-50"
-        }`}
-      >
-        {child}
-      </span>
-    );
-  }
+                      return (
+                        <span
+                          key={i}
+                          onClick={() =>
+                            navigate(link, { state: { openCreateModal: true } })
+                          }
+                          className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
+                            hoverIndex === idx ? "" : "opacity-50"
+                          }`}
+                        >
+                          {child}
+                        </span>
+                      );
+                    }
                     return (
                       <span
                         key={i}
@@ -418,25 +419,25 @@ const isQuizActive =
                   }
 
                   if (item.label === "포트폴리오") {
-  let link = "";
-  if (child === "포트폴리오 추출") link = "/portfolio";
-  if (child === "포트폴리오 추출 내역") link = "/portfolio/history";
+                    let link = "";
+                    if (child === "포트폴리오 추출") link = "/portfolio";
+                    if (child === "포트폴리오 추출 내역")
+                      link = "/portfolio/history";
 
-
-  if (link) {
-    return (
-      <Link
-        key={i}
-        to={link}
-        className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
-          hoverIndex === idx ? "" : "opacity-50"
-        }`}
-      >
-        {child}
-      </Link>
-    );
-  }
-}
+                    if (link) {
+                      return (
+                        <Link
+                          key={i}
+                          to={link}
+                          className={`text-[15px] font-medium text-gray-800 cursor-pointer transition duration-200 hover:text-green-500 hover:scale-105 hover:font-semibold ${
+                            hoverIndex === idx ? "" : "opacity-50"
+                          }`}
+                        >
+                          {child}
+                        </Link>
+                      );
+                    }
+                  }
 
                   if (item.label === "마이페이지") {
                     let link = "";
