@@ -11,6 +11,8 @@
   import { getCurrentUser, checkGithubConnection } from "../../api/authApi";
   import { getRootCodeFolder, updateCodeFile, getChildFolders, getCodesInFolder } from "../../api/codeApi";
 
+  import FloatingButton from "../../components/floating/FloatingButton";
+
   const SelfCodingPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
@@ -199,6 +201,7 @@
             />
           </Split>
         </div>
+        <FloatingButton />
       </div>
     );
   };
