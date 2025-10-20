@@ -26,7 +26,7 @@ const sections = [
   "마감일 지남",
 ];
 
-const ProjectTasksTab = ({ project }) => {
+const ProjectTasksTab = ({ project, onTaskAdded, onTaskUpdated, onTaskDeleted }) => {
   const [tasks, setTasks] = useState([]);
   const [viewMode] = useState("list");
   const [selectedTask, setSelectedTask] = useState(null);
@@ -155,46 +155,28 @@ const ProjectTasksTab = ({ project }) => {
   };
 
   const handleAddTask = async () => {
-    if (!newTask.title || !newTask.project_id) {
-      alert("작업 이름과 프로젝트는 필수입니다.");
-      return;
-    }
+    if (!newTask.title || !newTask.project_id) return alert("작업 이름과 프로젝트는 필수입니다.");
     try {
-      const taskData = {
+      const res = await createTask({
         ...newTask,
         status: newTask.due_date ? "예정" : "완료됨",
-      };
-      const res = await createTask(taskData);
-      setTasks((prev) => [...prev, res]);
-      setNewTask({
-        title: "",
-        start_date: "",
-        due_date: "",
-        project_id: project?.project_id || "",   // ✅ 추가 후에도 고정 유지
-        collaborator_ids: [],
       });
+      setTasks((prev) => [...prev, res]);
+      onTaskAdded?.(res); // ✅ 부모 상태 갱신 트리거
+      setNewTask({ title: "", start_date: "", due_date: "", project_id: project?.project_id || "", collaborator_ids: [] });
       setIsAddingTask(false);
     } catch (err) {
       console.error("Failed to add task:", err);
-      alert("작업 추가에 실패했습니다.");
     }
   };
 
   const handleUpdateTask = async (taskId, updatedData) => {
     try {
-      const taskData = {
-        ...updatedData,
-        status:
-          updatedData.status || (updatedData.due_date ? "예정" : "완료됨"),
-      };
-      const res = await updateTask(taskId, taskData);
-      setTasks((prev) =>
-        prev.map((task) => (task.task_id === res.task_id ? res : task))
-      );
-      setSelectedTask(res);
+      const res = await updateTask(taskId, updatedData);
+      setTasks((prev) => prev.map((t) => (t.task_id === res.task_id ? res : t)));
+      onTaskUpdated?.(res); // ✅ 부모 상태 갱신 트리거
     } catch (err) {
       console.error("Failed to update task:", err);
-      alert("작업 수정에 실패했습니다.");
     }
   };
 
@@ -215,15 +197,13 @@ const ProjectTasksTab = ({ project }) => {
   };
 
   const handleDeleteTask = async (taskId) => {
-    if (window.confirm("정말 이 작업을 삭제하시겠습니까?")) {
-      try {
-        await deleteTask(taskId);
-        setTasks((prev) => prev.filter((task) => task.task_id !== taskId));
-        setSelectedTask(null);
-      } catch (err) {
-        console.error("Failed to delete task:", err);
-        alert("작업 삭제에 실패했습니다.");
-      }
+    if (!window.confirm("정말 이 작업을 삭제하시겠습니까?")) return;
+    try {
+      await deleteTask(taskId);
+      setTasks((prev) => prev.filter((t) => t.task_id !== taskId));
+      onTaskDeleted?.(taskId); // ✅ 부모 상태 갱신 트리거
+    } catch (err) {
+      console.error("Failed to delete task:", err);
     }
   };
 
