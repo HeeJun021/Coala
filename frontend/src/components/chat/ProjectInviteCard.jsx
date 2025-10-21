@@ -85,15 +85,31 @@ const ProjectInviteCard = ({ invite, isMine }) => {
             {isMine ? (
                 <div className="text-xs text-gray-500">초대 메시지를 보냈습니다.</div>
             ) : inviteStatus === "accepted" || accepted ? (
-                <div className="text-sm text-green-600 font-medium">
-                    초대를 수락했습니다.
-                    <button
-                        onClick={() => navigate(`/team-project/${projectId}`)}
-                        className="mt-2 ml-1 px-3 py-1 text-xs border border-gray-300 rounded hover:bg-gray-100"
-                    >
-                        프로젝트로 이동
-                    </button>
+                // --- [수정된 부분] ---
+                // 1. 정보 영역(두 개의 텍스트)을 div로 묶었습니다.
+                // 2. 행동 영역(버튼)을 별도 div로 묶고, 정보 영역과 간격(mt-3)을 주었습니다.
+                <div>
+                    {/* 정보 영역 */}
+                    <div>
+                        <div className="text-sm text-green-600 font-medium">
+                            초대를 수락했습니다.
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1.5">
+                            연결된 GitHub 계정으로 저장소 초대 이메일이 발송되었습니다.
+                        </div>
+                    </div>
+                    
+                    {/* 행동 영역 */}
+                    <div className="mt-3"> 
+                        <button
+                            onClick={() => navigate(`/team-project/${projectId}`)}
+                            className="px-3 py-1 text-xs border border-gray-300 rounded hover:bg-gray-100"
+                        >
+                            프로젝트로 이동
+                        </button>
+                    </div>
                 </div>
+                // --- [수정 끝] ---
             ) : inviteStatus === "rejected" || (responded && !accepted) ? (
                  <div className="text-sm text-gray-500">초대를 거절했습니다.</div>
             ) : (
@@ -101,7 +117,7 @@ const ProjectInviteCard = ({ invite, isMine }) => {
                     <button
                         onClick={handleAcceptInvite}
                         disabled={isProcessing}
-                        className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                        className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
                     >
                         {isProcessing ? "처리 중..." : "수락"}
                     </button>

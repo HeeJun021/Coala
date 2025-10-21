@@ -10,8 +10,11 @@ from app.models.project_git.project_branch import ProjectBranch
 from app.models.social_login import SocialLogin
 from app.models.user import User
 from app.schemas.github import RepoCreateRequest, RepoInfo 
+import logging
 
 GITHUB_API = "https://api.github.com"
+
+logger = logging.getLogger(__name__)
 
 def _get_github_token(db: Session, user_id: int) -> str:
     sl = (
@@ -119,7 +122,7 @@ def get_project_owner_user_id(db: Session, project_id: int) -> int:
     """
     1순위: ProjectRepo.owner_user_id (레포 소유자로 저장된 사용자)
     2순위: Project.creator_user_id (프로젝트 생성자)
-    3순위: ProjectMembers 중 leader(또는 owner) 역할 사용자
+    3순위: ProjectMembers 중 is_leader == True 사용자
     """
     # 1) 레포 소유자
     repo = (
@@ -135,17 +138,14 @@ def get_project_owner_user_id(db: Session, project_id: int) -> int:
     if project and getattr(project, "creator_user_id", None):
         return project.creator_user_id
 
-    # 3) 프로젝트 리더(역할 이름은 실제 스키마에 맞게 조정)
-    # 예: ProjectMembers(role = 'leader') 또는 roles JSON에 leader 플래그
+    # 3) 프로젝트 리더 (is_leader 플래그 사용)
     from app.models.project_models import ProjectMembers  # 순환참조 방지용 내부 import
 
     leader = (
         db.query(ProjectMembers)
         .filter(
             ProjectMembers.project_id == project_id,
-            # 아래 조건은 실제 컬럼에 맞게 수정: 예) ProjectMembers.role == "leader"
-            # 또는 ProjectMembers.is_leader == True 등
-            ProjectMembers.roles == "leader"
+            ProjectMembers.is_leader == True  # <--- ✨ 이렇게 수정 (roles 대신 is_leader 사용)
         )
         .first()
     )
@@ -198,6 +198,8 @@ def _get_repo_owner_token(
         .first()
     )
     if not repo:
+        # <--- [추가]
+        logger.warning(f"Project ID ({project_id}): 'Repository mapping not found'. 404 발생.")
         raise HTTPException(status_code=404, detail="Repository mapping not found for this project")
 
     owner_login = repo.owner

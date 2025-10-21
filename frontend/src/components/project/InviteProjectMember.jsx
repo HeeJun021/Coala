@@ -22,7 +22,7 @@ const InviteProjectMember = ({
       setIsLoading(true);
       try {
         const res = await searchUsers(search.trim());
-        setResults(res); // [{ user_id, nickname, email, profile_image }]
+        setResults(res); // [{ user_id, nickname, profile_image_url }]
       } catch (err) {
         console.error("❌ 유저 검색 실패:", err);
       } finally {
@@ -61,7 +61,7 @@ const InviteProjectMember = ({
         {/* 검색 입력 */}
         <input
           type="text"
-          placeholder="사용자 검색 (닉네임, 이메일)"
+          placeholder="사용자 검색 (닉네임)"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full border px-3 py-2 rounded text-sm mb-3"
@@ -95,9 +95,9 @@ const InviteProjectMember = ({
                   onClick={() => handleSelect(user)}
                 >
                   <div className="flex items-center gap-2">
-                    {user.profile_image ? (
+                    {user.profile_image_url ? (
                       <img
-                        src={user.profile_image}
+                        src={user.profile_image_url}
                         alt="profile"
                         className="w-8 h-8 rounded-full object-cover"
                       />

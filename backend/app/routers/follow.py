@@ -109,15 +109,9 @@ def search_users(
         query = query.filter(User.nickname.ilike(f"%{keyword}%"))
 
     users = query.order_by(User.nickname.asc()).limit(50).all()
+    return users  # ✅ ORM 객체 그대로 반환
 
-    return [
-        UserSimpleInfo(
-            user_id=u.user_id,
-            nickname=u.nickname,
-            profile_image=u.profile_image_url,
-        )
-        for u in users
-    ]
+
 
 
 # 추천친구 검색
