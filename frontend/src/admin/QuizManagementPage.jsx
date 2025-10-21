@@ -50,7 +50,7 @@ const QuizManagementPage = () => {
     setOpenDialog(false);
   };
 
-  const mapType = (type) => (type === 1 ? "OX" : type === 2 ? "객관식" : "단답형");
+  const mapType = (type) => (type === 1 ? "OX" : type === 2 ? "단답형" : "객관식");
   const mapDifficulty = (d) => (d === 1 ? "쉬움" : d === 2 ? "보통" : "어려움");
 
   return (
