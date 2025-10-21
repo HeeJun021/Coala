@@ -291,7 +291,7 @@ const ChatRoomPanel = ({ room, onBack, refreshRoom, handleLeaveRoom }) => {
   }
 
   return (
-    <div className="fixed bottom-24 right-6 w-[360px] h-[520px] bg-sky-100 shadow-lg rounded-xl border border-gray-200 z-50 flex flex-col overflow-hidden">
+    <div className="fixed bottom-24 right-6 w-[360px] h-[520px] bg-green-200 shadow-lg rounded-xl border border-gray-200 z-50 flex flex-col overflow-hidden">
       {/* 상단바 */}
       <div className="px-4 py-2 border-b border-gray-300 bg-white flex items-center justify-between">
         <div className="flex items-center gap-2">
