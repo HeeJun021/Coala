@@ -128,14 +128,29 @@ async def create_task(task_data: TaskCreate, db: Session = Depends(get_db), curr
     task.project_name = project.name
     return task
 
+# task.py (update_task 함수 전체)
+
 @router.patch("/{task_id}", response_model=TaskResponse)
 async def update_task(task_id: int, task_data: TaskUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     task = db.query(Tasks).filter(Tasks.task_id == task_id).first()
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
-    ensure_project_open(db, task.project_id)  # ✅ 소속 프로젝트 상태 확인
-    if task.user_id != current_user.user_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to update this task")
+        
+    ensure_project_open(db, task.project_id) # 프로젝트가 닫혔는지 확인
+    
+    # -----------------------------------------------------------
+    # ✅ 수정된 권한 로직: 요청자가 프로젝트 멤버인지 확인
+    # -----------------------------------------------------------
+    is_project_member = db.query(ProjectMembers).filter(
+        ProjectMembers.project_id == task.project_id,
+        ProjectMembers.user_id == current_user.user_id
+    ).first()
+
+    if not is_project_member:
+        # 프로젝트 멤버가 아닌 경우 수정 불가능
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only project members can update tasks")
+    
+    # -----------------------------------------------------------
     
     valid_statuses = {"예정", "진행중", "완료됨", "마감일 지남"}
     update_data = task_data.dict(exclude_unset=True)
@@ -143,8 +158,12 @@ async def update_task(task_id: int, task_data: TaskUpdate, db: Session = Depends
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid status: {update_data['status']}")
     
     if "collaborator_ids" in update_data:
+        # 기존 협업자 삭제
         db.query(TaskCollaborators).filter(TaskCollaborators.task_id == task_id).delete()
+        
+        # 새 협업자 추가
         for user_id in task_data.collaborator_ids:
+            # 협업자가 프로젝트 멤버인지 확인
             if not db.query(ProjectMembers).filter(
                 ProjectMembers.project_id == task.project_id,
                 ProjectMembers.user_id == user_id
@@ -154,10 +173,14 @@ async def update_task(task_id: int, task_data: TaskUpdate, db: Session = Depends
             db.add(collaborator)
         del update_data["collaborator_ids"]
     
+    # 나머지 필드 업데이트
     for key, value in update_data.items():
         setattr(task, key, value)
+        
     db.commit()
     db.refresh(task)
+    
+    # 응답 데이터에 협업자 정보 포함
     task.collaborators = (
         db.query(User)
         .join(TaskCollaborators, User.user_id == TaskCollaborators.user_id)
@@ -166,6 +189,7 @@ async def update_task(task_id: int, task_data: TaskUpdate, db: Session = Depends
     )
     project = db.query(Project).filter(Project.project_id == task.project_id).first()
     task.project_name = project.name if project else None
+    
     return task
 
 @router.delete("/{task_id}", response_model=dict)

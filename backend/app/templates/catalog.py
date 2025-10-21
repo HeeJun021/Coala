@@ -13,7 +13,7 @@ TEMPLATE_CATALOG: dict[str, dict] = {
     # 1) HTML + CSS + JS (vanilla)
     # ---------------------------
     "vanilla": {
-        "default_folder_name": "vanilla-starter",
+        "default_folder_name": "Default_html",
         "open_files": ["index.html", "src/js/main.js"],
         "tree": {
             "index.html": """<!DOCTYPE html>
@@ -25,7 +25,7 @@ TEMPLATE_CATALOG: dict[str, dict] = {
     <link rel="stylesheet" href="src/css/style.css" />
   </head>
   <body>
-    <h1>Hello, Vanilla!</h1>
+    <h1>Hello, HTML!</h1>
     <p>이 프로젝트는 HTML/CSS/JS로 바로 실행할 수 있는 가장 기본 템플릿입니다.</p>
     <script src="src/js/main.js"></script>
   </body>

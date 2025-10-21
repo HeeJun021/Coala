@@ -121,7 +121,7 @@ const PracticeQuiz = () => {
   };
 
   const getLabel = (type) =>
-    type === "ox" ? "O/X 문제" : type === "short" ? "단답형 문제" : "선택형 문제";
+    type === "ox" ? "O/X 문제" : type === "short" ? "선택형 문제" : "단답형 문제";
 
   return (
     <div className="w-full min-h-screen pt-4 pl-[164px]"> 
