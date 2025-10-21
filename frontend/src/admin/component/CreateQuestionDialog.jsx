@@ -99,7 +99,7 @@ const CreateQuestionDialog = ({ open, onClose, onCreate }) => {
 
         {/* 문제 유형 선택 */}
         <div className="flex gap-2 mb-4">
-          {[{ type: 1, label: "O/X" }, { type: 2, label: "객관식" }, { type: 3, label: "단답형" }].map((opt) => (
+          {[{ type: 1, label: "O/X" }, { type: 2, label: "단답형" }, { type: 3, label: "객관식" }].map((opt) => (
             <button
               key={opt.type}
               onClick={() => handleChange("question_type", opt.type)}

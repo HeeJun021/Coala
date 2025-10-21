@@ -48,7 +48,7 @@ const TestQuiz = () => {
     setLoading(true);
     try {
       const quizPayload = {
-        title: "테스트 퀴즈",
+        title: "실전 문제",
         quiz_type: "test",
         time_limit: 30, // 분
         language_id: languageId,
@@ -72,7 +72,7 @@ const TestQuiz = () => {
   };
 
   const getLabel = (type) =>
-    type === "ox" ? "O/X 문제" : type === "short" ? "단답형 문제" : "선택형 문제";
+    type === "ox" ? "O/X 문제" : type === "short" ? "선택형 문제" : "단답형 문제";
 
   const getIcon = (type) => {
     const className = "w-5 h-5 text-green-600 mr-2";
