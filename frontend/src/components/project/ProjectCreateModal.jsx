@@ -1,3 +1,5 @@
+// ProjectCreateModal.jsx (수정된 전체 내용)
+
 import React, { useState } from "react";
 import {
   Database,
@@ -6,11 +8,21 @@ import {
   Calendar,
   CheckSquare,
   Activity,
-  LayoutTemplate, // templates 아이콘 추가
-  Code, // code_editor 아이콘 추가
+  Code,
   X,
 } from "lucide-react";
 import { createProject } from "../../api/projectApi";
+
+// 위젯 우선순위 정의 (이 순서대로 정렬됨)
+const PRIORITY_ORDER = [
+  "tasks",
+  "calendar",
+  "timeline",
+  "docs",
+  "erd",
+  "code_editor",
+  "git",
+];
 
 // 모달 UI
 const Modal = ({ onClose, title, children }) => {
@@ -30,49 +42,49 @@ const Modal = ({ onClose, title, children }) => {
   );
 };
 
-// 위젯 아이콘 + 색상 정의
-const WIDGET_OPTIONS = [
-  {
-    key: "erd",
-    label: "ERD 설계",
-    icon: <Database size={16} className="text-purple-600" />,
-  },
-  {
-    key: "git",
-    label: "GitHub 공유",
-    icon: <GitBranch size={16} className="text-gray-700" />,
-  },
-  {
-    key: "docs",
-    label: "문서 관리",
-    icon: <FileText size={16} className="text-green-700" />,
-  },
-  {
-    key: "calendar",
-    label: "캘린더",
-    icon: <Calendar size={16} className="text-red-500" />,
-  },
-  {
+// 위젯 아이콘 + 색상 정의 (템플릿 제거, 순서 변경)
+// --------------------------------------------------------------------
+// ✅ WIDGET_OPTIONS 배열을 PRIORITY_ORDER 순서에 맞게 재정렬했습니다.
+const WIDGET_OPTIONS_MAP = {
+  tasks: {
     key: "tasks",
     label: "작업",
     icon: <CheckSquare size={16} className="text-indigo-600" />,
   },
-  {
+  calendar: {
+    key: "calendar",
+    label: "캘린더",
+    icon: <Calendar size={16} className="text-red-500" />,
+  },
+  timeline: {
     key: "timeline",
     label: "타임라인",
     icon: <Activity size={16} className="text-pink-500" />,
   },
-  {
-    key: "templates",
-    label: "템플릿",
-    icon: <LayoutTemplate size={16} className="text-blue-600" />, // templates 추가
+  docs: {
+    key: "docs",
+    label: "문서 관리",
+    icon: <FileText size={16} className="text-green-700" />,
   },
-  {
+  erd: {
+    key: "erd",
+    label: "ERD 설계",
+    icon: <Database size={16} className="text-purple-600" />,
+  },
+  code_editor: {
     key: "code_editor",
     label: "코드 에디터",
-    icon: <Code size={16} className="text-green-600" />, // code_editor 추가
+    icon: <Code size={16} className="text-green-600" />,
   },
-];
+  git: {
+    key: "git",
+    label: "GitHub 공유",
+    icon: <GitBranch size={16} className="text-gray-700" />,
+  },
+};
+
+const WIDGET_OPTIONS = PRIORITY_ORDER.map(key => WIDGET_OPTIONS_MAP[key]);
+// --------------------------------------------------------------------
 
 const ProjectCreateModal = ({ onClose, onCreated }) => {
   const [projectName, setProjectName] = useState("");
@@ -86,16 +98,24 @@ const ProjectCreateModal = ({ onClose, onCreated }) => {
 
   const handleSubmit = async () => {
     if (!projectName.trim()) return alert("프로젝트 이름을 입력하세요.");
+    
+    // 1. 선택된 위젯 목록 (객체 형태)
     const widgetData = WIDGET_OPTIONS.reduce(
       (acc, opt) => ({ ...acc, [opt.key]: selectedWidgets.includes(opt.key) }),
       {}
     );
-    const widgetOrder = ["overview", ...selectedWidgets];
+    
+    // 2. 지정된 우선순위(PRIORITY_ORDER)에 따라 선택된 위젯만 정렬
+    const sortedSelectedWidgets = PRIORITY_ORDER.filter(key => selectedWidgets.includes(key));
+    
+    // 3. 'overview'를 가장 앞에 추가하여 최종 widget_order 구성
+    const widgetOrder = ["overview", ...sortedSelectedWidgets];
+
     try {
       const res = await createProject({
         name: projectName,
         widgets: widgetData,
-        widget_order: widgetOrder,
+        widget_order: widgetOrder, // 정렬된 순서로 전송
       });
       onCreated?.(res);
       onClose();
@@ -125,6 +145,7 @@ const ProjectCreateModal = ({ onClose, onCreated }) => {
             위젯 선택
           </label>
           <div className="grid grid-cols-2 gap-2">
+            {/* ✅ WIDGET_OPTIONS 배열이 이미 정렬되어 있으므로 이 순서대로 표시됩니다. */}
             {WIDGET_OPTIONS.map((opt) => (
               <button
                 key={opt.key}
