@@ -1,7 +1,8 @@
+// src/components/InviteProjectMember.jsx
 import React, { useEffect, useState } from "react";
 import { FaTimes } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
-import { searchUsers } from "../../api/followApi"; // 사용자 검색 API
+import { searchUsers, getRecommendedUsers } from "../../api/followApi"; // ✅ 추천 API 추가
 
 const InviteProjectMember = ({
   selectedFriend,
@@ -13,22 +14,28 @@ const InviteProjectMember = ({
   const [results, setResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  // ✅ 검색 또는 추천 유저 로딩
   useEffect(() => {
-    const delayDebounce = setTimeout(async () => {
-      if (!search.trim()) {
-        setResults([]);
-        return;
-      }
+    const fetchUsers = async () => {
       setIsLoading(true);
       try {
-        const res = await searchUsers(search.trim());
-        setResults(res); // [{ user_id, nickname, profile_image_url }]
+        let res = [];
+        if (!search.trim()) {
+          // ✅ 검색어 없으면 맞팔 or 추천 유저 목록 표시
+          res = await getRecommendedUsers();
+        } else {
+          // ✅ 검색어 있으면 검색 결과 표시
+          res = await searchUsers(search.trim());
+        }
+        setResults(res);
       } catch (err) {
-        console.error("❌ 유저 검색 실패:", err);
+        console.error("❌ 유저 불러오기 실패:", err);
       } finally {
         setIsLoading(false);
       }
-    }, 300);
+    };
+
+    const delayDebounce = setTimeout(fetchUsers, 300);
     return () => clearTimeout(delayDebounce);
   }, [search]);
 
@@ -50,7 +57,7 @@ const InviteProjectMember = ({
         className="bg-white w-[400px] max-h-[500px] rounded-lg shadow-lg p-5 relative"
       >
         {/* 헤더 */}
-        <div className="text-center font-semibold text-lg mb-4">멤버 초대</div>
+        <div className="text-center font-semibold text-lg mb-4">프로젝트 멤버 초대</div>
         <button
           className="absolute top-4 right-4 text-gray-500 hover:text-black"
           onClick={onClose}
@@ -64,10 +71,13 @@ const InviteProjectMember = ({
           placeholder="사용자 검색 (닉네임)"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full border px-3 py-2 rounded text-sm mb-3"
+          className="w-full px-3 py-2 border rounded-md border-gray-300 focus:outline-none focus:border-green-600 font-medium text-gray-800 mb-3"
         />
 
-        {/* 검색 결과 */}
+
+
+
+        {/* 결과 영역 */}
         <AnimatePresence mode="wait">
           <motion.div
             key={isLoading ? "loading" : `results-${search.trim()}`}
@@ -79,48 +89,44 @@ const InviteProjectMember = ({
           >
             {isLoading ? (
               <div className="text-center text-sm text-gray-500 mt-4">
-                검색 중...
+                불러오는 중...
               </div>
             ) : results.length === 0 ? (
               <div className="text-center text-sm text-gray-500 mt-4">
-                검색 결과가 없습니다.
+                {search.trim()
+                  ? "검색 결과가 없습니다."
+                  : "추천할 유저가 없습니다."}
               </div>
             ) : (
-              results.map((user) => (
-                <div
-                  key={user.user_id}
-                  className={`flex items-center justify-between px-2 py-1 rounded hover:bg-gray-100 cursor-pointer ${
-                    selectedFriend?.id === user.user_id ? "bg-blue-100" : ""
-                  }`}
-                  onClick={() => handleSelect(user)}
-                >
-                  <div className="flex items-center gap-2">
-                    {user.profile_image_url ? (
+              results.map((user) => {
+                const profileSrc =
+                  user.profile_image_url || user.profile_image || "/default-avatar.png";
+                return (
+                  <div
+                    key={user.user_id}
+                    className={`flex items-center justify-between px-2 py-1 rounded hover:bg-gray-100 cursor-pointer ${
+                      selectedFriend?.id === user.user_id ? "bg-blue-100" : ""
+                    }`}
+                    onClick={() => handleSelect(user)}
+                  >
+                    <div className="flex items-center gap-2">
                       <img
-                        src={user.profile_image_url}
+                        src={profileSrc}
                         alt="profile"
                         className="w-8 h-8 rounded-full object-cover"
                       />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                        <img
-                          src="/default-avatar.png"
-                          alt="default"
-                          className="w-5 h-5"
-                        />
-                      </div>
-                    )}
-                    <span className="text-sm text-gray-800">
-                      {user.nickname}
-                    </span>
+                      <span className="text-sm text-gray-800">
+                        {user.nickname}
+                      </span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      readOnly
+                      checked={selectedFriend?.id === user.user_id}
+                    />
                   </div>
-                  <input
-                    type="checkbox"
-                    readOnly
-                    checked={selectedFriend?.id === user.user_id}
-                  />
-                </div>
-              ))
+                );
+              })
             )}
           </motion.div>
         </AnimatePresence>

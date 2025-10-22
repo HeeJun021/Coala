@@ -1,3 +1,4 @@
+// src/components/NewChatModal.jsx
 import React, { useState, useEffect } from "react";
 import { FaTimes } from "react-icons/fa";
 import apiClient from "../../api/apiClient";
@@ -10,6 +11,7 @@ const NewChatModal = ({ onClose, onCreateRoom, onChatCreated }) => {
   const [selectedUserIds, setSelectedUserIds] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  // ✅ 맞팔/추천 유저 불러오기
   useEffect(() => {
     const fetchRecommended = async () => {
       try {
@@ -22,6 +24,7 @@ const NewChatModal = ({ onClose, onCreateRoom, onChatCreated }) => {
     fetchRecommended();
   }, []);
 
+  // ✅ 검색어 입력 시 검색
   useEffect(() => {
     const fetchSearch = async () => {
       if (!search.trim()) return;
@@ -40,6 +43,7 @@ const NewChatModal = ({ onClose, onCreateRoom, onChatCreated }) => {
     fetchSearch();
   }, [search]);
 
+  // ✅ 추천 또는 검색 결과 표시
   const displayUsers = search.trim() ? searchResults : recommendedUsers;
 
   const toggleUserSelection = (userId) => {
@@ -50,27 +54,25 @@ const NewChatModal = ({ onClose, onCreateRoom, onChatCreated }) => {
     );
   };
 
+  // ✅ 채팅방 생성 요청
   const handleCreateChat = async () => {
-  if (selectedUserIds.length === 0) return;
-  try {
-    const res = await apiClient.post("/api/chat/create", {
-      room_type: "general",
-      is_group: selectedUserIds.length > 1,
-      participant_ids: selectedUserIds,
-    });
+    if (selectedUserIds.length === 0) return;
+    try {
+      const res = await apiClient.post("/api/chat/create", {
+        room_type: "general",
+        is_group: selectedUserIds.length > 1,
+        participant_ids: selectedUserIds,
+      });
 
-    if (onCreateRoom) onCreateRoom(res.data);
+      if (onCreateRoom) onCreateRoom(res.data);
+      if (onChatCreated) onChatCreated(); // 새로고침 콜백
+      onClose();
+    } catch (err) {
+      console.error("❌ 채팅방 생성 실패:", err);
+    }
+  };
 
-    // ✅ 채팅 생성 후 목록 새로고침 콜백 호출
-    if (onChatCreated) onChatCreated();
-
-    onClose();
-  } catch (err) {
-    console.error("❌ 채팅방 생성 실패:", err);
-  }
-};
-
-
+  // ✅ 스켈레톤 UI
   const renderSkeletonList = () => {
     return Array.from({ length: 7 }).map((_, idx) => (
       <div
@@ -112,15 +114,16 @@ const NewChatModal = ({ onClose, onCreateRoom, onChatCreated }) => {
           placeholder="받는 사람..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full border px-3 py-2 rounded text-sm mb-3"
+          className="w-full px-3 py-2 border rounded-md border-gray-300 
+                     focus:outline-none focus:border-green-600 font-medium text-gray-800 mb-3"
         />
 
-        {/* 추천 or 검색 결과 */}
+        {/* 추천 or 검색 결과 라벨 */}
         <div className="text-sm text-gray-600 mb-1">
           {search.trim() ? "검색 결과" : "추천"}
         </div>
 
-        {/* 유저 리스트 with 애니메이션 */}
+        {/* 유저 리스트 */}
         <AnimatePresence mode="wait">
           <motion.div
             key={
@@ -136,43 +139,51 @@ const NewChatModal = ({ onClose, onCreateRoom, onChatCreated }) => {
           >
             {isLoading
               ? renderSkeletonList()
-              : displayUsers.map((user) => (
-                  <div
-                    key={user.user_id}
-                    className="flex items-center justify-between px-2 py-1 rounded hover:bg-gray-100 cursor-pointer"
-                    onClick={() => toggleUserSelection(user.user_id)}
-                  >
-                    <div className="flex items-center gap-2">
-                      {user.profile_image ? (
+              : displayUsers.length === 0
+              ? (
+                <div className="text-center text-sm text-gray-500 mt-4">
+                  {search.trim()
+                    ? "검색 결과가 없습니다."
+                    : "추천할 유저가 없습니다."}
+                </div>
+              )
+              : displayUsers.map((user) => {
+                  const profileSrc =
+                    user.profile_image_url ||
+                    user.profile_image ||
+                    "/default-avatar.png";
+                  return (
+                    <div
+                      key={user.user_id}
+                      className={`flex items-center justify-between px-2 py-1 rounded hover:bg-gray-100 cursor-pointer ${
+                        selectedUserIds.includes(user.user_id)
+                          ? "bg-green-50"
+                          : ""
+                      }`}
+                      onClick={() => toggleUserSelection(user.user_id)}
+                    >
+                      <div className="flex items-center gap-2">
                         <img
-                          src={user.profile_image}
+                          src={profileSrc}
                           alt="profile"
                           className="w-8 h-8 rounded-full object-cover"
                         />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-[#DBDBDB] flex items-center justify-center">
-                          <img
-                            src="/default-avatar.png"
-                            alt="default"
-                            className="w-5 h-5"
-                          />
-                        </div>
-                      )}
-                      <span className="text-sm text-gray-800">
-                        {user.nickname}
-                      </span>
+                        <span className="text-sm text-gray-800">
+                          {user.nickname}
+                        </span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={selectedUserIds.includes(user.user_id)}
+                        readOnly
+                      />
                     </div>
-                    <input
-                      type="checkbox"
-                      checked={selectedUserIds.includes(user.user_id)}
-                      readOnly
-                    />
-                  </div>
-                ))}
+                  );
+                })}
           </motion.div>
         </AnimatePresence>
 
-        {/* 채팅 버튼 */}
+        {/* 채팅 시작 버튼 */}
         <button
           onClick={handleCreateChat}
           disabled={selectedUserIds.length === 0}
