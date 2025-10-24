@@ -116,7 +116,7 @@ const Navbar = () => {
     {
       label: "학습자료",
       path: "/StudyMaterialsPage",
-      children: languages.map((lang) => lang.language),
+      children: languages.map((lang) => "\u00A0"+lang.language),
     },
     {
       label: "개념퀴즈",
@@ -150,12 +150,12 @@ const Navbar = () => {
     {
       label: "포트폴리오",
       path: user ? "/portfolio" : "/login",
-      children: user ? ["포트폴리오 추출", "포트폴리오 추출 내역"] : [],
+      children: user ? ["포트폴리오 추출\u00A0", "포트폴리오 추출 내역\u00A0"] : [],
     },
     {
       label: "게시판",
       path: "/board",
-      children: ["자유 게시판", "프로젝트 모집", "코드 공유 게시판"],
+      children: ["자유 게시판\u00A0", "프로젝트 모집\u00A0", "코드 공유 게시판\u00A0"],
     },
   ];
 
@@ -164,7 +164,7 @@ const Navbar = () => {
       {/* 상단 네비게이션 바 */}
       <nav className="fixed top-0 left-0 w-full bg-white border-b shadow-sm h-[70px] flex items-center justify-between px-12 z-50">
         <Link to="/" className="flex items-center">
-          <span className="relative text-3xl font-bold text-green-700 ml-8 after:content-[''] after:absolute after:left-0 after:bottom-[-2px] after:w-0 after:h-[3px] after:bg-green-600 after:transition-all after:duration-300 hover:after:w-full">
+          <span className="relative text-3xl font-bold text-green-700 ml-10 after:content-[''] after:absolute after:left-0 after:bottom-[-2px] after:w-0 after:h-[3px] after:bg-green-600 after:transition-all after:duration-300 hover:after:w-full">
             {" "}
             {/* 👈 ml-8로 밀기 */}
             Coala
@@ -265,7 +265,7 @@ const Navbar = () => {
 
       {/* 드롭다운 메뉴 */}
       <div
-        className={`fixed top-[70px] pr-6 left-0 w-full bg-white border-b shadow-md z-40 overflow-hidden transition-all duration-300 ${
+        className={`fixed top-[70px] pr-6 left-[6px] w-full bg-white border-b shadow-md z-40 overflow-hidden transition-all duration-300 ${
           hoverIndex !== null
             ? "max-h-[250px] py-6 opacity-100"
             : "max-h-0 opacity-0"
