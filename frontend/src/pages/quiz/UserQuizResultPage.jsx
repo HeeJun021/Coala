@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getUserQuizResult } from "../../api/userQuizApi";
+import { ChevronLeft } from "lucide-react";
 
 const UserQuizResultPage = ({ userData }) => {
   const { uq_submission_id } = useParams();
@@ -13,6 +14,7 @@ const UserQuizResultPage = ({ userData }) => {
     const fetchQuizResult = async () => {
       if (!userData?.user_id) {
         setError("로그인이 필요합니다.");
+        setLoading(false);
         return;
       }
 
@@ -37,7 +39,17 @@ const UserQuizResultPage = ({ userData }) => {
 
   return (
     <div className="bg-white min-h-screen py-10 px-4">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto relative">
+
+        {/* ⬅️ 뒤로가기 버튼 (QuizResultPage 동일 스타일) */}
+        <button
+          className="absolute top-0 left-0 flex items-center gap-1 text-gray-600 hover:text-gray-800 text-sm"
+          onClick={() => navigate(-2)}
+        >
+          <ChevronLeft className="w-5 h-5" />
+          뒤로가기
+        </button>
+
         {/* 제목 */}
         <h2 className="text-3xl font-bold text-center mb-4 text-gray-900">
           {quizResult.title}
@@ -46,7 +58,8 @@ const UserQuizResultPage = ({ userData }) => {
         {/* 정답 개수 */}
         <div className="text-center mb-8">
           <p className="text-lg text-gray-800">
-            <strong>정답 개수:</strong> {quizResult.correct_count} / {quizResult.questions.length}
+            <strong>정답 개수:</strong>{" "}
+            {quizResult.correct_count} / {quizResult.questions.length}
           </p>
         </div>
 

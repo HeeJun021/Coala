@@ -26,6 +26,7 @@ import {
   mergeBranch,
 } from "../../api/project_gitApi";
 import CommitModal from "./projectgit/CommitModal"; 
+import AlertDialog from "./projectgit/AlertDialog";
 
 /* ---------------------- Sub Components ---------------------- */
 
@@ -277,13 +278,32 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
 
   const [status, setStatus] = useState({ staged: [], unstaged: [] });
   const [branches, setBranches] = useState([]);
-  const [currentBranch, setCurrentBranch] = useState(repoInfo?.default_branch || "main");
+  const [currentBranch, setCurrentBranch] = useState(
+    repoInfo?.default_branch || "main"
+  );
   const [commits, setCommits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isBranchModalOpen, setIsBranchModalOpen] = useState(false);
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
-  const [isCommitModalOpen, setIsCommitModalOpen] = useState(false); // ✅ 추가
+  const [isCommitModalOpen, setIsCommitModalOpen] = useState(false);
+
+  // ✅ AlertDialog 상태 추가
+  const [alert, setAlert] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "alert", // 'alert' or 'confirm'
+    onConfirm: null,
+  });
+
+  const showAlert = (title, message) => {
+    setAlert({ isOpen: true, title, message, type: "alert", onConfirm: null });
+  };
+
+  const showConfirm = (title, message, onConfirm) => {
+    setAlert({ isOpen: true, title, message, type: "confirm", onConfirm });
+  };
 
   const fetchDataForBranch = useCallback(
     async (branch) => {
@@ -298,7 +318,7 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
         setCommits(commitsRes);
       } catch (error) {
         console.error("데이터 로딩 실패:", error);
-        alert("GitHub 정보를 불러오는 데 실패했습니다.");
+        showAlert("오류", "GitHub 정보를 불러오는 데 실패했습니다.");
       } finally {
         setIsSubmitting(false);
       }
@@ -342,9 +362,9 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
     loadInitialData();
   }, [project.project_id, repoInfo, fetchDataForBranch]);
 
-    const handleBranchSwitch = async (newBranch) => {
+  const handleBranchSwitch = async (newBranch) => {
     if (!newBranch || typeof newBranch !== "string") {
-      alert("잘못된 브랜치 이름입니다.");
+      showAlert("오류", "잘못된 브랜치 이름입니다.");
       setIsBranchModalOpen(false);
       return;
     }
@@ -360,10 +380,9 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
       await fetchDataForBranch(newBranch);
       onBranchChange?.(newBranch);
     } catch (error) {
-      alert(
-        `브랜치 이동 실패: ${
-          error?.response?.data?.detail || error.message || "알 수 없는 오류"
-        }`
+      showAlert(
+        "브랜치 이동 실패",
+        error?.response?.data?.detail || error.message || "알 수 없는 오류"
       );
     } finally {
       setIsSubmitting(false);
@@ -379,8 +398,6 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
         from_branch: currentBranch,
         new_branch: newBranchName.trim(),
       });
-
-      // 최신 브랜치 목록 불러오기
       const rawBranches = await listBranches(project.project_id);
       const mappedBranches =
         (rawBranches || []).map((b) => ({
@@ -390,27 +407,34 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
           is_protected: !!b.is_protected,
         })) || [];
       setBranches(mappedBranches);
-
-      // 새 브랜치로 바로 이동
       await handleBranchSwitch(newBranchName.trim());
     } catch (error) {
-      alert(
-        `브랜치 생성 실패: ${
-          error?.response?.data?.detail || error.message || "알 수 없는 오류"
-        }`
+      showAlert(
+        "브랜치 생성 실패",
+        error?.response?.data?.detail || error.message || "알 수 없는 오류"
       );
     }
   };
 
   const handleCommit = async ({ title, message }) => {
     if (!title.trim()) {
-      alert("커밋 제목을 입력하세요.");
+      showAlert("입력 오류", "커밋 제목을 입력하세요.");
       return;
     }
     if ((status.staged?.length || 0) === 0) {
-      const goOn = window.confirm("Staged 파일이 없습니다. 그래도 커밋할까요?");
-      if (!goOn) return;
+      showConfirm(
+        "경고",
+        "Staged 파일이 없습니다. 그래도 커밋할까요?",
+        async () => {
+          await doCommit(title, message);
+        }
+      );
+      return;
     }
+    await doCommit(title, message);
+  };
+
+  const doCommit = async (title, message) => {
     try {
       setIsSubmitting(true);
       const fullMessage = `${title}\n\n${message || ""}`;
@@ -421,42 +445,49 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
       });
       await fetchDataForBranch(currentBranch);
       setIsCommitModalOpen(false);
-      alert("커밋 완료!");
+      showAlert("성공", "커밋이 완료되었습니다!");
     } catch (e) {
-      alert(e?.response?.data?.detail || e?.message || "커밋 중 오류가 발생했습니다.");
+      showAlert(
+        "오류",
+        e?.response?.data?.detail || e?.message || "커밋 중 오류가 발생했습니다."
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleMerge = async (sourceBranch) => {
-    const commitMessage = `Merge branch '${sourceBranch}' into ${currentBranch}`;
-    const ok = window.confirm(
-      `'${sourceBranch}' 브랜치를 '${currentBranch}'(으)로 병합합니다.\n\n진행할까요?`
+    showConfirm(
+      "병합 확인",
+      `'${sourceBranch}' 브랜치를 '${currentBranch}'(으)로 병합합니다.\n\n진행할까요?`,
+      async () => {
+        setIsSubmitting(true);
+        try {
+          await mergeBranch(project.project_id, {
+            base: currentBranch,
+            head: sourceBranch,
+            commit_message: `Merge branch '${sourceBranch}' into ${currentBranch}`,
+          });
+          showAlert("성공", "병합이 완료되었습니다.");
+          await fetchDataForBranch(currentBranch);
+        } catch (error) {
+          showAlert(
+            "병합 실패",
+            error?.response?.data?.detail || error.message
+          );
+        } finally {
+          setIsSubmitting(false);
+          setIsMergeModalOpen(false);
+        }
+      }
     );
-    if (!ok) return;
-    setIsSubmitting(true);
-    try {
-      await mergeBranch(project.project_id, {
-        base: currentBranch,
-        head: sourceBranch,
-        commit_message: commitMessage,
-      });
-      alert("병합이 완료되었습니다.");
-      await fetchDataForBranch(currentBranch);
-    } catch (error) {
-      alert(`병합 실패: ${error?.response?.data?.detail || error.message}`);
-    } finally {
-      setIsSubmitting(false);
-      setIsMergeModalOpen(false);
-    }
   };
 
   if (loading) return <div className="text-center py-10">로딩 중...</div>;
 
   return (
     <div className="max-w-5xl ml-6">
-      {/* Branch / Fetch / Pull / Push */}
+      {/* 상단 버튼 */}
       <div className="flex justify-between items-center bg-gray-100 p-2 rounded-lg border">
         <button
           onClick={() => setIsBranchModalOpen(true)}
@@ -471,7 +502,6 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
             disabled={isSubmitting}
             className="px-3 py-1.5 text-sm bg-white border rounded-md hover:bg-gray-50 flex items-center gap-1.5 disabled:opacity-50"
             onClick={() => fetchDataForBranch(currentBranch)}
-            title="원격 상태 새로고침"
           >
             <RotateCw size={14} /> Fetch
           </button>
@@ -497,10 +527,9 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
         </div>
       </div>
 
-      {/* Status & Commit */}
+      {/* 변경사항 / 커밋 영역 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
         <div>
-          {/* 변경사항 패널 (Unstaged / Staged) */}
           <h4 className="font-semibold text-gray-800 flex items-center gap-2 mb-2">
             <FileDiff size={16} /> 로컬 변경사항
           </h4>
@@ -518,6 +547,7 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
               <p className="text-gray-400 mt-2 text-xs">변경사항 없음</p>
             )}
           </div>
+
           <div className="p-4 bg-gray-50 rounded-lg border text-sm mt-4">
             <h5 className="font-medium text-green-700">
               Staged ({status.staged?.length || 0})
@@ -535,7 +565,6 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
         </div>
 
         <div>
-          {/* 커밋 패널 */}
           <h4 className="font-semibold text-gray-800 flex items-center gap-2 mb-2">
             <GitCommit size={16} /> 커밋
           </h4>
@@ -551,29 +580,23 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
         </div>
       </div>
 
-      {/* 최근 커밋 내역 */}
+      {/* 커밋 내역 */}
       <div className="mt-8">
         <h4 className="font-semibold text-gray-800 flex items-center gap-2 mb-2">
           <GitCommit size={16} /> 최근 커밋 내역
         </h4>
         <ul className="space-y-3 text-sm border rounded-lg p-2 bg-white">
           {commits.map((c) => {
-            // 메시지를 제목/본문으로 분리 (첫 줄 = 제목, 나머지 = 메시지)
             const [title, ...rest] = c.message.split("\n");
             const body = rest.join("\n").trim();
-
             return (
               <li key={c.sha} className="p-3 border-b last:border-b-0">
-                {/* 제목 */}
                 <p className="font-medium text-gray-900">{title}</p>
-
-                {/* 메시지(본문) - 작고 연한 색상 */}
                 {body && (
                   <p className="mt-1 text-xs text-gray-600 whitespace-pre-line">
                     {body}
                   </p>
                 )}
-
                 <div className="flex justify-between items-center mt-2">
                   <p className="text-xs text-gray-500">
                     {c.author} - {new Date(c.date).toLocaleString()}
@@ -610,6 +633,16 @@ const ConnectedView = ({ project, repoInfo, onBranchChange }) => {
           onSubmit={handleCommit}
         />
       )}
+
+      {/* ✅ AlertDialog 컴포넌트 */}
+      <AlertDialog
+        isOpen={alert.isOpen}
+        onClose={() => setAlert((prev) => ({ ...prev, isOpen: false }))}
+        title={alert.title}
+        message={alert.message}
+        type={alert.type}
+        onConfirm={alert.onConfirm}
+      />
     </div>
   );
 };

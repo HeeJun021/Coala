@@ -22,6 +22,8 @@ import { css as cssLang } from "@codemirror/lang-css";
 import { python as pythonLang } from "@codemirror/lang-python";
 import { keymap } from "@codemirror/view";
 
+import AlertDialog from "./projectgit/AlertDialog";
+
 // 🔹 헤더 아이콘
 import { Code } from "lucide-react";
 
@@ -52,10 +54,34 @@ export default function CodeEditorPanel({ project, branch, onBranchChange }) {
   const [showPreview, setShowPreview] = useState(true);
 
   const [isCommitModalOpen, setIsCommitModalOpen] = useState(false);
-
+  
   // Git 연결 불가 상태
   const [gitUnavailable, setGitUnavailable] = useState(false);
   const [gitErrMsg, setGitErrMsg] = useState("");
+
+  // 1. AlertDialog 상태 관리
+  const [alertState, setAlertState] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'alert',
+    onConfirm: () => {},
+  });
+
+  const closeAlert = () => {
+    setAlertState(prev => ({ ...prev, isOpen: false }));
+  };
+
+  const customAlert = useCallback((message, title = '알림') => {
+    setAlertState({
+      isOpen: true,
+      title: title,
+      message: message,
+      type: 'alert',
+      onConfirm: closeAlert,
+    });
+  }, []);
+
 
   // 공통: 404/409/400 등을 Git 미연결로 전환
   const handleGit404 = useCallback((error, fallbackMsg) => {
@@ -78,25 +104,13 @@ export default function CodeEditorPanel({ project, branch, onBranchChange }) {
     return false; // not handled
   }, []);
 
-  // 변경 여부
-  const unsaved = useMemo(
-    () => content !== originalContent,
-    [content, originalContent]
-  );
-
-  // 현재 파일 확장자
-  const ext = useMemo(
-    () => activePath?.split(".").pop()?.toLowerCase() || "",
-    [activePath]
-  );
-
-  // 실행 가능 확장자
+  // ... (useMemo 훅들은 변경 없음)
+  const unsaved = useMemo(() => content !== originalContent, [content, originalContent]);
+  const ext = useMemo(() => activePath?.split(".").pop()?.toLowerCase() || "", [activePath]);
   const isRunnable = useMemo(() => {
     if (!activePath) return false;
     return ["js", "py", "html"].includes(ext);
   }, [activePath, ext]);
-
-  // CodeMirror 언어 확장
   const cmLangExtensions = useMemo(() => {
     switch (ext) {
       case "js":
@@ -104,14 +118,10 @@ export default function CodeEditorPanel({ project, branch, onBranchChange }) {
       case "ts":
       case "tsx":
         return [javascript({ jsx: true, typescript: ext.startsWith("ts") })];
-      case "html":
-        return [htmlLang()];
-      case "css":
-        return [cssLang()];
-      case "py":
-        return [pythonLang()];
-      default:
-        return [];
+      case "html": return [htmlLang()];
+      case "css": return [cssLang()];
+      case "py": return [pythonLang()];
+      default: return [];
     }
   }, [ext]);
 
@@ -124,12 +134,7 @@ export default function CodeEditorPanel({ project, branch, onBranchChange }) {
       setGitUnavailable(false);
       setGitErrMsg("");
     } catch (e) {
-      if (
-        handleGit404(
-          e,
-          "Git 상태를 불러올 수 없습니다. Git 패널에서 저장소를 초기화하세요."
-        )
-      ) {
+      if (handleGit404(e, "Git 상태를 불러올 수 없습니다. Git 패널에서 저장소를 초기화하세요.")) {
         return;
       }
       console.error("[Git] 상태 조회 실패:", e);
@@ -156,11 +161,10 @@ export default function CodeEditorPanel({ project, branch, onBranchChange }) {
       setPreviewSrcDoc(null);
       setPreviewFilename("");
     } catch (e) {
-      if (
-        handleGit404(e, "파일을 불러올 수 없습니다. 저장소를 먼저 준비하세요.")
-      )
+      if (handleGit404(e, "파일을 불러올 수 없습니다. 저장소를 먼저 준비하세요."))
         return;
       console.error("[Git] 파일 열기 실패:", e);
+      customAlert(`파일을 열 수 없습니다: ${e?.response?.data?.detail || e.message}`, "파일 오류");
     }
   };
 
@@ -179,40 +183,21 @@ export default function CodeEditorPanel({ project, branch, onBranchChange }) {
       setOriginalContent(content);
       await refreshStatus();
     } catch (e) {
-      if (
-        handleGit404(e, "저장할 수 없습니다. 저장소 연결/브랜치를 확인하세요.")
-      )
+      if (handleGit404(e, "저장할 수 없습니다. 저장소 연결/브랜치를 확인하세요."))
         return;
       console.error("[Git] 저장 실패:", e);
+      customAlert(`저장 실패: ${e?.response?.data?.detail || e.message}`, "저장 오류");
     }
   }, [
-    gitUnavailable,
-    activePath,
-    unsaved,
-    projectId,
-    branch,
-    content,
-    encoding,
-    baseSha,
-    refreshStatus,
-    handleGit404,
+    gitUnavailable, activePath, unsaved, projectId, branch, 
+    content, encoding, baseSha, refreshStatus, handleGit404, customAlert
   ]);
 
-  // Ctrl/Cmd+S
-  const saveKeymap = useMemo(
-    () =>
-      keymap.of([
-        {
-          key: "Mod-s",
-          preventDefault: true,
-          run: () => {
-            handleSave();
-            return true;
-          },
-        },
-      ]),
-    [handleSave]
-  );
+  const saveKeymap = useMemo(() => keymap.of([{
+    key: "Mod-s",
+    preventDefault: true,
+    run: () => { handleSave(); return true; },
+  }]), [handleSave]);
 
   // stage/unstage
   const handleStage = async () => {
@@ -222,9 +207,9 @@ export default function CodeEditorPanel({ project, branch, onBranchChange }) {
       await stagePaths(projectId, { branch, paths: [activePath], staged: true });
       await refreshStatus();
     } catch (e) {
-      if (handleGit404(e, "Staging할 수 없습니다. 저장소를 먼저 준비하세요."))
-        return;
+      if (handleGit404(e, "Staging할 수 없습니다. 저장소를 먼저 준비하세요.")) return;
       console.error("[Git] staging 실패:", e);
+      customAlert(`Staging 실패: ${e?.response?.data?.detail || e.message}`, "Staging 오류");
     }
   };
 
@@ -235,13 +220,13 @@ export default function CodeEditorPanel({ project, branch, onBranchChange }) {
       await stagePaths(projectId, { branch, paths: [activePath], staged: false });
       await refreshStatus();
     } catch (e) {
-      if (handleGit404(e, "Unstage할 수 없습니다. 저장소를 먼저 준비하세요."))
-        return;
+      if (handleGit404(e, "Unstage할 수 없습니다. 저장소를 먼저 준비하세요.")) return;
       console.error("[Git] unstage 실패:", e);
+      customAlert(`Unstage 실패: ${e?.response?.data?.detail || e.message}`, "Unstage 오류");
     }
   };
 
-  // 커밋
+  // 2. 커밋 함수 수정
   const handleCommit = async ({ title, message }) => {
     if (gitUnavailable) return;
     try {
@@ -253,45 +238,39 @@ export default function CodeEditorPanel({ project, branch, onBranchChange }) {
       });
       setBaseSha(null);
       await refreshStatus();
+      setIsCommitModalOpen(false);
+      customAlert("커밋이 완료되었습니다.", "커밋 성공"); // 성공 알림
     } catch (e) {
-      if (handleGit404(e, "커밋할 수 없습니다. 저장소를 먼저 준비하세요."))
-        return;
+      setIsCommitModalOpen(false);
+      if (handleGit404(e, "커밋할 수 없습니다. 저장소를 먼저 준비하세요.")) return;
       console.error("[Git] commit 실패:", e);
+      customAlert(
+        `커밋 실패: ${e?.response?.data?.detail || e.message || "알 수 없는 오류"}`,
+        "커밋 실패"
+      ); // 실패 알림
     }
   };
 
   // 실행
   const handleRun = async () => {
-    if (gitUnavailable) return;
-    if (!isRunnable) return;
+    if (gitUnavailable || !isRunnable) return;
     try {
-      if (ext === "js") {
-        const result = await runProjectJs(content);
-        setPreviewSrcDoc(result);
-      } else if (ext === "py") {
-        const result = await runProjectPython(content);
-        setPreviewSrcDoc(result);
-      } else if (ext === "html") {
-        setPreviewSrcDoc(content);
-      }
+      let result;
+      if (ext === "js") result = await runProjectJs(content);
+      else if (ext === "py") result = await runProjectPython(content);
+      else if (ext === "html") result = content;
+      
+      setPreviewSrcDoc(result);
       setPreviewFilename(activePath);
       setShowPreview(true);
     } catch (err) {
-      if (
-        handleGit404(err, "코드를 실행할 수 없습니다. 저장소를 먼저 준비하세요.")
-      )
-        return;
+      if (handleGit404(err, "코드를 실행할 수 없습니다. 저장소를 먼저 준비하세요.")) return;
       console.error(`${ext.toUpperCase()} 실행 실패`, err);
-      setPreviewSrcDoc({
-        success: false,
-        stdout: "",
-        stderr:
-          err?.response?.data?.detail ||
-          err.message ||
-          "알 수 없는 오류가 발생했습니다.",
-      });
+      const errMsg = err?.response?.data?.detail || err.message || "알 수 없는 오류가 발생했습니다.";
+      setPreviewSrcDoc({ success: false, stdout: "", stderr: errMsg });
       setPreviewFilename(activePath);
       setShowPreview(true);
+      customAlert(errMsg, "코드 실행 오류");
     }
   };
 
@@ -300,39 +279,30 @@ export default function CodeEditorPanel({ project, branch, onBranchChange }) {
   }, []);
 
   // Git 미연결 안내 UI
-  const renderGitMissing = () => {
-    return (
-      <div className="w-full h-full flex flex-col items-center justify-center text-center p-8">
-        <div className="text-2xl font-semibold text-gray-800 mb-2">
-          Git 연결이 되어있지 않습니다.
-        </div>
-        <div className="text-sm text-gray-500 mb-6 max-w-md">
-          {gitErrMsg ||
-            "이 프로젝트에 연결된 저장소가 없거나 접근할 수 없습니다."}
-          <br />
-          GitHub 패널에서 저장소를 연결하거나, 자율코딩으로 이동해 로컬 편집을
-          이용하세요.
-        </div>
-        <div className="flex gap-3">
-          <button
-            onClick={() =>
-              navigate(`/team-project/${pid}`, {
-                state: {
-                  tab: "overview",
-                  subTab: "git",
-                  projectId: pid,
-                  ts: Date.now(),
-                },
-              })
-            }
-            className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
-          >
-            GitPanel로 이동
-          </button>
-        </div>
+  const renderGitMissing = () => (
+    <div className="w-full h-full flex flex-col items-center justify-center text-center p-8">
+      <div className="text-2xl font-semibold text-gray-800 mb-2">
+        Git 연결이 되어있지 않습니다.
       </div>
-    );
-  };
+      <div className="text-sm text-gray-500 mb-6 max-w-md">
+        {gitErrMsg || "이 프로젝트에 연결된 저장소가 없거나 접근할 수 없습니다."}
+        <br />
+        GitHub 패널에서 저장소를 연결하거나, 자율코딩으로 이동해 로컬 편집을 이용하세요.
+      </div>
+      <div className="flex gap-3">
+        <button
+          onClick={() =>
+            navigate(`/team-project/${pid}`, {
+              state: { tab: "overview", subTab: "git", projectId: pid, ts: Date.now() },
+            })
+          }
+          className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+        >
+          GitPanel로 이동
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="w-full h-full flex flex-col bg-white">
@@ -353,7 +323,6 @@ export default function CodeEditorPanel({ project, branch, onBranchChange }) {
           >
             {showExplorer ? <FaChevronLeft /> : <FaChevronRight />}
           </button>
-
           <div className="text-sm text-gray-600 flex items-center flex-shrink min-w-0">
             <span className="font-medium truncate">
               {gitUnavailable ? "Git 연결 필요" : activePath || "파일을 선택하세요"}
@@ -361,51 +330,16 @@ export default function CodeEditorPanel({ project, branch, onBranchChange }) {
             <div className="w-px bg-gray-300 mx-3 self-stretch" />
             <span className="flex-shrink-0">{branch || "브랜치 로딩 중..."}</span>
             <div className="w-px bg-gray-300 mx-3 self-stretch" />
-            <span className="flex-shrink-0">
-              Staged: {status.staged?.length || 0}
-            </span>
-            <span className="ml-2 flex-shrink-0">
-              Unstaged: {status.unstaged?.length || 0}
-            </span>
+            <span className="flex-shrink-0">Staged: {status.staged?.length || 0}</span>
+            <span className="ml-2 flex-shrink-0">Unstaged: {status.unstaged?.length || 0}</span>
           </div>
-
           <div className="ml-auto flex items-center gap-2 flex-shrink-0">
-            <button
-              className="text-[12px] text-blue-600 hover:text-blue-800 justify-center px-2 py-0.5 w-16 h-6 border border-blue-300 rounded disabled:opacity-50"
-              onClick={handleSave}
-              disabled={gitUnavailable || !activePath || !unsaved}
-              title={unsaved ? "저장" : "변경 사항 없음"}
-            >
-              Save
-            </button>
-            <button
-              className="text-[12px] text-purple-600 hover:text-purple-800 px-2 py-0.5 w-16 h-6 border border-purple-300 rounded flex items-center justify-center gap-1 disabled:opacity-50"
-              onClick={handleRun}
-              disabled={gitUnavailable || !activePath || !isRunnable}
-            >
-              Run
-            </button>
-            <button
-              className="text-[12px] text-green-600 hover:text-green-800 justify-center px-2 py-0.5 w-16 h-6 border border-green-300 rounded disabled:opacity-50"
-              onClick={handleStage}
-              disabled={gitUnavailable || !activePath}
-            >
-              Staging
-            </button>
-            <button
-              className="text-[12px] text-orange-500 hover:text-orange-700 justify-center px-2 py-0.5 w-16 h-6 border border-orange-300 rounded disabled:opacity-50"
-              onClick={handleUnstage}
-              disabled={gitUnavailable || !activePath}
-            >
-              Unstage
-            </button>
-            <button
-              className="text-[12px] text-gray-700 hover:text-black justify-center px-2 py-0.5 w-16 h-6 border border-gray-300 rounded disabled:opacity-50"
-              onClick={() => setIsCommitModalOpen(true)}
-              disabled={gitUnavailable || status.staged?.length === 0}
-            >
-              Commit
-            </button>
+            {/* Action Buttons */}
+            <button onClick={handleSave} disabled={gitUnavailable || !activePath || !unsaved} title={unsaved ? "저장" : "변경 사항 없음"} className="text-[12px] text-blue-600 hover:text-blue-800 justify-center px-2 py-0.5 w-16 h-6 border border-blue-300 rounded disabled:opacity-50">Save</button>
+            <button onClick={handleRun} disabled={gitUnavailable || !activePath || !isRunnable} className="text-[12px] text-purple-600 hover:text-purple-800 px-2 py-0.5 w-16 h-6 border border-purple-300 rounded flex items-center justify-center gap-1 disabled:opacity-50">Run</button>
+            <button onClick={handleStage} disabled={gitUnavailable || !activePath} className="text-[12px] text-green-600 hover:text-green-800 justify-center px-2 py-0.5 w-16 h-6 border border-green-300 rounded disabled:opacity-50">Staging</button>
+            <button onClick={handleUnstage} disabled={gitUnavailable || !activePath} className="text-[12px] text-orange-500 hover:text-orange-700 justify-center px-2 py-0.5 w-16 h-6 border border-orange-300 rounded disabled:opacity-50">Unstage</button>
+            <button onClick={() => setIsCommitModalOpen(true)} disabled={gitUnavailable || status.staged?.length === 0} className="text-[12px] text-gray-700 hover:text-black justify-center px-2 py-0.5 w-16 h-6 border border-gray-300 rounded disabled:opacity-50">Commit</button>
           </div>
         </div>
 
@@ -415,10 +349,7 @@ export default function CodeEditorPanel({ project, branch, onBranchChange }) {
             <div className="flex-1">{renderGitMissing()}</div>
           ) : (
             <>
-              <div
-                className="border-r transition-all duration-200 ease-out flex-shrink-0"
-                style={{ width: sidebarWidth }}
-              >
+              <div className="border-r transition-all duration-200 ease-out flex-shrink-0" style={{ width: sidebarWidth }}>
                 {showExplorer && (
                   <ProjectGitExplorerPanel
                     className="h-full overflow-auto"
@@ -433,11 +364,7 @@ export default function CodeEditorPanel({ project, branch, onBranchChange }) {
                       setContent("");
                       setOriginalContent("");
                       setBaseSha(null);
-                      setStatus({
-                        staged: [],
-                        unstaged: [],
-                        has_uncommitted: false,
-                      });
+                      setStatus({ staged: [], unstaged: [], has_uncommitted: false });
                     }}
                   />
                 )}
@@ -481,6 +408,17 @@ export default function CodeEditorPanel({ project, branch, onBranchChange }) {
           onSubmit={handleCommit}
         />
       )}
+      
+      {/* 3. AlertDialog 렌더링 */}
+      <AlertDialog
+        isOpen={alertState.isOpen}
+        onClose={closeAlert}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        onConfirm={alertState.onConfirm}
+        confirmText="확인"
+      />
     </div>
   );
 }

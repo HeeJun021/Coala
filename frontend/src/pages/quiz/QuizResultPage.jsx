@@ -40,7 +40,7 @@ const QuizResultPage = ({ userData }) => {
         {/* ⬅️ 뒤로가기 버튼 (메타 톤) */}
         <button
           className="absolute top-0 left-0 flex items-center gap-1 text-gray-600 hover:text-gray-800 text-sm"
-          onClick={() => navigate(-1)}
+          onClick={() => navigate(-2)}
         >
           <ChevronLeft className="w-5 h-5" />
           뒤로가기
