@@ -148,15 +148,17 @@ const Navbar = () => {
     },
 
     {
-      label: "포트폴리오",
-      path: user ? "/portfolio" : "/login",
-      children: user ? ["포트폴리오 추출\u00A0", "포트폴리오 추출 내역\u00A0"] : [],
-    },
+      label: "포트폴리오",
+      path: user ? "/portfolio" : "/login",
+      // ✅ "포트폴리오 추출", "포트폴리오 추출 내역" 뒤의 \u00A0 제거
+      children: user ? ["포트폴리오 추출", "포트폴리오 추출 내역"] : [],
+    },
     {
-      label: "게시판",
-      path: "/board",
-      children: ["자유 게시판\u00A0", "프로젝트 모집\u00A0", "코드 공유 게시판\u00A0"],
-    },
+      label: "게시판",
+      path: "/board",
+      // ✅ "자유 게시판", "프로젝트 모집", "코드 공유 게시판" 뒤의 \u00A0 제거
+      children: ["자유 게시판", "프로젝트 모집", "코드 공유 게시판"],
+    },
   ];
 
   return (
