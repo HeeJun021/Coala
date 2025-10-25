@@ -1,120 +1,107 @@
-// src/pages/mypage/MyPageQuizHistory.jsx
-// ✅ MyPagePortfolioHistory 디자인 기준에 맞춰 전체 리디자인된 버전
+// src/pages/mypage/MyPagePortfolioHistory.jsx
+// ✅ MyPageProject.jsx의 레이아웃 구조 + 포폴 히스토리 디자인 반영 버전
 
 import React, { useEffect, useMemo, useState } from "react";
 import {
   History,
   CheckCircle,
+  XCircle,
   Clock4,
   ArrowLeft,
   ArrowRight,
+  ExternalLink,
 } from "lucide-react";
-import { useNavigate, useOutletContext } from "react-router-dom";
-import { getUserQuizHistory } from "../../api/quizApi";
+import { getPortfolioExportHistory } from "../../api/portfolioApi";
 
 const ITEMS_PER_PAGE = 15;
 
-export default function MyPageQuizHistory() {
-  const { userData } = useOutletContext();
-  const navigate = useNavigate();
-
+export default function MyPagePortfolioHistory() {
   const [items, setItems] = useState([]);
-  const [filter] = useState("all"); // all | practice | test
+  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
 
   useEffect(() => {
     (async () => {
-      if (!userData?.user_id) {
-        setErr("로그인이 필요합니다.");
-        setLoading(false);
-        return;
-      }
-
       try {
         setLoading(true);
-        const res = await getUserQuizHistory(userData.user_id);
-        // normalize
-        const normalized = (res || []).map((q) => ({
-          quiz_id: q.quiz_id ?? q.id,
-          title: q.title ?? "-",
-          quiz_type: q.quiz_type ?? "practice",
-          correct_count: q.correct_count ?? 0,
-          total_questions: q.total_questions ?? 0,
-          submitted_at: q.submitted_at ?? q.created_at ?? null,
-          rating_change: q.rating_change ?? 0,
+        const { items: list = [], total: cnt = 0 } =
+          await getPortfolioExportHistory({
+            page,
+            limit: ITEMS_PER_PAGE,
+          });
+
+        const normalized = list.map((x) => ({
+          export_id: x.export_id ?? x.id,
+          title: x.title ?? "-",
+          status: x.status ?? "pending",
+          block_count: x.block_count ?? 0,
+          duration_ms: x.duration_ms ?? 0,
+          created_at: x.created_at ?? null,
+          page_id: x.page_id ?? null,
+          project_name: x.project_name ?? "-",
+          template_name: x.template_name ?? "-",
+          ai_used: x.ai_used ?? false,
+          error_msg: x.error_msg ?? null,
         }));
         setItems(normalized);
-        setErr(null);
+        setTotal(cnt);
       } catch (e) {
-        console.error("❌ 퀴즈 내역 불러오기 실패:", e);
-        setErr("퀴즈 기록을 불러오는 데 실패했습니다.");
+        console.error("❌ 포트폴리오 내역 불러오기 실패:", e);
+        setErr("내역을 불러오는 데 실패했습니다.");
       } finally {
         setLoading(false);
       }
     })();
-  }, [userData]);
+  }, [page]);
 
-  // filtering
-  const filtered = useMemo(() => {
-    if (filter === "all") return items;
-    return items.filter((x) =>
-      filter === "practice" ? x.quiz_type === "practice" : x.quiz_type === "test"
-    );
-  }, [items, filter]);
-
-  const total = filtered.length;
   const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
-  const currentItems = useMemo(() => {
-    const start = (page - 1) * ITEMS_PER_PAGE;
-    return filtered.slice(start, start + ITEMS_PER_PAGE);
-  }, [filtered, page]);
-
-  useEffect(() => {
-    // when filter changes reset to first page
-    setPage(1);
-  }, [filter]);
+  const currentItems = useMemo(() => items, [items]);
 
   const goPage = (p) => {
     if (p < 1 || p > totalPages) return;
     setPage(p);
   };
 
-  const openResult = (id) => {
-    navigate(`/quiz-result/${id}`);
+  const openNotion = (pageId) => {
+    if (!pageId) return;
+    window.open(
+      `https://www.notion.so/${pageId.replaceAll("-", "")}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
   };
 
   return (
     <div className="flex min-h-screen">
-      {/* 좌측 여백 (포트폴리오 기준과 동일) */}
+      {/* ✅ MyPageProject.jsx와 동일한 좌측 여백 */}
       <div className="w-[200px]" />
 
+      {/* ✅ 메인 콘텐츠 */}
       <div className="flex-1 p-6 max-w-6xl mx-auto">
         <div className="max-w-5xl bg-white shadow-xl rounded-2xl border border-gray-300 p-7 relative ml-4">
           {/* 타이틀 */}
           <div className="mb-8">
             <h1 className="text-3xl font-extrabold text-gray-800 mb-4 tracking-wide">
-              퀴즈 풀이 내역
+              포트폴리오 추출 내역
             </h1>
             <p className="text-gray-500 text-sm">
-              내가 풀었던 퀴즈 결과와 점수를 확인할 수 있습니다.
+              노션으로 내보낸 기록을 한눈에 확인하세요.
             </p>
           </div>
 
-          {/* 헤더 라인 (총 개수) + 필터 버튼 우측 정렬 */}
+          {/* 헤더 라인 (총 개수) */}
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center gap-2 text-gray-800">
               <History className="w-5 h-5 text-green-600" />
               <h2 className="text-lg font-semibold">
-                풀이 목록{" "}
+                내보내기 목록{" "}
                 <span className="text-sm font-normal text-gray-500">
                   · 총 <strong>{total}</strong>건
                 </span>
               </h2>
             </div>
-
-            
           </div>
 
           {/* 상태 */}
@@ -123,7 +110,7 @@ export default function MyPageQuizHistory() {
           ) : err ? (
             <p className="text-sm text-red-500">{err}</p>
           ) : total === 0 ? (
-            <p className="text-sm text-gray-500">해당 유형의 퀴즈 기록이 없습니다.</p>
+            <p className="text-sm text-gray-500">아직 내보낸 기록이 없습니다.</p>
           ) : (
             <>
               {/* 테이블 */}
@@ -131,67 +118,62 @@ export default function MyPageQuizHistory() {
                 <table className="w-full text-sm text-gray-700 border-collapse">
                   <thead className="bg-gray-100 border-b border-gray-200">
                     <tr>
-                      <th className="p-3 w-[40%] text-left">퀴즈 제목</th>
-                      <th className="p-3 w-[12%] text-center">유형</th>
-                      <th className="p-3 w-[16%] text-center">정답</th>
-                      <th className="p-3 w-[18%] text-center">제출 시간</th>
-                      <th className="p-3 w-[10%] text-center">레이팅</th>
-                      <th className="p-3 w-[8%] text-center">이동</th>
+                      <th className="p-3 w-[8%] text-center">ID</th>
+                      <th className="p-3 w-[25%] text-left">제목</th>
+                      <th className="p-3 w-[12%] text-center">상태</th>
+                      <th className="p-3 w-[18%] text-center">프로젝트</th>
+                      <th className="p-3 w-[20%] text-center">템플릿</th>
+                      <th className="p-3 w-[15%] text-center">생성 시간</th>
+                      <th className="p-3 w-[10%] text-center whitespace-nowrap">
+                        노션
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {currentItems.map((q) => (
+                    {currentItems.map((x) => (
                       <tr
-                        key={q.quiz_id}
+                        key={x.export_id}
                         className="hover:bg-gray-50 border-b border-gray-100"
                       >
-                        <td className="p-3 text-left truncate">{q.title}</td>
-
+                        <td className="p-3 text-center">{x.export_id}</td>
+                        <td className="p-3 text-left truncate">{x.title}</td>
                         <td className="p-3 text-center whitespace-nowrap">
-                          {q.quiz_type === "test" ? (
-                            <span className="inline-flex items-center gap-1 text-gray-800">
-                              <CheckCircle className="w-4 h-4 text-gray-600" />
-                              테스트
+                          {x.status === "success" ? (
+                            <span className="inline-flex items-center gap-1 text-green-700">
+                              <CheckCircle className="w-5 h-5" /> 성공
+                            </span>
+                          ) : x.status === "failed" ? (
+                            <span className="inline-flex items-center gap-1 text-rose-600">
+                              <XCircle className="w-5 h-5" /> 실패
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 text-gray-600">
-                              <Clock4 className="w-4 h-4 text-gray-600" />
-                              연습
+                              <Clock4 className="w-5 h-5" /> 진행중
                             </span>
                           )}
                         </td>
-
-                        <td className="p-3 text-center text-green-600">
-                          {q.correct_count} / {q.total_questions}
+                        <td className="p-3 text-center">
+                          {x.project_name ?? "-"}
                         </td>
-
-                        <td className="p-3 text-center text-gray-700 whitespace-nowrap">
-                          {q.submitted_at
-                            ? new Date(q.submitted_at).toLocaleString()
+                        <td className="p-3 text-center">
+                          {x.template_name ?? "-"}
+                        </td>
+                        <td className="p-3 text-center">
+                          {x.created_at
+                            ? new Date(x.created_at).toLocaleString()
                             : "-"}
                         </td>
-
                         <td className="p-3 text-center">
-                          {q.quiz_type === "test" && q.rating_change !== 0 ? (
-                            <span
-                              className={
-                                q.rating_change > 0 ? "text-green-500" : "text-red-500"
-                              }
+                          {x.page_id ? (
+                            <button
+                              onClick={() => openNotion(x.page_id)}
+                              className="inline-flex items-center gap-1 px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded-md whitespace-nowrap leading-none"
                             >
-                              {q.rating_change > 0 ? `+${q.rating_change}` : q.rating_change}
-                            </span>
+                              열기 <ExternalLink className="w-3.5 h-3.5" />
+                            </button>
                           ) : (
-                            <span className="text-gray-400">-</span>
+                            <span className="text-gray-400 text-xs">-</span>
                           )}
-                        </td>
-
-                        <td className="p-3 text-center">
-                          <button
-                            onClick={() => openResult(q.quiz_id)}
-                            className="inline-flex items-center gap-1 px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded-md whitespace-nowrap leading-none"
-                          >
-                            이동
-                          </button>
                         </td>
                       </tr>
                     ))}
