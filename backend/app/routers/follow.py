@@ -4,6 +4,7 @@ from sqlalchemy.dialects.postgresql import insert
 from typing import List
 from sqlalchemy import delete
 from app.models.user import User, UserFollow
+from app.models.project_models import ProjectMembers
 from app.schemas.user import UserSimpleInfo
 from app.database import get_db
 from app.dependencies.auth import get_current_user
@@ -117,32 +118,53 @@ def search_users(
 # 추천친구 검색
 @router.get("/recommended", response_model=list[UserSimpleInfo])
 def get_recommended_users(
-    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+    project_id: int,  # 1. 기준이 되는 프로젝트 ID
+    current_user: User = Depends(get_current_user), 
+    db: Session = Depends(get_db)
 ):
+    
+    # --- 1. 맞팔 유저 ID 검색 ---
+    
     # 내가 팔로우하는 사람
-    followings = (
-        db.query(User.user_id)
-        .join(UserFollow, User.user_id == UserFollow.following_id)
+    followings_subq = (
+        db.query(UserFollow.following_id)
         .filter(UserFollow.follower_id == current_user.user_id)
     )
 
     # 나를 팔로우하는 사람
-    followers = (
-        db.query(User.user_id)
-        .join(UserFollow, User.user_id == UserFollow.follower_id)
+    followers_subq = (
+        db.query(UserFollow.follower_id)
         .filter(UserFollow.following_id == current_user.user_id)
     )
 
-    # 둘 다 합치고 distinct
-    union_subq = followings.union(followers).subquery()
+    # 맞팔 유저 (교집합)
+    # SQLAlchemy의 intersect를 사용하거나, 
+    # 간단하게 in_()을 두 번 사용하여 교집합을 구현할 수 있습니다.
+    mutual_friends_subq = (
+        db.query(UserFollow.following_id)
+        .filter(UserFollow.follower_id == current_user.user_id)
+        .filter(UserFollow.following_id.in_(followers_subq))
+        .subquery()
+    )
 
+    # --- 2. 제외할 유저 ID 검색 (프로젝트 멤버/초대된 사람) ---
+    excluded_users_subq = (
+        db.query(ProjectMembers.user_id)
+        .filter(ProjectMembers.project_id == project_id)
+        .subquery()
+    )
+
+    # --- 3. 최종 쿼리 ---
+    # (맞팔 O) AND (멤버/초대 X) AND (나 자신 X)
     users = (
         db.query(User)
-        .filter(User.user_id.in_(db.query(union_subq)))
-        .filter(User.user_id != current_user.user_id)
+        .filter(User.user_id.in_(db.query(mutual_friends_subq))) # 맞팔 조건
+        .filter(User.user_id.notin_(db.query(excluded_users_subq))) # 제외 조건
+        .filter(User.user_id != current_user.user_id) # 나 자신 제외 (확인)
         .all()
     )
 
+    # 결과 반환
     return [
         UserSimpleInfo(
             user_id=u.user_id, nickname=u.nickname, profile_image=u.profile_image_url

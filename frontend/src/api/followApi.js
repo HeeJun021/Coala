@@ -10,11 +10,14 @@ export const searchUsers = async (keyword) => {
 };
 
 // 추천 유저 목록 API
-export const getRecommendedUsers = async () => {
-  const response = await apiClient.get("/follow/recommended");
+export const getRecommendedUsers = async (projectId) => {
+  const response = await apiClient.get("/follow/recommended", {
+    params: {
+      project_id: projectId,
+    },
+  });
   return response.data;
 };
-
 // 팔로잉 목록
 export const getFollowings = async () => {
   const response = await apiClient.get("/follow/followings");

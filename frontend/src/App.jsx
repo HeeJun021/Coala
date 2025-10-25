@@ -62,10 +62,11 @@ import MyPageCTHistory from "./pages/mypage/MyPageCTHistory";
 import MyPageCommunity from "./pages/mypage/MyPageCommunity";
 import MyPageAttendance from "./pages/mypage/MyPageAttendance";
 import MyPageProject from "./pages/mypage/MyPageProject";
+import MyPagePortfolioHistory from "./pages/mypage/MyPagePortfolioHistory";
 
 // 포트폴리오
 import PortfolioExport from "./components/portfolio/PortfolioExport";
-import PortfolioHistory from "./components/portfolio/PortfolioHistory";
+// import PortfolioHistory from "./components/portfolio/PortfolioHistory";
 import PortfolioPage from "./pages/portfolio/PortfolioPage";
 
 // 인증
@@ -281,7 +282,7 @@ const App = () => {
                         <Route path="community" element={<MyPageCommunity />} />
                         <Route path="attendance" element={<MyPageAttendance />} />
                         <Route path="portfolio" element={<PortfolioExport />} />
-                        <Route path="portfolio/history" element={<PortfolioHistory />} />
+                        <Route path="portfolio/history" element={<MyPagePortfolioHistory />} />
                       </Route>
 
                       {/* 팀프로젝트 */}

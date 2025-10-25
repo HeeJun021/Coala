@@ -391,6 +391,7 @@ const MyTasksTab = ({ projects: propProjects }) => {
               tasks={tasks}
               projects={projects}
               onTaskClick={handleTaskClick}
+              onTaskDeleted={handleDeleteTask}
             />
           </div>
         )}

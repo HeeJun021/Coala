@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { updateTask } from "../../api/taskApi";
+import { updateTask, deleteTask } from "../../api/taskApi";
 
 import {
   CalendarDays,
@@ -15,7 +15,7 @@ import {
 
 import { colorPalette, getRandomColor, getTextColor } from "../../utils/colorUtils";
 
-const TaskCalendarView = ({ tasks = [], projects = [], onTaskClick, title }) => {
+const TaskCalendarView = ({ tasks = [], projects = [], onTaskClick, title, onTaskDeleted }) => {
   const [selectedTask, setSelectedTask] = useState(null);
   const [calendarEvents, setCalendarEvents] = useState([]);
   const [isAddingCollaborator, setIsAddingCollaborator] = useState(false);
@@ -126,6 +126,47 @@ const calendarRef = useRef(null);
     } catch (err) {
       console.error("작업 수정 실패", err);
       alert("작업 수정에 실패했습니다.");
+    }
+  };
+
+  const handleDeleteTask = async (taskId) => {
+    if (!window.confirm("정말 이 작업을 삭제하시겠습니까?")) return;
+    try {
+      await deleteTask(taskId);
+      setSelectedTask(null); // 패널 닫기
+      onTaskDeleted?.(taskId);
+
+      // tasks prop을 직접 수정할 수 없으므로, calendarEvents 상태만 갱신
+      const updatedEvents = calendarEvents.filter(
+        (event) => event.id !== String(taskId)
+      );
+      setCalendarEvents(updatedEvents);
+
+      // tasks 상태도 갱신 (부모로부터 받은 tasks를 내부에서 필터링하여 갱신)
+      // 이 컴포넌트는 tasks를 prop으로 받으므로 부모의 갱신이 필요하지만,
+      // 부모(MyTasksTab, ProjectWidgetTabs)에서 onTaskDeleted를 전달하지 않으므로
+      // 임시로 내부 상태만이라도 갱신합니다.
+      const updatedTasks = tasks.filter((task) => task.task_id !== taskId);
+      setCalendarEvents(
+        updatedTasks
+          .filter((task) =>
+            projects.some((proj) => proj.project_id === task.project_id)
+          )
+          .map((task) => {
+            // (이하 매핑 로직은 handleUpdateTask와 동일)
+            const bg = task.color || "#8da4f1";
+            const textColor = getTextColor(bg);
+            return {
+              id: String(task.task_id),
+              /* ... (기존 매핑 로직) ... */
+              extendedProps: { ...task, bgColor: bg, textColor: textColor },
+              backgroundColor: bg, borderColor: bg,
+            };
+          })
+      );
+    } catch (err) {
+      console.error("작업 삭제 실패", err);
+      alert("작업 삭제에 실패했습니다.");
     }
   };
 
@@ -274,12 +315,8 @@ const calendarRef = useRef(null);
         ×
       </button>
       <button
-        onClick={() => {
-          if (window.confirm("정말 이 작업을 삭제하시겠습니까?")) {
-            setSelectedTask(null);
-          }
-        }}
         className="text-red-500 hover:text-red-700 text-sm font-medium"
+        onClick={() => handleDeleteTask(selectedTask.task_id)} // ✅ [수정] 삭제 핸들러 연결
       >
         작업 삭제
       </button>
