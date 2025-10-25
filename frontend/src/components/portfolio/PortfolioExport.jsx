@@ -1,8 +1,8 @@
 // frontend/src/components/portfolio/PortfolioExport.jsx
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { getMyLeaves } from "../../api/eucalyptusApi"; // ✅ 새 API 함수
-import NotionConnectPanel from "./NotionConnectPanel";
 import PortfolioFilterPanel from "./PortfolioFilterPanel";
+import PortfolioGuide from "./PortfolioGuide";
 import { getNotionStatus, disconnectNotion, publishToNotion } from "../../api/notionApi";
 import { getMyProjects } from "../../api/projectApi";
 import { X, Upload, MapPin, Layers, CheckCircle2, Loader2, AlertTriangle, ExternalLink,LayoutDashboard,Users,FileText, Leaf} from "lucide-react";
@@ -515,22 +515,16 @@ const handleSelectTemplate = useCallback((id, title) => {
   );
 }
 
-  if (!connected) {
+if (!connected) {
   return (
-    <div className="w-full min-h-screen pl-[144px]" data-scroll-root>
-      <div className="bg-[#F9FAFB] min-h-screen">
-        <div className="max-w-5xl mx-auto pt-0 -mt-2.5 relative">
-          <NotionConnectPanel
-            connected={false}
-            onConnectedChange={(v) => {
-              if (v) { setConnected(true); refreshStatus(); }
-            }}
-          />
-        </div>
-      </div>
-    </div>
+   <div className="w-full pl-[144px] bg-[#F9FAFB] flex justify-center" data-scroll-root>
+  <PortfolioGuide />
+</div>
+
   );
 }
+
+
 
 
 return (
