@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { SiNotion } from "react-icons/si";
-import { Layers, CheckCircle2, User, Brain, FolderGit2 } from "lucide-react";
+import { Layers, User, Brain, FolderGit2 } from "lucide-react";
 import { getNotionAuthorizeUrl } from "../../api/notionApi";
 import PortfolioGuideDetail from "./PortfolioGuideDetail";
 
@@ -99,7 +99,7 @@ export default function PortfolioGuide() {
       </p>
 
       {/* 🔹 단계 카드 */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         {steps.map((step) => (
           <div
             key={step.id}
@@ -115,14 +115,6 @@ export default function PortfolioGuide() {
             </p>
           </div>
         ))}
-      </div>
-
-      {/* 🔹 시작 버튼 */}
-      <div className="text-center">
-        <button className="inline-flex items-center gap-2 px-8 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md transition">
-          <CheckCircle2 className="w-5 h-5" />
-          시작하기
-        </button>
       </div>
 
       {/* 🔹 디테일 모달 */}
