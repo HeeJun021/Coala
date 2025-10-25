@@ -216,13 +216,12 @@ export default function PortfolioFilterPanel({
       <section className="mb-8">
         <div className="flex items-center gap-2 mb-3">
           <SlidersHorizontal size={18} />
-          <h3 className="font-semibold">기본 필터</h3>
+          <h3 className="font-semibold">프로젝트</h3>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* ▶ 프로젝트 단일 선택 */}
           <div className="md:col-span-1 flex flex-col gap-1 relative" ref={projPanelRef}>
-            <label className="block text-sm text-gray-600 mb-1">프로젝트</label>
 
             <div className="relative">
               {/* 버튼 */}

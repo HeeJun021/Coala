@@ -571,7 +571,7 @@ return (
 
           {/* 스텝퍼 */}
           <ol className="mt-2 flex flex-wrap items-center gap-2 text-[13px]">
-            {["제목", "대상 페이지", "템플릿", "필터", "퍼블리시"].map((label, i) => {
+            {["제목", "대상 페이지", "템플릿", "프로젝트", "퍼블리시"].map((label, i) => {
               const step = i + 1;
               const done =
                 (step === 1 && !!pageTitle?.trim()) ||
