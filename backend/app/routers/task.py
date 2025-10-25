@@ -202,8 +202,13 @@ async def delete_task(
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
     ensure_project_open(db, task.project_id)
-    if task.user_id != current_user.user_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to delete this task")
+    is_project_member = db.query(ProjectMembers).filter(
+        ProjectMembers.project_id == task.project_id,
+        ProjectMembers.user_id == current_user.user_id
+    ).first()
+
+    if not is_project_member:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only project members can delete tasks")
     db.delete(task)
     db.commit()
     return {"detail": "Task deleted"}

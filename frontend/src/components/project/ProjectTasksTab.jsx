@@ -201,6 +201,7 @@ const ProjectTasksTab = ({ project, onTaskAdded, onTaskUpdated, onTaskDeleted })
     try {
       await deleteTask(taskId);
       setTasks((prev) => prev.filter((t) => t.task_id !== taskId));
+      setSelectedTask(null); // ✅ [추가] 삭제 성공 시 패널 닫기
       onTaskDeleted?.(taskId); // ✅ 부모 상태 갱신 트리거
     } catch (err) {
       console.error("Failed to delete task:", err);
@@ -372,7 +373,7 @@ const ProjectTasksTab = ({ project, onTaskAdded, onTaskUpdated, onTaskDeleted })
         )}
 
         {isAddingTask && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             {/* ✅ MyTasksTab 모달과 동일 레이아웃 + 프로젝트 고정 */}
             <div className="bg-white p-6 rounded-lg shadow-lg w-[500px]">
               <div className="flex justify-between items-center mb-4">
@@ -513,7 +514,7 @@ const ProjectTasksTab = ({ project, onTaskAdded, onTaskUpdated, onTaskDeleted })
       {selectedTask && (
         <div
           ref={slideRef}
-          className="w-[500px] bg-white border-l shadow-xl rounded p-6 fixed right-0 top-0 h-full overflow-y-auto"
+          className="w-[500px] bg-white border-l shadow-xl rounded p-6 fixed right-0 top-0 h-full overflow-y-auto z-50"
         >
           <div className="flex justify-between items-center mb-6">
             <button
@@ -522,12 +523,12 @@ const ProjectTasksTab = ({ project, onTaskAdded, onTaskUpdated, onTaskDeleted })
             >
               ×
             </button>
-            <button
-              onClick={() => handleDeleteTask(selectedTask.task_id)}
-              className="text-red-500 hover:text-red-700 text-sm font-medium"
-            >
-              작업 삭제
-            </button>
+        <button
+          onClick={() => handleDeleteTask(selectedTask.task_id)}
+          className="text-red-500 hover:text-red-700 text-sm font-medium"
+        >
+          작업 삭제
+        </button>
           </div>
 
           <div className="mb-6 flex items-center gap-2">

@@ -137,3 +137,10 @@ export const closeProject = async (projectId) => {
   const res = await apiClient.post(`/projects/${projectId}/close`);
   return res.data;
 };
+
+
+// ✅ [추가] 프로젝트 재활성화
+export const reopenProject = async (projectId) => {
+  const res = await apiClient.post(`/projects/${projectId}/reopen`);
+  return res.data;
+};

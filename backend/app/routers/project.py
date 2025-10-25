@@ -175,13 +175,13 @@ def update_project(
         raise HTTPException(status_code=404, detail="Project not found")
     
     # 리더 여부 확인
-    current_leader = db.query(ProjectMembers).filter(
+    is_member = db.query(ProjectMembers).filter(
         ProjectMembers.project_id == project_id,
         ProjectMembers.user_id == current_user.user_id,
-        ProjectMembers.is_leader == True
+        ProjectMembers.status == "accepted"
     ).first()
-    if not current_leader:
-        raise HTTPException(status_code=403, detail="Only leader can update project")
+    if not is_member:
+        raise HTTPException(status_code=403, detail="Only project members can update project settings")
 
     # 업데이트 적용
     if project_data.name is not None:
@@ -222,7 +222,6 @@ def update_project(
 # 5. 팀장 권한 이전
 @router.post("/{project_id}/transfer-leader")
 def transfer_leader(project_id: int, data: dict, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    ensure_project_open(db, project_id)  # ✅
     current_leader = db.query(ProjectMembers).filter(
         ProjectMembers.project_id == project_id,
         ProjectMembers.user_id == current_user.user_id,
@@ -375,7 +374,7 @@ def update_member_roles(
 
 @router.post("/{project_id}/leave")
 def leave_project(project_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    ensure_project_open(db, project_id)
+    # ensure_project_open(db, project_id)
     member = db.query(ProjectMembers).filter(
         ProjectMembers.project_id == project_id,
         ProjectMembers.user_id == current_user.user_id
@@ -384,8 +383,25 @@ def leave_project(project_id: int, db: Session = Depends(get_db), current_user: 
         raise HTTPException(status_code=404, detail="Not a project member")
 
     if member.is_leader:
-        # ✅ 팀장은 탈퇴 불가 (권한 이전 필요)
-        raise HTTPException(status_code=403, detail="Leader cannot leave before transferring leadership")
+        # ▼▼▼ [수정] 팀장 탈퇴 로직 ▼▼▼
+        member_count = db.query(ProjectMembers).filter(
+            ProjectMembers.project_id == project_id,
+            ProjectMembers.status == "accepted"
+        ).count()
+
+        if member_count > 1:
+            # 2인 이상이면 권한 이양 필요
+            raise HTTPException(status_code=403, detail="팀장은 탈퇴할 수 없습니다. 먼저 팀장 권한을 다른 멤버에게 이전하세요.")
+        else:
+            db.delete(member)
+            db.add(ProjectActivityLog(
+                project_id=project_id,
+                actor_id=current_user.user_id,
+                action=f"{current_user.nickname}이(가) 프로젝트에서 탈퇴함 (마지막 멤버)",
+                created_at=datetime.now()
+            ))
+            db.commit()
+            return {"message": "Left project successfully (last member left)"}
 
     # 팀원 탈퇴 처리
     db.delete(member)
@@ -429,3 +445,32 @@ def close_project(project_id: int, db: Session = Depends(get_db), current_user: 
     ))
     db.commit()
     return {"message": "Project closed", "end_date": project.end_date, "duration": project.duration}
+
+# ✅ [추가] 11. 프로젝트 재활성화 (팀장 전용)
+@router.post("/{project_id}/reopen")
+def reopen_project(project_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    project = db.query(Project).filter(Project.project_id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    leader = db.query(ProjectMembers).filter(
+        ProjectMembers.project_id == project_id,
+        ProjectMembers.user_id == current_user.user_id,
+        ProjectMembers.is_leader == True
+    ).first()
+    if not leader:
+        raise HTTPException(status_code=403, detail="Only leader can reopen")
+
+    if not project.is_closed:
+        return {"message": "Already active"}
+
+    project.is_closed = False
+    # project.end_date = None # ✅ 참고: 종료일은 일단 유지 (정책에 따라 None으로 변경 가능)
+    db.add(ProjectActivityLog(
+        project_id=project_id,
+        actor_id=current_user.user_id,
+        action=f"{current_user.nickname}이(가) 프로젝트를 다시 활성화함",
+        created_at=datetime.now()
+    ))
+    db.commit()
+    return {"message": "Project reopened"}

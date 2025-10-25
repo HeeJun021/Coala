@@ -13,6 +13,7 @@ import {
   updateMemberRoles,
   leaveProject,
   closeProject,
+  reopenProject
 } from "../../api/projectApi";
 import { getMyTasks } from "../../api/taskApi";
 
@@ -268,10 +269,6 @@ const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
   };
 
 const handleLeaveProject = async () => {
-  if (meId && leaderId && meId === leaderId) {
-    alert("팀장은 탈퇴할 수 없습니다. 먼저 팀장 권한을 다른 멤버에게 이전하세요.");
-    return;
-  }
   if (!window.confirm("정말 프로젝트에서 탈퇴하시겠습니까?")) return;
 
   try {
@@ -311,6 +308,25 @@ const handleCloseProject = async () => {
   }
 };
 
+// ✅ [추가] 프로젝트 활성화 핸들러 (팀장)
+const handleReopenProject = async () => {
+  if (!(meId && leaderId && meId === leaderId)) return;
+  if (!window.confirm("프로젝트를 다시 활성화하시겠습니까? '진행 중' 상태로 변경됩니다.")) return;
+
+  try {
+    await reopenProject(project.project_id);
+    alert("프로젝트가 활성화되었습니다.");
+
+    // 사이드바 새로고침 이벤트
+    window.dispatchEvent(new CustomEvent("projects:refresh", {
+      detail: { projectId: project.project_id, action: "reopen" }
+    }));
+
+    window.location.reload(); // 전체 새로고침
+  } catch (e) {
+    alert(e?.response?.data?.detail || "활성화에 실패했습니다.");
+  }
+};
   const displayedLogs = showAllLogs ? activityLogs : activityLogs.slice(0, 5);
 
   return (
@@ -588,37 +604,55 @@ const handleCloseProject = async () => {
           </p>
           <div className="flex gap-2 flex-wrap">
             {isClosed ? (
+              // --- 종료된 프로젝트 ---
               <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded">
                 종료됨 (읽기 전용)
               </span>
             ) : (
+              // --- 활성 프로젝트 ---
               <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded">
                 진행 중
               </span>
             )}
           </div>
 
-          {/* 작은 링크 버튼: 덜 강조 */}
-          {!isClosed && (
-            <div className="mt-3 flex items-center justify-end gap-3 text-xs">
-              <button
-                onClick={handleLeaveProject}
-                className="text-gray-500 hover:text-gray-700 underline-offset-2 hover:underline"
-                title="프로젝트에서 탈퇴"
-              >
-                프로젝트 탈퇴
-              </button>
-              {meId && leaderId && meId === leaderId && (
-                <button
-                  onClick={handleCloseProject}
-                  className="text-red-500 hover:text-red-600 underline-offset-2 hover:underline"
-                  title="프로젝트 종료"
-                >
-                  프로젝트 종료
+          {/* --- 버튼 영역 --- */}
+          <div className="mt-3 flex items-center justify-end gap-3 text-xs">
+            {isClosed ? (
+              // --- 종료된 프로젝트일 때 ---
+              meId && leaderId && meId === leaderId ? (
+                // (팀장)
+                <>
+                  <button onClick={handleReopenProject} className="text-blue-600 hover:text-blue-700 underline-offset-2 hover:underline">
+                    프로젝트 활성화
+                  </button>
+                  {/* ✅ [수정] 영구 삭제 -> 프로젝트 탈퇴 (클릭 시 "팀장 탈퇴 불가" 알림이 뜰 것임) */}
+                  <button onClick={handleLeaveProject} className="text-gray-500 hover:text-gray-700 underline-offset-2 hover:underline">
+                    프로젝트 탈퇴
+                  </button>
+                </>
+              ) : (
+                // (팀원)
+                <button onClick={handleLeaveProject} className="text-gray-500 hover:text-gray-700 underline-offset-2 hover:underline">
+                  프로젝트 탈퇴
                 </button>
-              )}
-            </div>
-          )}
+              )
+            ) : (
+              // --- 활성 프로젝트일 때 (기존 로직) ---
+              <>
+                <button
+                  onClick={handleLeaveProject} className="text-gray-500 hover:text-gray-700 underline-offset-2 hover:underline" title="프로젝트에서 탈퇴">
+                  프로젝트 탈퇴
+                </button>
+{meId && leaderId && meId === leaderId && (
+                  <button onClick={handleCloseProject} className="text-red-500 hover:text-red-600 underline-offset-2 hover:underline" title="프로젝트 종료">
+                    프로젝트 종료
+                  </button>
+                )}
+              </>
+)}
+          </div>
+          {/* ▲▲▲ [수정] 상태 뱃지 및 버튼 영역 ▲▲▲ */}
         </div>
 
         {/* 진행률 */}
