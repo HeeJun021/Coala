@@ -9,20 +9,29 @@ const InviteProjectMember = ({
   setSelectedFriend,
   onClose,
   onInvite,
+  projectId,
 }) => {
   const [search, setSearch] = useState("");
   const [results, setResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // ✅ 검색 또는 추천 유저 로딩
+  
   useEffect(() => {
+    // ⬇️ 3. projectId가 없으면 추천 API를 호출하지 않도록 방어
+    if (!search.trim() && !projectId) {
+      console.warn("projectId가 제공되지 않아 추천 목록을 불러올 수 없습니다.");
+      setResults([]);
+      return;
+    }
+
     const fetchUsers = async () => {
       setIsLoading(true);
       try {
         let res = [];
         if (!search.trim()) {
           // ✅ 검색어 없으면 맞팔 or 추천 유저 목록 표시
-          res = await getRecommendedUsers();
+          // ⬇️ 2. API 호출 시 projectId 전달
+          res = await getRecommendedUsers(projectId);
         } else {
           // ✅ 검색어 있으면 검색 결과 표시
           res = await searchUsers(search.trim());
@@ -37,7 +46,7 @@ const InviteProjectMember = ({
 
     const delayDebounce = setTimeout(fetchUsers, 300);
     return () => clearTimeout(delayDebounce);
-  }, [search]);
+  }, [search, projectId]); // ⬇️ 4. useEffect 의존성 배열에 projectId 추가
 
   const handleSelect = (user) => {
     if (selectedFriend?.id === user.user_id) {
