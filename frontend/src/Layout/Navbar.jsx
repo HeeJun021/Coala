@@ -274,9 +274,16 @@ const Navbar = () => {
         }`}
       >
         <div className="flex justify-center">
-          <div className="grid grid-cols-7 w-[1050px] text-center">
+          <div className="grid grid-cols-7 mr-1 w-[1050px] text-center">
             {menuItems.map((item, idx) => (
-              <div key={idx} className="flex flex-col items-center gap-3">
+              <div
+                key={idx}
+                className={`flex flex-col gap-3 items-center ${
+                  item.label === "게시판" || item.label === "포트폴리오" || item.label === "학습자료"
+                    ? "pr-1 items-start"
+                    : ""
+                }`}
+              >
                 {item.children.map((child, i) => {
                   if (item.label === "학습자료") {
                     return (
