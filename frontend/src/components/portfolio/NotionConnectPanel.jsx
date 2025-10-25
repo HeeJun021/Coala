@@ -38,6 +38,7 @@ export default function NotionConnectPanel({ connected, workspaceName, onConnect
   };
 
   return (
+    // ⬇️ 여기에 카드 스타일을 다시 적용합니다.
     <div className="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
       <div className="flex items-start gap-6">
         <div className="flex-shrink-0">
