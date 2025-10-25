@@ -519,7 +519,7 @@ const handleSelectTemplate = useCallback((id, title) => {
   return (
     <div className="w-full min-h-screen pl-[144px]" data-scroll-root>
       <div className="bg-[#F9FAFB] min-h-screen">
-        <div className="max-w-5xl mx-auto pt-0 mt-0 relative">
+        <div className="max-w-5xl mx-auto pt-0 -mt-2.5 relative">
           <NotionConnectPanel
             connected={false}
             onConnectedChange={(v) => {
