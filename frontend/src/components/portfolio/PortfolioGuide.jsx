@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { SiNotion } from "react-icons/si";
-import { FileText, Layers, Upload, CheckCircle2, User, Brain, FolderGit2 } from "lucide-react";
+import { Layers, CheckCircle2, User, Brain, FolderGit2 } from "lucide-react";
 import { getNotionAuthorizeUrl } from "../../api/notionApi";
 import PortfolioGuideDetail from "./PortfolioGuideDetail";
 
