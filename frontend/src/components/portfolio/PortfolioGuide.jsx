@@ -19,11 +19,14 @@ export default function PortfolioGuide() {
     try {
       setLoading(true);
       const { authorize_url } = await getNotionAuthorizeUrl();
-      window.location.href = authorize_url;
+
+      // 약간의 시각적 자연스러움 위해 약간의 지연 추가
+      setTimeout(() => {
+        window.location.href = authorize_url;
+      }, 600);
     } catch (err) {
       console.error("노션 연결 URL 불러오기 실패:", err);
       alert("노션 연결을 시작할 수 없습니다.");
-    } finally {
       setLoading(false);
     }
   };
@@ -86,7 +89,14 @@ export default function PortfolioGuide() {
           disabled={loading}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium disabled:opacity-60"
         >
-          {loading ? "연결 중..." : "노션 연결"}
+          {loading ? (
+            <>
+              <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+              연결 중...
+            </>
+          ) : (
+            "노션 연결"
+          )}
         </button>
       </div>
 
@@ -95,7 +105,10 @@ export default function PortfolioGuide() {
         노션 포트폴리오 가이드
       </h1>
       <p className="text-gray-600 text-lg mb-10 max-w-2xl">
-        노션과 연동하여 프로젝트 기반의 포트폴리오 페이지를 자동으로 생성할 수 있습니다.
+        <span className="font-semibold text-gray-800">코알라 프로젝트</span>를
+        기반으로, 나만의{" "}
+        <span className="font-semibold text-gray-800">노션 포트폴리오</span>를
+        자동 생성할 수 있습니다.
       </p>
 
       {/* 🔹 단계 카드 */}
@@ -104,7 +117,8 @@ export default function PortfolioGuide() {
           <div
             key={step.id}
             onClick={() => setSelectedStep(step)}
-            className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col items-start hover:shadow-lg transition cursor-pointer"
+            className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col items-start 
+                 hover:shadow-lg transition cursor-pointer select-none" // ✅ select-none 추가!
           >
             {step.icon}
             <div className="text-lg font-semibold text-gray-800 mb-1">
@@ -118,12 +132,10 @@ export default function PortfolioGuide() {
       </div>
 
       {/* 🔹 디테일 모달 */}
-      {selectedStep && (
-        <PortfolioGuideDetail
-          step={selectedStep}
-          onClose={() => setSelectedStep(null)}
-        />
-      )}
+      <PortfolioGuideDetail
+        step={selectedStep}
+        onClose={() => setSelectedStep(null)}
+      />
     </div>
   );
 }
