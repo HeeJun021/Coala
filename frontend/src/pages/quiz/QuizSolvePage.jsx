@@ -131,7 +131,7 @@ const QuizSolvePage = ({ userData }) => {
                       className={`flex items-center gap-2 px-4 py-2 border rounded-full cursor-pointer text-sm
                       ${
                         answers.find((a) => a.questionId === question.question_id)?.userAnswer ===
-                        value
+                        (value === "O" ? "true" : "false")
                           ? "bg-[#A7DA9B] text-white"
                           : "bg-gray-100 text-gray-800"
                       }`}
@@ -143,15 +143,18 @@ const QuizSolvePage = ({ userData }) => {
                         value={value}
                         checked={
                           answers.find((a) => a.questionId === question.question_id)?.userAnswer ===
-                          value
+                          (value === "O" ? "true" : "false")
                         }
-                        onChange={() => handleAnswerChange(question.question_id, value)}
+                        onChange={() =>
+                          handleAnswerChange(question.question_id, value === "O" ? "true" : "false")
+                        }
                       />
                       {value}
                     </label>
                   ))}
                 </div>
               )}
+
 
               {/* 객관식 문제 */}
               {question.question_type === 2 && (

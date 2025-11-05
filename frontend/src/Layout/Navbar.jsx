@@ -116,7 +116,7 @@ const Navbar = () => {
     {
       label: "학습자료",
       path: "/StudyMaterialsPage",
-      children: languages.map((lang) => "\u00A0"+lang.language),
+      children: languages.map((lang) => lang.language),
     },
     {
       label: "개념퀴즈",
@@ -268,7 +268,7 @@ const Navbar = () => {
       {/* 드롭다운 메뉴 */}
       <div
         className={`fixed top-[70px] pr-6 left-[6px] w-full bg-white border-b shadow-md z-40 overflow-hidden transition-all duration-300 ${
-          hoverIndex !== null
+          hoverIndex !== null && user
             ? "max-h-[250px] py-6 opacity-100"
             : "max-h-0 opacity-0"
         }`}
