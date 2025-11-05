@@ -55,7 +55,8 @@ const Home = () => {
       <AttendancePopup tz="Asia/Seoul" userId={user?.user_id} />
 
       {/* 🌿 Hero Section */}
-      <section className="relative flex flex-col justify-center items-center text-center min-h-screen overflow-hidden bg-gradient-to-b from-[#f7fff1] via-green-100 to-yellow-50">
+      <section className="relative flex flex-col justify-center items-center text-center min-h-screen overflow-hidden bg-gradient-to-b from-[#e9ffdb] via-green-200 to-yellow-100">
+
         <motion.div
           className="absolute top-[-10%] left-[10%] w-[35rem] h-[35rem] bg-emerald-200 rounded-full blur-[180px] opacity-40 -z-10"
           animate={{ y: [0, 30, 0], x: [0, 10, 0] }}
@@ -122,7 +123,7 @@ const Home = () => {
         }`}
       >
         {/* 자연스러운 연결: 노랑+연초록 */}
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-yellow-50 via-[#f2fcd9] to-[#fafff2]" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-yellow-100 via-[#e9fcb9] to-[#e6ffe3]" />
         <div className="max-w-6xl mx-auto px-6 flex items-center gap-12">
           <motion.img
             variants={fadeLeft}
@@ -173,7 +174,7 @@ const Home = () => {
         }`}
       >
         {/* 연결: 연초록 → 밝은 라임 */}
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#fafff2] via-[#e6fadb] to-[#f6fff1]" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#f0ffe6] via-[#d8f5c1] to-[#e9ffdc]" />
         <div className="max-w-6xl mx-auto px-6 flex items-center gap-12">
           <motion.div
             variants={fadeLeft}
@@ -224,7 +225,7 @@ const Home = () => {
         }`}
       >
         {/* 연결: 초록 → 주황톤 부드럽게 */}
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#f6fff1] via-[#fff6e7] to-[#fff8f3]" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#eaffda] via-[#ffe6c7] to-[#ffeae1]" />
         <div className="max-w-6xl mx-auto px-6 text-center">
           <motion.img
             variants={fadeUp}
