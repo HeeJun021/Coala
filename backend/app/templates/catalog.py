@@ -13,40 +13,149 @@ TEMPLATE_CATALOG: dict[str, dict] = {
     # 1) HTML + CSS + JS (vanilla)
     # ---------------------------
     "vanilla": {
-        "default_folder_name": "Default_html",
-        "open_files": ["index.html", "src/js/main.js"],
+        "default_folder_name": "HTML_CSS_JS", # 폴더 이름도 살짝 변경
+        "open_files": ["index.html", "src/js/main.js", "src/css/style.css"], # 열리는 파일 추가
         "tree": {
             "index.html": """<!DOCTYPE html>
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vanilla Starter</title>
+    <title>Vanilla Starter - Enhanced</title>
+    <link rel="stylesheet" href="src/css/variables.css" />
     <link rel="stylesheet" href="src/css/style.css" />
   </head>
   <body>
-    <h1>Hello, HTML!</h1>
-    <p>이 프로젝트는 HTML/CSS/JS로 바로 실행할 수 있는 가장 기본 템플릿입니다.</p>
+    <header class="main-header">
+      <div class="logo">App Name</div>
+      <nav class="main-nav">
+        <ul>
+          <li><a href="#">홈</a></li>
+          <li><a href="#">서비스</a></li>
+          <li><a href="#">문의</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="container">
+      <section>
+        <h1>Hello, HTML! (Enhanced)</h1>
+        <p>
+          이 템플릿은 Semantic HTML 구조와 기본 스타일링을 포함합니다.<br />
+          header, nav, section, footer와 같은 요소를 활용하여 작성되었습니다.
+        </p>
+        <button id="action-button">클릭해보세요</button>
+      </section>
+    </main>
+
+    <footer>
+      <p>&copy; 2025 Vanilla Starter Project</p>
+    </footer>
+
     <script src="src/js/main.js"></script>
   </body>
 </html>
 """,
             "src": {
                 "css": {
-                    "style.css": """body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "맑은 고딕", sans-serif;
-  margin: 24px;
-  line-height: 1.6;
+                    "variables.css": """:root {
+  /* 기본 컬러 팔레트 */
+  --primary-color: #007bff;
+  --text-color: #333;
+  --background-color: #f4f7f9;
+  --border-color: #ddd;
+
+  /* 간격 및 폰트 */
+  --spacing-unit: 8px;
+  --font-base: 16px;
 }
-h1 { margin-bottom: 8px; }
+""",
+                    "style.css": """/* Reset 및 기본 설정 */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "맑은 고딕", sans-serif;
+  margin: 0;
+  line-height: 1.6;
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+/* 레이아웃 및 컨테이너 */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: calc(var(--spacing-unit) * 3); /* 24px */
+}
+
+/* 헤더 및 네비게이션 스타일 */
+.main-header {
+  background-color: var(--primary-color);
+  color: white;
+  padding: var(--spacing-unit) calc(var(--spacing-unit) * 3);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.main-header .logo {
+  font-size: 1.5em;
+  font-weight: bold;
+}
+
+.main-nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+}
+
+.main-nav li {
+  margin-left: calc(var(--spacing-unit) * 2);
+}
+
+.main-nav a {
+  color: white;
+  text-decoration: none;
+  padding: var(--spacing-unit);
+  display: block;
+}
+
+/* 버튼 스타일 */
+#action-button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: var(--spacing-unit) calc(var(--spacing-unit) * 2);
+  cursor: pointer;
+  border-radius: 4px;
+  margin-top: calc(var(--spacing-unit) * 2);
+}
+
+/* 푸터 스타일 */
+footer {
+  text-align: center;
+  padding: var(--spacing-unit) calc(var(--spacing-unit) * 3);
+  margin-top: calc(var(--spacing-unit) * 5);
+  border-top: 1px solid var(--border-color);
+  font-size: 0.9em;
+  color: #666;
+}
 """
                 },
                 "js": {
-                    "main.js": """console.log("Hello, Vanilla!");"""
+                    "main.js": """console.log("Hello, Vanilla! The enhanced template is ready.");
+
+document.getElementById("action-button").addEventListener("click", () => {
+    alert("버튼이 클릭되었습니다! main.js에서 이벤트가 처리되었습니다.");
+});
+"""
                 },
             },
             "assets": {},
-            "README.md": "# Vanilla Starter\n\n가장 기본적인 정적 웹 스타터입니다.\n",
+            "README.md": "# Vanilla Starter\n\nSemantic HTML, 기본 CSS 변수, 간단한 Navigation 구조를 포함하는 정적 웹 스타터입니다.\n",
         },
     },
 
