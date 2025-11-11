@@ -405,8 +405,8 @@ const AIChatPanel = ({ onClose }) => {
           </div>
           <div className="flex gap-2">
             <input
-              className="flex-1 border rounded p-2"
-              placeholder="질문을 입력하세요..."
+              className="flex-1 border border-gray-300 rounded p-2 focus:outline-none focus:border-green-600 transition-colors"
+              placeholder="질문을 입력하세요."
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}

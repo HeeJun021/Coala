@@ -45,11 +45,20 @@ def create_gpt_session(
         title_response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "당신은 핵심 요약 제목을 생성하는 비서입니다."},
+                {
+                    "role": "system",
+                    "content": "당신은 핵심 요약 제목을 생성하는 비서입니다.",
+                },
                 {"role": "user", "content": title_prompt},
             ],
         )
-        generated_title = title_response.choices[0].message.content.strip().replace('"', "")
+        generated_title = (
+            title_response.choices[0]
+            .message.content.strip()
+            .replace('"', "")
+            .replace("'", "")
+        )
+
         if not generated_title:
             generated_title = request.message[:30]  # fallback
     except Exception as e:
@@ -82,8 +91,15 @@ def create_gpt_session(
     try:
         gpt_response = client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=messages,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "답변은 3문장 이내로 간결하게, 핵심만 말해줘.",
+                },
+                *messages,
+            ],
         )
+
         answer = gpt_response.choices[0].message.content
     except Exception as e:
         print("❌ GPT 응답 예외 발생:", e)
@@ -99,7 +115,6 @@ def create_gpt_session(
     db.commit()
 
     return {"session_id": session.session_id, "response": answer}
-
 
 
 # 2. 기존 세션에 이어서 질문하기
