@@ -16,6 +16,7 @@ import {
   reopenProject
 } from "../../api/projectApi";
 import { getMyTasks } from "../../api/taskApi";
+import ConfirmModal from "../ConfirmModal";
 
 import {
   LayoutDashboard,
@@ -74,7 +75,7 @@ const ProjectDetailPanel = ({ project, onUpdate, onNameChange }) => {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [meId, setMeId] = useState(null);
   const [allMyTasks, setAllMyTasks] = useState([]);
-
+  const [showConfirmClose, setShowConfirmClose] = useState(false);
   // ✅ 종료 여부 + 읽기 전용 가드
   const isClosed = !!project?.is_closed;
   const guardClosed = (e) => {
@@ -287,22 +288,23 @@ const handleLeaveProject = async () => {
   }
 };
 
-const handleCloseProject = async () => {
+// 프로젝트 종료 요청 (확인 모달 띄움)
+const handleCloseProject = () => {
   if (!(meId && leaderId && meId === leaderId)) return;
-  if (!window.confirm("프로젝트를 종료하면 읽기 전용으로 전환됩니다. 계속할까요?")) return;
+  setShowConfirmClose(true); // ✅ 모달 표시
+};
 
+// 실제 종료 처리 로직
+const confirmCloseProject = async () => {
+  setShowConfirmClose(false); // 모달 닫기
   try {
     await closeProject(project.project_id);
-    alert("프로젝트가 종료되었습니다.");
 
-    // 사이드바 새로고침 이벤트
     window.dispatchEvent(new CustomEvent("projects:refresh", {
-      detail: { projectId: project.project_id, action: "close" }
+      detail: { projectId: project.project_id, action: "close" },
     }));
 
-    // ✅ 전체 페이지 새로고침
     window.location.reload();
-
   } catch (e) {
     alert(e?.response?.data?.detail || "종료에 실패했습니다.");
   }
@@ -774,6 +776,16 @@ const handleReopenProject = async () => {
           </div>
         </div>
       )}
+      {showConfirmClose && (
+        <ConfirmModal
+          show={showConfirmClose}
+          title="프로젝트 종료"
+          message="프로젝트를 종료하면 읽기 전용 상태로 전환됩니다. 계속하시겠습니까?"
+          onClose={() => setShowConfirmClose(false)}
+          onConfirm={confirmCloseProject}
+        />
+      )}
+
     </div>
   );
 };
