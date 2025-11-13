@@ -121,7 +121,7 @@ const FloatingToolButton = ({
                 className="flex items-center gap-2 w-full text-left px-4 py-2 hover:bg-gray-200 text-sm"
               >
                 <Table size={16} className="text-cyan-400" />
-                테이블 추가
+                엔티티 추가
               </button>
 
               <div

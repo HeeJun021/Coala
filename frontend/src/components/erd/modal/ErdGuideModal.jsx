@@ -33,7 +33,7 @@ const guideSections = {
             <div className="flex items-center gap-2">
               <Table size={16} className="text-cyan-400" />
               <span>
-                <strong>테이블 추가:</strong> 클릭 후 캔버스를 누르면 테이블이 생성돼요.
+                <strong>엔티티 추가:</strong> 클릭 후 캔버스를 누르면 엔티티가 생성돼요.
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -55,21 +55,21 @@ const guideSections = {
       imgSrc: "/guide/erd/floating-button.png",
     },
     {
-      title: "테이블 추가",
+      title: "엔티티 추가",
       content:
-        "플로팅 메뉴에서 '테이블 추가'를 클릭 시 마우스 커서가 바뀌고, 캔버스를 클릭하면 테이블이 생성돼요.",
+        "플로팅 메뉴에서 '엔티티 추가'를 클릭 시 마우스 커서가 바뀌고, 캔버스를 클릭하면 엔티티가 생성돼요.",
       icon: <Table size={18} className="text-cyan-400" />,
       imgSrc: (
         <div className="flex items-center justify-center gap-4">
           <img
             src="/guide/erd/add-table-step1.png"
-            alt="테이블 추가 단계 1"
+            alt="엔티티 추가 단계 1"
             className="w-[45%] rounded border shadow"
           />
           <ArrowRight size={24} className="text-blue-400" />
           <img
             src="/guide/erd/add-table-step2.png"
-            alt="테이블 추가 단계 2"
+            alt="엔티티 추가 단계 2"
             className="w-[45%] rounded border shadow"
           />
         </div>
@@ -80,7 +80,7 @@ const guideSections = {
       content: (
         <div className="space-y-2 text-gray-700">
           <div>
-            <strong>컬럼 추가:</strong> 테이블 안의{" "}
+            <strong>컬럼 추가:</strong> 엔티티 안의{" "}
             <Plus size={14} className="inline text-green-500" /> 버튼을 눌러 컬럼을 추가할 수 있어요.
           </div>
           <div>
@@ -136,7 +136,7 @@ const guideSections = {
     { title: "줌 인/아웃", content: "Ctrl + 마우스 휠", icon: <ZoomIn size={18} className="text-blue-500" /> },
   ],
   "조작 방법": [
-    { title: "테이블 생성", content: "툴바의 + 버튼 클릭 후 캔버스를 클릭", icon: <Table size={18} className="text-cyan-500" /> },
+    { title: "엔티티 생성", content: "툴바의 + 버튼 클릭 후 캔버스를 클릭", icon: <Table size={18} className="text-cyan-500" /> },
     { title: "관계 설정", content: "관계 모드에서 컬럼 클릭 → 다른 컬럼 클릭", icon: <GitCompareArrows size={18} className="text-pink-500" /> },
     { title: "드래그 후 삭제", content: "테이블 선택 후 Delete 키로 삭제", icon: <Trash2 size={18} className="text-rose-500" /> },
     { title: "화면 이동", content: "캔버스에서 마우스 휠 클릭 후 드래그", icon: <Move size={18} className="text-blue-500" /> },

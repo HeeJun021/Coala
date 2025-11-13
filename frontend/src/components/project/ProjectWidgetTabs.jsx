@@ -302,7 +302,7 @@ case "calendar":
   };
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden">
+    <div className="w-full h-full flex flex-col overflow-auto">
       <div className="sticky top-0 z-10 bg-white border-b">
         <div className="flex items-center h-12 px-6">
           {enabledTabs.map((tab) => {
@@ -371,7 +371,7 @@ case "calendar":
         </div>
       </div>
 
-      <div className="flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden">
+      <div className="flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden editor-scroll-area">
   {renderTabContent()}
 </div>
 

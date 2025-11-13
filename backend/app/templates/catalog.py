@@ -21,35 +21,51 @@ TEMPLATE_CATALOG: dict[str, dict] = {
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vanilla Starter - Enhanced</title>
+    <title>Vanilla Starter - Modern Template</title>
     <link rel="stylesheet" href="src/css/variables.css" />
     <link rel="stylesheet" href="src/css/style.css" />
   </head>
   <body>
     <header class="main-header">
-      <div class="logo">App Name</div>
+      <div class="logo">MyWeb</div>
       <nav class="main-nav">
         <ul>
-          <li><a href="#">홈</a></li>
-          <li><a href="#">서비스</a></li>
-          <li><a href="#">문의</a></li>
+          <li><a href="#home">홈</a></li>
+          <li><a href="#services">서비스</a></li>
+          <li><a href="#contact">문의</a></li>
         </ul>
       </nav>
+      <button class="menu-toggle" id="menu-toggle">☰</button>
     </header>
 
-    <main class="container">
-      <section>
-        <h1>Hello, HTML! (Enhanced)</h1>
-        <p>
-          이 템플릿은 Semantic HTML 구조와 기본 스타일링을 포함합니다.<br />
-          header, nav, section, footer와 같은 요소를 활용하여 작성되었습니다.
-        </p>
-        <button id="action-button">클릭해보세요</button>
-      </section>
-    </main>
+    <section id="home" class="hero">
+      <div class="hero-content">
+        <h1>반갑습니다 👋</h1>
+        <p>이 스타터 템플릿은 HTML, CSS, JS만으로 구성된 미니 웹사이트 예시입니다.</p>
+        <button id="learn-more">자세히 보기</button>
+      </div>
+    </section>
+
+    <section id="services" class="services container">
+      <h2>주요 서비스</h2>
+      <div class="cards">
+        <div class="card">
+          <h3>웹 디자인</h3>
+          <p>깔끔하고 반응형 웹 디자인을 제공합니다.</p>
+        </div>
+        <div class="card">
+          <h3>프론트엔드 개발</h3>
+          <p>최신 트렌드의 인터랙티브 UI 구현.</p>
+        </div>
+        <div class="card">
+          <h3>백엔드 연동</h3>
+          <p>API 통신 및 서버 연동 기능을 지원합니다.</p>
+        </div>
+      </div>
+    </section>
 
     <footer>
-      <p>&copy; 2025 Vanilla Starter Project</p>
+      <p>&copy; 2025 MyWeb. All rights reserved.</p>
     </footer>
 
     <script src="src/js/main.js"></script>
@@ -70,87 +86,169 @@ TEMPLATE_CATALOG: dict[str, dict] = {
   --font-base: 16px;
 }
 """,
-                    "style.css": """/* Reset 및 기본 설정 */
+                    "style.css": """@import url('variables.css');
+
+/* Reset */
 * {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
+/* Base */
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "맑은 고딕", sans-serif;
-  margin: 0;
-  line-height: 1.6;
+  font-family: "Noto Sans KR", Arial, sans-serif;
   background-color: var(--background-color);
   color: var(--text-color);
+  line-height: 1.6;
 }
 
-/* 레이아웃 및 컨테이너 */
+/* Layout */
 .container {
+  width: 90%;
   max-width: 1100px;
   margin: 0 auto;
-  padding: calc(var(--spacing-unit) * 3); /* 24px */
+  padding: calc(var(--spacing-unit) * 3);
 }
 
-/* 헤더 및 네비게이션 스타일 */
+/* Header */
 .main-header {
   background-color: var(--primary-color);
   color: white;
-  padding: var(--spacing-unit) calc(var(--spacing-unit) * 3);
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-unit) calc(var(--spacing-unit) * 3);
 }
 
 .main-header .logo {
-  font-size: 1.5em;
+  font-size: 1.4rem;
   font-weight: bold;
 }
 
 .main-nav ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
   display: flex;
+  list-style: none;
 }
 
-.main-nav li {
+.main-nav li + li {
   margin-left: calc(var(--spacing-unit) * 2);
 }
 
 .main-nav a {
   color: white;
   text-decoration: none;
-  padding: var(--spacing-unit);
-  display: block;
 }
 
-/* 버튼 스타일 */
-#action-button {
-  background-color: var(--primary-color);
-  color: white;
+.menu-toggle {
+  display: none;
+  background: none;
   border: none;
-  padding: var(--spacing-unit) calc(var(--spacing-unit) * 2);
-  cursor: pointer;
-  border-radius: 4px;
-  margin-top: calc(var(--spacing-unit) * 2);
+  color: white;
+  font-size: 1.5rem;
 }
 
-/* 푸터 스타일 */
+/* Hero Section */
+.hero {
+  background: linear-gradient(to right, #007bff, #00c4ff);
+  color: white;
+  text-align: center;
+  padding: 80px 20px;
+}
+
+.hero-content h1 {
+  font-size: 2.4rem;
+}
+
+.hero-content p {
+  margin: 16px 0;
+}
+
+.hero-content button {
+  background-color: white;
+  color: var(--primary-color);
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* Services */
+.services h2 {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 24px;
+}
+
+.card {
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  transition: transform 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+/* Footer */
 footer {
   text-align: center;
-  padding: var(--spacing-unit) calc(var(--spacing-unit) * 3);
-  margin-top: calc(var(--spacing-unit) * 5);
-  border-top: 1px solid var(--border-color);
-  font-size: 0.9em;
-  color: #666;
+  padding: 20px;
+  margin-top: 40px;
+  background-color: #f1f3f6;
+  color: #555;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .main-nav { display: none; }
+  .menu-toggle { display: block; }
 }
 """
                 },
                 "js": {
-                    "main.js": """console.log("Hello, Vanilla! The enhanced template is ready.");
+                    "main.js": """console.clear();
+console.log("JS App Running Independently!");
 
-document.getElementById("action-button").addEventListener("click", () => {
-    alert("버튼이 클릭되었습니다! main.js에서 이벤트가 처리되었습니다.");
-});
+const appTitle = "Mini User Dashboard";
+const sections = ["Home", "About", "Team", "Contact"];
+const users = [
+  { name: "김희준", role: "Frontend Developer", email: "heejun@example.com" },
+  { name: "박민수", role: "Backend Engineer", email: "minsu@example.com" },
+  { name: "이서연", role: "UI/UX Designer", email: "seoyeon@example.com" },
+  { name: "정우진", role: "Data Scientist", email: "woojin@example.com" },
+  { name: "최예린", role: "AI Researcher", email: "yerin@example.com" },
+];
+
+console.log("=".repeat(60));
+console.log(appTitle.padStart(35, " "));
+console.log("=".repeat(60));
+console.log("Navigation:", sections.join(" | "));
+console.log("-".repeat(60));
+
+console.log("Team Members");
+for (const user of users) {
+  console.log(`${user.name}`);
+  console.log(`   ├ Role : ${user.role}`);
+  console.log(`   └ Email: ${user.email}`);
+  console.log("-".repeat(40));
+}
+
+console.log("".repeat(1));
+console.log("=".repeat(60));
+console.log("© 2025 Heejoon JS Standalone Demo");
+console.log("=".repeat(60));
+
+
+
 """
                 },
             },

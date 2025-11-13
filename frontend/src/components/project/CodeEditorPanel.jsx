@@ -305,7 +305,7 @@ export default function CodeEditorPanel({ project, branch, onBranchChange }) {
   );
 
   return (
-    <div className="w-full h-full flex flex-col bg-white">
+    <div className="w-full flex-1 flex flex-col bg-white min-h-0">
       {/* 🔹 헤더 */}
       <h2 className="text-xl font-bold mt-4 mb-4 flex items-center gap-2 pl-8">
         <Code size={20} className="text-gray-700" /> 코드 에디터
@@ -371,20 +371,22 @@ export default function CodeEditorPanel({ project, branch, onBranchChange }) {
               </div>
 
               {/* 에디터 */}
-              <div className="flex-1 min-w-0 h-full">
+              <div className="flex-1 min-w-0 h-full overflow-auto">
                 {!activePath ? (
                   <div className="w-full h-full flex items-center justify-center text-gray-400">
                     좌측에서 파일을 선택하면 편집할 수 있어요
                   </div>
                 ) : (
-                  <CodeMirror
-                    value={content}
-                    height="100%"
-                    theme={githubLight}
-                    extensions={[...cmLangExtensions, saveKeymap]}
-                    onChange={onCodeChange}
-                    style={{ height: "100%" }}
-                  />
+                    <CodeMirror
+                      value={content}
+                      height="auto"           // 🔹에디터 높이를 코드 길이에 따라 자동 확장
+                      theme={githubLight}
+                      extensions={[...cmLangExtensions, saveKeymap]}
+                      onChange={onCodeChange}
+                      style={{
+                        fontSize: "14px"
+                      }}
+                    />
                 )}
               </div>
 

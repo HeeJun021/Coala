@@ -39,7 +39,7 @@ const CodingTestEditorPanel = ({
   return (
     <div className="w-[60%] flex flex-col border-l border-gray-200 bg-white">
       {/* 코드 에디터 영역 */}
-      <div className="flex-1 min-h-0 bg-white editor-scrollbar">
+      <div className="flex-1 min-h-0  overflow-auto bg-white editor-scrollbar">
         <div className="mt-0 border border-gray-200 rounded overflow-hidden">
           {/* 스코프 클래스 ct-v6-editor 추가 → 아래 CSS가 이 범위에만 적용됨 */}
           <div className="cm-v6-gutter-v5">

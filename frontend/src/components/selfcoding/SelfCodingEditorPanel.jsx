@@ -262,7 +262,7 @@ const SelfCodingEditorPanel = ({
       </div>
 
       {/* 코드 에디터 (v6) */}
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 overflow-auto">
         {!selectedFilename ? (
           <div className="w-full h-full flex items-center justify-center text-gray-400">
             {/* 좌측에서 파일을 선택하면 편집할 수 있어요 */}

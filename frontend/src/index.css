@@ -102,7 +102,12 @@ html,
 body,
 #root {
   height: 100%;
-  overflow: hidden;
+  overflow: auto;
+}
+
+.editor-scroll-area {
+  height: 100%;
+  overflow-y: auto; /* 내부 스크롤 허용 */
 }
 
 /* 코딩테스트 & 에디터 스크롤바 커스텀 */
